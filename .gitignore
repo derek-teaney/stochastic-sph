@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Simulation output and plots produced by test/ and examples/
+*.h5
+*.png
+
+# LaTeX build files (docs/*.pdf are committed)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+*Notes.bib

@@ -1,0 +1,1585 @@
+\PassOptionsToPackage{usenames,dvipsnames,table}{xcolor}
+\documentclass[12pt,aps,preprint,nofootinbib,noshowkeys,noshowpacs,longbibliography,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+%\usepackage{showkeys}
+\usepackage{graphics,graphicx}
+\usepackage[inline]{enumitem}
+\usepackage{mathrsfs}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{bbold}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,196}
+\definecolor{darkgreen}{RGB}{0,120,0}
+\usepackage{tikz}
+%\usepackage{cancel}
+% \usepackage{caption}
+%\usepackage{bbold}
+%\usepackage{subfigure}
+%\usepackage{stix}
+%\usepackage{multirow}
+%\usepackage{longtable}
+%\usepackage{color}
+%\usepackage[normalem]{ulem}
+%\usepackage{hyperref}
+%\usepackage{authblk}
+%\usepackage{bigints}
+%\usepackage{xparse}
+%\usepackage{physics}
+%\usepackage{verbatim}
+%\usepackage{minibox}
+%\usepackage{comment}
+%\usepackage{appendix}
+%%%\usepackage[inline]{showlabels}
+%\usepackage{scalerel}
+%\usepackage{marginnote}
+%\usepackage{graphicx}
+%\usepackage[nice]{nicefrac}
+%\usepackage{soul}
+\newcommand{\mathcolorbox}[2]{\colorbox{#1}{$\displaystyle #2$}}
+\newcommand{\hlfancy}[2]{\sethlcolor{#1}\hl{#2}}
+% -- highlighting
+\usepackage{stackengine}
+\renewcommand\useanchorwidth{T}
+\newcommand\oU[1]{\ensurestackMath{\stackon[1pt]{#1}{\mkern2mu\bullet}}}
+\newcommand\oX[1]{\ensurestackMath{\stackon[1pt]{#1}{\mkern2mu\star}}}
+\newcommand\oY[1]{\ensurestackMath{\stackon[1pt]{#1}{\mkern2mu\smwhitestar}}}
+\newcommand\oZ[1]{\ensurestackMath{\stackon[1pt]{#1}{\mkern2mu\scaleto{\circ}{3pt}}}}
+\renewcommand\S{\mathcal S}
+\newcommand\Sstress{{\mathcal S}}
+\renewcommand\P{\mathcal P}
+\newcommand\N{\mathcal N}
+\newcommand\uS{{\underline{S}} }
+\def\half{\tfrac{1}{2}}
+\def\quarter{\tfrac{1}{4}}
+\def\LF{{\scriptscriptstyle LF}}
+\def\Pbb{{\mathbb P}}
+\def\Ebb{{\mathbb E}}
+\def\Mbb{{\mathbb M}}
+\def\Sbb{{\mathbb S}}
+\def\Vbb{{\mathbb V}}
+\def\bbeta{{\sf b}}
+\def\Teff{{\sf T}}
+\newcommand{\ubeta}{{\underline{\smash{\beta}}}}
+\newcommand{\uf}{{\underline{{f}}}}
+\newcommand{\uu}{{\underline{u}}}
+\def\pp{{\rm p}}
+\def\three{{}^{(3)}}
+\def\F{{\mathcal F}}
+\def\K{{\mathcal K}}
+\def\x{{\bm x}}
+\def\p{{\bm p}}
+\def\edense{{\mathcal{E}}}
+\def\pdense{M}
+\def\dpdense{\delta\kern-0.08em M}
+\def\dbeta{\delta\kern-0.08em \beta}
+\def\CChi{ {\mathcal \chi}}
+\def\HP{\hphantom{\alpha}} % horizontal
+\def\llangle{\left\langle}
+\def\rrangle{\right\rangle}
+\newcommand{\nn}{\nonumber}
+\newcommand{\rl}{\mathrm{rel}}
+\newcommand{\tbj}{\tau}
+\newcommand{\vecxp}{\vec{x}_\perp}
+\def\Pr{ {\rm p} }
+\def\edense{ {\rm e} }
+\def\muh{\hat\mu}
+\def\vh{\hat v}
+\def\noisekernel{{\kappa}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Eqs#1{eqs.~(\ref{#1})}
+\def\eq#1{(\ref{#1})}
+\def\app#1{App.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\Figs#1{Figs.~\ref{#1}}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Ref#1{Ref.~\cite{#1}}
+\def\betaz{{(\beta_0)}}
+
+
+% equation environments  
+\def\P{\mathcal P}
+\def\beq{\begin{equation}}
+\def\eeq{\end{equation}}
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\ba{\begin{eqnarray}}
+\def\ea{\end{eqnarray}}   
+\def\DD{{\mathcal L}}
+\def\vDD{{\mathcal L}}
+\newcommand\vbeta{{\vec{\beta}}}
+\newcommand\vcovD{D}
+\newcommand\Chi{\mathcal X}
+\newcommand\covD{\nabla}
+\newcommand{\ve}[2]{e_{\;\,#1}^{#2}}
+\newcommand{\de}[2]{e_{\;\,#2}^{#1}}
+\newcommand{\vp}{{\vec{p}\,}}
+\newcommand{\petsc}{{\tt PETsc}}
+
+\def\E{{\mathcal E}}
+\def\P{{\mathcal P}}
+\def\M{{\mathcal M}}
+\def\m{{\mathfrak m}}
+\def\dd{{\rm d}}
+\def\lps{{N}}
+\def\sp{\phantom{j}}
+\def\spm{\phantom{\mu}}
+\def\sft{\vec{N}}
+\def\tideal{{\mathcal T}}
+\def\tvisc{\Pi}
+\def\btvisc{\bar{\Pi}}
+\newcommand\ph{\phantom{\nu}}
+
+\newcommand\V{V_0}
+\newcommand\dtau{{{\Delta}\tau}}
+\newcommand\dt{{{\Delta}t}}
+
+%\usepackage{showkeys}
+\def\bb1{{(1)}}
+\def\bbt{{(2)}}
+\def\bbth{{(3)}}
+
+\newcommand{\AM}[1]{{\color{green}AM: #1}}
+
+\newcommand{\cmtJF}[1]{{\color{blue}JF: #1}}
+\newcommand{\rs}[1]{{\color{red}RS: #1}}
+\newcommand{\cmtMS}[1]{{\color{cyan}MS: #1}}
+
+\newcommand{\gammathree}{{}^{(3)}\Gamma}
+\usepackage[colorlinks=true,linktocpage=true,linkcolor=darkblue,citecolor=red,urlcolor=darkblue]{hyperref}
+\usepackage{listings}
+\definecolor{jlkw}{RGB}{0,0,180}
+\definecolor{jlcmt}{RGB}{0,128,0}
+\definecolor{jlstr}{RGB}{160,60,0}
+\definecolor{jlfn}{RGB}{128,0,128}
+\lstdefinelanguage{Julia}{%
+  morekeywords=[1]{abstract,break,catch,const,continue,do,else,elseif,%
+    end,export,false,for,function,immutable,import,if,in,%
+    macro,module,mutable,return,struct,true,try,using,while,with},%
+  morekeywords=[2]{zero,dot,minimum_image,wendland_c2_grad,%
+    kappa_tensor,neighbors,SMatrix,rebuild_cell_list},%
+  sensitive=true,%
+  alsoletter={!},%
+  morecomment=[l]{\#},%
+  morecomment=[n]{\#=}{=\#},%
+  morestring=[b]{"},%
+}[keywords,comments,strings]
+
+\lstset{
+  language=Julia,
+  basicstyle=\ttfamily\small,
+  columns=flexible,
+  keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=[1]\color{jlkw}\bfseries,
+  keywordstyle=[2]\color{jlfn},
+  commentstyle=\color{jlcmt}\itshape,
+  stringstyle=\color{jlstr},
+  literate=
+    {ε}{$\varepsilon$}{1}
+    {κ}{$\kappa$}{1}
+    {Δ}{$\Delta$}{1}
+    {β}{$\bbeta$}{1}
+    {>=}{$\geq$}{2}
+    {!=}{$\neq$}{2}
+}
+
+
+
+\renewcommand{\baselinestretch}{1.05}
+
+\begin{document}
+
+\section{Field and particle notation}
+
+The continuous entropy density field is denoted $S(x)$; the relativistic entropy density is
+\st
+s_{\rm rel}(x) \equiv \frac{S(x)}{\gamma(x)} \, .
+\stp
+Each SPH particle $a$ carries a conserved scalar $s_a$ (entropy per particle).
+After smoothing, the SPH estimate of the entropy density at the particle site is
+\st
+S(x_a) = \sum_b s_b\, W(x_a, x_b) \, .
+\stp
+The per-particle entropy satisfies
+\st
+s_a \approx S(x_a)\,\mathrm{vol}_a \, ,
+\stp
+where $\mathrm{vol}_a = L^2/N$ is the area per particle.  This relation is
+\emph{approximate}: $S(x_a)$ is itself a kernel average, so there is an $\mathcal{O}(h^2)$
+smoothing error, and for a non-uniform lattice the exact equality never holds.
+The setup functions \texttt{set\_ic!} and \texttt{setup\_ic} in \texttt{shearwave.jl}
+initialise particles via $s_a = S_{\rm func}(x_a)\,\mathrm{vol}_a$, where
+$S_{\rm func}(x,y)$ is the user-supplied continuous entropy density.
+
+\section{Algorithm}
+We define the sph kernel $W(x_a, x_b) = F(\half (x_a  - x_b)^2 )$ and the derivative
+\st
+D_k(x_a, x_b) = \frac{\partial W(x_a, x_b)}{\partial x_a^k} 
+\stp
+
+\begin{enumerate}
+    \item Given $m_a^i$ and  $s_a$  compute $M^i(x_a), S(x_a)$. 
+	\begin{align}
+	    M^i(x_a) =& \sum_b m_b^i W(x_a, x_b) \\
+	    S(x_a) =& \sum_b s_b W(x_a, x_b)
+	\end{align}
+
+    \item Use the equation of state to find  the thermodynamic conjugates,  $(v/S)_i(x_a)$ and  $-(\F/S)(x_a)$,  from the extensive variables $M^i(x_a), S(x_a)$.  
+      Also compute the potential $\E(x_a)$ and (optionally) its legendre transform $T(x_a)$. See  \Sect{sec:eos} for details.
+
+\item Compute a number of quantities
+    \begin{align}
+	\dot x_{i, a} \equiv& \sum_b s_b (v/S)_i (x_b) W(x_a, x_b) \\
+	\Teff_a =& \E(x_a)  - \sum_b s_b (\F/S)(x_b) W(x_a, x_b)  \\
+	\bbeta_{i, a} \equiv&  \frac{\dot x_{i, a}}{\Teff_a}
+    \end{align}
+These are related to the derivatives of the Hamiltonian (see below)
+\item  
+The Hamiltonian is 
+\st
+{\mathbb H}(s_a, x_a, m_a)  = \sum_a s_a \E(M(x_a), S(x_a))
+\stp
+and we have (as advertised)
+\st
+\Delta {\mathbb H} (s_a, x_a, m_a)  =  \sum_a \Teff_a  \Delta s_a  + \dot x_{a} \cdot  \Delta m_a 
+\stp
+
+The ideal equations are Hamilton's. Spefically we do the following:
+  Update the positions
+    \st
+    \Delta x^i_a = \Delta t \, \delta^{ik }\dot x_{k, a}
+    \stp
+    and then update the momentum due to the ideal terms 
+    \begin{multline}
+\Delta m_{a}^i =  -\Delta t \sum_{b} \big[ (v/S)_j(x_a) s_a m_b^j + (v/S)_j(x_b) s_b m_a^j  \\
+    -  (\F/S)(x_a)s_a s_b - (\F/S)(x_b) s_b s_a \big] \delta^{ik }  D_k (x_a, x_b) \, . 
+\end{multline}
+\item Update the momentum and entropy due to viscous forces. Update the momentum by viscous forces 
+    \begin{align}
+      \Delta m^i_{{\rm visc}, a} =& \Delta t  \, f^i_{\rm visc}(x_a) \\
+      \Delta s_{a} =& -\bbeta_a  \cdot \Delta m_{{\rm visc}, a}
+   \end{align}
+   The viscous force is assembled in two passes --- the two-level scheme of
+   \eqref{eq:strain}, \eqref{eq:K_twolevel} and \app{app:dissipative_loop}.
+   First compute the SPH strain at every particle,
+   \st
+   \varepsilon_{ji}(x_a) = \frac{1}{S(x_a)} \sum_b s_b\,
+      \big(\bbeta_{i,b}-\bbeta_{i,a}\big)\, D_j(x_a,x_b) \,,
+   \stp
+   then assemble the force from the stored strains,
+   \begin{gather}
+   f^i_{\rm visc}(x_a) = \sum_{b} F^i_{\rm visc}(x_a, x_b) = - \frac{\partial K}{\partial \bbeta_{i, a}} \, ,  \\
+   F_{\rm visc}^i(x_a, x_b) =
+   s_a s_b\, D_j(x_a, x_b) \left(
+      \frac{T_{\rm rel} \kappa^{ijlm}}{S^2}\bigg|_a \varepsilon_{lm}(x_a)
+      + \frac{T_{\rm rel} \kappa^{ijlm}}{S^2}\bigg|_b \varepsilon_{lm}(x_b)
+      \right) \,.
+   \end{gather}
+   The total rate of entropy production is
+   \st
+   \frac{d\Sbb}{dt} \;=\; 2K \;=\; \sum_a \frac{s_a}{S(x_a)}\;
+      \varepsilon_{ji}(x_a)\, T_{\rm rel}\kappa^{ijlm}\big|_a\,
+      \varepsilon_{lm}(x_a) \;\ge\; 0\,,
+   \stp
+   with $K$ the dissipative function \eqref{eq:K_twolevel}.
+
+
+    \end{enumerate}
+\section{\bf Stochastic updates} 
+
+First we  generate the noise for each pair 
+\begin{align}
+    \llangle \xi^{ij} \xi^{lm}  \rrangle = 2 T_{\rm rel} \kappa^{ijlm}(v) \delta(t-t') \delta^2(\mathbf{r}-\mathbf{r}')
+\end{align}
+
+\section{Hamiltonian evolution}
+
+\noindent{\bf Starting point}
+\st
+\label{eq:Hamiltonian}
+\boxed{
+{\mathbb H}(s_a, x_a, m_a)  = \sum_a s_a \E(\M(x_a), V_s(x_a))
+}
+\stp
+The variables in the Hamiltonian are summarized below. \\
+
+\noindent {\bf Thermo: }
+We have
+\st
+d\Ebb = Td{\Sbb} + v d\Mbb - p d\Vbb
+\stp
+We work with a volume where $\Sbb = \Sbb_0$ is constant. Then $S= \Sbb_0/\Vbb$.  Divinding by 
+$\Sbb_0$ and definining $d\Vbb/\Vbb = -dS/S(x)$ one has 
+\st
+ d \E =  v d\M   - p d(1/S)
+\stp
+where $\E= \Ebb/\Sbb$ and $\M = \Mbb/\Sbb$.   We 
+also note 
+\st
+d \E =  \frac{v}{S} dM  - \frac{\F}{S}\, dS
+\stp
+where the free energy per entropy is $\F$:
+\st
+\mathcal F \equiv \E - T =  v M/S - p/S   \qquad \F/S \equiv v M/S^2 - p/S^2
+\stp
+
+We also note that $T\equiv-1/\beta_0(x)$ is the related to the ``usual" $T_{\rm rel}$:
+\st
+T \equiv \frac{1}{\beta^0} \equiv \frac{T_{\rm rel}}{\gamma}.
+\stp
+% From now on we define $V_s$ as the specific volume $1/s$
+% \st
+%  d \E =  v d\M   - p dV_s
+% \stp
+%
+% And a convenent legendre transform
+% \st
+% d (\E + p V_s) =  v d\M +  V_s dp
+% \stp
+% and 
+% \st
+% d (\E + p V_s - v \M) = dT  =  -\M  dv  + \frac{1}{s} dp
+% \stp
+
+\noindent{{\bf Variables: }}
+The variables are
+\begin{align}
+    S(x) = \frac{1}{V(x)}  \equiv& \sum_a s_a W(x, x_a) \\
+    M(x) \equiv & \sum_a  m_a W(x, x_a)  \\
+    \M (x)  \equiv& \frac{1}{S(x)} \sum_{a} m_a W(x, x_a)  \\
+    m_a \equiv& \m_a s_a
+\end{align}
+The conjugate variables are functions of these, i.e. 
+\st
+   v(x_a) = v(\M(x), 1/S(x)) \neq v(\M_a, 1/s_a)
+\stp
+% \st
+%  \partial \M(x) /\partial M_a =  s_a W(x, x_a)/S(x)
+% \stp
+% \begin{align}
+%     \partial \M(x) /\partial x_a =&  -s_a \M_a W'(x, x_a)/S(x) -   \frac{M(x)}{S^2(x)} (-s_a  W'(x, x_a)) 
+% = -s_{a} W'(x, x_a)/S(x) \left( \M_a  - \M(x)  \right)
+% \end{align}
+\noindent {\bf EOM}: 
+We use 
+\begin{align}
+    \Aboxed{
+    \frac{dx_a}{dt}  =&  \frac{\partial {\mathbb H}}{\partial m_a} }  \\
+    % = \frac{1}{s_a}  \frac{\partial {\mathbb H}}{ \partial \M_a}  \\
+    % =&  \sum_b s_b v(x_b) \frac{\partial \M(x_b)}{\partial \M_a}   \\
+    =& \sum_b s_b v(x_b) W(x_b, x_a) /S(x_b) \\
+   % =&  \frac{1}{V(x_a)} \underline{V v}(x_a)  \\
+    \equiv& S(x_a) \underline{v/S}(x_a)
+\end{align}
+where we use the underline to denote an average:
+\st
+\underline{Q}(x) \equiv \frac{1}{S(x) } \, \sum_b\,  Q_b \,  s_b \, W(x_b, x)  
+%\equiv  \sum_{b} Q_b \lambda_b(x)    \qquad  \lambda_b(x) \equiv  s_b W(x_b, x)/S(x)
+\stp
+Thus
+\st
+\dot x_b - v(x_b)  \equiv  S(x_b) \underline{v/S}(x_b) - v(x_b)
+\stp
+And
+\st
+\M(x) = \underline \m(x) = \underline{m/s}(x)
+\stp
+
+
+We also have
+\st
+\boxed{
+    \frac{dm_a}{dt} =  -\frac{\partial {\mathbb H}}{\partial x_a}  +  f^{i}_{\rm visc}(x_a) 
+}
+\stp
+Computing the derivatives we have 
+\begin{multline}
+    \frac{dm_{a}^i}{dt}  =  -\sum_{b} s_a s_b \left[ (v/S)^j(x_a) \Delta \M_b^j(x_a) + (v/S)^j(x_b) \Delta \M_a^j (x_b)  \right]  \delta^{ik } D_k (x_a, x_b)
+    \\
+    - \sum_{b} s_a s_b \left[ (p/S^2)(x_a) + (p/S^2)(x_b) \right] \delta^{ik }  D_k (x_a, x_b)
+    + f_{\rm visc}^i(x_a)
+\end{multline}
+Here 
+\st
+\Delta \M_b(x_a) = \m_b - \M(x_a)
+\stp
+
+We also defined the derivative operator
+\st
+ D_{k}(x_a,x_b) \equiv \frac{\partial W(x_a , x_b) }{\partial x_a^k }
+\stp
+
+In retrospect it seems natural to write the force term as 
+\begin{multline}
+\frac{dm_{a}^i}{dt}  =  -\sum_{b} \left[ (v/S)^j(x_a) s_a m_b  + (v/S)^j(x_b) s_b m_a  \right]  \delta^{ik } D_k (x_a, x_b)
+    \\
+    + \sum_{b} \left[ (\F/S)(x_a)s_a s_b + (\F/S)(x_b) s_b s_a \right] \delta^{ik }  D_k (x_a, x_b)
+    + f_{\rm visc}^i(x_a)
+\end{multline}
+
+\noindent {\bf Proposed viscous forces:} 
+When viscous forces are included we include the last line which 
+we write just like the pressure.
+\begin{align}
+    \Aboxed{
+    f_{\rm visc}^i(x_a) \equiv& -\sum_{b} s_a s_b \left( (\Pi^{ik}/S^2)(x_a) + (\Pi^{ik}/S^2)(x_b) \right)  D_k (x_a, x_b)
+} \\
+    \equiv& \sum_{b} F_{\rm visc}^i(x_a, x_b)
+\end{align}
+Then net momentum transfer is zero 
+\st
+\sum f_{\rm visc}(x_a)= 0 
+\stp
+
+\noindent {\bf Change in entropy: }
+Let's see how the energy changes under viscous evolution. 
+We use the change in the entropy written as
+\begin{align}
+    \Delta S_{\rm visc} (x_a) =& \sum_{b} \Delta s_b   W(x_a, x_b )  % = S(x_a) \underline{ (\Delta s/s) }(x_a ) 
+\end{align}
+Starting from \Eq{eq:Hamiltonian}  we find
+\st
+\Delta {\mathbb H} = \sum_{a}\left[ \Delta s_a \, \E(\M, V^s)   - s_a \, (\F/S)_a  \Delta S_{\rm visc}(x_a)  \right]   + \sum_{a} \frac{\partial {\mathbb H}}{\partial m_a}  \Delta m_{\rm visc, a}
+\stp
+% We have
+% \st
+% {\mathcal F}(x)\equiv \E(x) - T(x)  = v M/S  -p/S = \mbox{Free energy per entropy} 
+% \stp
+
+% Then lets look at the energy density in each cell
+% \st
+% E(x_a) = S(x_a) \E( M(x_a)/S(x_a), 1/S(x_a)) 
+% \stp
+Then noting
+\st
+\sum_{a} s_a \, Q(x_a) \, \Delta S(x_a) =  \sum_{ab}  \Delta s_b  \,  W(x_b, x_a)  \, s_a Q(x_a) = \sum_b \Delta s_b \, S(x_b) \,  \underline{Q}(x_b)
+\stp
+the free energy term can be written
+\st
+\sum_a  s_a (\F/S)_a \, \Delta S_{\rm visc}(x_a)   = \sum_b \Delta s_b \, S(x_b)  \, \underline{{\mathcal F}/S}(x_b)
+\stp
+So we have 
+\st
+\Delta {\mathbb H} = \sum_a \Delta s_a  \, \Teff_a +  \frac{dx_a}{dt}  \Delta m_{\rm visc, a} = 0
+\stp
+where here: 
+\st
+\boxed{
+\Teff_a = T(x_a)  + \left({\F}(x_a) - S(x_a) \underline{\F/S}(x_a) \right)
+}
+\stp
+So to have energy conservation we have 
+\st
+\boxed{
+    \Delta s_a =  -\frac{1}{\Teff_a} \frac{dx_a}{dt} \cdot \Delta t \, f_a 
+}
+\stp
+where we said $\Delta m_{\rm vis, a} = \Delta t f_a$.  Then 
+\st
+\boxed{
+\Delta \Sbb = \sum_a \Delta s_a = - \sum_{ab} \frac{\dot x_a}{\Teff_a}  \cdot \Delta t\, F_{ab}\ =  - \sum_{ab} \left( 
+    \frac{\dot x_a}{\Teff_a}   
+    -
+\frac{\dot x_b}{\Teff_b}   \right) \cdot \Delta t \, F_{\rm visc}(x_a, x_b) 
+}
+\stp
+
+ 
+\noindent {\bf Entropy production,  deterministic hydro, and the dissipative function } \\
+
+We start by postulating the dissipative function
+Define the SPH strain at particle $a$ as
+\begin{equation}
+\label{eq:strain}
+    \varepsilon_{ji}(x_a) \;\equiv\;
+    \frac{1}{S(x_a)}\sum_b s_b\,
+    \bigl(\bbeta_{i,b} - \bbeta_{i,a}\bigr)\,D_j(x_a,x_b) \,,
+\end{equation}
+which is an antisymmetric SPH gradient estimator for $\partial_j\beta_i$ at
+particle $a$.  The discrete dissipative function is then
+\begin{equation}
+\boxed{
+\label{eq:K_twolevel}
+    K \;=\; \frac{1}{2} \sum_a \frac{s_a}{S(x_a)}\;
+    \varepsilon_{ji}(x_a)\,
+    T_{\rm rel}\kappa^{ijlm}\big|_a\;
+    \varepsilon_{lm}(x_a) \,.
+}
+\end{equation}
+Here the two factors of $D_j$ live in \emph{separate} neighbor sums (one for
+each index of $\varepsilon$), so there is no overlap.  The volume element
+$s_a/S(x_a)$ is the correct SPH approximation to $d^2x$.
+We have defined
+\st
+\bbeta_i(a) \equiv \frac{\dot x_{a, i} }{\Teff_a}
+\stp
+As we will see the rate of entropy production is 
+\st
+ \dot \Sbb = 2 K 
+\stp
+
+We take 
+\st
+\boxed{
+f_{\rm visc}^i(x_a)  = -\frac{\partial K}{\partial \bbeta_{i, a }  } = \sum_b F^i_{\rm visc}(x_a, x_b) }
+\stp
+where the pair of forces is
+\st
+\boxed{
+      F^i_{\rm visc}(x_a, x_b) = s_a s_b \,D_j(x_a, x_b)\,
+     \left( \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_a\;\varepsilon_{lm}(x_a)
+    \;+\;
+    \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_b\;\varepsilon_{lm}(x_b) \right)
+}
+\stp
+We note that
+\st
+ F^i_{\rm visc}(x_a, x_b) = - F^i_{\rm visc}(x_b, x_a)
+\stp
+due to the antisymmetry of $D_i(a,b)$. 
+This fits into the general mould where momentum is conserved since
+\st
+\sum_{a} f_{\rm visc}^i(x_a) =\sum_{ab} F^i(x_a, x_b)= 0 
+\stp
+
+So the previously defined mean strains are now more explicit:
+\st
+   \left(\frac{\Pi^{ij}}{S^2}(x_a)  
+   +
+   \frac{\Pi^{ij}}{S^2}(x_b)  
+   \right)
+     =
+     -\left( \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_a\;\varepsilon_{lm}(x_a)
+    \;+\;
+    \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_b\;\varepsilon_{lm}(x_b) \right)
+\stp
+with 
+\begin{align}
+    \Aboxed{
+    F_{\rm visc}^i(x_a, x_b) \equiv& - s_a s_b \left( (\Pi^{ik}/S^2)(x_a) + (\Pi^{ik}/S^2)(x_b) \right)  D_k (x_a, x_b)
+} 
+\end{align}
+
+
+
+
+The signs and magnitude are consistent with the  continous expression 
+\st
+\Pi^{ij} = - T_{\rm rel} \kappa^{ijlm} \partial_l \beta_m
+\stp
+The net force on a particle  
+\st
+f^i_{\rm visc}(x_a) = - \sum_b s_a s_b  D_j (x_a ,x_b) \left(\frac{\Pi^{ij}}{S^2} (x_a)  + \frac{\Pi^{ij}}{S^2} (x_b) \right)   
+\stp
+This 
+is compatible with the continous expression 
+\st
+  \partial_t M^i = - \partial_j \Pi^{ij}
+\stp
+
+Finally and most importantly
+\st
+\boxed{
+\dot \Sbb =  \sum_{a} -\bbeta_a \cdot f_{\rm  visc}(x_a) =   \bbeta_a \cdot  \frac{\partial K }{\partial \bbeta_{a} } =\,  2  K \geq 0
+}
+\stp
+
+
+
+% We also note that
+% \st
+% \frac{\Delta S_{\rm visc}}{S} (x_a) = \sum_{b} (\Delta s_b/s_b)  s_b W(x_a, x_b ) =  \underline{ (\Delta s/s) }(x_a )
+% \stp
+% Let look at
+% \begin{multline}
+%     \Delta E(x_a) =   S(x_a) \Big( \frac{\Delta S_{\rm visc}(x_a)}{S(x_a) } \E(x_a)  +  v(x_a) \Delta M_{\rm visc}(x_a)/S(x_a) \\ - v(x_a) \frac{M(x_a)}{S(x_a)}  \frac{\Delta S_{\rm visc}}{S}(x_a)  + \frac{p(x_a)}{S(x_a) } \frac{\Delta S_{\rm visc} }{S(x_a) } \big] 
+% \end{multline}
+% Using 
+% \st
+%   \E - v M/S + p/S = T(x)
+% \stp
+% we find
+% \st
+% \Delta E(x_a) = T (x_a) S(x_a) \big[  (\frac{\Delta S(x_a)}{S(x_a)}   + \frac{v(x_a)}{T(x_a) }  \frac{\Delta M_{\rm visc}(x_a) }{S(x_a)}
+% \stp
+% So if we require that $\Delta E(x_a) = 0$,  then  
+% \st
+% \Delta s_a = \frac{v(x_a) }{T(x_a) } \Delta M_{a, \rm visc} 
+% \stp
+
+
+\subsection{Some notes} 
+
+\subsubsection{Translational Invariance}
+We have charges
+\st
+Q(x) = \sum_a q_a W(x, x_a)
+\stp
+We have 
+\st
+W(1, 2) = F(\tfrac{1}{2} (\vec{x}_1 -\vec{x}_2)^2 ) = F(1, 2)
+\stp
+\begin{align}
+    \frac{\partial W(1,2)}{\partial \vec{1}}   =& F'(1, 2) \, (\vec{x}_1 - \vec{x}_2) \equiv W'(1,2 ) \\
+    \frac{\partial W(1, 2)}{\partial \vec{2}} =&  -F'(1, 2) (\vec{x}_1 - \vec{x}_2) \equiv  - W'(1,2 )
+\end{align}
+So
+\st
+\frac{\partial Q(x_b) }{\partial x_a}  = \left(\sum_{c} q_c W'_{ac}\right)\delta_{ab} - q_a W'_{ba}  \qquad \qquad \mbox{no-$a$-sum! } 
+r 
+\stp
+We note that  translational invariance implies
+\st
+ \sum_a  \frac{\partial Q(x_b) }{\partial x_a} = 0 
+\stp
+
+\subsubsection{\texorpdfstring{Derivatives with respect to $x_a$}{Derivatives with respect to x\_a}}
+We have the variables 
+\st
+ Q^I =  (M, S)
+\stp
+Then 
+\st
+\E_I \equiv \frac{\partial \E}{\partial u^I} =  (\frac{v}{s} ,  -\F/S)
+\stp
+\begin{align}
+    \frac{\partial \mathbb H}{\partial x_a } =& \sum_b s_b \frac{\partial \E}{\partial x_a} \\
+    =& \sum_{b} s_b \E_I(x_b) \frac{\partial Q^I(x_b)}{\partial x_a}  \\
+    =& \sum_b s_b\E_I(x_b) \left[  (\sum_c q_c^I W'_{ac}) \delta_{ba} -  q_a^I W'_{ba}  \right]   \\
+    =& \sum_{c} s_a \E_I(x_a) q^I_c W'_{ac}   - \sum_{b} q_a^I W'_{ba} s_b \E_I(x_b)  \\
+    =& \sum_{b}  \left[ s_a \E_I(x_a) \; q^I_{b} + s_b \E_I(x_b) \; q_a^I \right] W'_{ab}
+\end{align}
+
+\subsubsection{\texorpdfstring{Evaluation of $\partial \mathbb H/\partial x_a$}{Evaluation of dH/dx\_a}}
+For the specific case we have 
+\begin{multline}
+   \frac{\partial \mathbb H}{\partial x_a} = 
+   \sum_{b} \left[  s_a\left( (v/S)(x_a) m_b -  (vM/S^2)(x_a)s_b \right) + s_b \left( (v/S)(x_b) m_a -  (vM/S^2)(x_b) s_a  \right) \right]  W'_{ab} \\ + \mbox{pressure}
+\end{multline}
+Defining 
+\st
+ \Delta \M_b(x_a) \equiv \m_b -  \M(x_a) 
+\stp
+We have
+\st
+   \frac{\partial \mathbb H}{\partial x_a} = 
+   \sum_{b}   s_a s_b \left[   \, v/S(x_a) \, \Delta \M_b(x_a) +  \, v/S(x_b)\,  \Delta \M_a(x_b) \right]  W'_{ab} + \mbox{pressure}
+\stp
+The pressure term is 
+\begin{align}
+    \mbox{pressure} =& 
+    \sum_{b} \left[ s_a (p/S^2)(x_a) s_b + s_b (p/S^2)(x_b) s_a \right] W'_{ab} \\
+    =& 
+    \sum_{b} s_a s_b \left[  (p/S^2)(x_a) +  (p/S^2)(x_b) \right] W'_{ab}  
+\end{align}
+So to summarize 
+\st
+\frac{\partial \mathbb H}{\partial x_a} = 
+\sum_{b}   s_a s_b \left[   \, v/S(x_a) \, \Delta \M_b(x_a) +  \, v/S(x_b)\,  \Delta \M_a(x_b)  +  (p/S^2)(x_a) + (p/S^2)(x_b) \right]  W'_{ab} 
+\stp
+
+\subsubsection{Solving the equation of state}
+\label{sec:eos}
+
+
+
+We have the momentum $M^i(x) = (e + p) \gamma^2 v^i$ and the entropy
+\st
+    S = \frac{(e+p)\,\gamma}{T_{\rm rel}(e)} \, ,
+\stp
+where $T_{\rm rel}(e)$ is the relativistic temperature determined by the
+equation of state.  Given $S_{\rm in} \equiv S(x_a)$ and
+$M \equiv |\vec M(x_a)|$, we want to find $e$ and hence the thermodynamic
+conjugates $(v/S)$ and $-(\F/S)$:
+\st
+ \dd \E = (v/S)_i \, \dd M^i  -  (\F/S) \, \dd S \, ,
+\stp
+where $\E$ is the energy per entropy.
+The spatial index is suppressed below, writing $M^i = M n^i$ and
+$(v/S)_i = (v/S)\, n_i$ with $n^i$ a unit vector.
+
+\noindent{\bf Step 1: velocity from a trial $e$.}
+From $M^i = (e+p)\gamma\,u^i$ with $u^i = \gamma v^i$, taking magnitudes:
+\st
+    u = \frac{M}{e+p(e)} \, , \qquad
+    \gamma = \sqrt{1 + u^2} \, , \qquad
+    v = \frac{u}{\gamma} \, .
+\stp
+This is exact given $e$; no sub-iteration is required.
+
+\noindent{\bf Step 2: Newton iteration on $e$.}
+Define the residual
+\st
+    f(e) = \frac{(e+p(e))\,\gamma(e)}{T_{\rm rel}(e)} - S_{\rm in} \, ,
+\stp
+where $\gamma(e)$ is evaluated via Step~1.
+The Newton derivative follows from the thermodynamic identity
+\st
+    T_{\rm rel}\frac{de}{dT_{\rm rel}} = \frac{e+p}{c_s^2}
+    \quad\Longleftrightarrow\quad
+    \frac{dT_{\rm rel}}{de} = \frac{c_s^2\,T_{\rm rel}}{e+p} \, ,
+\stp
+and the lemma $d[(e+p)\gamma]/de = (1+c_s^2)/\gamma$ proved below:
+\begin{align}
+    f'(e) &= \frac{1}{T_{\rm rel}}\frac{d[(e+p)\gamma]}{de}
+             - \frac{(e+p)\gamma}{T_{\rm rel}^2}\frac{dT_{\rm rel}}{de}
+           = \frac{1+c_s^2}{T_{\rm rel}\,\gamma} - \frac{c_s^2\,\gamma}{T_{\rm rel}}
+           = \frac{1 - c_s^2 u^2}{T_{\rm rel}\,\gamma} \, .
+\end{align}
+The Newton update is $e \leftarrow e - f(e)/f'(e)$.
+
+\noindent{\bf Lemma.}  $\dfrac{d}{de}[(e+p)\gamma] = \dfrac{1+c_s^2}{\gamma}$.
+
+Let $w = e+p$ and $u = M/w$.  Then $dw/de = 1+c_s^2$ and
+$du/de = -(u/w)(1+c_s^2)$, so
+$d\gamma/de = (u/\gamma)\,du/de = -u^2(1+c_s^2)/(\gamma w)$.  Hence
+\st
+    \frac{d(w\gamma)}{de}
+    = (1+c_s^2)\gamma - \frac{u^2(1+c_s^2)}{\gamma}
+    = \frac{1+c_s^2}{\gamma}\underbrace{(\gamma^2 - u^2)}_{=\,1}
+    = \frac{1+c_s^2}{\gamma} \, .
+\stp
+
+\noindent{\bf Post-convergence expressions.}
+With $S \equiv S_{\rm in}$:
+\begin{align}
+    p =& \; p(e) \, , \\
+    \frac{v}{S} =& \; \frac{v}{S} \, , \\
+    \frac{\F}{S} =& \; \frac{v}{S}\frac{M}{S} - \frac{p}{S^2} \, , \\
+    \E =& \; \frac{(e+p)\gamma^2 - p}{S} \, , \\
+    T =& \; \frac{e+p}{S} \, .
+\end{align}
+
+\section{Dissipative Function}
+
+We use the Hamiltonian formalism of  {\tt DZYALOSHINSKII AND VOLOVICK } section 2:
+\begin{align}
+    T \left(\partial_t S(x)  +\{S(x), H \} \right) =&     
+    T \partial_\ell \left(\frac{\partial R }{ \partial \nabla_\ell T  }   \right)  + T K \\         
+    v^k \left(\partial_t M_k(x)  + \{M_k(x), H \}  \right)=&   
+v^k \partial_\ell \left( \frac{\partial R }{  \partial \nabla_\ell v^k  }  \right)
+\end{align}
+Here $R=K=0$ corresponds to ideal hydro.  $K$ is rate of entropy production.   As we will see,  $R = T K/2$, and $R$ is the dissipative function. In the density frame we know that
+\st
+K = T_{\rm rel} \kappa^{ijlm} \partial_i\beta_j \partial_l \beta_m
+\stp
+One of the goals of this section is to relate $K$ to the density frame entropy current. 
+
+To see the relation between $R$ and $K$ we have
+\begin{align}
+    \partial_t E  + \partial_k \tideal^{0k} =& T 
+    \partial_\ell \left(\frac{\partial R }{ \partial \nabla_\ell T  }   \right)  
++    v^k \partial_\ell \left(\frac{\partial R }{ \partial_\ell v^k  } \right) + T K \\
+    =&  \partial_{\ell} \left( T \frac{\partial R }{ \partial \nabla_\ell T  }  + v^k  \frac{\partial R}{\partial \nabla_\ell v_k }
+	\right)   
+	-
+      (\nabla_\ell T) \left(\frac{\partial R }{ \partial \nabla_\ell T  }   \right)  
+      - (\nabla_\ell v^k )  \left(\frac{\partial R }{ \partial \nabla_\ell v^k  } \right) + T K
+\end{align}
+Demanding that the rhs is zero up to a total divergence, we find
+the relation between $R$ and $K$.
+In general the dissipative functional involves
+\st
+2 R  = T K = T T_{\rm rel} \kappa^{ijlm} \partial_{i}\beta_j  \partial_{\ell} \beta_m
+\stp
+where
+\st
+\partial_{(i} \beta_{j)} = \frac{1}{T} \left( -\frac{v_{(i}\partial_{j)}T }{T} + \partial_{(i} v_{j)} \right)  
+\stp
+Then,   the dissipative flux to the energy
+\st
+\partial_{\ell} \left( T \frac{\partial R }{ \partial \nabla_\ell T  }  + v^k  \frac{\partial R}{\partial \nabla_\ell v_k }
+\right) = 0 
+\stp
+This is the density-frame condition
+
+
+The  strain according to us  is 
+\st
+\Pi^{ij} = -T_{\rm rel} \kappa^{ijlm} \partial_{(\ell} \beta_{m)} 
+\stp
+which does indeed work:
+\st
+\Pi^{ij}_R = -\frac{ \partial R}{\partial \nabla_\ell  v_k }  = - T_{\rm rel} \kappa^{ijlm} \partial_{(\ell} \beta_{m)} \, .
+\stp
+Then we have according to us:
+\st
+\partial_t S + \partial_i (S v^i) = \partial_j (\beta_i \Pi^{ij})   +   \partial\beta \cdot T_{\rm rel} \kappa \cdot \partial\beta 
+\stp
+We identify the entropy flux from the dissipative function
+\st
+\frac{\partial R}{\partial( \nabla_j T) } = -v_i \kappa^{ijlm} \partial_l\beta_m = \beta_i \Pi^{ij}
+\stp
+which is in agreement. 
+
+We see that the entropy conservation law can be written
+\st
+\partial_t S + \partial_i (S v^i)= \beta_{i} \,  \partial_{j} \Pi^{ij} 
+\stp
+Dividing by $N$ and using the conservation law
+\st
+ \partial_t N + \partial_i N v^i  = 0
+\stp
+\st
+D_t (S/N)  = \frac{1}{N(x)} \beta_i \partial_j \Pi^{ij}
+\stp
+One can take $N=S^{(0)}(t, x)$ the initial entropy.
+
+\subsection{\texorpdfstring{The $\kappa^{ijlm}$ tensor}{The kappa\^{}\{ijlm\} tensor}}
+\label{sec:kappa}
+
+We use the $d=3$ formula for $\kappa^{ijlm}$ throughout, even though the SPH
+simulation is restricted to 2D motion in the $(x,y)$ plane.  This choice is
+physically natural: the fluid is genuinely three-dimensional and the simulation
+is a 2D cross-section.  The $d=3$ formula gives the standard coefficient
+$\kappa^{xxxx}|_{v=0} = 4\eta/3$ in the non-relativistic limit.
+
+The tensor splits into shear and bulk parts,
+\st
+T_{\rm rel}\kappa^{ijlm}
+   = \kappa_{\rm shear}^{ijlm}(v)\,\frac{T_{\rm rel}\,\eta}{(1-c_s^2 v^2)^2}
+   + \kappa_{\rm bulk}^{ijlm}(v)\,\frac{T_{\rm rel}\,\zeta}{(1-c_s^2 v^2)^2}\,,
+\stp
+where $i,j,l,m\in\{x,y\}$ are purely spatial indices and
+$v^2 = v_x^2 + v_y^2$.  Define the spatial projector
+\st
+L^{ij} = \delta^{ij} - v^i v^j
+\stp
+and the $d=3$ abbreviations
+\begin{align}
+\langle PL\rangle &= 1 - c_s^2 v^2 \,,\\
+(LPL)^{ij} &= -\frac{c_s^2\,v^i v^j}{\gamma^2} + \frac{L^{ij}}{3} \,,\\
+\langle PLPL\rangle &= \frac{2}{3}(c_s^2 v^2)^2 + \frac{1}{3}(1-c_s^2 v^2)^2 \,.
+\end{align}
+
+\noindent{\bf Shear part:}
+\st
+\kappa_{\rm shear}^{ijlm} = 2\langle PL\rangle^2\left[L^{(il}L^{j)m}
+  - \frac{L^{ij}(LPL)^{lm}}{\langle PL\rangle}
+  - \frac{L^{lm}(LPL)^{ij}}{\langle PL\rangle}
+  + \frac{\langle PLPL\rangle}{\langle PL\rangle^2}\,L^{ij}L^{lm}\right]
+\stp
+where $L^{(il}L^{j)m} = \frac{1}{2}(L^{il}L^{jm}+L^{im}L^{jl})$.
+
+\noindent{\bf Bulk part:}
+\st
+\kappa_{\rm bulk}^{ijlm} = L^{ij}\,L^{lm}
+\stp
+For a conformal EOS, Weyl invariance requires $\zeta=0$, so the bulk term vanishes.
+
+\noindent{\bf Checks at $v=0$:}
+\begin{align}
+T_{\rm rel}\kappa^{xxxx}\big|_{v=0} &= \tfrac{4}{3}\,T_{\rm rel}\eta\,,\\
+T_{\rm rel}\kappa^{xxyy}\big|_{v=0} &= -\tfrac{2}{3}\,T_{\rm rel}\eta\,,\\
+T_{\rm rel}\kappa^{xyxy}\big|_{v=0} &= T_{\rm rel}\eta\,.
+\end{align}
+
+\noindent{\bf 1D check} ($v_y=0$, speed $v=v_x$):
+\st
+T_{\rm rel}\kappa^{xxxx}(v_x,0) = \frac{4}{3}\,\frac{T_{\rm rel}\,\eta}{\gamma^4\,(1-c_s^2 v_x^2)^2}
+\stp
+which agrees with the main-text result for $\kappa^{xxxx}$.
+
+\noindent{\bf Symmetries:}
+\begin{align}
+\kappa^{ijlm} &= \kappa^{jilm} = \kappa^{ijml} = \kappa^{lmij}
+\end{align}
+The tensor has only 6 independent components for 2D indices:
+$\kappa^{xxxx}$, $\kappa^{xxxy}$, $\kappa^{xxyy}$, $\kappa^{xyxy}$, $\kappa^{xyyy}$, $\kappa^{yyyy}$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\appendix
+
+\section{Implementation notes for the Julia SPH code}
+\label{app:impl}
+
+\subsection*{Field and particle notation}
+
+\begin{itemize}
+  \item $s_a$ — entropy of particle $a$ (extensive, units: entropy)
+  \item $m_a^i$ — momentum of particle $a$ (extensive, units: momentum)
+  \item $S(x) = \sum_a s_a\,W(x,x_a)$ — entropy density field (units: entropy/area,
+        since $W$ has units $1/\text{area}$ and $\int d^2x\,W = 1$)
+  \item $M^i(x) = \sum_a m_a^i\,W(x,x_a)$ — momentum density field; satisfies
+        $\int d^2x\,M^i(x) = \sum_a m_a^i$
+  \item $\texttt{vol} = \Delta x^2$ — particle volume (area per particle on the
+        initialization lattice); appears \emph{only} in initialization to convert
+        a density to a per-particle quantity, e.g.\ $s_a = s_{\rm density}\times\texttt{vol}$.
+        It does \emph{not} appear in any smoothing sum.
+  \item $s_{\rm rel}(e) \equiv (e+p)/T_{\rm rel}$ — relativistic entropy density
+        (a thermodynamic field, not a per-particle quantity).
+        \emph{Note:} $s_{\rm rel}(e) \neq s_a$.  The approximate relation between
+        them is $s_a \approx s_{\rm rel}(e)\,\gamma\,\texttt{vol}$,
+        since the per-particle entropy is the entropy density times the
+        Lorentz-contracted volume element.
+        The specific shear viscosity $\eta/s$ appearing in the transport
+        coefficients is properly $\eta/s_{\rm rel}$; in Julia this is
+        \texttt{eos.\(\eta\_{\rm by\_s}\)} and the physical viscosity is
+        $\eta = (\eta/s_{\rm rel})\,s_{\rm rel}(e)$.
+\end{itemize}
+
+\subsection*{Key definitions used in the dissipative step}
+
+\paragraph{The vector $\bbeta$ (\texttt{b\_vec} in Julia).}
+The dissipative function $K$ and the pair force $F^i_{\rm visc}(x_a,x_b)$ involve
+the 2-vector $\bbeta_a \equiv \dot x_a / \Teff_a$, where
+\begin{align}
+    \dot x_{i,a} &= \sum_b s_b\,(v/S)_i(x_b)\,W(x_a, x_b)
+    \quad\text{(kernel-smoothed velocity)}, \label{eq:dotx}\\
+    \Teff_a      &= \E(x_a) - \sum_b s_b\,({\F}/S)(x_b)\,W(x_a, x_b) \,. \label{eq:Teff}
+\end{align}
+Here $s_b$ is the per-particle entropy (not a density); the sum $\sum_b s_b W$
+reproduces the entropy density $S(x_a)$ because $s_b = s_{\rm density}\,\texttt{vol}$
+was set at initialization.
+Concretely,
+\begin{equation}
+    \texttt{b\_vec}[a] = \dot x_a \;/\; \Teff_a \,.
+\end{equation}
+
+\paragraph{Hamiltonian structure behind $\dot x_a$ and $\Teff_a$.}
+Both quantities are Hamilton's equations for the discrete Hamiltonian
+\begin{equation}
+    {\mathbb H}(s_a, x_a, m_a) = \sum_a s_a\,\E\!\left(M(x_a),\,S(x_a)\right),
+\end{equation}
+where $M(x_a) = \texttt{pa.M\_smooth}$ and $S(x_a) = \texttt{pa.S\_smooth}$ are the
+kernel-smoothed momentum and entropy densities.  The energy per entropy $\E$ is evaluated
+as a function of the \emph{smoothed} fields by \texttt{solve\_eos!}:
+\begin{equation}
+    \E(M_{\rm smooth},\, S_{\rm smooth}) \;=\; \texttt{pa.H\_over\_S}
+    \;=\; \frac{(e+p)\gamma^2 - p}{S_{\rm smooth}}\,.
+\end{equation}
+Its partial derivatives give the thermodynamic conjugates that \texttt{solve\_eos!} stores:
+\begin{equation}
+    \frac{\partial \E}{\partial M^i_{\rm smooth}} = \frac{v^i}{S}
+    = \texttt{pa.v\_over\_S}[i]\,,
+    \qquad
+    \frac{\partial \E}{\partial S_{\rm smooth}} = -\F/S = -\texttt{pa.F\_over\_S}\,.
+\end{equation}
+Hamilton's equations then reproduce eqs.~\eqref{eq:dotx}--\eqref{eq:Teff} exactly:
+\begin{align}
+    \dot x_{i,a} &= \frac{\partial {\mathbb H}}{\partial m_a^i}
+    = \sum_b s_b\,\texttt{pa\_b.v\_over\_S}[i]\,W(x_a,x_b), \\
+    \Teff_a &= \frac{\partial {\mathbb H}}{\partial s_a}
+    = \texttt{pa.H\_over\_S} - \sum_b s_b\,\texttt{pa\_b.F\_over\_S}\,W(x_a,x_b)\,.
+\end{align}
+\textbf{Key point:} \texttt{pa.H\_over\_S} is \emph{not} the energy per entropy at the
+bare particle position; it is $\E$ evaluated at the \emph{smoothed} state
+$(M_{\rm smooth}, S_{\rm smooth})$.  Likewise, \texttt{pa.v\_over\_S} is
+$\partial\E/\partial M_{\rm smooth}$, computed inside \texttt{solve\_eos!} via the
+thermodynamic identity $d\E = (v/S)\,dM - (\F/S)\,dS$.
+
+\paragraph{Gotcha~1: $\bbeta \neq v/T$.}
+In relativistic kinetic theory one defines a thermodynamic inverse-temperature
+4-vector $\beta^\mu = u^\mu/T_{\rm rel}$.  Its spatial part is
+\begin{equation}
+    \beta_i = \frac{u_i}{T_{\rm rel}} = \frac{\gamma v_i}{T_{\rm rel}}
+            = \frac{v_i}{T_{\rm rel}/\gamma} = \frac{v_i}{\texttt{pa.T}}\,.
+\end{equation}
+This is \emph{not} the same as $\bbeta_i$ above.  The two coincide only when
+(i) the SPH kernel average equals the pointwise value, i.e.\ the field is smooth
+on the scale $h$, \emph{and} (ii) $\Teff = T$.  In general $\bbeta$ contains
+kernel-smoothing corrections through $\dot x$ (eq.~\eqref{eq:dotx}) and through
+$\Teff$ (eq.~\eqref{eq:Teff}).  Using $v_i/\texttt{pa.T}$ in place of $\bbeta_i$
+in the pair force would violate energy conservation at $O(h^2)$.
+
+\paragraph{Gotcha~2: $\dot x$ vs.\ the EOS velocity.}
+After \texttt{smooth\_to\_particles!} and \texttt{update\_thermodynamics!},
+the particle holds $\texttt{pa.v\_over\_S} = v_i/S$ (the local
+thermodynamic 3-velocity divided by the local entropy density).
+The SPH-smoothed velocity $\dot x_a$ is \emph{not} simply
+$\texttt{pa.v\_over\_S}[i] \times \texttt{pa.S\_smooth}$; it is a kernel
+average over the neighbors' velocities (eq.~\eqref{eq:dotx}), exactly as computed
+in \texttt{hamiltonian\_velocity!}.  In the function \texttt{compute\_b\_vec!}
+in \texttt{celllist.jl} both sums (for $\dot x$ and for
+$\sum_b s_b\,(F/S)(x_b)\,W$) are evaluated in the same neighbor loop.
+
+\paragraph{Gotcha~3: $T_{\rm rel}\kappa^{ijlm}$ uses the local thermodynamic temperature.}
+In the pair force
+\begin{equation}
+    F^i_{\rm visc}(x_a,x_b) =
+    \tfrac{1}{4}s_a s_b\,D_j(a,b)
+    \left[\frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\bigg|_a +
+          \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\bigg|_b\right]
+    D_l(a,b)\,(\bbeta_{m,b}-\bbeta_{m,a}),
+\end{equation}
+the factor $T_{\rm rel}\kappa^{ijlm}$ is returned by \texttt{kappa\_tensor(pa, eos, Kappa3D())}
+and uses the \emph{local} thermodynamic temperature
+$T_{\rm rel} = \texttt{pa.T}\times\texttt{pa.}\gamma$.  This is correct and separate
+from the $\Teff$ appearing in $\bbeta$.
+
+\section{Sound waves test}
+
+For a constant background and small fluctuations we can neglect the differences between
+$E = (e + p) \gamma^2 - p \simeq e$ and $s_{\rm rel} \simeq S$, so that
+$\delta e(t, x) \simeq \frac{(e + p)}{S}\,\delta S \simeq T\,\delta S(t, x)$.
+Substituting $\delta e(t, x) = A \cos(kx - \omega t)$ and $M^x(t, x) = A c_s \cos(kx - \omega t)$
+into the linearized conservation laws,
+\begin{align}
+  \partial_t \delta e(t,x) +  \partial_x M^x(t, x) =& 0 \\
+  \partial_t M^x(t, x) +  c_s^2\, \partial_x \delta e(t, x) =& 0
+\end{align}
+The solution has $\omega = c_s k$. 
+
+When dissipation is included the linearized equations become
+\begin{align}
+  \partial_t \delta e +  \partial_x M^x =& \;0 \,, \\
+  \partial_t M^x +  c_s^2\, \partial_x \delta e - \Gamma_s\, \partial_x^2 M^x =& \;0 \,,
+\end{align}
+where the sound-attenuation coefficient is
+\begin{equation}
+  \Gamma_s \;=\; \frac{\tfrac{4}{3}\eta + \zeta}{e_0 + p_0}
+            \;=\; \frac{\tfrac{4}{3}(\eta/s) + (\zeta/s)}{T_{{\rm rel},0}} \,.
+\end{equation}
+Inserting the plane-wave ansatz $\delta e, M^x \propto e^{i(kx-\omega t)}$
+gives the exact dispersion relation
+\begin{equation}
+  \omega^2 + i\,\Gamma_s k^2\,\omega - c_s^2 k^2 = 0 \,.
+\end{equation}
+Solving exactly,
+\begin{equation}
+\label{eq:sound_dispersion}
+  \omega \;=\; \pm\,\omega_R \;-\; i\,\frac{\Gamma_s k^2}{2} \,, \qquad
+  \omega_R \;\equiv\; \frac{k}{2}\sqrt{4c_s^2 - \Gamma_s^2 k^2}
+           \;=\; c_s k\sqrt{1 - \frac{\Gamma_s^2 k^2}{4c_s^2}} \,,
+\end{equation}
+valid in the underdamped regime $\Gamma_s k < 2c_s$.
+Both modes share the same decay rate $\Gamma_s k^2/2$; the phase velocity
+$\omega_R/k$ is shifted below $c_s$ by a term of order ${(\Gamma_s k/c_s)}^2$.
+The decay timescale is $\tau_s = 2/(\Gamma_s k^2)$ regardless of whether the
+approximation $\Gamma_s k \ll c_s$ holds.
+
+The right-moving eigenmode initialized at $t=0$ with $\delta e(0,x)=A\cos(kx)$
+evolves as
+\begin{align}
+\label{eq:sound_sol}
+  \delta e(t,x) &= A\cos(kx - \omega_R t)\,e^{-\Gamma_s k^2 t/2} \,, \\
+  M^x(t,x)      &= A\,e^{-\Gamma_s k^2 t/2}
+    \left[\frac{\omega_R}{k}\cos(kx-\omega_R t)
+         +\frac{\Gamma_s k}{2}\sin(kx-\omega_R t)\right] \,.
+\end{align}
+The second line follows from the continuity equation
+$\partial_t\delta e + \partial_x M^x = 0$, which gives
+$M^x_0 = \mathrm{Re}[(\omega/k)\,\delta e_0]$ with the \emph{complex}
+$\omega/k = \omega_R/k - i\,\Gamma_s k/2$.
+A useful identity: $|\omega/k|^2 = (\omega_R/k)^2 + (\Gamma_s k/2)^2 = c_s^2$
+(from the dispersion relation~\eqref{eq:sound_dispersion}), so
+\begin{equation}
+  M^x(t,x) = A\,c_s\,e^{-\Gamma_s k^2 t/2}\cos(kx-\omega_R t - \varphi)\,,
+  \qquad
+  \varphi = \arctan\!\left(\frac{\Gamma_s k^2}{2\,\omega_R}\right) \,.
+\end{equation}
+The phase lag $\varphi$ vanishes as $\Gamma_s\to 0$.
+
+\paragraph{Initial condition.}
+Using $\delta e \simeq T_{{\rm rel},0}\,\delta S$ the IC for the right-moving
+eigenmode is
+\begin{align}
+\label{eq:sound_ic}
+  \delta S(x) &= \frac{A}{T_{{\rm rel},0}}\cos(kx) \,, \\
+  M^x(x)      &= A\left[\frac{\omega_R}{k}\cos(kx)
+                        +\frac{\Gamma_s k}{2}\sin(kx)\right]
+               = A\,c_s\cos(kx - \varphi) \,.
+\end{align}
+For $\eta/s = \zeta/s = 0$ one has $\Gamma_s = 0$, $\omega_R = c_s k$,
+$\varphi = 0$, and the IC reduces to the one in \texttt{testsound.jl}.
+For the viscous test one sets $\eta/s > 0$ and uses the GENERIC integrator
+\texttt{generic\_step!}.
+
+\section{ Dissipative force per volume}
+
+We defined
+\begin{align}
+  M(x) = \sum m_a W(x, x_a)
+\end{align}
+The force per volume is  
+\begin{align}
+     \frac{\partial M(x)}{\partial t} =  \sum_a  \frac{dm_a}{dt} W(x, x_a)   -  m_a \dot x_a  \partial_x W(x, x_a)  
+\end{align}
+For a small amplitude shear wave in a uniform background
+\begin{align}
+  M^y (x) = A \cos(kx) 
+\end{align}
+We have  the following estimate:
+\begin{align}
+  \partial_t M^y(x) = - \partial_x \Pi^{yx}  \simeq  \partial_x  (T_{\rm rel }\eta \, \partial_x \beta^y) \simeq  \frac{\eta}{e + p } \partial_x^2 M^y = \frac{\eta/s}{T_0} \partial_x^2 M^y
+\end{align}
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Two-level dissipative loop for the Julia SPH code}
+\label{app:dissipative_loop}
+
+\subsection*{The problem with the original pair-based discretization}
+
+The dissipative function originally proposed in the main text is
+\begin{equation}
+    K = \frac{1}{16}\sum_{ab} s_a s_b\,
+    D_j(x_a,x_b)(\bbeta_{i,b}-\bbeta_{i,a})
+    \left[\frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\bigg|_a
+         +\frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\bigg|_b\right]
+    D_l(x_a,x_b)(\bbeta_{m,b}-\bbeta_{m,a})\,.
+\end{equation}
+In the continuum limit this should approximate
+\begin{equation}
+    K \;\longrightarrow\; \frac{1}{2}\int d^2x\; \partial_j\beta_i\,
+    T_{\rm rel}\kappa^{ijlm}\,\partial_l\beta_m \,.
+\end{equation}
+The inconsistency is that $D_j(x_a,x_b)$ and $D_l(x_a,x_b)$ are both kernel
+gradients evaluated at the \emph{same pair} $(a,b)$.  Their supports overlap
+completely, so the pair sum does not factorize into two independent gradient
+estimates at a point.  In the continuum limit the product of two coincident
+kernel gradients produces a $\delta(0)$ divergence, and the normalization is
+wrong.  Moreover, the pair contraction $D_j(a,b)D_l(a,b)\Delta\bbeta_j\Delta\bbeta_l$
+captures only the \emph{longitudinal} component of the strain along $\hat r_{ab}$;
+transverse components of $\partial_j\beta_i$ are missed at $\mathcal{O}(h^2)$.
+
+\subsection*{The two-level remedy}
+
+The fix is to compute the strain tensor $\varepsilon_{ji}$ at each particle site
+\emph{first}, using a proper SPH gradient estimator, and then to build the force
+from the stored strains.  This separates the two kernel gradients into independent
+neighbor sums, eliminating the overlap.
+
+\paragraph{Discretize the continuum dissipative function.}
+Define the SPH strain at particle $a$ as
+\begin{equation}
+\label{eq:strain-impl}
+    \varepsilon_{ji}(x_a) \;\equiv\;
+    \frac{1}{S(x_a)}\sum_b s_b\,
+    \bigl(\bbeta_{i,b} - \bbeta_{i,a}\bigr)\,D_j(x_a,x_b) \,,
+\end{equation}
+which is an antisymmetric SPH gradient estimator for $\partial_j\beta_i$ at
+particle $a$.  The discrete dissipative function is then
+\begin{equation}
+\label{eq:K_twolevel-impl}
+    K \;=\; \frac{1}{2} \sum_a \frac{s_a}{S(x_a)}\;
+    \varepsilon_{ji}(x_a)\,
+    T_{\rm rel}\kappa^{ijlm}\big|_a\;
+    \varepsilon_{lm}(x_a) \,.
+\end{equation}
+Here the two factors of $D_j$ live in \emph{separate} neighbor sums (one for
+each index of $\varepsilon$), so there is no overlap.  The volume element
+$s_a/S(x_a)$ is the correct SPH approximation to $d^2x$.
+
+\paragraph{Viscous force from $\partial K/\partial \bbeta_{i,c}$.}
+Taking the derivative of $K$ with respect to $\bbeta_{i,c}$ and using
+$f^i_{\rm visc}(x_c) = -\partial K/\partial\bbeta_{i,c}$ yields two terms,
+depending on whether $c$ appears as the reference particle (the $a=c$
+term) or as a neighbor (the $b=c$ term in the sum over $b$):
+
+\begin{equation}
+\label{eq:force_twolevel}
+    f^i_{\rm visc}(x_c) =
+    \underbrace{+\frac{s_c}{S_c^2}\sum_b s_b\,D_j(c,b)\,
+    T_{\rm rel}\kappa^{ijlm}\big|_c\;\varepsilon_{lm}(x_c)}_{\text{term 1: }c\text{ is reference particle}}
+    \;-\;
+    \underbrace{\sum_a \frac{s_a s_c}{S_a^2}\,D_j(a,c)\,
+    T_{\rm rel}\kappa^{ijlm}\big|_a\;\varepsilon_{lm}(x_a)}_{\text{term 2: }c\text{ is neighbor of }a}\,.
+\end{equation}
+This can be written
+\begin{equation}
+\label{eq:force_combined}
+    f^i_{\rm visc}(x_c) =
+     \sum_a s_c s_a \,D_j(c,a)\,
+     \left( \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_c\;\varepsilon_{lm}(x_c)
+    \;+\;
+    \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_a\;\varepsilon_{lm}(x_a) \right)
+\end{equation}
+Finally relabelling we find
+\begin{equation}
+\label{eq:force_relabeled}
+    f^i_{\rm visc}(x_a) =
+     \sum_b
+      s_a s_b \,D_j(x_a, x_b)\,
+     \left( \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_a\;\varepsilon_{lm}(x_a)
+    \;+\;
+    \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_b\;\varepsilon_{lm}(x_b) \right)
+\end{equation}
+
+Momentum conservation $\sum_c f^i_{\rm visc}(x_c) = 0$ follows from the
+antisymmetry of $D_j(x_a, x_b)$ . We write this as in the main text
+\begin{equation}
+   \left(\frac{\Pi^{ij}}{S^2}(x_a)  
+   +
+   \frac{\Pi^{ij}}{S^2}(x_b)  
+   \right)
+     =
+     -\left( \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_a\;\varepsilon_{lm}(x_a)
+    \;+\;
+    \left. \frac{T_{\rm rel}\kappa^{ijlm}}{S^2}\right|_b\;\varepsilon_{lm}(x_b) \right)
+\end{equation}
+so
+\begin{equation}
+\label{eq:force_Pi}
+    f^i_{\rm visc}(x_a) =
+     -\sum_b s_a s_b \,D_j(x_a, x_b)\,
+   \left(\frac{\Pi^{ij}}{S^2}(x_a)  
+   +
+   \frac{\Pi^{ij}}{S^2}(x_b)  
+   \right)
+\end{equation}
+
+
+Entropy production $\dot S = 2K \geq 0$ is guaranteed because $K$ is a
+positive-definite quadratic form in $\varepsilon$ and $\kappa^{ijlm}$ is
+positive definite.
+
+\paragraph{Entropy update.}
+Once $f^i_{\rm visc}(x_c)$ is known, the entropy is updated from energy
+conservation (eq.~50 of the main text):
+\begin{equation}
+\label{eq:entropy_update}
+    \Delta s_a = -\bbeta_a \cdot \Delta t\, f_{\rm visc,a} \,.
+\end{equation}
+
+\subsection*{Implementation in Julia — three passes}
+
+The two-level force requires two neighbor loops plus one particle loop.
+The total cost is approximately $3\times$ the standard pair-force loop,
+but the continuum limit is correct.
+
+\paragraph{Pass 1 — compute strain tensor at every particle.}
+Loop over ALL neighbors $b \neq a$ (not just $b > a$, since
+$\varepsilon_{ji}(x_a)$ needs contributions from every neighbor):
+\begin{lstlisting}
+for a in 1:N
+    ε[a] = zero(SMatrix{2,2,Float64})
+    for b in neighbors(a)            # all b != a
+        r_mic, r_mag = minimum_image(x[a]-x[b], L)
+        r_mag >= 2h && continue
+        D_ab  = wendland_c2_grad(r_mic, r_mag, h)
+        Δb    = b_vec[b] - b_vec[a]
+        ε[a] += s[b] * (Δb * D_ab^T) / S_smooth[a]   # outer product
+    end
+end
+\end{lstlisting}
+
+\paragraph{Pass 2 — compute viscous force from stored strains.}
+Loop over pairs $b > a$ and apply Newton's third law:
+\begin{lstlisting}
+for a in 1:N, b in neighbors(a) with b > a
+    r_mic, r_mag = minimum_image(x[a]-x[b], L)
+    r_mag >= 2h && continue
+    D_ab   = wendland_c2_grad(r_mic, r_mag, h)
+    κ_a    = kappa_tensor(particles[a], eos)     # T_rel κ^{ijlm} at a
+    κ_b    = kappa_tensor(particles[b], eos)
+    w_a    = s[a] * s[b] / S_smooth[a]^2
+    w_b    = s[a] * s[b] / S_smooth[b]^2
+    f_ab   = w_a * κ_a * ε[a] * D_ab
+           - w_b * κ_b * ε[b] * D_ab
+    f_visc[a] += f_ab
+    f_visc[b] -= f_ab                            # Newton's third law
+end
+\end{lstlisting}
+
+\paragraph{Pass 3 — entropy update.}
+One loop over particles, no neighbor search required:
+\begin{lstlisting}
+for a in 1:N
+    Δs[a] = -dot(b_vec[a], dt * f_visc[a])
+    s[a] += Δs[a]
+end
+\end{lstlisting}
+
+\subsection*{Checks to run after implementation}
+
+\begin{enumerate}
+    \item \textbf{Momentum conservation:} $\sum_a f^i_{\rm visc}(x_a) = 0$
+          to machine precision after Pass~2.
+    \item \textbf{Second law:} $\sum_a \Delta s_a \geq 0$ after Pass~3.
+    \item \textbf{Energy conservation:} $|\sum_a \Teff_a\,\Delta s_a
+          + \dot x_a \cdot \Delta t\, f_{\rm visc,a}| < \epsilon_{\rm tol}$
+          (GENERIC degeneracy condition).
+    \item \textbf{Shear wave damping:} with $\eta > 0$, $\zeta = 0$,
+          a transverse wave $M^y(x) = A\cos(kx)$ should damp at rate
+          $\gamma_k = (\eta/s)\,k^2/T_0$ (Appendix~D of main text).
+\end{enumerate}
+
+
+\section{Generating noise}
+
+We first generate a \emph{unit-normalized} noise $\hat\xi^{ij}$ whose correlation
+function equals the bare kappa tensor,
+\begin{align}
+\label{eq:xihat_cov}
+ \llangle \hat\xi^{ij} \hat\xi^{lm} \rrangle = \kappa^{ijlm} \, ,
+\end{align}
+with $\kappa^{ijlm}$ the tensor built from $2\eta(\dots)+\zeta(\dots)$ below
+(no factor of $T_{\rm rel}$).  The physical density-frame noise is then the
+rescaling
+\begin{align}
+\label{eq:xi_from_xihat}
+ \boxed{\;\xi^{ij} \;=\; \sqrt{2\,T_{\rm rel}}\;\hat\xi^{ij}\;}
+\end{align}
+which satisfies the usual fluctuation--dissipation relation
+$\llangle \xi^{ij}(x,t)\,\xi^{lm}(x',t')\rrangle = 2\,T_{\rm rel}\,\kappa^{ijlm}(v)\,
+\delta(t-t')\,\delta^d(x-x')$, matching $\Pi^{ij} = -T_{\rm rel}\kappa^{ijlm}\partial_l\beta_m$.
+The construction of $\hat\xi^{ij}$ is done for every particle as follows:
+\begin{enumerate}
+\item Produce the Landau noise in the local rest frame  
+$\xi^{\mu\nu}_{LRF} $ (this is a symmetric tensor purely spatial).  Any component of this tensor 
+with a zero index is zero
+\begin{align}
+ \xi^{0i}_{LRF} = \xi^{i0}_{LRF} = \xi^{00} = 0
+\end{align}
+
+We need the covariance matrix of $\xi^{ij}_{LRF}$ to satisfy 
+\begin{equation}
+  \llangle \xi^{ij}_{LRF} \xi^{lm}_{LRF} \rrangle = 2 \eta \left[ \delta^{(il} \delta^{j)m}  -\frac{1}{d} \delta^{ij} \delta^{lm} \right]  + \zeta  \delta^{ij} \delta^{lm} 
+\end{equation}
+One way to do this is to pick one tensor
+\begin{align}
+\xi_{L}^{ij} = \sqrt{d (d + 2) \eta} \,  \xi_1 \left(n^i n^j - \tfrac{1}{d} \delta^{ij} \right)   +  \sqrt{\zeta} \, \xi_2 \delta^{ij} 
+\end{align}
+Here $\xi_1$ and $\xi_2$ are independent random numbers with variance one,
+and $n^i$ is a unit vector drawn uniformly from the sphere ($d=3$) or circle ($d=2$).
+The relevant moments of the uniform measure are
+\begin{align}
+  \llangle n^i n^j \rrangle &= \frac{1}{d}\,\delta^{ij} \\
+  \llangle n^i n^j n^l n^m \rrangle &= \frac{1}{d(d+2)}\left(\delta^{ij}\delta^{lm} + \delta^{il}\delta^{jm} + \delta^{im}\delta^{jl}\right)
+\end{align}
+One can then verify directly that the covariance is correct.  Using the cross terms
+\begin{align}
+\llangle \left(n^i n^j - \tfrac{1}{d}\delta^{ij}\right)\!\left(n^l n^m - \tfrac{1}{d}\delta^{lm}\right)\rrangle
+&= \frac{\delta^{il}\delta^{jm}+\delta^{im}\delta^{jl}}{d(d+2)}
+  - \frac{2}{d^2(d+2)}\,\delta^{ij}\delta^{lm}
+\end{align}
+one finds
+\begin{align}
+\llangle \xi^{ij}_L \xi^{lm}_L \rrangle
+&= d(d+2)\eta\left[\frac{\delta^{il}\delta^{jm}+\delta^{im}\delta^{jl}}{d(d+2)}
+   - \frac{2\,\delta^{ij}\delta^{lm}}{d^2(d+2)}\right]
+  + \zeta\,\delta^{ij}\delta^{lm} \nonumber\\
+&= 2\eta\left[\delta^{(il}\delta^{j)m} - \frac{1}{d}\delta^{ij}\delta^{lm}\right]
+  + \zeta\,\delta^{ij}\delta^{lm}
+\end{align}
+as required.
+
+
+\item Boost to the lab frame.
+The fluid cell has four-velocity $u^\mu = (\gamma, \gamma v^i)$ in the lab frame.
+The Lorentz boost that takes the LRF rest vector $(1,0,0,0)$ to $u^\mu$
+has matrix elements
+\begin{align}
+  \Lambda^0{}_0 &= \gamma, &
+  \Lambda^0{}_j &= \gamma\, v_j, \\
+  \Lambda^i{}_0 &= \gamma\, v^i, &
+  \Lambda^i{}_j &= \delta^i_j + \frac{\gamma - 1}{v^2}\,v^i v_j,
+\end{align}
+where $v^2 = v_i v^i$.
+The Landau-frame noise tensor in the lab frame is then
+\begin{align}
+ \xi^{\mu\nu}_{L} = \Lambda^{\mu}{}_{\alpha}\, \Lambda^{\nu}{}_{\beta}\, \xi^{\alpha\beta}_{LRF}\,.
+\end{align}
+Since $\Delta^{\mu\nu} = g^{\mu\nu} + u^\mu u^\nu$ (with $g^{\mu\nu} = \mathrm{diag}(-1,1,1,1)$)
+is the projector onto the space orthogonal to $u^\mu$, one can verify that
+\begin{align}
+  \llangle \xi^{\mu\nu}_{L}\, \xi^{\alpha\beta}_{L}  \rrangle
+  = 2\eta\left(\Delta^{(\mu\alpha}\Delta^{\nu)\beta}
+    - \frac{1}{d}\Delta^{\mu\nu}\Delta^{\alpha\beta}\right)
+    + \zeta\,\Delta^{\mu\nu}\Delta^{\alpha\beta}\,.
+\end{align}
+
+
+\item Apply the frame-change matrix $\kappa_{\mu\nu}^{ij}$ to obtain the
+unit-normalized Density-Frame noise:
+\begin{align}
+   \hat\xi^{ij}  = \kappa_{\mu\nu}^{ij}\, \xi^{\mu\nu}_{L}\,.
+\end{align}
+The matrix $\kappa^{ij}_{\mu\nu}$ is built from the comoving-frame
+basis vectors and the equation of state.  Define
+\begin{align}
+  e^i_\mu &= \delta^i_\mu - v^i \delta^0_\mu \,, \label{eq:e_def}\\
+  h^{ij}  &= e^i_\mu e^j_\nu \eta^{\mu\nu} = \delta^{ij} - v^i v^j \,. \label{eq:h_def}
+\end{align}
+Here $e^i_\mu$ projects a lab-frame covariant index onto the comoving spatial
+directions, and $h^{ij}$ is the induced spatial metric in the comoving frame.
+The transformation matrix is (theory.pdf eq.\ (43))
+\begin{align}
+  \kappa^{ij}_{\mu\nu}
+  = e^i_{(\mu} e^j_{\nu)}
+    - h^{ij}\,\frac{\partial\mathcal{P}}{\partial\mathcal{T}^{0\rho}}
+      \delta^0_{(\mu}\delta^\rho_{\nu)} \,, \label{eq:kappa_def}
+\end{align}
+where the pressure derivative (theory.pdf eq.\ (44)) is
+\begin{align}
+  \frac{\partial\mathcal{P}}{\partial\mathcal{T}^{0\rho}}\,
+  \delta^0_\mu\delta^\rho_\nu
+  = -\frac{c_s^2}{1 - v^2 c_s^2}
+    \left[\frac{1}{\gamma^2}\Delta^0_\mu\Delta^0_\nu - u_\mu u_\nu\right] \,.
+    \label{eq:dPdT}
+\end{align}
+Here $\Delta^{\mu\nu} = g^{\mu\nu} + u^\mu u^\nu$ is the projector orthogonal to
+$u^\mu$, with $\Delta^0_\mu \equiv g^{0\nu}\Delta_{\nu\mu}$.
+It is also useful to introduce the scalar projector (theory.pdf eq.\ (45))
+\begin{align}
+  P_{\mu\nu} = -c_s^2\,u_\mu u_\nu + \frac{1}{d}\,\Delta_{\mu\nu} \,,
+  \label{eq:Pmunu}
+\end{align}
+in terms of which $\kappa^{ij}_{\mu\nu}$ decomposes into shear and bulk parts
+(theory.pdf eq.\ (46)):
+\begin{align}
+  \kappa^{ij}_{\mu\nu}
+  &= \underbrace{\left(e^i_{(\mu}e^j_{\nu)}
+      - \frac{h^{ij}}{\langle Ph\rangle}(ePe)_{\mu\nu}\right)}_{\mathring\kappa^{ij}_{\mu\nu}}
+    + \underbrace{\frac{h^{ij}}{\langle Ph\rangle}\,P_{\mu\nu}}_{\bar\kappa^{ij}_{\mu\nu}} \,,
+\end{align}
+where
+\begin{align}
+  (ePe)_{\mu\nu} &= e^i_\mu P_{ij} e^j_\nu
+    = -\frac{c_s^2}{\gamma^2}\,\Delta^0_\mu\Delta^0_\nu
+      + \frac{1}{d}\,\Delta_{\mu\nu} \,, \\
+  \langle Ph\rangle &= P_{ij}\,h^{ji} = 1 - c_s^2 v^2 \,.
+\end{align}
+The covariance of the resulting unit-normalized Density-Frame noise then
+satisfies $\llangle\hat\xi^{ij}\hat\xi^{lm}\rrangle = \kappa^{ijlm}$ with
+(theory.pdf eq.\ (54))
+\begin{align}
+  \kappa^{ijlm} = \kappa^{ij}_{\mu\nu}
+    \left[2\eta\!\left(\Delta^{(\mu\rho}\Delta^{\nu)\sigma}
+      - \tfrac{1}{d}\Delta^{\mu\nu}\Delta^{\rho\sigma}\right)
+      + \zeta\,\Delta^{\mu\nu}\Delta^{\rho\sigma}\right]
+    \kappa^{lm}_{\rho\sigma} \,,
+\end{align}
+and the physical noise $\xi^{ij} = \sqrt{2T_{\rm rel}}\,\hat\xi^{ij}$ of
+\Eq{eq:xi_from_xihat} then obeys the FDT normalization
+$\llangle\xi^{ij}\xi^{lm}\rrangle = 2 T_{\rm rel}\kappa^{ijlm}$.
+
+\end{enumerate}
+
+\section{First stochastic steps}
+
+\subsection{Physical Parameters}
+We need to decide on the parameters
+\begin{itemize}
+\item Shear Length
+\begin{align}
+ \ell  \equiv  \frac{\eta }{(e/c^2 +  p) c_s}
+\end{align}
+we note that $sT = e + c^2 p$. 
+\item Interparticle spacing 
+\begin{align}
+ \ell_Q  \equiv  \frac{1}{(s_0)^{1/2}}
+\end{align}
+\item  Speed of light $c$
+
+\item  Temperature $T_0$
+\end{itemize}
+
+We can choose units where $c = T_0 = \ell_Q = 1$.  
+
+\subsection{Defined and Derived Physical Parameters}
+Then we derive and define:
+\begin{itemize}
+\item We define the thermal momentum
+\begin{align}
+  p_0 \equiv  \frac{T_0}{c}
+\end{align}
+
+\item The dimensionless shear viscosity
+is the mean free path in these units and reads
+\begin{align}
+   \hat \eta \equiv \ell /\ell_Q   > 1
+\end{align} 
+
+  
+\item  The planks constant comes up in the definition of the entropy
+density 
+\begin{equation}
+s_0  \equiv   \frac{ \kappa^2 p_0^2 }{\hbar^2}  \qquad    
+\end{equation}
+and thus
+\begin{align}
+  \ell_Q =   \frac{\hbar}{\kappa\, p_0}
+\end{align}
+For a classical relativistic ideal gas with  $N^2$ degrees of freedom
+ in 2d we have
+\begin{align}
+    \kappa^2 \equiv \frac{N^2}{\pi} 
+\end{align}
+\end{itemize}
+
+We find (using that $s_0 T_0 = e + c^2 p$) we have
+\begin{equation}
+ \hat \eta = \left(\frac{\eta}{s \hbar } \right)   \kappa \left(\frac{c}{c_s} \right)
+\end{equation}
+Numerically 
+\begin{equation}
+ \kappa =  3.4    \left( \frac{N^2}{37}  \right)^{1/2}
+\end{equation}
+and  for $c_s = c/2$
+\begin{equation}
+ \hat \eta = 0.54 \left( \frac{4\pi \eta/s}{\hbar }\right)   \left( \frac{\kappa }{3.4}  \right) 
+\end{equation}
+
+\subsection{Basic description}
+
+We are applying hydro over a length $L$. There are viscous corrections 
+\begin{align}
+      {\rm classical} \sim \frac{\ell}{L}
+\end{align}
+There are also $1/\sqrt{N}$ corrections 
+\begin{align}
+    {\rm noise} \sim \frac{1}{\sqrt{L^2 s} } =  \frac{\ell_Q}{L}
+\end{align}
+which in two dimensions scale similarly to the classical terms. 
+
+The ratio of these corrections is 
+\begin{align}
+     \frac{ {\rm classical}}{{\rm noise}  } \sim \hat \eta
+\end{align}
+
+\subsection{Numerical Parameters}
+
+\begin{itemize}
+\item $h$  coarsening length
+\item $a$  inter-sph-particle spacing
+\end{itemize}
+
+We want to choose $h$ to be of order $\ell$ and $a$ to be of order $\ell_Q$ or 
+smaller.  So we choose
+\begin{align}
+  a\sim \ell_Q   \lesssim    h \sim \ell  \lesssim  L
+\end{align}
+
+To get started lets go crazy taking $\hat \eta \sim 10$
+
+\subsection{\texorpdfstring{Relation to the code's $T_{\rm scale}$ normalization}{Relation to the code's Tscale normalization}}
+
+In \texttt{sph.jl}, \texttt{ConformalEOS} parameterizes the temperature via
+\begin{align}
+  T_{\rm rel}(e) = T_{\rm scale}\, e^{c_s^2/(1+c_s^2)} \,.
+\end{align}
+For the $d=2$ fluid ($c_s^2=1/2$) this gives $e = (T_{\rm rel}/T_{\rm scale})^3$, and with $p=c_s^2 e$,
+\begin{align}
+  s = \frac{e+p}{T_{\rm rel}} = \frac{3}{2}\,\frac{T_{\rm rel}^2}{T_{\rm scale}^3} \,.
+\end{align}
+Comparing to $s_0 = \kappa^2 p_0^2/\hbar^2 = (N^2/\pi)\,T_0^2$ (natural units $\hbar=c=1$, $T_0=T_{\rm rel}$)
+and matching the coefficients of $T^2$,
+\begin{align}
+  T_{\rm scale} = \left(\frac{3\pi}{2N^2}\right)^{1/3} = \frac{(3\pi/2)^{1/3}}{N^{2/3}} \,,
+  \qquad\text{equivalently}\qquad
+  N^2 = \frac{3\pi}{2\,T_{\rm scale}^3}\,.
+\end{align}
+Using $\kappa^2 = N^2/\pi$ (line above) to eliminate $N^2$, this simplifies to
+\begin{align}
+  T_{\rm scale} = \left(\frac{3}{2\kappa^2}\right)^{1/3} = \frac{(3/2)^{1/3}}{\kappa^{2/3}} \,,
+  \qquad\text{equivalently}\qquad
+  \kappa^2 = \frac{3}{2\,T_{\rm scale}^3}\,,
+\end{align}
+i.e.\ $T_{\rm scale}$ scales as $\kappa^{-2/3}$, with the $\pi$ absorbed into $\kappa$ leaving
+the clean coefficient $(3/2)^{1/3}\approx1.145$.
+As a check, the numerical example above ($N^2=37 \Rightarrow \kappa\approx3.4$) gives
+$T_{\rm scale}\approx0.50$ — noticeably different from the arbitrary placeholder
+$T_{\rm scale}=1.0$ currently used in \texttt{testeos2d.jl}, which only exercises the
+EOS-solver mechanics and was never meant to be physically normalized.
+
+\subsection{Checking equilibration}
+
+A first step is to choose and
+\end{document}
+
+
+
+
