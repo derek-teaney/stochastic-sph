@@ -40,6 +40,9 @@ docs/       notes (LaTeX source + PDF)
 
 ## Running
 
+New to the code? See [`GETTING_STARTED.md`](GETTING_STARTED.md).
+
+
 Requires Julia 1.12 and a Python with matplotlib for PyPlot.
 
 ```sh
