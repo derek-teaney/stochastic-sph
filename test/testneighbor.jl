@@ -73,12 +73,12 @@ function plot_neighbor_pairs(particles::Vector{Particle},
                               title_str::String = "Neighbor pairs",
                               filename::Union{String,Nothing} = nothing)
     L  = cl.L
-    h  = cl.cell_size / 2.0   # cell_size ≈ 2h
+    h  = cl.cell_size[1] / 2.0   # cell width ≈ 2h
     fig, ax = subplots(figsize=(6, 6))
 
     # grid
-    for v in 0:cl.cell_size:cl.L[1]; ax.axvline(v, color="0.80", lw=0.8); end
-    for v in 0:cl.cell_size:cl.L[2]; ax.axhline(v, color="0.80", lw=0.8); end
+    for v in 0:cl.cell_size[1]:cl.L[1]; ax.axvline(v, color="0.80", lw=0.8); end
+    for v in 0:cl.cell_size[2]:cl.L[2]; ax.axhline(v, color="0.80", lw=0.8); end
 
     # neighbor pair lines — draw from pa to pa - r_mic (MIC endpoint)
     for (a, b, r) in pairs
@@ -192,7 +192,7 @@ particles3 = [
 
 cl3 = CellList2D(L3, h3, length(particles3))
 rebuild_cell_list!(cl3, particles3)
-@printf("ncx=%d  ncy=%d  cell_size=%.4g\n", cl3.ncx, cl3.ncy, cl3.cell_size)
+@printf("ncx=%d  ncy=%d  cell_size=%s\n", cl3.ncx, cl3.ncy, cl3.cell_size)
 
 brute3    = find_pairs_brute(particles3, h3, L3)
 celllist3 = find_pairs_celllist(particles3, cl3, h3, L3)
@@ -214,7 +214,7 @@ particles4 = [Particle(SVector(rand(RNG)*Lx4, rand(RNG)*Ly4), 1.0) for _ in 1:20
 
 cl4 = CellList2D(L4, h4, length(particles4))
 rebuild_cell_list!(cl4, particles4)
-@printf("ncx=%d  ncy=%d  cell_size=%.4g\n", cl4.ncx, cl4.ncy, cl4.cell_size)
+@printf("ncx=%d  ncy=%d  cell_size=%s\n", cl4.ncx, cl4.ncy, cl4.cell_size)
 
 brute4    = find_pairs_brute(particles4, h4, L4)
 celllist4 = find_pairs_celllist(particles4, cl4, h4, L4)
