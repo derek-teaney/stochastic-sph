@@ -8,7 +8,7 @@ mutable struct CellList2D
     indices    :: Vector{Int}       # (N,)        flat contiguous particle index array
     ncx        :: Int               # cells in x direction
     ncy        :: Int               # cells in y direction
-    cell_size  :: Float64           # Lx/ncx ≈ Ly/ncy ≈ 2h
+    cell_size  :: SVector{2,Float64} # (Lx/ncx, Ly/ncy), each ≥ 2h; cells tile the box exactly
     L          :: SVector{2,Float64}
 end
 
@@ -16,13 +16,16 @@ function CellList2D(L::SVector{2,Float64}, h::Float64, N::Int)
     ncx = floor(Int, L[1] / (2h))
     ncy = max(1, floor(Int, L[2] / (2h)))
     @assert ncx >= 3 "Box too small in x: need ncx ≥ 3, got $ncx"
-    cell_size = L[1] / ncx
+    # Separate widths in x and y.  A single width Lx/ncx reused in y does not tile
+    # [0, Ly) when Ly/ncy ≠ Lx/ncx, and the periodic y-stencil then misses pairs
+    # across y = 0 (test/testcelllist_box.jl).
+    cell_size = SVector(L[1] / ncx, L[2] / ncy)
     CellList2D(zeros(Int,ncx,ncy), zeros(Int,ncx,ncy), zeros(Int,N), ncx, ncy, cell_size, L)
 end
 
 function cell_index(x::SVector{2,Float64}, cl::CellList2D)
-    ix = mod(floor(Int, x[1] / cl.cell_size), cl.ncx) + 1
-    iy = mod(floor(Int, x[2] / cl.cell_size), cl.ncy) + 1
+    ix = mod(floor(Int, x[1] / cl.cell_size[1]), cl.ncx) + 1
+    iy = mod(floor(Int, x[2] / cl.cell_size[2]), cl.ncy) + 1
     return ix, iy
 end
 
@@ -406,10 +409,10 @@ function smooth_to_grid(particles::Vector{Particle}, params::SimParams,
     L         = params.L
     h         = params.h
     S  = zeros(ncx, ncy)
-    xs = LinRange(0.5 * cell_size, L[1] - 0.5 * cell_size, ncx)
-    ys = LinRange(0.5 * cell_size, L[2] - 0.5 * cell_size, ncy)
+    xs = LinRange(0.5 * cell_size[1], L[1] - 0.5 * cell_size[1], ncx)
+    ys = LinRange(0.5 * cell_size[2], L[2] - 0.5 * cell_size[2], ncy)
     for iy in 1:ncy, ix in 1:ncx
-        xg_vec = SVector((ix - 0.5) * cell_size, (iy - 0.5) * cell_size)
+        xg_vec = SVector((ix - 0.5) * cell_size[1], (iy - 0.5) * cell_size[2])
         acc = 0.0
         for dy in neighbor_range(ncy), dx in -1:1
             jx = mod(ix + dx - 1, ncx) + 1

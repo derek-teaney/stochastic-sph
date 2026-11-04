@@ -28,21 +28,21 @@ function plot_cell_list(cl::CellList2D, particles::Vector{Particle};
         n = cl.cell_count[ix, iy]
         if n > 0
             rect = matplotlib.patches.Rectangle(
-                ((ix-1)*cl.cell_size, (iy-1)*cl.cell_size),
-                cl.cell_size, cl.cell_size,
+                ((ix-1)*cl.cell_size[1], (iy-1)*cl.cell_size[2]),
+                cl.cell_size[1], cl.cell_size[2],
                 facecolor="lightsteelblue", edgecolor="none", alpha=0.45)
             ax.add_patch(rect)
         end
     end
 
     # grid lines
-    for v in 0:cl.cell_size:cl.L[1]; ax.axvline(v, color="k", lw=1.0); end
-    for v in 0:cl.cell_size:cl.L[2]; ax.axhline(v, color="k", lw=1.0); end
+    for v in 0:cl.cell_size[1]:cl.L[1]; ax.axvline(v, color="k", lw=1.0); end
+    for v in 0:cl.cell_size[2]:cl.L[2]; ax.axhline(v, color="k", lw=1.0); end
 
     # cell labels
     for iy in 1:cl.ncy, ix in 1:cl.ncx
-        cx = (ix - 0.5) * cl.cell_size
-        cy = (iy - 0.5) * cl.cell_size
+        cx = (ix - 0.5) * cl.cell_size[1]
+        cy = (iy - 0.5) * cl.cell_size[2]
         n  = cl.cell_count[ix, iy]
         ax.text(cx, cy + 0.35, "($ix,$iy)", ha="center", va="center",
                 fontsize=8, color="gray")
