@@ -27,7 +27,7 @@ T  = ps[1].T * ps[1].γ
 # α = T η / n,  n 𝟙 = Σ_b V_b ψ r rᵀ (hex lattice: isotropic).
 nbrs = [[(b, minimum_image(ps[b].x - ps[a].x, L)) for b in 1:N
          if b != a && norm(minimum_image(ps[b].x - ps[a].x, L)) < 2h] for a in 1:N]
-ψw(r) = bond_weight(norm(r), h, params.kernel)
+ψw(r) = bond_weight(norm(r), h)
 nmom  = [sum(V * ψw(r) * dot(r, r) for (b, r) in nbrs[a]) / 2 for a in 1:N]
 αp    = [T * η / nmom[a] for a in 1:N]
 function plain_force!(f, β)
