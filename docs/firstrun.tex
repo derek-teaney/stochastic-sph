@@ -5,6 +5,7 @@
 \usepackage{graphics,graphicx}
 \usepackage[inline]{enumitem}
 \usepackage{mathrsfs}
+\usepackage{dsfont}
 \usepackage{bm}
 \usepackage{mathtools}
 \usepackage{bbold}
@@ -170,6 +171,7 @@
 \renewcommand{\baselinestretch}{1.05}
 
 % ============================================================================
+\providecommand{\tr}{\operatorname{tr}}
 \begin{document}
 
 \title{First stochastic SPH run:\\ideal symplectic step $+$ per-particle Metropolis sweep}
@@ -400,6 +402,275 @@ sound-wave runs are \emph{validations}, not calibrations.
 \end{itemize}
 
 % ============================================================================
+\section{First results on a frozen lattice}
+\label{sec:results}
+
+The unit checks of \texttt{teststochastic.jl} all pass: momentum is conserved
+to round-off, the sweep is visit-order independent, and the mean drift of the
+sweep reproduces \texttt{dissipative\_force!} (slope $0.994\pm0.007$).  The
+uniform-background run \texttt{examples/teststochastic\_run.jl}, however,
+fails.  Started at the FDT equilibrium with the ideal step on, after 3000
+steps $\mathrm{rms}(M)$ is $157$ times the FDT value and $\mathbb H$ has
+grown by $115\%$.  (Before the cell-list fix described below it blew up at
+step 419.)  This section isolates why, with the particles held fixed so that
+only the stochastic sweep acts.
+
+\paragraph{Setup (all figures).}
+2D conformal fluid, $c_s^2=1/2$, units $\ell_Q=T_0=1$, $s_0=1$,
+$\eta/s=10/\sqrt2\approx7.07$, $\zeta=0$.  Hex lattice with $h=15$, $h/a=2.55$
+($a=5.88$), box $147.1\times152.8$, $N=750$, particle volume $V=29.97$,
+$s_a\approx30$, $T_{\rm rel}=0.912$, $w=e+p=0.759$; each particle has 91
+neighbours within $2h$.  $\Delta t=4.24$ (acoustic CFL $0.2$) unless stated.
+\emph{Frozen lattice} means no ideal step: positions never move, and each step
+is refresh fields $\to$ \texttt{particle\_sweep!} $\to$ \texttt{apply\_sweep!}.
+\emph{Cold start} means all $m_a=0$ initially: all of the energy is internal,
+none kinetic.  The scripts are in \texttt{examples/} and named in each caption.
+
+\paragraph{A cell-list bug, now fixed.}
+Drawing the cells (\Fig{fig:cold}) exposed a bug in \texttt{CellList2D}: it
+used one square cell width $L_x/n_x$ in both directions.  In this box
+$L_y/n_y<L_x/n_x$, so the rows of cells did not tile $[0,L_y)$, the periodic
+$y$-stencil did not connect the top and bottom rows, and $5\%$ of the
+neighbour pairs (all across $y=0$) were dropped; $S(x_a)$ fell to $0.83$
+there on a uniform lattice.  The cells now have separate widths
+$(L_x/n_x,\,L_y/n_y)$; \texttt{test/testcelllist\_box.jl} checks this.  All
+results below are with the fix.  The fix changes the numbers by $\sim20\%$ but
+neither of the two problems below.
+
+% ----------------------------------------------------------------------------
+\subsection{Cold start: what the sweep does to particles at rest}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/simple_cold_start.png}
+\caption{Cold start, frozen lattice (\texttt{simple\_cold\_start.jl}).
+Panels 1--3: particles at steps 0, 50, 200; arrows are $m_a$ (rescaled per
+panel, so compare the rms values in the titles, not arrow lengths).  Dots are
+coloured by $S(x_a)$, uniform as it should be.  Grey lines: cell-list cells.
+Circles of radius $h$ (solid) and $2h$ (dashed, the kernel support) around
+three particles.  Panel 4: $\mathrm{rms}|m|$ (scaled to its maximum) and
+$\mathbb H/\mathbb H_0-1$ vs step.}
+\label{fig:cold}
+\end{figure}
+
+\Fig{fig:cold} is the most basic run.  The noise immediately builds a momentum
+field that changes direction from one particle to the next, on the lattice
+spacing $a$, which is much shorter than $h$.  Inside a single $h$-circle (about
+20 particles) the arrows point every which way, so the smoothed field
+$M(x)=\sum_b m_b W(x-x_b)$ averages most of this momentum away.
+$\mathrm{rms}|m|$ is $6.5$ at step 50 and $10.2$ at step 200 and is still
+rising.  A working scheme would saturate at the FDT value.  $\mathbb H$ rises
+in a straight line ($+8.2\%$ by step 200).  With $\mathbb H$ fixed, the
+fluctuation kinetic energy should instead come \emph{out} of the internal
+energy: by equipartition about $T$ per particle against $s_aT\approx30T$
+internal, a few percent of $\mathbb H$.
+
+% ----------------------------------------------------------------------------
+\subsection{The failures do not go away as $\Delta t\to0$}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/dt_scan.png}
+\caption{Cold start, frozen lattice, four time steps run to the same physical
+time $t\approx848$ (\texttt{dt\_scan.jl}).  Left: $\mathrm{rms}|m|$.
+Right: $\mathbb H/\mathbb H_0-1$.}
+\label{fig:dt}
+\end{figure}
+
+\Fig{fig:dt} repeats the cold start at $\Delta t=4.24,\,2.12,\,1.06,\,0.53$,
+always to the same physical time.  The curves lie on top of each other (at
+$t\approx848$: $\mathrm{rms}|m|=10.2,\,9.6,\,10.1,\,8.9$ and
+$\mathbb H/\mathbb H_0-1=0.082,\,0.082,\,0.083,\,0.084$), and the acceptance
+goes to 1 as $\Delta t\to0$ ($0.961\to0.986$).  The scheme is converging to a
+well-defined continuous-time limit; it is that limit that is wrong.  The
+$O(\Delta t)$ weak biases of \app{app:accuracy}(a) would shrink, so these are
+not them.  Two separate defects:
+\begin{enumerate}
+  \item \textbf{Energy.}  $\mathbb H$ grows at $\approx1.0\times10^{-4}$ per
+        unit time, independent of $\Delta t$.  This is the linearized
+        $\Delta s=-\bbeta\cdot\Delta m$ of \app{app:accuracy}(b).  The dropped
+        term $\tfrac12\Delta m\cdot\partial^2\mathbb H\cdot\Delta m$ is
+        $O(\Delta t)$ per step and always positive, so it adds up to an $O(1)$
+        drift in physical time.  It is suppressed by $1/s_a$, and $s_a=30$
+        here is not large.
+  \item \textbf{Momentum.}  $\mathrm{rms}|m|$ keeps growing in the
+        continuous-time limit.  The rest of this section shows why.
+\end{enumerate}
+
+% ----------------------------------------------------------------------------
+\subsection{What the smoothing sees: the response $R(k)$}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figs/smoothing_response.png}
+\caption{Smoothing response of the lattice (\texttt{smoothing\_response.jl}).
+Left: $R(\mathbf k)$ in the plane; black contour $R=0.1$; dotted circle
+$|k|=1/h$; triangles: reciprocal lattice vectors (copies of $k=0$).
+Right: cuts along $k_x$ and $k_y$ compared with the continuum kernel
+transform $\tilde W(k)$.}
+\label{fig:R}
+\end{figure}
+
+Everything in the scheme ($\mathbb H$, $\dot x$, $\bbeta$, the strain, the
+accept test) sees the particle momenta only through $M(x_a)$.  Put a wave on
+the particles, $m_b=\hat m\cos(\mathbf k\cdot\mathbf x_b)$.  Converted back to a
+momentum per particle, the smoothed field returns it scaled:
+\st
+V\,M(x_a) = R(\mathbf k)\,\hat m\cos(\mathbf k\cdot\mathbf x_a)\,,\qquad
+R(\mathbf k) = V\sum_b W(x_a-x_b)\cos\!\big(\mathbf k\cdot(\mathbf x_b-\mathbf x_a)\big)\,.
+\label{eq:R}
+\stp
+$R(\mathbf k)$ is the fraction of the wave the smoothed field keeps.
+\Fig{fig:R} evaluates \eqref{eq:R} on the actual neighbours.  $R(0)=1.0002$
+(a uniform flow is fully seen), and the lattice sum matches the continuum
+$\tilde W(k)$ up to $|k|\approx1$.  $R$ falls to $0.5$ at $|k|\approx0.15$, to
+$0.1$ at $|k|\approx0.26$, and is essentially zero beyond $|k|\approx0.35$
+(a wavelength of about $1.2h$).  On a lattice, $\mathbf k$ and
+$\mathbf k+\mathbf G$ give the same pattern, which is why $R$ returns to 1 at
+the reciprocal vectors ($|G|=4\pi/\sqrt3a=1.23$).  Every distinct pattern has
+a $\mathbf k$ in one hexagonal zone of area $\approx1.32$, and $R>0.1$ only in a
+disk of area $\approx0.21$.  So \textbf{only about $16\%$ of the lattice's
+momentum patterns are seen by the smoothing at more than $10\%$}.  This is the
+price of $h/a=2.55$: each smoothed value averages over about 90 neighbours.
+
+% ----------------------------------------------------------------------------
+\subsection{The growing momentum is the part the smoothing does not see}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/momentum_split.png}
+\caption{Cold start, frozen lattice, 800 steps (\texttt{momentum\_split.jl}).
+Left: rms of the total momentum, its resolved part $V_aM(x_a)$ and its
+unresolved part $m_a-V_aM(x_a)$.  Right: spectrum
+$P(\mathbf k)=|\sum_a m_a e^{-i\mathbf k\cdot\mathbf x_a}|^2/N$ binned in $|k|$
+at four times, with $R$ (red dashed, right axis) averaged in the same bins.
+The bump at $|k|>1$ is lattice aliasing of the low-$k$ modes (\Fig{fig:R}).}
+\label{fig:split}
+\end{figure}
+
+Split each particle's momentum into the part the smoothed field sees and the
+rest:
+\st
+m_a = \underbrace{V_a M(x_a)}_{\rm resolved}
+    + \underbrace{\big[m_a - V_aM(x_a)\big]}_{\rm unresolved}\,,\qquad V_a=s_a/S_a\,.
+\stp
+For a long wave the resolved part is all of it; for a pattern that changes from
+particle to particle it is nearly none.  \Fig{fig:split} (left) shows that the
+resolved part levels off at about 3 and barely moves.  All of the growth is
+unresolved: at step 800 the rms values are total $16.7$, resolved $3.9$,
+unresolved $13.9$.  The spectrum (right) shows where the power piles up:
+$|k|\approx0.15$--$0.3$, wavelengths around $2h$, where $R$ is small but not
+zero.  Near the zone boundary, where $R\approx0$, there is little power,
+because the kicks $\xi_a D(x_a,x_b)$ are built from the kernel too and barely
+excite those patterns.
+
+% ----------------------------------------------------------------------------
+\subsection{The damping rate: $\Gamma_{\rm SPH}=\Gamma_{\rm phys}\,R^4$}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/damping_rate.png}
+\caption{Deterministic damping rate of a shear wave on the frozen lattice
+(\texttt{damping\_rate.jl}).  Left: $\Gamma(k)$ for the two-level force and the
+physical $(\eta/w)k^2$.  Right: the ratio, with $R(k)^4$ and $R(k)^2$.}
+\label{fig:damp}
+\end{figure}
+
+This measurement has no noise and no time stepping, and it does not start
+from rest.  On the frozen lattice put a small shear wave in the momenta,
+$m_a=A\,\hat y\cos(kx_a)$ with $A$ chosen so $v\sim10^{-4}$.  Refresh the
+fields, evaluate the deterministic two-level force \texttt{dissipative\_force!}
+once, and project it onto the wave:
+\st
+\Gamma_{\rm SPH}(k) = -\frac{\sum_a f_a\cdot m_a}{\sum_a m_a\cdot m_a}\,.
+\stp
+Since the mean drift of the sweep is this force (\Sect{sec:det}), this is also
+the damping rate of the stochastic scheme.  Physically a shear wave decays at
+$\Gamma_{\rm phys}=(\eta/w)k^2$, so the shortest waves die fastest.
+\Fig{fig:damp} and Table~\ref{tab:damp} show that the scheme does the opposite:
+\st
+\boxed{\;\Gamma_{\rm SPH}(k) = \Gamma_{\rm phys}(k)\,R(k)^4\;}
+\label{eq:R4}
+\stp
+to three digits for every $k\lesssim0.34$ (beyond that both are below
+$10^{-7}$).  The rate peaks near $k\approx0.1$ and then goes to zero.  The four
+powers of $R$ have two origins:
+\begin{itemize}
+  \item $R^2$ \textbf{from the representation}: $\bbeta=\dot x/\Teff$ is built
+        from $m$ by two smoothings ($M=\sum m W$, then
+        $\dot x_a=\sum_b s_b (v/S)_b W$), so $\bbeta_{\mathbf k}\propto R^2 m_{\mathbf k}$.
+  \item $R^2$ \textbf{from the discretization of the dissipative function}:
+        the strain \eqref{eq:strain} is a kernel gradient of $\bbeta$
+        ($\propto kR$), and the force \eqref{eq:twolevel} is a second kernel
+        divergence ($\propto kR$).  This ``gradient of a smoothed gradient''
+        Laplacian is a wide stencil, the SPH version of odd--even decoupling.
+        A Laplacian built from two centred first differences also fails to
+        damp the checkerboard mode.
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{ccccc}
+$k$ & $2\pi/(kh)$ & $R(k)$ & $\Gamma_{\rm SPH}/\Gamma_{\rm phys}$ & $R(k)^4$ \\ \hline
+0.043 & 9.8 & 0.945 & 0.795 & 0.796 \\
+0.085 & 4.9 & 0.795 & 0.397 & 0.398 \\
+0.171 & 2.5 & 0.388 & $2.2\times10^{-2}$ & $2.3\times10^{-2}$ \\
+0.256 & 1.6 & 0.108 & $1.3\times10^{-4}$ & $1.3\times10^{-4}$ \\
+0.342 & 1.2 & 0.019 & $1.2\times10^{-7}$ & $1.3\times10^{-7}$
+\end{tabular}
+\caption{Shear-wave damping on the frozen lattice ($2\pi/(kh)$ is the
+wavelength in units of $h$).}
+\label{tab:damp}
+\end{table}
+
+\paragraph{Consequences.}
+\begin{itemize}
+  \item \textbf{Deterministic runs are affected too.}  A shear wave with
+        wavelength $5h$ decays at $40\%$ of the physical rate, and one with
+        $10h$ at $80\%$.  The deterministic shear- and sound-wave validations
+        should be rechecked against this before anything is calibrated.
+  \item \textbf{Why the stochastic momentum grows.}  The following scalings are
+        \emph{derived, not measured}; only the rate is measured.  For a mode
+        $\mathbf k$ the noise injected per unit time goes as $k^2R^2$ (the
+        kick pattern), the friction rate as $k^2R^4$ \eqref{eq:R4}, and the
+        equilibrium amplitude as $\langle|m_{\mathbf k}|^2\rangle\propto1/R^2$
+        (its energy cost goes through $M=\sum mW$).  For unresolved modes the
+        target is huge and the approach to it is very slow, so they simply keep
+        growing.  Note that $K$ sets only the rates: the equilibrium is fixed by
+        $\mathbb H$ and $\Sbb$.
+  \item \textbf{Relation to \app{app:perbond}.}  The per-bond scheme failed
+        through the same mechanism.  Its friction acted through the smoothed
+        $\bbeta$, so it was suppressed by $R^2$, while its noise was not
+        suppressed, so the runaway was fast.  The two-level move puts in less
+        noise ($k^2R^2$), which slows the runaway, but it damps by an
+        additional $R^2$.  It is not a remedy.  In \app{app:perbond} the
+        claim that ``the strain-based friction acts on what is excited'' is
+        false.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\subsection{A one-level (bond) form}
+\label{sec:bond}
+
+The two-level $K$ damps unresolved modes as $R^4$, and has an exact null mode
+at the zigzag.  A one-level (bond) form squares the differences of $\bbeta$
+across neighbouring pairs instead, after subtracting a mean-field rotation and
+dilation from each.  It has the same continuum limit, including the full
+$\kappa^{ijlm}(v)$ of a moving fluid, conserves momentum and angular momentum,
+and has no null mode.  It is derived in \texttt{bond\_dissipation.tex} and
+selected with \texttt{params.dissipation = :bond} (or
+\texttt{SPH\_DISSIPATION=bond}).  Its damping still levels off at the floor
+$\sim R^2$, which comes from $\bbeta$ and not from $K$.  The matching noise is
+not implemented yet.
+
+\textbf{No choice of $K$ alone can fix this}, because $K$ is a quadratic form in
+$\bbeta$ and $\bbeta$ carries $R^2$.  The particle-level momentum needs its own
+thermodynamic force.  That means changing $\mathbb H$ or $\Sbb$: for example
+the energy representation with particle entropy $\sum_\ell S(e_\ell,m_\ell)$,
+for which concavity gives $S(\underline P(x))\ge\underline S(x)$
+(\texttt{sph1.tex}, ``Convexity'').
+
+% ============================================================================
 % ============================================================================
 \appendix
 
@@ -414,8 +685,8 @@ coefficients, so $(X,Y)$ are jointly Gaussian and mean zero, and
 \llangle X\,\min(1,e^{Y})\rrangle
    = \tfrac12\llangle XY\rrangle + O(\sigma^3)
 \stp
-[split $\min(1,e^Y) = 1 + (e^Y-1)\mathbb 1[Y<0]$ and use
-$\llangle XY\,\mathbb 1[Y<0]\rrangle = \tfrac12\llangle XY\rrangle$ for a
+[split $\min(1,e^Y) = 1 + (e^Y-1)\mathds{1}[Y<0]$ and use
+$\llangle XY\,\mathds{1}[Y<0]\rrangle = \tfrac12\llangle XY\rrangle$ for a
 mean-zero Gaussian pair; the remainder is $O(\sigma_Y^3)=O(\Delta t^{3/2})$].
 With $G_j\equiv\sum_b s_b D_j(x_a,x_b)$ this gives
 \st
@@ -645,6 +916,15 @@ the volume power correct (\app{app:drift}), and the injected pattern
 $\xi_a\,D(x_a,x_b)$ is smooth in $b$ (a kernel-gradient dipole), so the
 grid-scale modes are excited far less and the strain-based friction acts on
 what is excited.
+
+\paragraph{Correction (see \Sect{sec:results}).}
+The last claim is false.  The friction on a mode $\mathbf k$ is
+$\Gamma_{\rm phys}R(k)^4$ (measured, \Fig{fig:damp}).  Two powers of $R$ come
+from the smoothed $\bbeta$, which the per-bond scheme shared, and two come from
+the wide two-level stencil.  The per-particle move suppresses the noise in
+those modes, which slows the runaway, but suppresses the friction even more.
+The per-particle sweep still shows the per-bond symptom (resolved sector flat,
+unresolved momentum growing), only more slowly.
 
 % ============================================================================
 \section{Implementation}

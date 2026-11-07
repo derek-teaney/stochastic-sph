@@ -16,3 +16,9 @@
 *.toc
 *.synctex.gz
 *Notes.bib
+
+# figures used by the notes
+!docs/figs/*.png
+
+# personal notes, not committed
+docs/private/

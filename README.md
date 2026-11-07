@@ -20,6 +20,12 @@ The physics and the algorithms are described in [`docs/`](docs):
   the $\kappa^{ijlm}$ tensor, the two-level dissipative force, noise generation.
 - `docs/firstrun.pdf` — the stochastic step: per-particle Metropolis sweep,
   its mean drift, known biases, and diagnostics.
+- `docs/bond_dissipation.pdf` — the one-level (bond) dissipative function: bond
+  differences of $\beta$ with a mean-field rotation and dilation removed, at
+  rest and in a moving fluid, and how the code computes its force.
+- `docs/particle_metrics.pdf` — gradients and quadratic forms on general particle
+  arrangements: the least-squares fit, the bond moment, and the moment-corrected
+  weights used by the bond form.
 
 These are working notes and will change.
 
@@ -28,7 +34,7 @@ These are working notes and will change.
 ```
 src/        library code (include in order: sph, celllist, setup, stochastic)
   sph.jl          SimParams, Particle, equation of state + Newton solve, kernels, κ tensor
-  celllist.jl     cell list, smoothing, leapfrog, two-level dissipative force, generic_step!
+  celllist.jl     cell list, smoothing, leapfrog, dissipative forces (two-level and bond), generic_step!
   setup.jl        lattices (square / hex / 1D), initial conditions, plotting helpers
   stochastic.jl   noise draw, particle_sweep!, apply_sweep!
   rng.jl          per-particle random streams
@@ -52,6 +58,25 @@ julia --project test/teststochastic.jl
 julia --project examples/testsound.jl
 ```
 
+### Dissipative function
+
+Two discretizations of the viscous dissipative function are available,
+selected by `params.dissipation`:
+
+- `:two_level` (default) — the SPH gradient of $\beta$ at each particle, squared
+  (`docs/sph2.pdf`).
+- `:bond` — the one-level bond form of `docs/bond_dissipation.pdf`. It damps
+  short wavelengths far more strongly and has no null mode.
+
+Any script can be run with the bond form from the environment:
+
+```sh
+SPH_DISSIPATION=bond julia --project examples/testsound_viscous.jl
+```
+
+The bond form is deterministic only for now: its noise is not implemented, and
+`particle_sweep!` stops with an error if `params.dissipation = :bond`.
+
 Scripts use plain `include`. To edit and re-run inside one REPL session, use
 [Revise](https://github.com/timholy/Revise.jl) from your global environment and
 swap `include` for `includet`.
@@ -65,6 +90,9 @@ Verified:
 - Deterministic viscous dynamics: shear-wave and sound-wave decay rates against
   the analytic values.
 - Stochastic noise draw: covariance matches $2T\kappa^{ijlm}$ (Monte Carlo check).
+- Bond dissipative function: force equals $-\partial K/\partial\beta$, exact for
+  linear fields on jittered and moving lattices, no force from rigid rotations
+  (`test/testdissipative.jl`).
 
 In progress:
 
@@ -74,6 +102,7 @@ In progress:
 - Uniform-background equilibration against the fluctuation–dissipation
   prediction (`examples/teststochastic_run.jl`).
 - Ensemble shear-wave and 2D sound-wave decay with noise.
+- Noise for the bond dissipative function.
 
 ## License
 
