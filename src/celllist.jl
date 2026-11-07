@@ -400,13 +400,14 @@ end
 #   G_a         = (∇b)_a,  G[i,j] = ∂_j b_i                   (least-squares fit)
 #   Ω_a, θ_a    = antisym(G_a),  ℓ_a:G_a / ⟨Pℓ⟩_a              (rotation, comoving dilation)
 #   D_ab        = Δb_ab − (Ω_a + θ_a P_a) r_ab                (covariant bond difference)
-#   K = Σ_a V_a T_a η_a Σ_b w_ab D_ab·ℓ_a·D_ab + ½ Σ_a V_a T_a c_θ θ_a²
+#   K = Σ_a V_a T_a η_a Σ_b w_ab D_ab·ℓ_a·D_ab + ½ Σ_a V_a T_a ζ_eff θ_a²
 #   t_ab        = −2 V_a T_a η_a w_ab ℓ_a D_ab                (traction: momentum a gives b)
 #   V_a Π_a     = Σ_b t_ab r_abᵀ                              (stress from the virial of the faces)
 #   E_a         = ∂K/∂G_a = e_a ℓ_a + antisym(V_a Π_a)        (mean-field stress)
 # The force is F_a = −∂K/∂b_a: bond part from the tractions, mean-field part through the fit.
-# c_θ = 2η(d−2)/d² + ζ uses the physical d (planar flow of a d-dimensional fluid);
-# the note instead uses d = 2 with ζ_eff, an equally exact split (its Appendix B).
+# The simulation is two-dimensional: P and the subtracted dilation use d_s = 2, and
+# the shear of the d − 2 unresolved directions of the d-dimensional fluid goes into
+#   ζ_eff = ζ + 2η (1/2 − 1/d)                                 (note, Appendix B).
 # The antisym(V_a Π_a) term of E_a vanishes when the Λ correction succeeds (the rotation
 # is then variational); it keeps the force exact on fallback particles.
 # 1D simulation: plain bond term with the full T κ^{xxxx}(v) on the bonds, no mean field.
@@ -469,7 +470,7 @@ end
 
 # Optional bv: force for a given b-field (default b = ẋ/Teff); used by the tests.
 # bond_dissipation(...) returns K itself (same arguments).  Kvec, if given, receives
-# each particle's share of K (its bonds plus its c_θ term).
+# each particle's share of K (its bonds plus its bulk term).
 function bond_dissipative_force!(dotm::Vector{SVector{2,Float64}},
                                  particles::Vector{Particle},
                                  params::SimParams, cl::CellList2D,
@@ -525,7 +526,8 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         η    = eta_by_s(eos) * sr
         ζ    = zeta_by_s(eos) * sr
         va   = pa.v_over_S * pa.S_smooth
-        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, d)
+        # 1D: P with the physical d (it enters only κ^{xxxx}); 2D: P with d_s = 2
+        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, oneD ? d : 2)
 
         # weights ψ_ab (moment-corrected) and n_a
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
@@ -572,9 +574,9 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         end
         if !oneD
             # mean-field force through the fit: E_a = ∂K/∂G_a
-            cθ  = 2η * (d - 2) / d^2 + ζ
-            Ka += 0.5 * Va * Ta * cθ * θa^2
-            e_a = (Va * Ta * cθ * θa + sum(VΠ .* P)) / Pℓ
+            ζeff = ζ + 2η * (1 / 2 - 1 / d)
+            Ka  += 0.5 * Va * Ta * ζeff * θa^2
+            e_a  = (Va * Ta * ζeff * θa + sum(VΠ .* P)) / Pℓ
             E   = e_a * ℓ + (VΠ - VΠ') / 2
             # q_ab = V_b ψ_ab E_a M_a⁻¹ r_ab:  ∂K/∂b_b += q_ab,  ∂K/∂b_a −= q_ab
             qsum = zero(SVector{2,Float64})

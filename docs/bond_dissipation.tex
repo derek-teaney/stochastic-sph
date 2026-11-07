@@ -993,10 +993,8 @@ equal and opposite pairs.
 \item \emph{One dimension.}  The 1D path has no mean field.  It uses a plain
   bond term with the full $T\kappa$ on the bonds.
 \item \emph{Unresolved dimensions.}  For planar flow of a 3D fluid the code
-  currently uses $d=3$ in $P$ and in the subtracted dilation, and puts the
-  out-of-plane shear into the coefficient of $\theta^2$.  This is an equally
-  exact split for linear fields; Appendix~\ref{sec:unresolved} uses $d=2$ with
-  $\zeta_{\rm eff}$.
+  uses $d=2$ in $P$ and in the subtracted dilation, with $\zeta_{\rm eff}$ of
+  Appendix~\ref{sec:unresolved}.
 \end{itemize}
 
 \paragraph{Use in the dissipative step.}  The force updates the momenta at
@@ -1232,6 +1230,15 @@ and the bracket is
 \stp
 This is \Eq{trsplit} again, now at any velocity, and \Eq{zetaeff} follows as at
 rest.
+
+\paragraph{Beyond linear fields.}  One could instead keep $d$ in $P$ and in the
+subtracted dilation, and put the shear of the unresolved directions into the
+coefficient of $\theta^2$.  The two choices give the same $K$ for \emph{any}
+field, not only a linear one.  By \Eq{split2d}, $K$ is the continuum
+dissipative function on the fitted gradient plus the residual.  The residual
+does not depend on what linear part is subtracted, and the resolved parts agree
+by \Eq{trsplit}.  This requires the corrected weights; on particles where the
+correction falls back, the two differ slightly.
 
 \paragraph{One dimension.}  For $d_s=1$ the traceless strain of the simulation
 vanishes, so there is no shear term, and
