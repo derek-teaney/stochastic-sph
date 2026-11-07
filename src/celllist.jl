@@ -294,8 +294,10 @@ end
 # (Shared by dissipative_force! and particle_sweep!.)
 # Requires up-to-date dotx, Teff, S_smooth (from smooth_to_particles! +
 # update_thermodynamics! + update_velocities!).
+# Optional bv: strain of a given b-field (default b = ẋ/Teff from the particles).
 function compute_strain(particles::Vector{Particle}, params::SimParams,
-                        cl::CellList2D)
+                        cl::CellList2D,
+                        bv::AbstractVector = [p.dotx / p.Teff for p in particles])
     N   = length(particles)
     ncx = cl.ncx;  ncy = cl.ncy
     h      = params.h
@@ -304,7 +306,7 @@ function compute_strain(particles::Vector{Particle}, params::SimParams,
     ε = Vector{SMatrix{2,2,Float64,4}}(undef, N)
     for a in 1:N
         ε_acc = zero(SMatrix{2,2,Float64})
-        β_a   = particles[a].dotx / particles[a].Teff
+        β_a   = bv[a]
         S_a   = particles[a].S_smooth
         ix, iy = cell_index(particles[a].x, cl)
         for dx in -1:1, dy in neighbor_range(ncy)
@@ -316,7 +318,7 @@ function compute_strain(particles::Vector{Particle}, params::SimParams,
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2h && continue
                 grad  = wendland_c2_grad(r_vec, r_mag, h, kernel)
-                Δβ    = particles[b].dotx / particles[b].Teff - β_a
+                Δβ    = bv[b] - β_a
                 # outer product: (grad * Δβ')[j,i] = D_j * Δβ_i  →  ε_{ji}
                 ε_acc += particles[b].s * (grad * Δβ')
             end
@@ -326,12 +328,28 @@ function compute_strain(particles::Vector{Particle}, params::SimParams,
     return ε
 end
 
+# Viscous force f = −∂K/∂b (b = ẋ/T), written into dotm.  The discretization of the
+# dissipative function K is chosen by params.dissipation:
+#   :two_level  two-level SPH strain form (firstrun.tex eq. twolevel)
+#   :bond       single-level bond form with mean-field rotation/dilation removed
+#               (firstrun.tex Sect. "A single-level bond form ...")
 # Requires up-to-date dotx, Teff, S_smooth (from smooth_to_particles! +
 # update_thermodynamics! + update_velocities!).
 function dissipative_force!(dotm::Vector{SVector{2,Float64}},
                              particles::Vector{Particle},
                              params::SimParams, cl::CellList2D,
                              eos::AbstractEOS)
+    if params.dissipation === :bond
+        bond_dissipative_force!(dotm, particles, params, cl, eos)
+    else
+        two_level_dissipative_force!(dotm, particles, params, cl, eos)
+    end
+end
+
+function two_level_dissipative_force!(dotm::Vector{SVector{2,Float64}},
+                                      particles::Vector{Particle},
+                                      params::SimParams, cl::CellList2D,
+                                      eos::AbstractEOS)
     N   = length(particles)
     ncx = cl.ncx;  ncy = cl.ncy
     h      = params.h
@@ -370,6 +388,220 @@ function dissipative_force!(dotm::Vector{SVector{2,Float64}},
             end
         end
     end
+end
+
+# ── Single-level bond dissipation, comoving (Lorentz-covariant) form ───────────
+#
+# Density-frame dissipative function (theory.tex §II.D), exact identity:
+#   ½ T κ^{ijmn} S_ij S_mn = Tη [ tr(ℓ S̊ ℓ S̊) + (d−2) λ²/d² ] + ½ T ζ λ² ,
+#   ℓ^{ij} = δ^{ij} − v^i v^j            (comoving metric)
+#   P_ij   = −cs² u_i u_j + Δ_ij/d        (frame-invariant scalar projector)
+#   λ = ℓ:S / ⟨Pℓ⟩ ,  ⟨Pℓ⟩ = 1 − cs² v² ,  S̊ = S − λ P   (ℓ-traceless shear part)
+# Bond discretization (docs/bondkappa.tex):
+#   K = ½ Σ_a Σ_{b≠a} α_a V_a V_b ω(ρ_ab) u_ab·ℓ_a·u_ab  +  ½ Σ_a V_a T_a c_θ λ_a²
+#   u_ab = Δb_ab − (Ω_a + λ_a P_a) r_ab      r_ab = x_b − x_a,  Δb_ab = b_b − b_a
+#   ρ_ab = √(r·ℓ_a⁻¹·r)                       rest-frame bond length
+# Mean-field pieces from the bond fit ε_a = (Y_a M_a⁻¹)ᵀ (ε[p,q] = ∂_p b_q), the
+# least-squares gradient with the same weights as the bonds: rotation
+# Ω = antisym, λ_a = ℓ_a:ε_a/⟨Pℓ⟩.  For linear fields u = S̊ᵀr, and the ρ-weighted
+# bond moment M_a = Σ_b V_b ω(ρ) r rᵀ ≈ n_a ℓ_a, so the bond sum → n_a tr(ℓ S̊ ℓ S̊).
+#   α_a = 2 T_a η_a / n_a ,  c_θ = 2η(d−2)/d² + ζ .  The bond weights are
+#   moment-corrected (bond_weights_comoving) so that M_a = n_a ℓ_a exactly; then the
+#   bond sum is exact for linear fields on any particle arrangement.
+# At v = 0 this is the isotropic bond form (ℓ = δ, λP = θ/d δ).
+# 1D simulation: every bond is longitudinal; plain bond term with
+#   α_a = T κ^{xxxx}(v_a) / n_a ,  n_a = Σ_b V_b ω(ρ) r²,  no mean-field terms.
+# u vanishes for rigid rotation (when ε is exact for linear fields) ⇒ angular
+# momentum conserved; Σ forces = 0 exactly.  Bond weight ψ(ρ) = −W′(ρ; h_ψ)/ρ.
+# Bond weight ψ(ρ) = −W′(ρ; h_ψ)/ρ ≥ 0: the SPH (Wendland C2) kernel with its own
+# smoothing length h_ψ = params.bond_h, support ρ < 2h_ψ.  Finite at ρ → 0.  Its
+# normalization is irrelevant (α_a divides by the bond moment n_a).
+bond_weight(ρ::Float64, hψ::Float64, kernel::AbstractKernel) =
+    (q = ρ / hψ; q < 2.0 ? (1 - q / 2)^3 / hψ^2 : 0.0)
+
+# comoving metric ℓ = δ − v vᵀ, its inverse δ + γ² v vᵀ, and the scalar projector
+# P (2×2 block) and ⟨Pℓ⟩ for physical dimension d.
+function comoving_structures(v::SVector{2,Float64}, cs2v::Float64, d::Int)
+    vv  = v * v'
+    γ2  = 1 / (1 - dot(v, v))
+    ℓ   = SMatrix{2,2,Float64}(I) - vv
+    ℓi  = SMatrix{2,2,Float64}(I) + γ2 * vv
+    P   = -cs2v * γ2 * vv + (SMatrix{2,2,Float64}(I) + γ2 * vv) / d
+    Pℓ  = 1 - cs2v * dot(v, v)
+    return ℓ, ℓi, P, Pℓ
+end
+
+# Moment-corrected comoving bond weights for one particle.  Returns (ω_b, n_a) with
+#   Σ_b V_b ω_b r_b r_bᵀ = n_a ℓ   exactly,   ω_b = ω(ρ_b) (1 + r_bᵀ Λ r_b),  ℓ:Λ = 0.
+# Falls back to Λ = 0 (n_a = ½ tr(ℓ⁻¹ M)) if a corrected weight would be negative.
+function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ, kernel)
+    ω0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ, kernel) for (b, r, rr) in nb]
+    Vb = [particles[b].s / particles[b].S_smooth for (b, r, rr) in nb]
+    # unknowns z = (Λxx, Λxy, Λyy, n):  M2 + L(Λ) − n ℓ = 0  (3 eqs),  ℓ:Λ = 0
+    A = zeros(4, 4);  rhs = zeros(4)
+    for (k, (b, r, rr)) in enumerate(nb)
+        c = Vb[k] * ω0[k];  c == 0 && continue
+        x, y = r[1], r[2]
+        q = (x^2, 2x*y, y^2)                      # ∂(rᵀΛr)/∂(Λxx, Λxy, Λyy)
+        e = (x^2, x*y, y^2)                       # components (xx, xy, yy) of r rᵀ
+        for i in 1:3
+            rhs[i] -= c * e[i]
+            for j in 1:3
+                A[i, j] += c * e[i] * q[j]
+            end
+        end
+    end
+    A[1, 4] = -ℓ[1,1];  A[2, 4] = -ℓ[1,2];  A[3, 4] = -ℓ[2,2]
+    A[4, 1] = ℓ[1,1];   A[4, 2] = 2ℓ[1,2];  A[4, 3] = ℓ[2,2]
+    z = A \ rhs
+    Λ = SMatrix{2,2,Float64}(z[1], z[2], z[2], z[3])
+    ω = [ω0[k] * (1 + dot(r, Λ * r)) for (k, (b, r, rr)) in enumerate(nb)]
+    if all(>=(0), ω) && isfinite(z[4]) && z[4] > 0
+        return ω, z[4]
+    end
+    M = sum((Vb[k] * ω0[k]) * (r * r') for (k, (b, r, rr)) in enumerate(nb))
+    return ω0, tr(ℓi * M) / 2
+end
+
+function bond_weights_1d(nb, particles, ℓi, hψ, kernel)
+    ω0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ, kernel) for (b, r, rr) in nb]
+    n  = sum((ω0[k] * particles[b].s / particles[b].S_smooth) * r[1]^2 for (k, (b, r, rr)) in enumerate(nb); init=0.0)
+    return ω0, n
+end
+
+# Optional bv: force for a given b-field (default b = ẋ/Teff); used by the tests.
+# bond_dissipation(...) returns K itself (same arguments).  Kvec, if given, receives
+# each particle's share of K (its bonds plus its c_θ term).
+function bond_dissipative_force!(dotm::Vector{SVector{2,Float64}},
+                                 particles::Vector{Particle},
+                                 params::SimParams, cl::CellList2D,
+                                 eos::AbstractEOS,
+                                 bv::AbstractVector = [pa.dotx / pa.Teff for pa in particles])
+    return _bond_dissipation!(dotm, particles, params, cl, eos, bv, nothing)
+end
+
+bond_dissipation(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                 eos::AbstractEOS, bv::AbstractVector = [pa.dotx / pa.Teff for pa in particles];
+                 Kvec = nothing) =
+    _bond_dissipation!(nothing, particles, params, cl, eos, bv, Kvec)
+
+# Shared kernel: returns K; if dotm !== nothing also writes f = −∂K/∂b into it.
+function _bond_dissipation!(dotm, particles::Vector{Particle},
+                            params::SimParams, cl::CellList2D,
+                            eos::AbstractEOS, bv::AbstractVector, Kvec)
+    N      = length(particles)
+    ncx    = cl.ncx;  ncy = cl.ncy
+    h      = params.h
+    L      = params.L
+    kernel = params.kernel
+    hψ     = params.bond_h
+    d      = params.d
+    cs2v   = cs2(eos)
+    oneD   = kernel isa WendlandC2_1D
+
+    g  = zeros(SVector{2,Float64}, N)                     # ∂K/∂b
+    K  = 0.0
+    Kvec === nothing || fill!(Kvec, 0.0)
+
+    nb = Tuple{Int,SVector{2,Float64},Float64}[]          # (b, r_ab, |r_ab|), r < 2h
+    for a in 1:N
+        pa = particles[a]
+        empty!(nb)
+        ix, iy = cell_index(pa.x, cl)
+        for dx in -1:1, dy in neighbor_range(ncy)
+            jx = mod(ix + dx - 1, ncx) + 1
+            jy = mod(iy + dy - 1, ncy) + 1
+            for b in particles_in_cell(cl, jx, jy)
+                b == a && continue
+                r_vec = minimum_image(particles[b].x - pa.x, L)
+                r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
+                r_mag < 2h && push!(nb, (b, r_vec, r_mag))
+            end
+        end
+
+        Va   = pa.s / pa.S_smooth
+        Ta   = pa.T * pa.γ
+        sr   = srel(eos, pa.e)
+        η    = eta_by_s(eos) * sr
+        ζ    = zeta_by_s(eos) * sr
+        va   = pa.v_over_S * pa.S_smooth
+        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, d)
+
+        # bond weights ω_b = ω(ρ_b) (1 + r_bᵀ Λ_a r_b), with Λ_a chosen so that the
+        # weighted bond moment is exactly comoving:  Σ_b V_b ω_b r rᵀ = n_a ℓ_a
+        ωs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ, kernel) :
+                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ, kernel)
+        n_a > 0 || continue
+
+        εa = zero(SMatrix{2,2,Float64});  Mi = zero(SMatrix{2,2,Float64});  λ = 0.0
+        if oneD
+            # T κ^{xxxx}(v): the closed form with S = e_x e_x
+            λx   = ℓ[1,1] / Pℓ
+            Sx   = SMatrix{2,2,Float64}(1.0, 0.0, 0.0, 0.0) - λx * P
+            Tκxx = Ta * (2η * (tr(ℓ * Sx * ℓ * Sx) + (d - 2) * λx^2 / d^2) + ζ * λx^2)
+            α    = Tκxx / n_a
+            Q    = zero(SMatrix{2,2,Float64})
+            ℓm   = SMatrix{2,2,Float64}(1.0, 0.0, 0.0, 0.0)   # 1D: only the x component
+        else
+            # Mean field: the bond-weighted least-squares fit of a linear field,
+            #   G_a = argmin_G Σ_b c_b |Δb_ab − G r_ab|² = Y_a M_a⁻¹,  c_b = V_b ω_b,
+            #   Y_a = Σ_b c_b Δb rᵀ,  M_a = Σ_b c_b r rᵀ  (= n_a ℓ_a after the Λ correction).
+            # Exact for linear fields on any arrangement; with the same weights as the
+            # bonds, the fitted rotation minimizes K (torque-free bond forces) and the
+            # split K = continuum K(G_a) + residual is exact (docs/onelevel1d.tex, App. A).
+            # Code convention: εa[p,q] = ∂_p b_q = G_aᵀ.
+            Mfit = zero(SMatrix{2,2,Float64});  Yfit = zero(SMatrix{2,2,Float64})
+            for (k, (b, r, rr)) in enumerate(nb)
+                cb = ωs[k] * particles[b].s / particles[b].S_smooth
+                Mfit += cb * (r * r')
+                Yfit += cb * ((bv[b] - bv[a]) * r')
+            end
+            Mi   = inv(Mfit)
+            εa   = (Yfit * Mi)'
+            α    = 2 * Ta * η / n_a
+            λ    = sum(ℓ .* εa) / Pℓ
+            Q    = (εa' - εa) / 2 + λ * P                         # u = Δb − Q r
+            ℓm   = ℓ
+        end
+
+        # bond terms: ∂K/∂u_ab = w ℓ u_ab,  w = α V_a V_b ω(ρ)
+        Y  = zero(SMatrix{2,2,Float64})                    # Σ_b (w ℓ u) ⊗ r
+        Ka = 0.0
+        for (k, (b, r, rr)) in enumerate(nb)
+            ω = ωs[k];  ω == 0 && continue
+            w = α * Va * (particles[b].s / particles[b].S_smooth) * ω
+            u = (bv[b] - bv[a]) - Q * r
+            z = w * (ℓm * u)
+            Ka   += 0.5 * dot(u, z)
+            g[b] += z
+            g[a] -= z
+            Y    += z * r'
+        end
+        if !oneD
+            cθ  = 2η * (d - 2) / d^2 + ζ
+            λa  = λ
+            Ka += 0.5 * Va * Ta * cθ * λa^2
+            # ∂K/∂ε_a  (ε[p,q] = ∂_p b_q):  E = antisym(Y)  − (Y:P) ℓ/⟨Pℓ⟩ + V T c_θ λ ℓ/⟨Pℓ⟩
+            E = (Y - Y') / 2 + ((Va * Ta * cθ * λa - sum(Y .* P)) / Pℓ) * ℓ
+            # ε_a[p,q] = Σ_c c_c (M⁻¹ r_c)_p (b_c − b_a)_q   ⇒   ∂K/∂b_c += c_c Eᵀ M⁻¹ r_c
+            Dsum = zero(SVector{2,Float64})
+            for (k, (c, r, rr)) in enumerate(nb)
+                t = (ωs[k] * particles[c].s / particles[c].S_smooth) * (E' * (Mi * r))
+                g[c] += t
+                Dsum += t
+            end
+            g[a] -= Dsum
+        end
+        K += Ka
+        Kvec === nothing || (Kvec[a] = Ka)
+    end
+
+    if dotm !== nothing
+        for a in 1:N
+            dotm[a] = -g[a]
+        end
+    end
+    return K
 end
 
 # One dissipative half/full step: smooth → EOS → viscous force → update (m, s).
