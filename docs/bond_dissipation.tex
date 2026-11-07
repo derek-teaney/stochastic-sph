@@ -652,9 +652,11 @@ E_a=\frac{\partial K}{\partial G_a}=V_a\Big(T_a\zeta_a\,\theta_a+\frac{\tr\Pi_a}
 The first term of $E_a$ is from the bulk term of $K$.  The second is from
 the dilation subtracted in every bond, and involves the stress \Eq{virial2d}.  From \Eq{Ga}, the derivative of the fit is
 \st
-\frac{\partial G_{b,ij}}{\partial\bbeta_{a,k}}=\delta_{ik}\,w_{ba}\,r^j_{ba}\quad(b\neq a),\qquad
-\frac{\partial G_{a,ij}}{\partial\bbeta_{a,k}}=-\delta_{ik}\sum_{b\neq a}w_{ab}\,r^j_{ab}.
+\frac{\partial G_{b,ij}}{\partial\beta_{a,k}}=\delta_i{}^k\,w_{ba}\,r_{ba\,j}\quad(b\neq a),\qquad
+\frac{\partial G_{a,ij}}{\partial\beta_{a,k}}=-\delta_i{}^k\sum_{b\neq a}w_{ab}\,r_{ab\,j},
 \stp
+where $G_{ij}=\nabla_j\beta_i$ has two lower indices, and the index of the bond
+vector is lowered with the metric, $r_{ab\,j}=\delta_{jl}\,r^l_{ab}$ at rest.
 Thus each neighbour of $a$ (for instance particle $b$) exerts a force
 \st
 \bm F^{\rm MF}_a=\sum_{b\neq a}\bm f^{\rm MF}_{ab},\qquad
