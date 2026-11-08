@@ -256,7 +256,9 @@ let
     Sm = (G + G') / 2
     errs = Float64[]
     for i in inner
-        κ  = kappa_tensor(ps[i], eosb, Kappa3D())
+        # the bonds use the comoving metric at ẋ_a (pa.dotx); evaluate κ(v) there too
+        q = deepcopy(ps[i]);  q.v_over_S = ps[i].dotx / ps[i].S_smooth
+        κ  = kappa_tensor(q, eosb, Kappa3D())
         Ke = 0.5 * (ps[i].s / ps[i].S_smooth) *
              sum(κ[a,b,c,e] * Sm[a,b] * Sm[c,e] for a in 1:2, b in 1:2, c in 1:2, e in 1:2)
         push!(errs, abs(Kv[i] - Ke) / Ke)

@@ -207,7 +207,7 @@ function minimum_image(r::SVector{2,Float64}, L::SVector{2,Float64})
 end
 
 # Given the entropy density S = s_rel γ and the momentum density M = (e+p) γ² v = w γ u
-# (the Landau T^{0i}; sph2.tex §II.4), find the rest-frame energy density e.
+# (the density-frame T^{0i}; sph2.tex §II.4), find the rest-frame energy density e.
 # With w = e + p and G ≡ w γ:  M = G u and γ² = 1 + u²  ⇒  G⁴ − w² G² − w² M² = 0, so
 #   G(w, M) = √[(w² + √(w⁴ + 4 w² M²))/2],   γ = G/w,   u = M/G,   v = u/γ = M w/G².
 # The residual is f(e) = G/T_rel − S.

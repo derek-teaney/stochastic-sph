@@ -160,7 +160,7 @@ end
 # mode=:ideal  → acoustic CFL only: dt = CFL * h / cs
 # mode=:viscous → min(acoustic, diffusive) where diffusive uses minimum T_rel
 #   T0=nothing  : scan particles (ignoring those with s < s_thresh * s_mean)
-#   T0=<value>  : use fixed temperature (uniform background, tests)
+#   T0=<value>  : use a fixed rest-frame temperature T_rel (uniform background, tests)
 
 function compute_dt(particles, params, eos;
                     mode     = :viscous,
@@ -178,21 +178,21 @@ function compute_dt(particles, params, eos;
     visc == 0.0 && return dt_acoustic
 
     if T0 !== nothing
-        T_eff = T0
+        Trel_min = T0
     else
         s_mean = sum(pa.s for pa in particles) / length(particles)
         s_cut  = s_thresh * s_mean
-        T_eff  = minimum(pa.T * pa.γ for pa in particles if pa.s > s_cut)
+        Trel_min = minimum(pa.T * pa.γ for pa in particles if pa.s > s_cut)   # T_rel = γ T
     end
 
-    Γ_s          = visc / T_eff
+    Γ_s          = visc / Trel_min
     dt_diffusive = CFL * params.h^2 / Γ_s
     dt = min(dt_acoustic, dt_diffusive)
     if params.dissipation === :changerep
         # The particle representation damps the shortest modes at up to Γ_max
         # (changerep.tex, "The time step").  generic_step! applies two viscous half
         # steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.
-        dt = min(dt, 2 / changerep_rate_bound(params, eos, T_eff))
+        dt = min(dt, 2 / changerep_rate_bound(params, eos, Trel_min))
     end
     return dt
 end
@@ -203,15 +203,15 @@ end
 #   Σ_b w_ab ≤ d_s ∫ψ / ∫ψ ρ² = c_d / h_ψ²,   c_1 = 15/4,  c_2 = 7/2
 # (the continuum integral includes ρ → 0, which the bond sum omits, so it bounds the
 # lattice sum).  κ_b is the largest viscosity carried by the bonds: κ(v=0) = 2η(d−1)/d + ζ
-# in 1D, 2η + ζ_eff in 2D.  κ_b/w = (κ_b/s)/T.  In 1D at h/a = 4 the bound is about twice
+# in 1D, 2η + ζ_eff in 2D.  κ_b/w = (κ_b/s)/T_rel.  In 1D at h/a = 4 the bound is about twice
 # the measured rate of the zigzag mode.
-function changerep_rate_bound(params::SimParams, eos::AbstractEOS, T_eff::Float64)
+function changerep_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     ds = params.kernel isa WendlandC2_1D ? 1 : 2
     d  = params.d
     η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
     κb_s = ds == 1 ? 2η_s * (d - 1) / d + ζ_s : 2η_s + ζ_s + 2η_s * (1 / 2 - 1 / d)
     c_d  = ds == 1 ? 15 / 4 : 7 / 2
-    return 4 * (κb_s / T_eff) * c_d / params.bond_h^2
+    return 4 * (κb_s / Trel) * c_d / params.bond_h^2
 end
 
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
@@ -554,7 +554,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         sr   = srel(eos, pa.e)
         η    = eta_by_s(eos) * sr
         ζ    = zeta_by_s(eos) * sr
-        va   = pa.v_over_S * pa.S_smooth
+        va   = pa.dotx                 # coarse-grained particle velocity ẋ_a (update_velocities!)
         # 1D: P with the physical d (it enters only κ^{xxxx}); 2D: P with d_s = 2
         ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, oneD ? d : 2)
 

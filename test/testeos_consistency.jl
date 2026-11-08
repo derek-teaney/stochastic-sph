@@ -7,13 +7,13 @@
 #     S = s γ,  T^{00} = (e+p)γ² − p,  T^{0i} = (e+p)γ² v.
 # Checks:
 #   1  round trip: feed (S, M) to solve_eos! for two candidate momentum densities,
-#        Landau  M = (e+p)γ² v = w γ u   and   M = (e+p) u = w u,
+#        density frame  M = T^{0i} = (e+p)γ² v = w γ u   and   M = (e+p) u = w u,
 #      and see which one returns the input e and v, and ε = H_over_S·S = T^{00}.
 #   2  conjugacy: with h(S, M) = S·H_over_S, compare ∂h/∂M|_S with v and ∂h/∂S|_M with
 #      (e+p)/S, by finite differences on one branch (warm start).
 #   3  Hamiltonian velocity: on a moving particle configuration, compare ∂H/∂m_a with
 #      ẋ_a (update_velocities!) and ∂H/∂s_a with Teff_a, by finite differences.
-# Fails (exit 1) if the Landau round trip of 1 is off by more than 1e-10, or 2 or 3
+# Fails (exit 1) if the density-frame round trip of 1 is off by more than 1e-10, or 2 or 3
 # disagree beyond 1e-5 relative.
 #
 # Run:  julia --project test/testeos_consistency.jl
@@ -33,7 +33,7 @@ ok = true
 
 # ── 1  round trip from a known state ──────────────────────────────────────────
 println("1  Round trip from a known rest-frame state (e, v)")
-@printf("   %-6s %-6s | %-34s | %-34s\n", "e", "|v|", "input M = (e+p)γ²v  (Landau T^{0i})", "input M = (e+p)u")
+@printf("   %-6s %-6s | %-34s | %-34s\n", "e", "|v|", "input M = (e+p)γ²v  (T^{0i})", "input M = (e+p)u")
 for (e, vx, vy) in ((1.0, 0.1, 0.0), (1.0, 0.3, 0.2), (2.0, 0.6, 0.0), (0.5, 0.0, 0.8))
     v = SVector(vx, vy);  γ = 1 / sqrt(1 - dot(v, v));  w = e + pressure(eos, e)
     S = srel(eos, e) * γ;  ε = w * γ^2 - pressure(eos, e)

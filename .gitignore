@@ -27,3 +27,6 @@ docs/private/
 examples/compare/*
 !examples/compare/sidebyside.py
 examples/gaussian_cmp/
+
+# serialized run data from examples
+*.jls

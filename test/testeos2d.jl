@@ -9,7 +9,7 @@ function make_particle(; S_smooth, Mx_smooth=0.0, My_smooth=0.0)
     return pa
 end
 
-# Residual S(e, M) − S_in, with the Landau momentum M = (e+p)γ² v = w γ u.
+# Residual S(e, M) − S_in, with the density-frame momentum M = T^{0i} = (e+p)γ² v = w γ u.
 function residual(pa::Particle, eos::AbstractEOS)
     e = pa.e
     w = e + pressure(eos, e)
@@ -28,7 +28,7 @@ const eos = ConformalEOS(cs2_val=cs2_val, T_scale=Tscale)
 
 # ── Helper: momentum density of a fluid moving at speed v ─────────────────────
 # Test states are specified physically: entropy density S and speed v (0 ≤ v < 1).
-# The rest-frame e solves S = s_rel(e) γ (bisection), and the Landau momentum density
+# The rest-frame e solves S = s_rel(e) γ (bisection), and the momentum density
 # is M = (e+p) γ² v.  (A root of solve_eos! exists for every M with this momentum;
 # the earlier "causality bound" came from taking u = M/w.)
 function momentum_at(S::Float64, v::Float64, θ::Float64)

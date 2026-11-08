@@ -9,7 +9,7 @@ function make_particle(; S_smooth, Mx_smooth=0.0, My_smooth=0.0)
     return pa
 end
 
-# Residual S(e, M) − S_in, with the Landau momentum M = (e+p)γ² v = w γ u.
+# Residual S(e, M) − S_in, with the density-frame momentum M = T^{0i} = (e+p)γ² v = w γ u.
 function residual(pa::Particle, eos::AbstractEOS)
     e = pa.e
     w = e + pressure(eos, e)
@@ -88,7 +88,7 @@ println("PASS")
 
 # ── Test 4: solve_eos! residual check — relativistic (M ≠ 0) ──────────────────
 #
-# With the Landau momentum M = wγu, f(e) = wγ/T_rel − S rises from 0 to ∞ (conformal
+# With the momentum M = T^{0i} = wγu, f(e) = wγ/T_rel − S rises from 0 to ∞ (conformal
 # EOS), so there is a root for every M.
 
 println("\n", "=" ^ 55)

@@ -745,7 +745,10 @@ $\F/S=(h-TS)/S^2$.  The last step uses the Euler relation
 \st
 h+p=TS+v\,M ,
 \stp
-which holds for the Landau momentum: $TS+vM=w+w\gamma^2v^2=w\gamma^2=h+p$.
+which holds for the density-frame momentum $M=T^{0i}$: $TS+vM=w+w\gamma^2v^2=w\gamma^2=h+p$.
+In the density frame $T^{0i}$ has no dissipative correction, so it always holds;
+in the Landau frame $T^{0i}=(e+p)\gamma^2v^i+\Pi^{0i}$, and the relation would
+hold only for the thermodynamic part.
 (\texttt{test/testeos\_consistency.jl} checks these relations numerically.)
 
 \section{Dissipative Function}

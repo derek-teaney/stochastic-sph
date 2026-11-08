@@ -44,6 +44,7 @@ function dissipative_step_changerep!(particles::Vector{Particle}, params::SimPar
 
     smooth_to_particles!(particles, params, cl)     # S_a, hence V_a = s_a/S_a
     update_thermodynamics!(particles, eos)          # warm start for the pointwise solves
+    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
     pointwise_beta!(β, particles, eos)
     K = bond_dissipation(particles, params, cl, eos, β)
     bond_dissipative_force!(dotm, particles, params, cl, eos, β)
@@ -65,7 +66,7 @@ end
 # (held fixed), and entropy S_a(e_a, m_a) = V_a σ(e_a/V_a, m_a/V_a).  The viscous step
 # changes m_a; the back map sets s_a' = S_a(e_a, m_a').  docs/changerep.tex.
 
-# State from the energy density ε = wγ² − p and the Landau momentum density
+# State from the energy density ε = wγ² − p and the density-frame momentum density
 # M = wγ²v = (ε + p) v, as in solve_eos!.  The rest-frame energy density is
 # e = ε − M·v = ε − |M|²/(ε + p(e)) (a fixed point; a contraction for |v| < 1).
 # Returns (S, v, T) with S = w γ / T_rel the entropy density and T = (e+p)/S.
@@ -106,6 +107,7 @@ function dissipative_step_changerep_exact!(particles::Vector{Particle}, params::
 
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
+    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
     V = [pa.s / pa.S_smooth for pa in particles]               # held fixed
     e = [particle_energy(pa, eos) for pa in particles]         # held fixed
     pointwise_beta!(β, particles, eos)
@@ -185,6 +187,7 @@ function dissipative_step_changerep_grad!(particles::Vector{Particle}, params::S
 
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
+    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
     V     = [pa.s / pa.S_smooth for pa in particles]
     stars = [kernel_star(a, particles, params, cl) for a in 1:N]
     C     = [inverse_susceptibility(pa, eos) for pa in particles]

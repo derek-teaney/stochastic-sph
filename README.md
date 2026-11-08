@@ -26,6 +26,10 @@ The physics and the algorithms are described in [`docs/`](docs):
 - `docs/changerep.pdf` — the viscous step in a particle representation: each
   particle's own energy and thermodynamic force, the gradient-corrected conversion
   map, and its energy bookkeeping and convergence.
+- `docs/stochrep.pdf` — the stochastic viscous step in the particle
+  representation: a random stress per particle distributed through its faces,
+  random residual tractions per bond, a consensus vote of the bonds, a
+  checkerboard sweep; frozen-lattice equilibration tests at rest and moving.
 - `docs/particle_metrics.pdf` — gradients and quadratic forms on general particle
   arrangements: the least-squares fit, the bond moment, and the moment-corrected
   weights used by the bond form.
@@ -39,6 +43,7 @@ src/        library code (include in order: sph, celllist, setup, stochastic)
   sph.jl          SimParams, Particle, equation of state + Newton solve, kernels, κ tensor
   celllist.jl     cell list, smoothing, leapfrog, dissipative forces (two-level and bond), generic_step!
   changerep.jl    viscous step in the particle representation (included by celllist.jl)
+  stochrep.jl     stochastic step in the particle representation (include after rng.jl)
   setup.jl        lattices (square / hex / 1D), initial conditions, plotting helpers
   stochastic.jl   noise draw, particle_sweep!, apply_sweep!
   rng.jl          per-particle random streams
@@ -122,7 +127,11 @@ In progress:
 - Uniform-background equilibration against the fluctuation–dissipation
   prediction (`examples/teststochastic_run.jl`).
 - Ensemble shear-wave and 2D sound-wave decay with noise.
-- Noise for the bond and particle-representation viscous steps.
+- Stochastic step in the particle representation (`src/stochrep.jl`,
+  `docs/stochrep.pdf`): equilibrates a frozen lattice to the exact $e^{S}$, at
+  rest and moving, in 1D and 2D (`examples/stochrep_thermalize.jl`,
+  `stochrep_smallk.jl`, `stochrep_moving.jl`). Not yet coupled to the
+  Hamiltonian step.
 
 ## License
 
