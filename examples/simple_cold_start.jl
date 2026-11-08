@@ -18,6 +18,9 @@ include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
+# The stochastic sweep implements the noise of the two-level dissipative function
+# only, so this script uses :two_level (the default is :bond).
+ENV["SPH_DISSIPATION"] = "two_level"
 # ── Parameters (same as teststochastic_run.jl) ──────────────────────────────
 h       = 15.0                 # SPH smoothing length
 h_over_a = 2.55                # h / lattice spacing

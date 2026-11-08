@@ -658,10 +658,11 @@ across neighbouring pairs instead, after subtracting a mean-field rotation and
 dilation from each.  It has the same continuum limit, including the full
 $\kappa^{ijlm}(v)$ of a moving fluid, conserves momentum and angular momentum,
 and has no null mode.  It is derived in \texttt{bond\_dissipation.tex} and
-selected with \texttt{params.dissipation = :bond} (or
-\texttt{SPH\_DISSIPATION=bond}).  Its damping still levels off at the floor
-$\sim R^2$, which comes from $\bbeta$ and not from $K$.  The matching noise is
-not implemented yet.
+is the default, \texttt{params.dissipation = :bond}; the two-level form is
+selected with \texttt{:two\_level} (or \texttt{SPH\_DISSIPATION=two\_level}).  The
+damping of the bond form still levels off at the floor $\sim R^2$, which comes
+from $\bbeta$ and not from $K$.  Its matching noise is not implemented yet, so
+the stochastic sweep uses the two-level form.
 
 \textbf{No choice of $K$ alone can fix this}, because $K$ is a quadratic form in
 $\bbeta$ and $\bbeta$ carries $R^2$.  The particle-level momentum needs its own

@@ -16,6 +16,9 @@ include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
+# The stochastic sweep implements the noise of the two-level dissipative function
+# only, so this script uses :two_level (the default is :bond).
+ENV["SPH_DISSIPATION"] = "two_level"
 t_max     = 848.0                       # physical run time (= 200 steps at the base dt)
 dt_factors = (1.0, 0.5, 0.25, 0.125)    # dt = factor × CFL dt
 

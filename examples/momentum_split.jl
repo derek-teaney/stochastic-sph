@@ -24,6 +24,9 @@ include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
+# The stochastic sweep implements the noise of the two-level dissipative function
+# only, so this script uses :two_level (the default is :bond).
+ENV["SPH_DISSIPATION"] = "two_level"
 n_steps    = 800
 spec_steps = (25, 100, 400, 800)          # when to take a spectrum
 

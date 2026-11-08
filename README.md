@@ -63,19 +63,21 @@ julia --project examples/testsound.jl
 Two discretizations of the viscous dissipative function are available,
 selected by `params.dissipation`:
 
-- `:two_level` (default) — the SPH gradient of $\beta$ at each particle, squared
+- `:bond` (default) — the one-level bond form of `docs/bond_dissipation.pdf`.
+  It damps short wavelengths far more strongly and has no null mode.
+- `:two_level` — the SPH gradient of $\beta$ at each particle, squared
   (`docs/sph2.pdf`).
-- `:bond` — the one-level bond form of `docs/bond_dissipation.pdf`. It damps
-  short wavelengths far more strongly and has no null mode.
 
-Any script can be run with the bond form from the environment:
+Any script can be run with the two-level form from the environment:
 
 ```sh
-SPH_DISSIPATION=bond julia --project examples/testsound_viscous.jl
+SPH_DISSIPATION=two_level julia --project examples/testsound_viscous.jl
 ```
 
 The bond form is deterministic only for now: its noise is not implemented, and
-`particle_sweep!` stops with an error if `params.dissipation = :bond`.
+`particle_sweep!` stops with an error unless `params.dissipation = :two_level`.
+The stochastic scripts (`test/teststochastic.jl`, `examples/teststochastic_run.jl`,
+…) therefore select `:two_level` themselves.
 
 Scripts use plain `include`. To edit and re-run inside one REPL session, use
 [Revise](https://github.com/timholy/Revise.jl) from your global environment and

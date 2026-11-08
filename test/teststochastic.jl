@@ -8,6 +8,9 @@ include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
+# The stochastic sweep implements the noise of the two-level dissipative function
+# only, so this script uses :two_level (the default is :bond).
+ENV["SPH_DISSIPATION"] = "two_level"
 # ═════════════════════════════════════════════════════════════════════════════
 # Staged tests for the stochastic SPH sweep (per-particle Metropolis scheme).
 #   Step 0 — accumulator fields + apply_sweep!
