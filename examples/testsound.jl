@@ -131,4 +131,3 @@ fig_fc = plot_ic_sound_wave(particles, params; nx, ny, title = "Final Particles"
 savefig(joinpath(@__DIR__, "testsound_fc.png"), dpi=150)
 println("Saved testsound_fc.png")
 
-show()

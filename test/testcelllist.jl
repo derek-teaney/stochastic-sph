@@ -206,4 +206,3 @@ plot_cell_list(cl4, particles4;
                title_str = "Test 4B: four corners after wrap_positions!",
                filename  = joinpath(@__DIR__, "testcelllist4b.png"))
 
-show()

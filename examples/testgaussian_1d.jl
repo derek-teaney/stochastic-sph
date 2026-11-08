@@ -114,4 +114,3 @@ fig_final = plot_gaussian_1d(particles, params, cl;
 savefig(joinpath(@__DIR__, "testgaussian_1d_final.png"), dpi=150)
 println("Saved testgaussian_1d_final.png")
 
-show()

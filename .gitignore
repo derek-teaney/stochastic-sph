@@ -16,3 +16,14 @@
 *.toc
 *.synctex.gz
 *Notes.bib
+
+# figures used by the notes
+!docs/figs/*.png
+
+# personal notes, not committed
+docs/private/
+
+# comparison run outputs
+examples/compare/*
+!examples/compare/sidebyside.py
+examples/gaussian_cmp/

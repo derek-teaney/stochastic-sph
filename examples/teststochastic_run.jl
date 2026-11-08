@@ -9,6 +9,9 @@ include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
+# The stochastic sweep implements the noise of the two-level dissipative function
+# only, so this script uses :two_level (the default is :bond).
+ENV["SPH_DISSIPATION"] = "two_level"
 # ═════════════════════════════════════════════════════════════════════════════
 # Step 4: ideal symplectic step + one per-particle Metropolis sweep per step, on
 # a QUIESCENT uniform background.  2D conformal fluid (cs² = 1/2, Kappa2D).  No

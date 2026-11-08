@@ -9,7 +9,8 @@ to experiment.
 - `examples/`: physics runs (sound waves, shear waves, Gaussian pulse,
   stochastic background). These are the scripts to run and play with.
 - `test/`: checks that pass or fail.
-- `docs/`: the notes behind the code (`sph2.pdf`, `firstrun.pdf`).
+- `docs/`: the notes behind the code (`sph2.pdf`, `firstrun.pdf`,
+  `bond_dissipation.pdf`, `particle_metrics.pdf`).
 
 ## Setup (once)
 

@@ -19,12 +19,19 @@ mutable struct SimParams
     d       :: Int                 # physical dimension (2 or 3); drives cs²=1/d and kappa
     lattice :: Symbol              # :square or :hex
     kernel  :: AbstractKernel      # WendlandC2_2D() or WendlandC2_1D()
+    dissipation :: Symbol          # :bond (default) or :two_level — see dissipative_force!
+    bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
 end
 
+# dissipation: discretization of the dissipative function, :two_level or :bond.
+#   Default from the environment variable SPH_DISSIPATION (else :bond), so any
+#   script can be run with the two-level form:  SPH_DISSIPATION=two_level julia --project …
+#   The stochastic sweep (particle_sweep!) has noise only for :two_level.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
-function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2)
+function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
+                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "bond")), bond_h=nothing)
     a = h / ha_ratio
     if sim_dim == 1
         Nx      = round(Int, Lx_t / a)
@@ -51,11 +58,14 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     end
     L = SVector(Lx, Ly)
     dim_str = kernel isa WendlandC2_1D ? "1D" : "2D"
-    @printf("SimParams: Lx=%-6g  Ly=%-6g  a=%-8g  h=%-8g  N=%-6d  h/a=%.3g  vol=%.4g  lattice=%s  sim=%s\n",
-            Lx, Ly, a, h, N, h/a, vol, lattice, dim_str)
+    @printf("SimParams: Lx=%-6g  Ly=%-6g  a=%-8g  h=%-8g  N=%-6d  h/a=%.3g  vol=%.4g  lattice=%s  sim=%s  dissipation=%s\n",
+            Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
-    SimParams(L, a, h, N, vol, seed, d, lattice, kernel)
+    dissipation in (:two_level, :bond) || error("dissipation must be :two_level or :bond, got $dissipation")
+    hψ = bond_h === nothing ? Float64(h) : Float64(bond_h)
+    0 < hψ <= h || error("bond_h = $hψ must satisfy 0 < bond_h ≤ h (bond support 2·bond_h ≤ 2h stencil)")
+    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ)
 end
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.

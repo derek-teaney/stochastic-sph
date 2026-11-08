@@ -184,6 +184,9 @@ end
 function particle_sweep!(particles::Vector{Particle}, params::SimParams,
                          cl::CellList2D, eos::AbstractEOS,
                          dt::Float64, rngs::Vector{Xoshiro} = PHYS_RNG)
+    params.dissipation === :two_level ||
+        error("particle_sweep! implements the noise of the two-level dissipative function only; " *
+              "params.dissipation = :$(params.dissipation) has no matching noise yet")
     @assert length(rngs) == length(particles) "rng vector length $(length(rngs)) ≠ particle count $(length(particles)) — call seed_phys!(N, seed)"
     ncx  = cl.ncx;  ncy = cl.ncy
     h    = params.h
