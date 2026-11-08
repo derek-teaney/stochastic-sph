@@ -187,7 +187,31 @@ function compute_dt(particles, params, eos;
 
     Γ_s          = visc / T_eff
     dt_diffusive = CFL * params.h^2 / Γ_s
-    return min(dt_acoustic, dt_diffusive)
+    dt = min(dt_acoustic, dt_diffusive)
+    if params.dissipation === :changerep
+        # The particle representation damps the shortest modes at up to Γ_max
+        # (changerep.tex, "The time step").  generic_step! applies two viscous half
+        # steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.
+        dt = min(dt, 2 / changerep_rate_bound(params, eos, T_eff))
+    end
+    return dt
+end
+
+# Upper bound on the damping rate of the particle-representation viscous step.
+# Gershgorin on the bond coefficients: Γ_max ≤ 4 (κ_b/w) max_a Σ_b w_ab, and for the
+# Wendland bond weight ψ ∝ (1 − ρ/2h_ψ)³ in d_s dimensions
+#   Σ_b w_ab ≤ d_s ∫ψ / ∫ψ ρ² = c_d / h_ψ²,   c_1 = 15/4,  c_2 = 7/2
+# (the continuum integral includes ρ → 0, which the bond sum omits, so it bounds the
+# lattice sum).  κ_b is the largest viscosity carried by the bonds: κ(v=0) = 2η(d−1)/d + ζ
+# in 1D, 2η + ζ_eff in 2D.  κ_b/w = (κ_b/s)/T.  In 1D at h/a = 4 the bound is about twice
+# the measured rate of the zigzag mode.
+function changerep_rate_bound(params::SimParams, eos::AbstractEOS, T_eff::Float64)
+    ds = params.kernel isa WendlandC2_1D ? 1 : 2
+    d  = params.d
+    η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
+    κb_s = ds == 1 ? 2η_s * (d - 1) / d + ζ_s : 2η_s + ζ_s + 2η_s * (1 / 2 - 1 / d)
+    c_d  = ds == 1 ? 15 / 4 : 7 / 2
+    return 4 * (κb_s / T_eff) * c_d / params.bond_h^2
 end
 
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
@@ -333,6 +357,8 @@ end
 #   :two_level  two-level SPH strain form (sph2.tex)
 #   :bond       one-level bond form with mean-field rotation/dilation removed
 #               (bond_dissipation.tex)
+#   :changerep  the bond form evaluated on the particle force β_a (changerep.tex);
+#               the full viscous step is dissipative_step_changerep_grad!
 # Requires up-to-date dotx, Teff, S_smooth (from smooth_to_particles! +
 # update_thermodynamics! + update_velocities!).
 function dissipative_force!(dotm::Vector{SVector{2,Float64}},
@@ -341,6 +367,9 @@ function dissipative_force!(dotm::Vector{SVector{2,Float64}},
                              eos::AbstractEOS)
     if params.dissipation === :bond
         bond_dissipative_force!(dotm, particles, params, cl, eos)
+    elseif params.dissipation === :changerep
+        β = zeros(SVector{2,Float64}, length(particles))
+        bond_dissipative_force!(dotm, particles, params, cl, eos, pointwise_beta!(β, particles, eos))
     else
         two_level_dissipative_force!(dotm, particles, params, cl, eos)
     end
@@ -601,8 +630,17 @@ end
 
 # One dissipative half/full step: smooth → EOS → viscous force → update (m, s).
 # Positions are unchanged; entropy grows by Δs_a = −b_a · Δm_a ≥ 0.
+# For :changerep the shortest modes are damped at a rate of order (κ/w)/h²; compute_dt
+# bounds this rate (changerep_rate_bound) so that each viscous half step of
+# generic_step!, of length Δt/2, decays every mode monotonically.
 function dissipative_step!(particles::Vector{Particle}, params::SimParams,
                             cl::CellList2D, dt::Float64, eos::AbstractEOS)
+    if params.dissipation === :changerep
+        # no viscosity: nothing to do (the conversion maps would only round-trip s)
+        eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
+        dissipative_step_changerep_grad!(particles, params, cl, dt, eos)
+        return
+    end
     N    = length(particles)
     dotm = zeros(SVector{2,Float64}, N)
 
@@ -654,3 +692,6 @@ function smooth_to_grid(particles::Vector{Particle}, params::SimParams,
     end
     return S, xs, ys
 end
+
+# The viscous step in the particle representation (params.dissipation = :changerep).
+include(joinpath(@__DIR__, "changerep.jl"))

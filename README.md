@@ -23,6 +23,9 @@ The physics and the algorithms are described in [`docs/`](docs):
 - `docs/bond_dissipation.pdf` — the one-level (bond) dissipative function: bond
   differences of $\beta$ with a mean-field rotation and dilation removed, at
   rest and in a moving fluid, and how the code computes its force.
+- `docs/changerep.pdf` — the viscous step in a particle representation: each
+  particle's own energy and thermodynamic force, the gradient-corrected conversion
+  map, and its energy bookkeeping and convergence.
 - `docs/particle_metrics.pdf` — gradients and quadratic forms on general particle
   arrangements: the least-squares fit, the bond moment, and the moment-corrected
   weights used by the bond form.
@@ -35,6 +38,7 @@ These are working notes and will change.
 src/        library code (include in order: sph, celllist, setup, stochastic)
   sph.jl          SimParams, Particle, equation of state + Newton solve, kernels, κ tensor
   celllist.jl     cell list, smoothing, leapfrog, dissipative forces (two-level and bond), generic_step!
+  changerep.jl    viscous step in the particle representation (included by celllist.jl)
   setup.jl        lattices (square / hex / 1D), initial conditions, plotting helpers
   stochastic.jl   noise draw, particle_sweep!, apply_sweep!
   rng.jl          per-particle random streams
@@ -60,22 +64,32 @@ julia --project examples/testsound.jl
 
 ### Dissipative function
 
-Two discretizations of the viscous dissipative function are available,
-selected by `params.dissipation`:
+Three viscous steps are available, selected by `params.dissipation`:
 
-- `:bond` (default) — the one-level bond form of `docs/bond_dissipation.pdf`.
-  It damps short wavelengths far more strongly and has no null mode.
+- `:changerep` (default) — the bond form evaluated in the particle
+  representation, with the gradient-corrected conversion map
+  (`docs/changerep.pdf`). Each particle's own momentum sets its thermodynamic
+  force, so short wavelengths are damped without the $R^2$ suppression of the
+  smoothing, while the smoothed energy $H$ is conserved as well as with the
+  smoothed forms.
+- `:bond` — the one-level bond form on the smoothed $\beta$
+  (`docs/bond_dissipation.pdf`). It has no null mode.
 - `:two_level` — the SPH gradient of $\beta$ at each particle, squared
   (`docs/sph2.pdf`).
 
-Any script can be run with the two-level form from the environment:
+Any script can be run with another form from the environment:
 
 ```sh
 SPH_DISSIPATION=two_level julia --project examples/testsound_viscous.jl
 ```
 
-The bond form is deterministic only for now: its noise is not implemented, and
-`particle_sweep!` stops with an error unless `params.dissipation = :two_level`.
+With its stronger damping of short wavelengths, `:changerep` needs smaller time
+steps: `compute_dt(...; mode=:viscous)` bounds its fastest rate and shortens
+$\Delta t$ so that every mode decays monotonically in each viscous half step of
+`generic_step!` (0.67 of the previous viscous $\Delta t$ in 1D, 0.41 in 2D).
+
+The noise is implemented only for the two-level form: `particle_sweep!` stops
+with an error unless `params.dissipation = :two_level`.
 The stochastic scripts (`test/teststochastic.jl`, `examples/teststochastic_run.jl`,
 …) therefore select `:two_level` themselves.
 
@@ -95,6 +109,10 @@ Verified:
 - Bond dissipative function: force equals $-\partial K/\partial\beta$, exact for
   linear fields on jittered and moving lattices, no force from rigid rotations
   (`test/testdissipative.jl`).
+- Equation of state: thermodynamically consistent for a moving fluid
+  (`test/testeos_consistency.jl`).
+- Particle-representation viscous step: rates, conversion map, gradient
+  correction, conservation (`test/testchangerep.jl`).
 
 In progress:
 
@@ -104,7 +122,7 @@ In progress:
 - Uniform-background equilibration against the fluctuation–dissipation
   prediction (`examples/teststochastic_run.jl`).
 - Ensemble shear-wave and 2D sound-wave decay with noise.
-- Noise for the bond dissipative function.
+- Noise for the bond and particle-representation viscous steps.
 
 ## License
 
