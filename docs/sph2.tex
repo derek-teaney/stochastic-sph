@@ -731,14 +731,22 @@ and $dw/de=1+c_s^2$:
 The Newton update is $e \leftarrow e - f(e)/f'(e)$.
 
 \noindent{\bf Post-convergence expressions.}
-With $S \equiv S_{\rm in}$:
+With $S \equiv S_{\rm in}$, $w=e+p$ and $G=w\gamma$ from Step~1:
 \begin{align}
     p =& \; p(e) \, , \\
-    \frac{v}{S} =& \; \frac{v}{S} \, , \\
+    \frac{v}{S} =& \; \frac{M\,w}{G^2\,S} \, , \\
     \frac{\F}{S} =& \; \frac{v}{S}\frac{M}{S} - \frac{p}{S^2} \, , \\
     \E =& \; \frac{(e+p)\gamma^2 - p}{S} \, , \\
-    T =& \; \frac{e+p}{S} \, .
+    T =& \; \frac{e+p}{S} = \frac{T_{\rm rel}}{\gamma} \, .
 \end{align}
+These follow from $\dd\E=(v/S)\,\dd M-(\F/S)\,\dd S$ with $\E=h/S$ and
+$h=(e+p)\gamma^2-p$: $\partial h/\partial M|_S=v$ and $\partial h/\partial S|_M=T$, and
+$\F/S=(h-TS)/S^2$.  The last step uses the Euler relation
+\st
+h+p=TS+v\,M ,
+\stp
+which holds for the Landau momentum: $TS+vM=w+w\gamma^2v^2=w\gamma^2=h+p$.
+(\texttt{test/testeos\_consistency.jl} checks these relations numerically.)
 
 \section{Dissipative Function}
 
