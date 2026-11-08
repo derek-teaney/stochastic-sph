@@ -260,4 +260,3 @@ plot_final_viscous_sound_1d(particles, params, cl,
                              t_end, A, k, kx, khat, ωR, Γ_s;
                              nx, T_period)
 
-show()

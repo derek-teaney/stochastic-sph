@@ -66,7 +66,7 @@ axes2[2].legend(fontsize=8)
 
 ys, fs = plot_slice(particles_s, params_s, cl_s; field=p->p.S_smooth, dim=:y)
 axes2[3].plot(ys, fs, color="C0", label="S(y) sph")
-axes2[3].axhline(s0 + A, linestyle="--", label="peak s0+A", linewidth=1.5)
+axes2[3].axhline(analytic_stripe(L/2), linestyle="--", label="input s_func at x=L/2", linewidth=1.5)
 axes2[3].set_xlabel("y"); axes2[3].set_ylabel("S(y)"); axes2[3].set_title("y-slice  (should be flat)")
 axes2[3].legend(fontsize=8)
 
@@ -154,4 +154,3 @@ tight_layout()
 savefig(joinpath(@__DIR__, "testshearwave_Mcompare.png"), dpi=150)
 println("Saved testshearwave_Mcompare.png")
 
-show()

@@ -88,7 +88,6 @@ function plot_diffusion_ic(params, particles, cl, eos, k, M_amp)
     tight_layout()
     savefig(joinpath(@__DIR__, "testdiffuse.png"), dpi=150)
     println("Saved testdiffuse.png")
-    show()
 end
 
 # ── Time evolution ─────────────────────────────────────────────────────────────
@@ -153,7 +152,6 @@ function plot_diffusion_evolve(t_vals, amp_vals, γ_k, M_amp, params, eos)
     tight_layout()
     savefig(joinpath(@__DIR__, "testdiffuse_evolve.png"), dpi=150)
     println("Saved testdiffuse_evolve.png")
-    show()
 end
 
 function plot_diffusion_final(particles, params, cl, k, M_amp, t_end, γ_k)
@@ -175,7 +173,6 @@ function plot_diffusion_final(particles, params, cl, k, M_amp, t_end, γ_k)
     tight_layout()
     savefig(joinpath(@__DIR__, "testdiffuse_final.png"), dpi=150)
     println("Saved testdiffuse_final.png")
-    show()
 end
 
 # ── Run ───────────────────────────────────────────────────────────────────────

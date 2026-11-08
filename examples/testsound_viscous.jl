@@ -192,7 +192,6 @@ function plot_amplitude_decay(t_vals, amp_vals, Γ_s, k, params, η_by_s, ζ_by_
     tight_layout()
     savefig(joinpath(@__DIR__, "testsound_viscous_decay.png"), dpi=150)
     println("Saved testsound_viscous_decay.png")
-    show()
 end
 
 # ── Final spatial profile ───────────────────────────────────────────────────────
@@ -221,7 +220,6 @@ function plot_final_viscous_sound(particles, params, cl,
     tight_layout()
     savefig(joinpath(@__DIR__, "testsound_viscous_final.png"), dpi=150)
     println("Saved testsound_viscous_final.png")
-    show()
 end
 
 # ── IC particle plot ───────────────────────────────────────────────────────────
@@ -275,4 +273,3 @@ plot_final_viscous_sound(particles, params, cl,
                           t_end, A, k, kx, ky, khat, ωR, Γ_s;
                           nx, ny, T_period)
 
-show()

@@ -223,4 +223,3 @@ plot_neighbor_pairs(particles4, brute4, cl4;
                     title_str = "Test 4: 20 random particles (3×6 grid, Lx=6 Ly=12)",
                     filename  = joinpath(@__DIR__, "testneighbor4.png"))
 
-show()

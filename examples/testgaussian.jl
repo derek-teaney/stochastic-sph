@@ -91,7 +91,7 @@ end
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-h        = 0.01
+h        = 0.015    # ~3-4 min per run; cost scales as h^-3
 ha       = 2.0
 L        = 1.0
 A        = 1.0      # Gaussian amplitude (energy density units)
@@ -130,4 +130,3 @@ fig_final = plot_gaussian(particles, params, cl;
 savefig(joinpath(@__DIR__, "testgaussian_final.png"), dpi=150)
 println("Saved testgaussian_final.png")
 
-show()

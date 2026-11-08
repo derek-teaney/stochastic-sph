@@ -35,4 +35,3 @@ ax2.legend(fontsize=8)
 
 tight_layout()
 savefig(joinpath(@__DIR__, "kernel.png"), dpi=150)
-show()

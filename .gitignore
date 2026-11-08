@@ -22,3 +22,8 @@
 
 # personal notes, not committed
 docs/private/
+
+# comparison run outputs
+examples/compare/*
+!examples/compare/sidebyside.py
+examples/gaussian_cmp/
