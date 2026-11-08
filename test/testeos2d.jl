@@ -9,13 +9,13 @@ function make_particle(; S_smooth, Mx_smooth=0.0, My_smooth=0.0)
     return pa
 end
 
+# Residual S(e, M) − S_in, with the Landau momentum M = (e+p)γ² v = w γ u.
 function residual(pa::Particle, eos::AbstractEOS)
     e = pa.e
     w = e + pressure(eos, e)
     M = sqrt(pa.M_smooth[1]^2 + pa.M_smooth[2]^2)
-    u = M / w
-    γ = sqrt(1.0 + u^2)
-    return w * γ / Trel(eos, e) - pa.S_smooth
+    G, _ = eos_wgamma(w, M)                 # G = w γ
+    return G / Trel(eos, e) - pa.S_smooth
 end
 
 # 2D conformal fluid: cs2 = 1/2 (vs 1/3 in testeos.jl).  T_scale=1.0 is an
@@ -26,36 +26,21 @@ const cs2_val = 0.5
 const Tscale  = 1.0
 const eos = ConformalEOS(cs2_val=cs2_val, T_scale=Tscale)
 
-# ── Helper: causality bound M_crit(S) ──────────────────────────────────────────
-# solve_eos! has a real root for M < M_crit(S), none for M > M_crit(S) (found by
-# bisecting on the minimum, over e, of w·γ/Trel(e) − S).  Recomputed from
-# cs2_val/Tscale so test cases below stay valid if those constants change.
-function critical_M(S::Float64; e_max=50.0, n=20_000)
-    function fmin(M)
-        best = Inf
-        for e in range(1e-6, e_max, length=n)
-            w = e + pressure(eos, e)
-            u = M / w
-            γ = sqrt(1.0 + u^2)
-            g = w * γ / Trel(eos, e) - S
-            g < best && (best = g)
-        end
-        best
-    end
-    lo, hi = 0.0, max(1.0, S^(1.0 + cs2_val))
-    while fmin(hi) < 0.0
-        hi *= 2
-    end
-    for _ in 1:50
+# ── Helper: momentum density of a fluid moving at speed v ─────────────────────
+# Test states are specified physically: entropy density S and speed v (0 ≤ v < 1).
+# The rest-frame e solves S = s_rel(e) γ (bisection), and the Landau momentum density
+# is M = (e+p) γ² v.  (A root of solve_eos! exists for every M with this momentum;
+# the earlier "causality bound" came from taking u = M/w.)
+function momentum_at(S::Float64, v::Float64, θ::Float64)
+    γ = 1 / sqrt(1 - v^2)
+    lo, hi = 1e-12, 1.0
+    while srel(eos, hi) * γ < S; hi *= 2; end
+    for _ in 1:200
         mid = (lo + hi) / 2
-        fmin(mid) > 0.0 ? (hi = mid) : (lo = mid)
+        srel(eos, mid) * γ < S ? (lo = mid) : (hi = mid)
     end
-    return (lo + hi) / 2
-end
-
-# (Mx, My) at a target fraction of the causality bound, along direction θ.
-function momentum_at(S::Float64, frac::Float64, θ::Float64)
-    m = frac * critical_M(S)
+    e = (lo + hi) / 2
+    m = (e + pressure(eos, e)) * γ^2 * v
     return m * cos(θ), m * sin(θ)
 end
 
@@ -127,10 +112,8 @@ println("PASS")
 
 # ── Test 4: solve_eos! residual check — relativistic (M ≠ 0) ──────────────────
 #
-# Physical constraint: a root exists only below a causality bound M_crit(S)
-# (larger cs2 leaves less room for relativistic momentum before solve_eos!
-# has no real solution — see critical_M above). Test cases below are chosen
-# as fractions of that bound, recomputed live from cs2_val/Tscale.
+# Test states at given entropy density and speed (momentum_at above); the speeds
+# 0.33–0.66 are well into the relativistic regime.
 
 println("\n", "=" ^ 55)
 println("Test 4: solve_eos! residual — relativistic M≠0")
@@ -153,9 +136,7 @@ let
         solve_eos!(pa, eos)
         res = abs(residual(pa, eos)) / tc.S_smooth
         M   = sqrt(tc.Mx^2 + tc.My^2)
-        w   = pa.e + pa.p
-        u   = M / w
-        v2  = u^2 / (1.0 + u^2)
+        v2  = sum(abs2, pa.v_over_S) * tc.S_smooth^2
         println("  S=$(tc.S_smooth)  |M|=$(round(M,sigdigits=3))  e=$(round(pa.e,sigdigits=5))" *
                 "  v²=$(round(v2,sigdigits=4))  res=$(round(res,sigdigits=2))")
         @assert res < 1e-11  "residual too large: S=$(tc.S_smooth), M=($(tc.Mx),$(tc.My))"
@@ -179,10 +160,9 @@ let
     S   = pa.S_smooth
     M   = pa.M_smooth
     w   = pa.e + pa.p
-    u_v = M / w
-    u2  = u_v[1]^2 + u_v[2]^2
-    γ   = sqrt(1.0 + u2)
-    v   = u_v / γ
+    G, _ = eos_wgamma(w, sqrt(M[1]^2 + M[2]^2))    # G = w γ, with M = w γ² v
+    γ   = G / w
+    v   = M * (w / G^2)
     F_over_S_check = dot(v, M / S) / S - pa.p / S^2
     H_over_S_check = (w * γ^2 - pa.p) / S
     T_check        = w / S
