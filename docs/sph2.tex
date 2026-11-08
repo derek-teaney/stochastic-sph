@@ -700,46 +700,35 @@ The spatial index is suppressed below, writing $M^i = M n^i$ and
 $(v/S)_i = (v/S)\, n_i$ with $n^i$ a unit vector.
 
 \noindent{\bf Step 1: velocity from a trial $e$.}
-From $M^i = (e+p)\gamma\,u^i$ with $u^i = \gamma v^i$, taking magnitudes:
+With $w=e+p$, the momentum is $M^i=w\gamma^2v^i=w\gamma\,u^i$ with $u^i=\gamma v^i$.
+Writing $G\equiv w\gamma$, so that $M=G\,u$, and using $\gamma^2=1+u^2$,
 \st
-    u = \frac{M}{e+p(e)} \, , \qquad
-    \gamma = \sqrt{1 + u^2} \, , \qquad
-    v = \frac{u}{\gamma} \, .
+G^4-w^2G^2-w^2M^2=0\,,\qquad
+G=\sqrt{\frac{w^2+\sqrt{w^4+4w^2M^2}}{2}}\,,\qquad
+\gamma=\frac{G}{w}\,,\qquad v=\frac{M\,w}{G^2}\,.
 \stp
-This is exact given $e$; no sub-iteration is required.
+This is exact given $e$; no sub-iteration is required.  (Taking $u=M/w$ instead, as
+an earlier version of these notes and of the code did, drops a factor $\gamma$: the
+energy $(e+p)\gamma^2-p$ is then not conjugate to $M$, and the Hamiltonian velocity
+and temperature are wrong at $O(v^2)$.)
 
 \noindent{\bf Step 2: Newton iteration on $e$.}
 Define the residual
 \st
-    f(e) = \frac{(e+p(e))\,\gamma(e)}{T_{\rm rel}(e)} - S_{\rm in} \, ,
+    f(e) = \frac{G(e)}{T_{\rm rel}(e)} - S_{\rm in} \, ,
 \stp
-where $\gamma(e)$ is evaluated via Step~1.
-The Newton derivative follows from the thermodynamic identity
+where $G(e)=G(w(e),M)$ is evaluated via Step~1.  For a conformal equation of state
+$f$ rises monotonically from $-S_{\rm in}$ at $e\to0$ to $+\infty$, so there is a
+root for every $M$.  The Newton derivative follows from the thermodynamic identity
 \st
-    T_{\rm rel}\frac{de}{dT_{\rm rel}} = \frac{e+p}{c_s^2}
-    \quad\Longleftrightarrow\quad
-    \frac{dT_{\rm rel}}{de} = \frac{c_s^2\,T_{\rm rel}}{e+p} \, ,
+    \frac{dT_{\rm rel}}{de} = \frac{c_s^2\,T_{\rm rel}}{e+p}
 \stp
-and the lemma $d[(e+p)\gamma]/de = (1+c_s^2)/\gamma$ proved below:
+and $dw/de=1+c_s^2$:
 \begin{align}
-    f'(e) &= \frac{1}{T_{\rm rel}}\frac{d[(e+p)\gamma]}{de}
-             - \frac{(e+p)\gamma}{T_{\rm rel}^2}\frac{dT_{\rm rel}}{de}
-           = \frac{1+c_s^2}{T_{\rm rel}\,\gamma} - \frac{c_s^2\,\gamma}{T_{\rm rel}}
-           = \frac{1 - c_s^2 u^2}{T_{\rm rel}\,\gamma} \, .
+    f'(e) &= \frac{1}{T_{\rm rel}}\left[(1+c_s^2)\frac{dG}{dw}-\frac{c_s^2\,G}{w}\right],\qquad
+    \frac{dG}{dw}=\frac{1}{2G}\left[w+\frac{w^3+2wM^2}{\sqrt{w^4+4w^2M^2}}\right].
 \end{align}
 The Newton update is $e \leftarrow e - f(e)/f'(e)$.
-
-\noindent{\bf Lemma.}  $\dfrac{d}{de}[(e+p)\gamma] = \dfrac{1+c_s^2}{\gamma}$.
-
-Let $w = e+p$ and $u = M/w$.  Then $dw/de = 1+c_s^2$ and
-$du/de = -(u/w)(1+c_s^2)$, so
-$d\gamma/de = (u/\gamma)\,du/de = -u^2(1+c_s^2)/(\gamma w)$.  Hence
-\st
-    \frac{d(w\gamma)}{de}
-    = (1+c_s^2)\gamma - \frac{u^2(1+c_s^2)}{\gamma}
-    = \frac{1+c_s^2}{\gamma}\underbrace{(\gamma^2 - u^2)}_{=\,1}
-    = \frac{1+c_s^2}{\gamma} \, .
-\stp
 
 \noindent{\bf Post-convergence expressions.}
 With $S \equiv S_{\rm in}$:

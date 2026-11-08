@@ -203,6 +203,18 @@ function minimum_image(r::SVector{2,Float64}, L::SVector{2,Float64})
     r .- L .* round.(r ./ L)
 end
 
+# Given the entropy density S = s_rel γ and the momentum density M = (e+p) γ² v = w γ u
+# (the Landau T^{0i}; sph2.tex §II.4), find the rest-frame energy density e.
+# With w = e + p and G ≡ w γ:  M = G u and γ² = 1 + u²  ⇒  G⁴ − w² G² − w² M² = 0, so
+#   G(w, M) = √[(w² + √(w⁴ + 4 w² M²))/2],   γ = G/w,   u = M/G,   v = u/γ = M w/G².
+# The residual is f(e) = G/T_rel − S.
+function eos_wgamma(w::Float64, M::Float64)
+    R = sqrt(w^4 + 4 * w^2 * M^2)
+    G = sqrt((w^2 + R) / 2)
+    dGdw = (w + (w^3 + 2 * w * M^2) / R) / (2G)       # from G² = (w² + R)/2
+    return G, dGdw
+end
+
 function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
     S_in  = pa.S_smooth
     M_vec = pa.M_smooth
@@ -212,14 +224,15 @@ function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbo
     e = pa.e > 0.0 ? pa.e : S_in
 
     for iter in 1:maxiter
-        w  = e + pressure(eos, e)
-        u  = M_mag / w
-        γ  = sqrt(1.0 + u^2)
-        T  = Trel(eos, e)
-        f  = w * γ / T - S_in
+        w     = e + pressure(eos, e)
+        G, Gw = eos_wgamma(w, M_mag)
+        T     = Trel(eos, e)
+        f     = G / T - S_in
         verbose && @printf("  iter %2d:  e = %+.12e   f = %+.4e\n", iter, e, f)
         abs(f) < tol * S_in && break
-        fp = (1.0 - cs2(eos, e) * u^2) / (T * γ)   # §II.4 analytic derivative
+        # f'(e) = [G'(w)(1 + cs²) − G cs²/w] / T,  using dT/de = cs² T/w
+        c2 = cs2(eos, e)
+        fp = (Gw * (1.0 + c2) - G * c2 / w) / T
         Δe = f / fp
         while e - Δe ≤ 0.0          # keep e positive; bisect toward zero if needed
             Δe *= 0.5
@@ -228,11 +241,10 @@ function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbo
     end
 
     # post-convergence expressions (§II.4)
-    w   = e + pressure(eos, e)
-    u_v = M_vec / w
-    u2  = u_v[1]^2 + u_v[2]^2
-    γ   = sqrt(1.0 + u2)
-    v   = u_v / γ
+    w    = e + pressure(eos, e)
+    G, _ = eos_wgamma(w, M_mag)
+    γ    = G / w
+    v    = M_vec * (w / G^2)        # M = w γ² v
     p_v = pressure(eos, e)
     S   = S_in
 

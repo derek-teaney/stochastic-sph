@@ -9,13 +9,13 @@ function make_particle(; S_smooth, Mx_smooth=0.0, My_smooth=0.0)
     return pa
 end
 
+# Residual S(e, M) − S_in, with the Landau momentum M = (e+p)γ² v = w γ u.
 function residual(pa::Particle, eos::AbstractEOS)
     e = pa.e
     w = e + pressure(eos, e)
     M = sqrt(pa.M_smooth[1]^2 + pa.M_smooth[2]^2)
-    u = M / w
-    γ = sqrt(1.0 + u^2)
-    return w * γ / Trel(eos, e) - pa.S_smooth
+    G, _ = eos_wgamma(w, M)                 # G = w γ
+    return G / Trel(eos, e) - pa.S_smooth
 end
 
 const eos = ConformalEOS(1.0/3.0, 1.0, 0.0, 0.0)
@@ -88,7 +88,8 @@ println("PASS")
 
 # ── Test 4: solve_eos! residual check — relativistic (M ≠ 0) ──────────────────
 #
-# Physical constraint for ConformalEOS(1/3): a root exists iff M/S^(4/3) < 0.625.
+# With the Landau momentum M = wγu, f(e) = wγ/T_rel − S rises from 0 to ∞ (conformal
+# EOS), so there is a root for every M.
 
 println("\n", "=" ^ 55)
 println("Test 4: solve_eos! residual — relativistic M≠0")
@@ -105,9 +106,7 @@ let test_cases = [
         solve_eos!(pa, eos)
         res = abs(residual(pa, eos)) / tc.S_smooth
         M   = sqrt(tc.Mx^2 + tc.My^2)
-        w   = pa.e + pa.p
-        u   = M / w
-        v2  = u^2 / (1.0 + u^2)
+        v2  = sum(abs2, pa.v_over_S) * tc.S_smooth^2
         println("  S=$(tc.S_smooth)  |M|=$(round(M,sigdigits=3))  e=$(round(pa.e,sigdigits=5))" *
                 "  v²=$(round(v2,sigdigits=4))  res=$(round(res,sigdigits=2))")
         @assert res < 1e-11  "residual too large: S=$(tc.S_smooth), M=($(tc.Mx),$(tc.My))"
@@ -130,10 +129,9 @@ let
     S   = pa.S_smooth
     M   = pa.M_smooth
     w   = pa.e + pa.p
-    u_v = M / w
-    u2  = u_v[1]^2 + u_v[2]^2
-    γ   = sqrt(1.0 + u2)
-    v   = u_v / γ
+    G, _ = eos_wgamma(w, sqrt(M[1]^2 + M[2]^2))    # G = w γ, with M = w γ² v
+    γ   = G / w
+    v   = M * (w / G^2)
     F_over_S_check = dot(v, M / S) / S - pa.p / S^2
     H_over_S_check = (w * γ^2 - pa.p) / S
     T_check        = w / S
