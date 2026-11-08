@@ -337,7 +337,32 @@ The step is still stable ($|g|<1$), but every mode with $\Gamma\Delta t>1$ chang
 sign each step; at the zigzag $g=-0.45$.  Halving $\Delta t$ makes all factors
 positive, with $g\ge0.27$.  The bound is set by the bond weight: the rate at
 short wavelengths is about $(\kappa/w)\,2\mu_0/\mu_2$, with
-$\mu_n=\sum_r\psi(r)|r|^n$, independent of $k$.
+$\mu_n=\sum_r\psi(r)|r|^n$, independent of $k$.  In 2D the full viscous $\Delta t$
+exceeds $\Gamma\Delta t=2$ for the shortest modes, and the explicit step is
+unstable.
+
+\paragraph{The time-step criterion.}  The particle representation must
+therefore take smaller time steps: its stronger damping of short wavelengths
+sets $\Delta t$.  A bound on the fastest rate follows from Gershgorin's theorem
+for the bond coefficients,
+\st
+\Gamma_{\max}\le4\,\frac{\kappa_b}{w}\,\max_a\sum_bw_{ab},\qquad
+\sum_bw_{ab}\le d_s\frac{\int\psi}{\int\psi\,\rho^2}=\frac{c_d}{h_\psi^2},
+\label{Gammabound}
+\stp
+with $c_1=15/4$ and $c_2=7/2$ for $\psi\propto(1-\rho/2h_\psi)^3$ (the continuum
+integral includes $\rho\to0$, which the bond sum omits, so it bounds the lattice
+sum), and $\kappa_b$ the largest viscosity the bonds carry: $\kappa(v=0)$ in 1D and
+$2\eta+\zeta_{\rm eff}$ in 2D.  In 1D at $h/a=4$ the bound is $15\,\kappa/(wh^2)$,
+twice the measured rate $7.3\,\kappa/(wh^2)$ of the zigzag mode.  For
+\texttt{params.dissipation = :changerep}, \texttt{compute\_dt} requires
+$\Gamma_{\max}\Delta t/2\le1$ for each viscous half step of \texttt{generic\_step!},
+so the actual factor is at most about $1/2$ and every mode decays
+monotonically.  This shortens the viscous time step to $0.67$ of the previous
+value in 1D and $0.41$ in 2D ($h/a=2.5$).  \texttt{test/testchangerep.jl} checks it:
+all per-step factors of the 1D lattice lie in $[0.52,1]$, and for a 2D random
+field the kinetic energy decreases and the entropy increases at every half
+step.
 
 %=============================================================================
 \section{Energy bookkeeping of the exact step}
@@ -583,14 +608,23 @@ over the two-level form against the entropy produced.}
 \section{Open points}
 \label{sec:open}
 
+The gradient-corrected particle representation is now the default viscous step
+of the code, \texttt{params.dissipation = :changerep}; \texttt{test/testchangerep.jl}
+checks the conversion map, the rates of \Sect{sec:damping}, the gradient
+correction and conservation.
+
 \begin{itemize}
+\item \emph{Speed.}  The gradient-corrected step is several times slower than the
+  bond step on the smoothed $\bbeta$: each half step rebuilds every particle's
+  kernel star and fits $G_a$ twice, with a pseudo-inverse.  Closed-form $2\times2$
+  fits, reused neighbour lists and a single pass over the stars should bring it
+  close to the cost of the bond step.
 \item \emph{The force of the corrected map.}  The gradient correction adds a
   higher-derivative term to the thermodynamic force,
   \Eq{betaeff}; it is not yet included in the force.
-\item \emph{Time step.}  For the particle representation, $\Delta t$ should be
-  set by the largest bond rate, $(\kappa/w)\,2\mu_0/\mu_2$, rather than by
-  $h^2w/\kappa$.  An implicit or exponential update of the bond step would
-  remove the restriction.
+\item \emph{Time step.}  An implicit or exponential update of the bond step
+  would remove the time-step restriction of \Sect{sec:damping}, which the code now
+  enforces (below).
 \item \emph{Stochastic step.}  Random momentum transfers between pairs,
   accepted with the exact $\Delta\mathbb S$; their mean drift should reproduce
   the deterministic rates of \Sect{sec:damping}.
@@ -691,8 +725,7 @@ energy $H$ plus the energy of the particle-scale fluctuations.
 \begin{enumerate}
 \item smooth, and for each particle build its star with the kernel weights
   $\lambda_{ab}$, the centred second moment $Q_a$, the fitted gradient $G_a$ of
-  $\bm\mu$, and $C_a=S\,\partial\bm v/\partial\bm M$ at the smoothed state (by finite
-  differences);
+  $\bm\mu$, and $C_a$ of \Eq{Canalytic} at the smoothed state;
 \item set $e_a'=e_a-g_a$;
 \item compute the particle forces $\beta_a$, the bond force, and
   $\Delta\bm m_a=\Delta t\,\bm F_a$;
@@ -701,6 +734,26 @@ energy $H$ plus the energy of the particle-scale fluctuations.
 \end{enumerate}
 The force uses the uncorrected $\beta_a$; the derivative term of $\beta^{\rm eff}$
 is not included.
+
+\paragraph{The inverse susceptibility.}  $C_a=\partial^2f_a/\partial\bm\mu\,\partial\bm\mu
+=S\,\partial\bm v/\partial\bm M|_S$ has a closed form.  At fixed $S=s\gamma$ the
+entropy per volume changes as $ds/s=-d\gamma/\gamma$, so with $ds/de=s/w$ the
+rest-frame energy density changes as $de=-w\,d\ln\gamma$, and $dw=(1+c_s^2)\,de$.
+Differentiating $\bm M=w\gamma^2\bm v$, with $d\gamma=\gamma^3\,\bm v\cdot d\bm v$,
+\st
+\frac{\partial\bm M}{\partial\bm v}\Big|_S=w\gamma^2\big[\one+\gamma^2(1-c_s^2)\,\bm v\bm v^T\big],
+\stp
+and inverting,
+\st
+C=S\,\frac{\partial\bm v}{\partial\bm M}\Big|_S
+=\frac{1}{T\gamma^2}\left[\one-\frac{(1-c_s^2)\,\bm v\bm v^T}{1-c_s^2v^2}\right],
+\qquad T=\frac{e+p}{S}=\frac{T_{\rm rel}}{\gamma} .
+\label{Canalytic}
+\stp
+Transverse to $\bm v$ it is $1/(T\gamma^2)$, along $\bm v$ it is
+$1/[T\gamma^4(1-c_s^2v^2)]$, and at rest it is $\one/T$.  It agrees with a
+finite-difference evaluation through the equation of state to $10^{-10}$ up to
+$v=0.83$.
 
 \paragraph{A first check.}  For a smooth shear flow on the 2D lattice
 ($\bm\mu\propto\sin2\pi x\,\hat y$, $h=0.05$), the gradient energy $\sum_ag_a$

@@ -9,7 +9,6 @@ using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "changerep.jl"))
 let src = read(joinpath(@__DIR__, "testgaussian.jl"), String)
     body = split(src, "# ── Main")[1]
     body = replace(body, r"^using PyPlot\n"m => "", r"^include\(.*\)\n"m => "")

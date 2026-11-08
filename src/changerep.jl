@@ -12,7 +12,7 @@
 #   ∂E_a/∂m_a = v_a ,  ∂E_a/∂s_a = T_a ,  so  β_a = (∂E_a/∂m_a)/(∂E_a/∂s_a).
 # The step Δm_a = Δt F_a, Δs_a = −β_a·Δm_a then keeps each E_a fixed to first order.
 #
-# Include after sph.jl and celllist.jl.
+# Included at the end of celllist.jl.
 
 # Pointwise state of particle a: solve the EOS at (S_a, m_a/V_a).
 # Returns (β_a, e_a, T_a).  Uses a scratch copy so the smoothed fields are untouched.
@@ -36,8 +36,8 @@ end
 # Returns (K, ΣΔs): K evaluated with the pointwise β, and the entropy produced.
 function dissipative_step_changerep!(particles::Vector{Particle}, params::SimParams,
                                      cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation === :bond ||
-        error("dissipative_step_changerep! uses the bond form (params.dissipation = :bond)")
+    params.dissipation in (:bond, :changerep) ||
+        error("dissipative_step_changerep! uses the bond force (params.dissipation = :changerep or :bond)")
     N    = length(particles)
     dotm = zeros(SVector{2,Float64}, N)
     β    = zeros(SVector{2,Float64}, N)
@@ -98,8 +98,8 @@ end
 # change of Σ_a S_a(e_a, m_a) and Σe the (conserved) total particle energy.
 function dissipative_step_changerep_exact!(particles::Vector{Particle}, params::SimParams,
                                            cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation === :bond ||
-        error("dissipative_step_changerep_exact! uses the bond form (params.dissipation = :bond)")
+    params.dissipation in (:bond, :changerep) ||
+        error("dissipative_step_changerep_exact! uses the bond force (params.dissipation = :changerep or :bond)")
     N    = length(particles)
     dotm = zeros(SVector{2,Float64}, N)
     β    = zeros(SVector{2,Float64}, N)
@@ -161,16 +161,15 @@ function star_fit(star, μ)
     return Y * pinv(Matrix(Q)) |> SMatrix{2,2,Float64}, Q
 end
 
-# Inverse susceptibility C = S ∂v/∂M at the smoothed state of particle a (finite differences).
+# Inverse susceptibility C = S ∂v/∂M|_S at the smoothed state of particle a.  With
+# M = wγ²v and S = sγ held fixed (de = −w d ln γ, dw = (1 + c_s²) de):
+#   ∂M/∂v = wγ² [1 + γ²(1 − c_s²) v vᵀ],
+#   C = 1/(T γ²) [1 − (1 − c_s²) v vᵀ / (1 − c_s² v²)],   T = (e+p)/S
+# (transverse 1/(Tγ²), longitudinal 1/(Tγ⁴(1 − c_s² v²)), and 1/T at rest).
 function inverse_susceptibility(pa::Particle, eos::AbstractEOS)
-    C = zero(MMatrix{2,2,Float64});  δ = 1e-6 * max(norm(pa.M_smooth), pa.S_smooth * 1e-3)
-    for j in 1:2
-        dM = SVector{2,Float64}(j == 1 ? (δ, 0.0) : (0.0, δ))
-        vp = (q = deepcopy(pa); q.M_smooth = pa.M_smooth + dM; solve_eos!(q, eos); q.v_over_S * q.S_smooth)
-        vm = (q = deepcopy(pa); q.M_smooth = pa.M_smooth - dM; solve_eos!(q, eos); q.v_over_S * q.S_smooth)
-        C[:, j] = pa.S_smooth * (vp - vm) / (2δ)
-    end
-    return SMatrix(C)
+    v  = pa.v_over_S * pa.S_smooth
+    c2 = cs2(eos, pa.e)
+    return (SMatrix{2,2,Float64}(I) - (1 - c2) * (v * v') / (1 - c2 * dot(v, v))) / (pa.T * pa.γ^2)
 end
 
 gradient_energy(s, C, G, Q) = 0.5 * s * tr(C * G * Q * G')
@@ -178,8 +177,8 @@ gradient_energy(s, C, G, Q) = 0.5 * s * tr(C * G * Q * G')
 # One viscous step with the gradient-corrected map.  Returns (K, ΣΔs, Σe′).
 function dissipative_step_changerep_grad!(particles::Vector{Particle}, params::SimParams,
                                           cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation === :bond ||
-        error("dissipative_step_changerep_grad! uses the bond form (params.dissipation = :bond)")
+    params.dissipation in (:bond, :changerep) ||
+        error("dissipative_step_changerep_grad! uses the bond force (params.dissipation = :changerep or :bond)")
     N    = length(particles)
     dotm = zeros(SVector{2,Float64}, N)
     β    = zeros(SVector{2,Float64}, N)

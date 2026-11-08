@@ -8,7 +8,9 @@ using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "changerep.jl"))
+# The "smoothed" runs use generic_step! with the bond form on the smoothed b; the
+# particle-representation runs call their steps directly.
+ENV["SPH_DISSIPATION"] = "bond"
 
 function particle_step!(ps, params, cl, dt, eos, dotm)
     dissipative_step_changerep_exact!(ps, params, cl, dt / 2, eos)
