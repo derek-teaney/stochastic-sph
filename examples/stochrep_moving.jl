@@ -81,7 +81,7 @@ function one_run(r, ps0, params, cl, eos, fz, dt, kvs, m0, C, N)
     late = zeros(length(kvs), 2);  nav = 0;  hist = zeros(NSTEPS, 2);  acc = zeros(2)
     P0 = sum(q.m for q in ps)
     for n in 1:NSTEPS
-        a = stochrep_step!(ps, params, cl, dt, eos; frozen=fz, rng, rngs, flip=isodd(n))
+        a = stochrep_step!(ps, params, cl, dt, eos; frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
         acc .+= (a.stress, a.resid) ./ NSTEPS
         dm = [q.m - m0 for q in ps]
         hist[n, 1] = sum(x[1]^2 for x in dm) / ((N - 1) * C[1, 1])

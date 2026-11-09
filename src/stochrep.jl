@@ -206,7 +206,7 @@ guards() = (rejected = GUARD_REJECTED[], evensplit = GUARD_EVENSPLIT[], backmap 
 # reverse move, and σ_ab ≈ β_a·t_ab, so ΔS_ab ≈ −Δβ_ab·t_ab is the bond's own entropy
 # production (invariant under a uniform shift of β).  vote = :even uses σ_ab = 0
 # (ΔS_a split evenly); vote = :star a single vote, min(1, exp(λ Σ_c ΔS_c)).  All exact.
-function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbol = :bonds)
+function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbol = :star)
     n  = length(st.nb)
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
@@ -330,6 +330,9 @@ function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::Cel
     return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V))
 end
 
+# Defaults: λ = 1 (detailed balance), the single vote (vote = :star: one factor
+# min(1, e^{λ ΣΔS}) per move; :bonds, the per-bond product, rejects more and heats faster
+# in coupled runs, docs/fullruns.tex), the gradient-corrected change of representation.
 # One stochastic viscous step at fixed positions: a stress sweep and a residual sweep,
 # in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
 # given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
@@ -340,7 +343,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
                         λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
                         rng::AbstractRNG = Random.default_rng(),
                         rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
-                        frozen = nothing, vote::Symbol = :bonds, shift::Bool = true,
+                        frozen = nothing, vote::Symbol = :star, shift::Bool = true,
                         gradient::Bool = frozen === nothing)
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D

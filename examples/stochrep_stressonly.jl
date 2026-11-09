@@ -44,7 +44,7 @@ function one_run(r, ps0, params, cl, eos, fz, dt, kvs, oneD, residual, snaps, ns
     ps = deepcopy(ps0);  rngs = make_phys_rng(N_of(ps0), 5000r + 7);  rng = Xoshiro(r)
     S = Dict{Int,Matrix{Float64}}();  KE = zeros(nsteps)
     for n in 1:nsteps
-        stochrep_step!(ps, params, cl, dt, eos; λ=1.0, residual, frozen=fz, rng, rngs, flip=isodd(n))
+        stochrep_step!(ps, params, cl, dt, eos; λ=1.0, residual, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
         n in snaps && (S[n] = spec(ps, kvs, oneD))
         KE[n] = sum(dot(q.m, q.m) for q in ps)
     end

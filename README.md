@@ -72,11 +72,10 @@ julia --project examples/testsound.jl
 `examples/stochrep_equilibrium.jl` and `examples/stochrep_hamiltonian.jl` take
 `SR_START`:
 
-- `cold` — the uniform state at rest; the run thermalizes from it (default of the
-  Hamiltonian driver).
+- `cold` — the uniform state at rest; the run thermalizes from it.
 - `eq` — energies and momenta drawn from the equilibrium at a global $\beta^\mu$ whose
   averages are the totals, then shifted to them exactly; no thermalization step is
-  needed (`docs/eqstart.pdf`, `equilibrium_init!`; default of the equilibrium driver).
+  needed (`docs/eqstart.pdf`, `equilibrium_init!`; the default).
 - `thermal` — momenta only, at fixed particle energies (`thermal_init!`, used by the
   first NERSC campaign).
 

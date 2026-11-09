@@ -43,7 +43,7 @@ for λ in LAMS
         for (i, q) in enumerate(ps); q.m = SVector(sqrt(V * w * T) * g[i], 0.0); end
         acc = zeros(nk);  nav = 0
         for n in 1:nsteps
-            stochrep_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n))
+            stochrep_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
             if n > burn && n % 5 == 0
                 for (j, k) in enumerate(ks)
                     acc[j] += abs2(sum(q.m[1] * cis(-k * q.x[1]) for q in ps))
