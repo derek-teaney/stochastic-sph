@@ -1,0 +1,304 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Plan: speed, measurements, and next steps for stochastic SPH}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The full Hamiltonian stochastic runs work (\texttt{fullruns.tex}).  This note
+plans the next stage: where the time goes and how to cut it, running at
+NERSC, measuring correlators in thermalized ensembles, guarding against
+superluminal proposals, parallelizing the code, and the physics to do once
+all of this works.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Where the time goes}
+\label{sec:time}
+
+\paragraph{Profile.}  One time step of the coupled run (stochastic half step,
+leapfrog, stochastic half step), single thread, measured while other runs
+shared the machine, so absolute times are pessimistic:
+\begin{center}
+\begin{tabular}{lrr}
+\hline
+ & $h/a=2$, $N=672$ & $h/a=2.5$, $N=1020$ \\ \hline
+one stochastic half step & 20 ms & 37 ms \\
+\quad rebuild stars (neighbours, comoving weights, $4\times4$ solve) & 8 & 15 \\
+\quad gradient correction (stars, fits, $g_a$ twice) & 3--15 & 5 \\
+\quad stress sweep & 3 & 6 \\
+\quad residual sweep (single vote) & 3 & 7 \\
+\quad residual sweep (per-bond vote) & 8 & 14 \\
+\quad smoothing, thermodynamics, particle energies & 4 & 5 \\
+leapfrog (ideal SPH) & 5 & 12 \\ \hline
+one time step & $\simeq45$ ms & $\simeq85$ ms \\
+per particle and step & $\simeq65\ \mu$s & $\simeq85\ \mu$s \\
+\hline
+\end{tabular}
+\end{center}
+About $90\%$ of the time is in the stochastic step, and within it the
+Metropolis sweeps are only about a third.  Most of the rest is bookkeeping:
+rebuilding the stars and the fits from scratch twice per step, with many
+small allocations.  One equation-of-state inversion costs $0.8\ \mu$s.
+
+\paragraph{Cost of a run.}  The cost is
+\st
+\text{wall time}\simeq c\times N\times N_{\rm steps},\qquad c\simeq65\ \mu{\rm s}\ (\text{now, one thread}).
+\stp
+The present test box ($N=672$, $t=100$, $11{,}500$ steps) takes about 8 minutes
+per realization on one thread.  A box of side $100h$ at $h/a=2$ has $N\simeq46{,}000$;
+to $t=100$ it would take about $10$ hours per realization on one thread now.
+
+\paragraph{Options, cheapest first.}
+\begin{enumerate}
+\item \emph{Merge the two stochastic half steps.}  The second half step of one
+  time step and the first of the next act at the same positions.  Doing one
+  stochastic step of length $\Delta t$ between leapfrogs (and half steps only at
+  the ends of the run or at measurements) halves the stochastic cost.  The
+  proposals grow by $\sqrt2$, so the acceptance drops somewhat.  Saving: about
+  $45\%$.
+\item \emph{Build the stars once per step and reuse the neighbour lists.}
+  Keep a neighbour list with a skin and rebuild it only when a particle has moved
+  more than half the skin; recompute only the weights.  Share the stars between
+  the bond weights and the gradient fit.  Saving: most of the star cost.
+\item \emph{Remove allocations in the hot loops:} preallocated buffers,
+  static $2\times2$ fits in closed form instead of \texttt{pinv}, arrays of
+  structures replaced by flat arrays.  Typical gain in Julia: a factor 2--5.
+\item \emph{Single vote} instead of the per-bond vote: half the residual cost
+  and higher acceptance.
+\item \emph{Threads} (\Sect{sec:parallel}) and \emph{ensembles} (\Sect{sec:nersc}).
+\end{enumerate}
+Items 1--4 together should bring $c$ to roughly $10\ \mu$s per particle and step on
+one thread, a factor $5$--$7$.
+
+%=============================================================================
+\section{Running at NERSC}
+\label{sec:nersc}
+
+The CPU nodes of Perlmutter have 128 cores (two 64-core AMD EPYC sockets).
+Julia is available as a module, and the package environment of the repository
+(\texttt{Project.toml}, \texttt{Manifest.toml}) can be instantiated in the user
+area; PyPlot is not needed on the compute nodes (plots are made afterwards).
+\begin{itemize}
+\item \emph{Ensembles first.}  Correlators need many independent realizations.
+  These are embarrassingly parallel: one realization per group of threads,
+  many groups per node, many nodes through a job array.  This needs no change
+  to the code beyond writing each realization's output to its own file.
+\item \emph{Threads within a realization} for large boxes (\Sect{sec:parallel}).
+\item \emph{Domain decomposition} across nodes only if single realizations no
+  longer fit on one node; not needed soon.
+\end{itemize}
+Practical steps: install and precompile the environment, a small driver
+script that reads a parameter file and a seed, writes HDF5 (or JLD2) output,
+and can restart from a checkpoint; a Slurm job-array template.
+
+%=============================================================================
+\section{Measurements in thermalized ensembles}
+\label{sec:measure}
+
+\paragraph{Start in equilibrium.}  The slowest modes relax on the diffusion
+time of the box, $1/(\nu k_{\rm min}^2)$ with $\nu=\eta/w$ and $k_{\rm min}=2\pi/L$.  For the
+present parameters $\nu=2.2\times10^{-3}$; this is about $4$ time units for $L=0.6$
+but about $300$ for $L=5$.  Waiting for thermalization from rest is therefore
+not an option for large boxes.  Instead, start from an equilibrium draw:
+momenta drawn from the single-particle covariance (\texttt{stochrep.tex}, the
+moving fluid), with the total momentum fixed, and a short burn-in for the
+particle positions and the lattice modes.
+
+\paragraph{What to record.}  For a fixed set of wave vectors (all $\bm k$ with
+$|\bm k|$ below a cut, say $kh<1.5$), record at regular intervals the particle sums
+\st
+\bm M_{\bm k}(t)=\sum_a\bm m_a(t)\,e^{-i\bm k\cdot\bm x_a(t)},\qquad
+S_{\bm k}(t)=\sum_as_a(t)\,e^{-i\bm k\cdot\bm x_a(t)},\qquad
+E_{\bm k}(t)=\sum_ae_a(t)\,e^{-i\bm k\cdot\bm x_a(t)} ,
+\stp
+the Fourier transforms of the momentum, entropy and energy densities.  For
+$kh\ll1$ they coincide with the transforms of the smoothed fields.  Split the
+momentum into its longitudinal and transverse parts,
+\st
+M^L_{\bm k}=\hat{\bm k}\cdot\bm M_{\bm k},\qquad M^T_{\bm k}=\hat{\bm k}\times\bm M_{\bm k} .
+\stp
+This is a cost of order $N\times N_k$ per record, small if recorded every few
+steps.  Store the time series per realization (HDF5), with the energies, the
+acceptance and the parameters.
+
+\paragraph{The transverse correlator.}  For example, with $\bm k$ along $x$,
+\st
+C_T(k,\tau)=\frac{1}{V}\,\avg{M_y(t+\tau,\bm k)\,M_y^*(t,\bm k)}
+\stp
+(the asked-for $\avg{m_y(t,k)\,m_y(0,-k)}$, since $M_{-\bm k}=M_{\bm k}^*$).  Estimate it
+by averaging over the start time $t$ in the stationary state (by FFT of the
+time series, or directly over lags), over all $\bm k$ of the same length (with
+$M_y$ replaced by $M^T$), and over realizations.  Errors from the spread over
+realizations, or by jackknife over time blocks longer than the correlation
+time.  Prediction from linearized hydrodynamics:
+\st
+C_T(k,\tau)=\chi_T\,e^{-\nu k^2|\tau|},\qquad \chi_T=wT ,
+\stp
+so the equal-time value checks the statics and the decay rate measures the
+shear viscosity at that $k$, including its renormalization by the
+fluctuations.
+
+\paragraph{The longitudinal correlator.}  $C_L(k,\tau)$ from $M^L$: two damped sound
+modes,
+\st
+C_L(k,\tau)\simeq\chi_L\,e^{-\frac12\Gamma_sk^2|\tau|}\cos(c_sk\tau),\qquad
+\Gamma_s=\frac{\tfrac43\eta+\zeta}{w}\quad(\text{3D fluid, planar flow}),
+\stp
+plus a small non-oscillating correction.  Together with $\avg{E_{\bm k}E_{\bm k}^*}$,
+$\avg{S_{\bm k}S_{\bm k}^*}$ and their cross correlators this gives the full set of
+static susceptibilities and the sound speed and attenuation.
+
+\paragraph{Errors.}  Two levels.  Realizations are independent, so the mean
+and the standard error over realizations are the most robust estimate.  Within
+a realization the time series is correlated over the decay time $1/(\nu k^2)$,
+which is long at small $k$; binning the series into blocks longer than this
+(and measuring the integrated autocorrelation time) gives honest errors from
+few long runs.  Derived quantities (a fitted $\nu(k)$, ratios of correlators)
+get errors by jackknife over realizations or time bins.  Julia packages:
+\texttt{Statistics} (standard library), \texttt{BinningAnalysis.jl} (binning,
+jackknife, autocorrelation times for Monte Carlo time series),
+\texttt{MCMCDiagnosticTools.jl} (effective sample size, agreement between
+independent chains), \texttt{LsqFit.jl} (fits with parameter covariances),
+\texttt{FFTW.jl} (correlators by FFT), \texttt{Bootstrap.jl}.
+
+\paragraph{Tools to build.}
+\begin{itemize}
+\item An observer hook in the time loop: a list of measurements, each called
+  every $n$ steps, writing to the output file.
+\item The equilibrium initial state.
+\item A post-processing module: read the files, correlators by FFT, averages
+  over $|\bm k|$ shells and realizations, errors, fits of the decay rates, and
+  comparison with the predictions above.
+\item Spectra $\avg{|M^{L,T}_{\bm k}|^2}$ versus $k$ as the first check of every run.
+\end{itemize}
+
+%=============================================================================
+\section{Guarding against superluminal proposals}
+\label{sec:guard}
+
+A proposal can push a particle's momentum beyond what its energy allows.  The
+inversion of the equation of state then fails (or gives $|v|\geq1$).  The
+fix is simple and exact: such a state has zero weight under $e^{\mathbb S}$, so
+the move is rejected.  In practice
+\begin{itemize}
+\item in the vote, a failed or superluminal inversion for any member of the
+  star counts as $\Delta\mathbb S=-\infty$, and the whole move is rejected;
+\item in the deterministic residual ($\lambda=\infty$) and in the back map, a
+  superluminal result is clipped or the step is subdivided, and counted;
+\item counters for these events are written to the output.
+\end{itemize}
+Detailed balance is unaffected, since the reverse of a rejected move is never
+proposed from an allowed state.  This is a few lines in \texttt{ask\_star!} and
+should be done before the long production runs.
+
+%=============================================================================
+\section{Parallelization}
+\label{sec:parallel}
+
+\paragraph{Do not start from scratch.}  The algorithm is now validated, and
+the profile shows that the cost is dominated by avoidable bookkeeping, not by
+the structure of the method.  A rewrite in another language would cost months
+and the validation would have to be repeated.  The plan is to refactor the
+hot paths in Julia, keeping the present code as the reference that every
+refactored routine must reproduce (same random streams, same results).
+
+\paragraph{Steps.}
+\begin{enumerate}
+\item A benchmark script with the per-part timing above, run before and after
+  every change; Julia's profiler and allocation tracker on the hot loops.
+\item The single-thread items of \Sect{sec:time}.
+\item Threads: the smoothing, thermodynamics, velocities and leapfrog loops
+  are per particle and thread trivially.  The stochastic sweeps already run the
+  cells of one colour in parallel; with many cells (large boxes) this scales,
+  with few cells (the present test box has 30) it does not, and ensembles are
+  the better use of the cores.
+\item Later, if needed: domain decomposition with a halo of width $2h$, which the
+  checkerboard of cells already respects.
+\end{enumerate}
+The random streams are per particle, so the results do not depend on the
+number of threads; this is the check that each step preserves.
+
+%=============================================================================
+\section{Next steps, once this works}
+\label{sec:next}
+
+\begin{enumerate}
+\item \emph{Equilibrium validation.}  Static susceptibilities, $C_T$ and $C_L$
+  versus $k$ and $\tau$, in boxes large enough to resolve a range of $kh\ll1$.
+  The decay rates give $\eta$ and $\Gamma_s$ as functions of $k$: their approach to
+  the input values as $k\to0$, and the fluctuation correction.
+\item \emph{Renormalization of the viscosity.}  In two dimensions the
+  fluctuation correction to $\eta$ grows logarithmically at small $k$ (long-time
+  tails).  Measure $\eta(k)$ over a decade in $k$ and compare with the
+  one-loop prediction, including the cutoff dependence on $h$.
+\item \emph{Dependence on the discretization:} $h/a$, $\Delta t$, $\lambda$, and the
+  single versus per-bond vote, for the measured transport coefficients.
+\item \emph{Energy drift.}  Decide between a global thermostat and a fix of
+  the It\^o term of the change of representation (\texttt{fullruns.tex}).
+\item \emph{Moving and inhomogeneous backgrounds} with the Hamiltonian step on:
+  a uniformly moving fluid (Lorentz covariance of the correlators), then
+  shear flow and an expanding (Bjorken-like) background.
+\item \emph{Physics targets:} long-time tails and the renormalization of the
+  transport coefficients in relativistic fluids, fluctuations near a critical
+  point, and the density-frame formulation that motivated the scheme.
+\end{enumerate}
+
+%=============================================================================
+\section{Status}
+\label{sec:status}
+
+On the branch \texttt{nextstage}:
+\begin{itemize}
+\item \emph{Superluminal guard}: done (\texttt{test/teststochrep\_guard.jl}).  A
+  failed or superluminal inversion rejects the move; an unphysical intermediate
+  state of the bond split falls back to the even split; the gradient back map
+  falls back to the plain map; the deterministic residual subdivides its step.
+  Counters are reported.
+\item \emph{Merged stochastic half steps}: done in the new driver
+  (\texttt{examples/stochrep\_equilibrium.jl}); about half the cost per step.
+  The residual acceptance drops from $0.88$ to $0.77$ (single vote).
+\item \emph{Equilibrium initial state, recorder, correlators}: first version
+  (\texttt{src/measure.jl}, \texttt{examples/stochrep\_correlators.jl}).
+\item \emph{Static solves} in the comoving weights and the gradient fit: done,
+  no measurable speed-up; a singular moment matrix (very fast flow, $\gamma\gtrsim2$,
+  when too few bonds remain inside the support along the flow) now falls back
+  instead of failing.  The comoving stencil at large $\gamma$ needs a closer look.
+\item \emph{Next}: a proper profile (sampling profiler and allocation tracking)
+  of \texttt{build\_stars} and the gradient correction.
+\end{itemize}
+
+%=============================================================================
+\section{Order of work}
+\label{sec:order}
+
+\begin{enumerate}
+\item The superluminal guard (\Sect{sec:guard}).  Small; do first.
+\item Merge the stochastic half steps; build the stars once per step.  Check
+  that the results are unchanged in distribution.
+\item Equilibrium initial state, observer hook, HDF5 output, correlator
+  post-processing; first measurement of $C_T$ in the present box.
+\item Allocation and fit clean-up; threads; benchmark.
+\item NERSC: environment, driver, job-array template; first ensemble in a
+  larger box.
+\item The physics of \Sect{sec:next}.
+\end{enumerate}
+
+\end{document}

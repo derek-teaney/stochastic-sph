@@ -1,0 +1,13 @@
+# One run per line: <name> <nseeds> <env assignments ...> -- <driver> <driver args>
+# Each (line, seed) becomes one Slurm array task with SR_SEED0 = seed − 1 and NREAL = 1.
+# Drivers: examples/stochrep_hamiltonian.jl (energy/stability scans),
+#          examples/stochrep_equilibrium.jl  (correlator ensembles).
+# Hamiltonian scans: args  h/a t_end nreal kinds vote dtfactor [split] [nograd]
+ref        16  SR_S0=1e6                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full,det star 1.0
+s3e5       16  SR_S0=3e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5       16  SR_S0=1e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5_hfix  16  SR_S0=1e5 SR_HFIX=1       -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5_ha3   16  SR_S0=1e5                 -- examples/stochrep_hamiltonian.jl 3.0 200 1 full star 1.0
+# Equilibrium ensembles: args  L h/a t_end nreal rec_every tag
+eqL1.2     32  SR_S0=1e6                 -- examples/stochrep_equilibrium.jl 1.2 2.0 400 1 2 L1.2
+eqL2.4     32  SR_S0=1e6                 -- examples/stochrep_equilibrium.jl 2.4 2.0 400 1 2 L2.4

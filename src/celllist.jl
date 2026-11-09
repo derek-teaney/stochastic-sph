@@ -466,22 +466,22 @@ function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
     ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
     Vb = [particles[b].s / particles[b].S_smooth for (b, r, rr) in nb]
     # unknowns z = (Λxx, Λxy, Λyy, n):  M + N:Λ − n ℓ = 0  (3 eqs),  ℓ:Λ = 0
-    A = zeros(4, 4);  rhs = zeros(4)
+    # (static 4×4 system: no allocation)
+    A3 = zero(SMatrix{3,3,Float64});  r3 = zero(SVector{3,Float64})
     for (k, (b, r, rr)) in enumerate(nb)
         c = Vb[k] * ψ0[k];  c == 0 && continue
         x, y = r[1], r[2]
-        q = (x^2, 2x*y, y^2)                      # ∂(rᵀΛr)/∂(Λxx, Λxy, Λyy)
-        e = (x^2, x*y, y^2)                       # components (xx, xy, yy) of r rᵀ
-        for i in 1:3
-            rhs[i] -= c * e[i]
-            for j in 1:3
-                A[i, j] += c * e[i] * q[j]
-            end
-        end
+        q = SVector(x^2, 2x*y, y^2)               # ∂(rᵀΛr)/∂(Λxx, Λxy, Λyy)
+        e = SVector(x^2, x*y, y^2)                # components (xx, xy, yy) of r rᵀ
+        r3 -= c * e
+        A3 += c * (e * q')
     end
-    A[1, 4] = -ℓ[1,1];  A[2, 4] = -ℓ[1,2];  A[3, 4] = -ℓ[2,2]
-    A[4, 1] = ℓ[1,1];   A[4, 2] = 2ℓ[1,2];  A[4, 3] = ℓ[2,2]
-    z = A \ rhs
+    A = SMatrix{4,4,Float64}(A3[1,1], A3[2,1], A3[3,1], ℓ[1,1],
+                             A3[1,2], A3[2,2], A3[3,2], 2ℓ[1,2],
+                             A3[1,3], A3[2,3], A3[3,3], ℓ[2,2],
+                             -ℓ[1,1], -ℓ[1,2], -ℓ[2,2], 0.0)
+    rhs = SVector(r3[1], r3[2], r3[3], 0.0)
+    z = abs(det(A)) > 0 ? A \ rhs : fill(NaN, SVector{4,Float64})
     Λ = SMatrix{2,2,Float64}(z[1], z[2], z[2], z[3])
     ψ = [ψ0[k] * (1 + dot(r, Λ * r)) for (k, (b, r, rr)) in enumerate(nb)]
     if all(>=(0), ψ) && isfinite(z[4]) && z[4] > 0

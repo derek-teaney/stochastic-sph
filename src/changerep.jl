@@ -160,7 +160,10 @@ function star_fit(star, μ)
         δr = r - rbar
         Q += λ * (δr * δr');  Y += λ * ((μ[b] - μbar) * δr')
     end
-    return Y * pinv(Matrix(Q)) |> SMatrix{2,2,Float64}, Q
+    # static inverse when Q is well conditioned (2D); pseudo-inverse otherwise (1D stars)
+    d = det(Q);  t2 = tr(Q)^2
+    Qi = abs(d) > 1e-10 * t2 ? inv(Q) : SMatrix{2,2,Float64}(pinv(Matrix(Q)))
+    return Y * Qi, Q
 end
 
 # Inverse susceptibility C = S ∂v/∂M|_S at the smoothed state of particle a.  With

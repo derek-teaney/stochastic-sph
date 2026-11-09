@@ -30,3 +30,7 @@ examples/gaussian_cmp/
 
 # serialized run data from examples
 *.jls
+
+# run output
+data/
+slurm/

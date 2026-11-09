@@ -626,6 +626,19 @@ were measured without the grid shift.
 \end{enumerate}
 
 %=============================================================================
+\section{Is the residual move needed?}
+\label{sec:needresid}
+
+With the stress move alone a mode is damped, and receives noise, only through
+the fitted gradient, at the rate $R(k)\Gamma(k)$, where $R(k)=K_{\rm res}(k)/K(k)$ is the
+fraction of the bond dissipation that the fit sees.  $R$ falls from one for
+$kh\ll1$ to zero beyond $kh\simeq4$, so most lattice modes are invisible to the stress
+move.  With the Hamiltonian step on, these modes are heated by the ideal SPH
+force and run away unless the residual move damps them.  The runs that show
+this, and the first long runs with the Hamiltonian step, are documented in
+\texttt{fullruns.tex}.
+
+%=============================================================================
 \section{A moving fluid}
 \label{sec:moving}
 

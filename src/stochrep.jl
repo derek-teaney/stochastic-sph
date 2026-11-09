@@ -3,8 +3,8 @@
 # During the step the positions, the particle volumes V_a = s_a/S_a and the particle
 # energies e_a are fixed; only the momenta move.  The total particle entropy
 #     𝕊[m] = Σ_a S_a(e_a, m_a),      ∂S_a/∂m_a = −β_a ,
-# is a sum of single-particle terms.  (The gradient energy g_a of changerep.tex is
-# left out in this first version.)
+# is a sum of single-particle terms.  With `gradient`, the gradient energy g_a of changerep.tex is
+# frozen during the sweeps and refit in the back map (the gradient-corrected change of rep).
 #
 # Two sweeps, each over a checkerboard of cells:
 #   stress sweep    particle a draws a random symmetric stress ξ_a with
@@ -174,7 +174,29 @@ function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
     end
 end
 
-particle_entropy(e, m, V, eos) = V * eos_from_energy(e / V, m / V, eos)[1]
+# Particle entropy S_a(e, m) at volume V; −Inf for a state no fluid can have (the
+# inversion fails, or |v| ≥ 1).  Such states have zero weight under e^𝕊: a move that
+# reaches one is rejected (docs/plan.tex, "Guarding against superluminal proposals").
+function particle_entropy(e, m, V, eos)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf      # |M| < ε is necessary (p ≤ e)
+    r = try
+        eos_from_energy(ε, M, eos)
+    catch
+        return -Inf
+    end
+    S, v, _ = r
+    return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
+end
+
+# Events guarded against, summed over the run (reset with reset_guards!()).
+const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
+const GUARD_EVENSPLIT = Threads.Atomic{Int}(0)   # bond split fell back to the even split
+const GUARD_BACKMAP = Threads.Atomic{Int}(0)     # gradient back map fell back to the plain map
+const GUARD_SUBDIV = Threads.Atomic{Int}(0)      # deterministic residual step subdivided
+reset_guards!() = foreach(c -> (c[] = 0), (GUARD_REJECTED, GUARD_EVENSPLIT, GUARD_BACKMAP, GUARD_SUBDIV))
+guards() = (rejected = GUARD_REJECTED[], evensplit = GUARD_EVENSPLIT[], backmap = GUARD_BACKMAP[],
+            subdiv = GUARD_SUBDIV[])
 
 # Ask the bonds: accept with Π_b min(1, exp(λ ΔS_ab)), all or nothing.  The bond
 # factor is ΔS_ab = ΔS_b + σ_ab + R/n_a, with σ_ab the share of ΔS_a due to the
@@ -189,11 +211,17 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
     Sa = particle_entropy(e[a], ma′, V[a], eos)
+    if !isfinite(Sa)
+        Threads.atomic_add!(GUARD_REJECTED, 1);  return false
+    end
     ΔSa = Sa - Sc[a]
     ΔStot = ΔSa
     for k in 1:n
         b = st.nb[k]
         Snew[k] = particle_entropy(e[b], m[b] + δ[k], V[b], eos)
+        if !isfinite(Snew[k])
+            Threads.atomic_add!(GUARD_REJECTED, 1);  return false
+        end
         ΔStot += Snew[k] - Sc[b]
     end
     logP = 0.0
@@ -208,6 +236,11 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
         for k in 1:n
             σ[k] = 0.5 * (particle_entropy(e[a], m[a] - δ[k], V[a], eos) - Sc[a]) -
                    0.5 * (particle_entropy(e[a], ma′ + δ[k], V[a], eos) - Sa)
+        end
+        # an unphysical intermediate state: use the even split for this move (the same
+        # points are evaluated for the reverse move, so detailed balance is kept)
+        if !all(isfinite, σ)
+            Threads.atomic_add!(GUARD_EVENSPLIT, 1);  σ .= 0.0
         end
         R = ΔSa - sum(σ)
         for k in 1:n
@@ -271,8 +304,17 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
             Δm[st.nb[k]] += t;  Δm[a] -= t
         end
     end
+    # guard: if any particle would become unphysical, do the step as two half steps
+    Snew = [particle_entropy(e[a], m[a] + Δm[a], V[a], eos) for a in 1:N]
+    if !all(isfinite, Snew)
+        Threads.atomic_add!(GUARD_SUBDIV, 1)
+        dt < 1e-6 && error("resid_deterministic!: unphysical state even for dt = $dt")
+        resid_deterministic!(m, Sc, e, V, stars, dt / 2, oneD, eos)
+        resid_deterministic!(m, Sc, e, V, stars, dt / 2, oneD, eos)
+        return
+    end
     for a in 1:N
-        m[a] += Δm[a];  Sc[a] = particle_entropy(e[a], m[a], V[a], eos)
+        m[a] += Δm[a];  Sc[a] = Snew[a]
     end
 end
 
@@ -289,7 +331,8 @@ function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::Cel
 end
 
 # One stochastic viscous step at fixed positions: a stress sweep and a residual sweep,
-# in an order that alternates with `flip`.  Returns acceptance fractions.  Pass
+# in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
+# given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
 # `frozen = stochrep_frozen(...)` to keep V_a, e_a and the stars fixed across steps
 # (a frozen lattice); otherwise they are recomputed from the current state.
 function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
@@ -297,7 +340,8 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
                         λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
                         rng::AbstractRNG = Random.default_rng(),
                         rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
-                        frozen = nothing, vote::Symbol = :bonds, shift::Bool = true)
+                        frozen = nothing, vote::Symbol = :bonds, shift::Bool = true,
+                        gradient::Bool = frozen === nothing)
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
     fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos) : frozen
@@ -305,6 +349,16 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     m  = [pa.m for pa in particles]
     Sc = [particle_entropy(e[a], m[a], V[a], eos) for a in eachindex(particles)]
     N  = length(particles)
+    # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
+    # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
+    # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
+    if gradient
+        kst = [kernel_star(a, particles, params, cl) for a in 1:N]
+        Cs  = [inverse_susceptibility(pa, eos) for pa in particles]
+        s0  = [pa.s for pa in particles]
+        μ0  = [pa.m / pa.s for pa in particles]
+        g0  = [gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...) for a in 1:N]
+    end
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
     for kind in kinds
@@ -317,6 +371,18 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
             cells = shifted_cells(particles, cl, u)
             acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
                                      eos, rngs, rng, vote) / N
+        end
+    end
+    if gradient
+        μ1 = [m[a] / s0[a] for a in 1:N]                                   # s still old, as in the deterministic step
+        for a in 1:N
+            g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
+            Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
+            if isfinite(Sg)
+                Sc[a] = Sg
+            else
+                Threads.atomic_add!(GUARD_BACKMAP, 1)                 # keep the plain map
+            end
         end
     end
     for (a, pa) in enumerate(particles)
