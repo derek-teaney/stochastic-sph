@@ -293,6 +293,40 @@ function shell_correlators(rec::Recorder, field::Symbol; t0 = 0.0, maxlag_t = 5.
     return shells, (0:maxlag) .* dtr, C
 end
 
+# ── Transverse mode as a damped oscillator ───────────────────────────────────
+# Viscous fluid with a shear modulus G (Kelvin–Voigt): ü = −2γ u̇ − ω0² u, with
+# 2γ = νk², ω0 = c_t k.  Velocity (momentum) autocorrelation, normalized at τ = 0:
+#   ω0 > γ:  e^{−γτ}[cos ωτ − (γ/ω) sin ωτ],     ω = (ω0² − γ²)^{1/2}
+#   ω0 < γ:  e^{−γτ}[cosh κτ − (γ/κ) sinh κτ],   κ = (γ² − ω0²)^{1/2}
+# ω0 = 0 gives e^{−2γτ} = e^{−νk²τ}, the pure fluid.
+function oscillator_corr(τ, γ, ω0)
+    d = ω0^2 - γ^2
+    if d > 1e-14
+        ω = sqrt(d);  return @. exp(-γ * τ) * (cos(ω * τ) - (γ / ω) * sin(ω * τ))
+    elseif d < -1e-14
+        κ = sqrt(-d);  return @. exp(-γ * τ) * (cosh(κ * τ) - (γ / κ) * sinh(κ * τ))
+    else
+        return @. exp(-γ * τ) * (1 - γ * τ)
+    end
+end
+
+# Least-squares fit of A·oscillator_corr(τ, γ, ω0) to C(τ): coarse grid, then a fine grid
+# around the best point; A is linear.  Returns (A, γ, ω0).
+function fit_oscillator(τ, C; γmax = 0.4, ω0max = 0.6, n = 120)
+    best = (Inf, 0.0, 0.0, 0.0)
+    function scan(γs, ωs)
+        for γ in γs, ω0 in ωs
+            f = oscillator_corr(τ, γ, ω0);  ff = dot(f, f);  ff > 0 || continue
+            A = dot(f, C) / ff;  r = sum(abs2, C .- A .* f)
+            r < best[1] && (best = (r, A, γ, ω0))
+        end
+    end
+    scan(range(0, γmax, length = n), range(0, ω0max, length = n))
+    dγ, dω = γmax / n, ω0max / n
+    scan(range(max(best[3] - 2dγ, 0), best[3] + 2dγ, length = 41), range(max(best[4] - 2dω, 0), best[4] + 2dω, length = 41))
+    return best[2], best[3], best[4]
+end
+
 # ── Output: one HDF5 file per realization ────────────────────────────────────
 # Datasets (Julia shape; h5py/numpy sees the axes reversed, e.g. MT as (nt, nk)):
 #   ks (2, nk)  t (nt)  ML, MT, S (nk, nt) complex  [E (nk, nt) if recorded]  H, KE (nt)

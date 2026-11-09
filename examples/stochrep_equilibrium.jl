@@ -46,6 +46,7 @@ const STRIDE = parse(Int, get(ENV, "SR_SEEDSTRIDE", "1"))             # = NREAL 
 const NOVISC = get(ENV, "SR_NOVISC", "0") == "1"
 const NOHAM  = get(ENV, "SR_NOHAM", "0") == "1"
 const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
+const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
@@ -59,7 +60,7 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
-     tag = TAG, start = string(START), novisc = NOVISC, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), novisc = NOVISC, lambda = LAMBDA, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 function one_realization(seed)
@@ -80,7 +81,7 @@ function one_realization(seed)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
         x0 = [q.x for q in ps]
-        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=:star)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
               Ht = Float64[], KE = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
@@ -92,7 +93,7 @@ function one_realization(seed)
     for n in st.n+1:nsteps
         NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
         if !NOVISC
-            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache)
+            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=:star, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
         end
         if n % RECN == 0
