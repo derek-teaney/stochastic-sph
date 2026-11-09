@@ -69,6 +69,30 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `second` — 2026-11-09, `nersc/campaign_second.txt`, 64 tasks, ≈ 0.8 node-hours
+
+The fast code (`main` at `f355cd0`: speedup merged after validation, equilibrium start,
+defaults star / λ = 1 / hot start, checkpoints every 20 min).  eqL1.2 and eqL2.4, 32
+realizations each, t = 400, SR_START=eq.  Compare with the same runs of `first`.
+
+- Run checkout: the worktree **`~/stochastic-sph-run`**, a detached HEAD at `f355cd0`, edited
+  by no one.  (`~/stochastic-sph` stays on `nextstage` until job 61035596 is done.)
+- Submitted as job **61037106** (`-q shared -c 2 -t 8:00:00`, m3722).  Tasks 1–32 eqL1.2,
+  33–64 eqL2.4.  Output `$SCRATCH/sph/second/`.  A task that times out leaves a `.chk` and
+  a partial `.h5`; resubmitting the same array index resumes it.
+
+**Validation of the fast code** (before `second`): 32 vs 32 realizations of the
+equilibrium driver, L = 0.6, t = 50, S0 = 1e6, old (`nextstage`) vs new (`speedup`).  All
+13 observables (KE/eq, ΔH/H, both acceptances, C_T(k,0), C_L(k,0), C_T(k,τ=5) in three
+shells) agree within 1.3σ; the new code took 243 s against 502 s.  Speed per particle
+and step at L = 2.4: 1 thread 52 → 27 μs, 2 threads 42 → 13, 8 threads 37 → 5.5.
+
+**s1e5_hfix rerun (61035596)**: 12/16 failed again in `bond_weights_comoving` once the
+lattice had melted (a particle with no neighbours; a superluminal smoothed velocity in
+the comoving metric).  Recorded as: the energy fix does not prevent the blow-up at
+δv = 0.14.  Not pursued further (owner, 2026-11-09).
+
+
 ### `first` — 2026-11-08, `nersc/campaign_first.txt`, 144 tasks, ≈ 2.1 node-hours
 
 Stability scan in S0 (thermal velocity), the energy fix and h/a, to t = 200 (16 seeds
