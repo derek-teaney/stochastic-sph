@@ -8,6 +8,7 @@ const RNG = MersenneTwister(0)
 abstract type AbstractKernel end
 struct WendlandC2_2D <: AbstractKernel end   # sim dimension = 2 (default)
 struct WendlandC2_1D <: AbstractKernel end   # sim dimension = 1
+struct WendlandC4_2D <: AbstractKernel end   # 2D, smoother (SPH_KERNEL=wc4); same support 2h
 
 mutable struct SimParams
     L       :: SVector{2,Float64}  # (Lx, Ly) after snapping to lattice
@@ -49,7 +50,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
         Lx = Nx * a;  Ly = Ny * dy
         N  = Nx * Ny
         vol = a^2 * sqrt(3) / 2
-        kernel  = WendlandC2_2D()
+        kernel  = get(ENV, "SPH_KERNEL", "wc2") == "wc4" ? WendlandC4_2D() : WendlandC2_2D()
     else
         Nx = round(Int, Lx_t / a)
         Ny = round(Int, Ly_t / a)
@@ -59,7 +60,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
         kernel  = WendlandC2_2D()
     end
     L = SVector(Lx, Ly)
-    dim_str = kernel isa WendlandC2_1D ? "1D" : "2D"
+    dim_str = kernel isa WendlandC2_1D ? "1D" : kernel isa WendlandC4_2D ? "2D (Wendland C4)" : "2D"
     @printf("SimParams: Lx=%-6g  Ly=%-6g  a=%-8g  h=%-8g  N=%-6d  h/a=%.3g  vol=%.4g  lattice=%s  sim=%s  dissipation=%s\n",
             Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
@@ -181,6 +182,20 @@ function wendland_c2(r::Float64, h::Float64, ::WendlandC2_1D)::Float64
 end
 
 wendland_c2(r::Float64, h::Float64) = wendland_c2(r, h, WendlandC2_2D())
+
+# Wendland C4 in 2D, support 2h:  W = 9/(4π h²) (1 − q/2)⁶ (1 + 3q + 35q²/12),  q = r/h
+function wendland_c2(r::Float64, h::Float64, ::WendlandC4_2D)::Float64
+    q = r / h
+    q >= 2.0 && return 0.0
+    return (9.0 / (4π * h^2)) * (1.0 - q/2.0)^6 * (1.0 + 3.0*q + 35.0*q^2/12.0)
+end
+function wendland_c2_grad(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC4_2D)
+    q = r / h
+    (q >= 2.0 || r < 1e-10) && return SVector(0.0, 0.0)
+    C    = 9.0 / (4π * h^2)
+    dWdr = -(14.0/3.0) * C * q * (1.0 + 2.5*q) * (1.0 - q/2.0)^5 / h
+    return dWdr / r .* r_vec
+end
 
 function wendland_c2_grad(r_vec::SVector{2,Float64},
                           r::Float64,

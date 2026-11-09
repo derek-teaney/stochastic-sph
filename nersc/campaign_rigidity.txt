@@ -1,0 +1,16 @@
+# Rigidity campaign (2026-11-09).  See nersc/LOG.md and docs/campaigns.tex.
+# Question: where does the transverse rigidity (c_t ≈ 0.022 at h/a = 2) come from, and how
+# does it scale with h/a and the kernel?  Every run records the displacements (UL, UT).
+# Submit with -c 8: each task runs 4 seeds (args nreal = 4, SR_SEEDSTRIDE=4), one thread each.
+# Equilibrium ensembles, L = 1.2, t = 200, S0 = 1e6, eq start, full scheme (λ = 1, star):
+ha2        4  SR_SEEDSTRIDE=4                        -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2
+ha2_wc4    4  SR_SEEDSTRIDE=4 SPH_KERNEL=wc4         -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2_wc4
+ha2.5      4  SR_SEEDSTRIDE=4                        -- examples/stochrep_equilibrium.jl 1.2 2.5 200 4 2 L1.2_ha2.5
+ha3        4  SR_SEEDSTRIDE=4                        -- examples/stochrep_equilibrium.jl 1.2 3.0 200 4 2 L1.2_ha3
+# control: positions frozen (no leapfrog), stochastic step only → C_T should be e^{−νk²τ}
+ha2_noham  4  SR_SEEDSTRIDE=4 SR_NOHAM=1             -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2_noham
+# ideal SPH only (no viscous step), thermal start, L = 0.6, t = 50: KE grows (lattice relaxes)
+nv_ha2     1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal              -- examples/stochrep_equilibrium.jl 0.6 2.0 50 4 2 nv_ha2
+nv_ha2_wc4 1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal SPH_KERNEL=wc4 -- examples/stochrep_equilibrium.jl 0.6 2.0 50 4 2 nv_ha2_wc4
+nv_ha2.5   1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal              -- examples/stochrep_equilibrium.jl 0.6 2.5 50 4 2 nv_ha2.5
+nv_ha3     1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal              -- examples/stochrep_equilibrium.jl 0.6 3.0 50 4 2 nv_ha3

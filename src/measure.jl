@@ -215,14 +215,33 @@ mutable struct Recorder
     S    :: Vector{Vector{ComplexF64}}
     E    :: Vector{Vector{ComplexF64}}
     energies :: Bool
+    # displacements from the initial sites x0 (minimum image in the box L), if x0 is given:
+    # u_k = Σ_a (x_a − x0_a) e^{−i k·x0_a}, split as for M.  Then M_k ≈ wV u̇_k.
+    UL   :: Vector{Vector{ComplexF64}}
+    UT   :: Vector{Vector{ComplexF64}}
+    x0   :: Vector{SVector{2,Float64}}
+    L    :: SVector{2,Float64}
 end
-Recorder(ks; energies = false) = Recorder(ks, Float64[], [], [], [], [], energies)
+Recorder(ks; energies = false, x0 = SVector{2,Float64}[], L = SVector(0.0, 0.0)) =
+    Recorder(ks, Float64[], [], [], [], [], energies, [], [], x0, L)
+Recorder(ks, t, ML, MT, S, E, energies) = Recorder(ks, t, ML, MT, S, E, energies, [], [], SVector{2,Float64}[], SVector(0.0, 0.0))
 
 function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::AbstractEOS)
     nk = length(rec.ks)
     ML = zeros(ComplexF64, nk);  MT = zeros(ComplexF64, nk);  S = zeros(ComplexF64, nk)
     E  = zeros(ComplexF64, rec.energies ? nk : 0)
     ea = rec.energies ? [particle_energy(pa, eos) for pa in particles] : Float64[]
+    disp = !isempty(rec.x0)
+    if disp
+        UL = zeros(ComplexF64, nk);  UT = zeros(ComplexF64, nk)
+        u = [minimum_image(pa.x - rec.x0[a], rec.L) for (a, pa) in enumerate(particles)]
+        Threads.@threads for i in 1:nk
+            k = rec.ks[i];  kh = k / norm(k);  U = zero(SVector{2,ComplexF64})
+            for a in eachindex(u);  U += u[a] * cis(-dot(k, rec.x0[a]));  end
+            UL[i] = kh[1] * U[1] + kh[2] * U[2];  UT[i] = kh[1] * U[2] - kh[2] * U[1]
+        end
+        push!(rec.UL, UL);  push!(rec.UT, UT)
+    end
     Threads.@threads for i in 1:nk
         k = rec.ks[i];  kh = k / norm(k)
         M = zero(SVector{2,ComplexF64});  s = 0.0im;  en = 0.0im
@@ -291,6 +310,7 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
         f["ks"] = reduce(hcat, Vector.(rec.ks));  f["t"] = rec.t
         f["ML"] = stack(rec.ML);  f["MT"] = stack(rec.MT);  f["S"] = stack(rec.S)
         rec.energies && (f["E"] = stack(rec.E))
+        isempty(rec.UT) || (f["UL"] = stack(rec.UL);  f["UT"] = stack(rec.UT))
         f["H"] = H;  f["KE"] = KE
         at = attributes(f)
         for (k, v) in pairs(meta)
@@ -328,7 +348,8 @@ function read_equilibrium(path::AbstractString)
         meta = NamedTuple(Symbol(k) => read(at[k]) for k in keys(at))
         ks = [SVector{2,Float64}(c) for c in eachcol(read(f["ks"]))]
         cols(name) = haskey(f, name) ? [Vector(c) for c in eachcol(read(f[name]))] : Vector{ComplexF64}[]
-        rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"))
+        rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"),
+                       cols("UL"), cols("UT"), SVector{2,Float64}[], SVector(0.0, 0.0))
         return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]))
     end
 end
