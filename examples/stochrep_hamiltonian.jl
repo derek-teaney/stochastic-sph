@@ -81,7 +81,7 @@ function run(kind, seed=1)
     # original nearest-neighbour pairs (hex lattice: distance a) for the local disorder
     pairs = [(i, j, norm(minimum_image(ps[j].x - ps[i].x, params.L))) for i in 1:N for j in i+1:N
              if norm(minimum_image(ps[j].x - ps[i].x, params.L)) < 1.2 * params.a]
-    dotm = zeros(SVector{2,Float64}, N)
+    dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()      # reused arrays of the stochastic step
     λ, resid = kind === :full ? (1.0, true) : kind === :det ? (Inf, true) : (1.0, false)
     E0 = sum(particle_energy(q, eos) for q in ps);  H0 = Hof(ps, params, cl, eos)
     ts = Float64[];  Hs = Float64[];  Es = Float64[];  KE = Float64[];  dis = Float64[];  loc = Float64[];  acc = Float64[]
@@ -96,7 +96,7 @@ function run(kind, seed=1)
             H1 = Hof(ps, params, cl, eos);  E1 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a1 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=isodd(n), vote=VOTE, gradient=GRAD)
+        a1 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=isodd(n), vote=VOTE, gradient=GRAD, cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H2 = Hof(ps, params, cl, eos);  E2 = Eof(ps)
@@ -106,7 +106,7 @@ function run(kind, seed=1)
             H3 = Hof(ps, params, cl, eos);  E3 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a2 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=!isodd(n), vote=VOTE, gradient=GRAD)
+        a2 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=!isodd(n), vote=VOTE, gradient=GRAD, cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H4 = Hof(ps, params, cl, eos);  E4 = Eof(ps)
