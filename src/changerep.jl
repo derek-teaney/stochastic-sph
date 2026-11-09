@@ -142,9 +142,10 @@ end
 # gradient after the momentum transfer, and sets s_a' = S_a(e_a' + g_a', m_a').
 
 # Star of a for the kernel weights: (b, r_ab, λ_ab), including b = a.
-# With a scratch buffer `buf`, the star is gathered there and copied once at its exact size.
-function kernel_star(a, particles, params, cl, buf = nothing)
-    pa = particles[a];  out = buf === nothing ? Tuple{Int,SVector{2,Float64},Float64}[] : empty!(buf)
+# kernel_star! fills `out` (keeping its capacity); kernel_star returns a fresh vector
+# (with a scratch buffer `buf`, gathered there and copied once at the exact size).
+function kernel_star!(out, a, particles, params, cl)
+    pa = particles[a];  empty!(out)
     ix, iy = cell_index(pa.x, cl)
     for dx in -1:1, dy in neighbor_range(cl.ncy)
         jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
@@ -154,8 +155,11 @@ function kernel_star(a, particles, params, cl, buf = nothing)
             W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth))
         end
     end
-    return buf === nothing ? out : copy(out)
+    return out
 end
+kernel_star(a, particles, params, cl, buf = nothing) =
+    buf === nothing ? kernel_star!(Tuple{Int,SVector{2,Float64},Float64}[], a, particles, params, cl) :
+                      copy(kernel_star!(buf, a, particles, params, cl))
 
 # Centred second moment Q_a and the fitted gradient G_a (G[i,j] = ∂_j μ_i) of a field
 # μ_b on a star; returns (G, Q).  Singular stars (1D) use the pseudo-inverse.

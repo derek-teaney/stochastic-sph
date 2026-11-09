@@ -14,7 +14,7 @@ for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
     include(joinpath(ROOT, "src", "$f.jl"))
 end
 
-function run_case(λ; L = 0.6, nsteps = 12)
+function run_case(λ; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") == "1" ? nothing : StochCache())
     eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e5, (x, y) -> SVector(0.0, 0.0); L, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 11);  rng = Xoshiro(12);  dotm = zeros(SVector{2,Float64}, N)
@@ -22,10 +22,10 @@ function run_case(λ; L = 0.6, nsteps = 12)
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     reset_guards!()
     acc = Float64[]
-    stochrep_step!(ps, params, cl, dt / 2, eos; λ, rng, rngs, vote=:star)
+    stochrep_step!(ps, params, cl, dt / 2, eos; λ, rng, rngs, vote=:star, cache)
     for n in 1:nsteps
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ, rng, rngs, vote=:star, flip=isodd(n))
+        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ, rng, rngs, vote=:star, flip=isodd(n), cache)
         push!(acc, a.stress);  isinf(λ) || push!(acc, a.resid)
     end
     return (x = [p.x for p in ps], m = [p.m for p in ps], s = [p.s for p in ps], acc = acc, guards = guards())

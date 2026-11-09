@@ -123,36 +123,36 @@ function update_velocities!(particles::Vector{Particle},
     end
 end
 
+# Each particle gathers its own force over its neighbours (threads over particles).
+# The pair term is odd under a ↔ b (bracket symmetric, kernel gradient odd in r), so
+# Σ_a ṁ_a = 0 up to roundoff; the previous pair loop (each pair once, ± to both) made
+# it exact but could not be threaded.
 function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                              particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
     ncx = cl.ncx;  ncy = cl.ncy
-    fill!(dotm, zero(SVector{2,Float64}))
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         ix, iy = cell_index(particles[a].x, cl)
+        sa, ma = particles[a].s, particles[a].m
+        vSa, FSa = particles[a].v_over_S, particles[a].F_over_S
+        acc = zero(SVector{2,Float64})
         for dx in -1:1, dy in neighbor_range(ncy)
             jx = mod(ix + dx - 1, ncx) + 1
             jy = mod(iy + dy - 1, ncy) + 1
             for b in particles_in_cell(cl, jx, jy)
-                b <= a && continue # avoid double counting and self-interaction
-
+                b == a && continue
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2params.h && continue
                 grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
-
-                sa, sb   = particles[a].s,        particles[b].s
-                ma, mb   = particles[a].m,        particles[b].m
-                vSa, vSb = particles[a].v_over_S, particles[b].v_over_S
-                FSa, FSb = particles[a].F_over_S, particles[b].F_over_S
-
+                sb, mb = particles[b].s, particles[b].m
+                vSb, FSb = particles[b].v_over_S, particles[b].F_over_S
                 bracket = -(dot(vSa, mb)*sa + dot(vSb, ma)*sb) +
                            (FSa + FSb)*sa*sb
-                force_a  = bracket * grad
-                dotm[a] += force_a
-                dotm[b] -= force_a
+                acc += bracket * grad
             end
         end
+        dotm[a] = acc
     end
 end
 

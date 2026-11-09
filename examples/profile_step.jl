@@ -21,8 +21,9 @@ params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(
 N = params.N;  rngs = make_phys_rng(N, 1);  rng = Xoshiro(2);  dotm = zeros(SVector{2,Float64}, N)
 thermal_init!(ps, params, cl, eos; rng = Xoshiro(3))
 dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
+const CACHE = StochCache()
 step!(n) = (leapfrog_step!(ps, params, cl, dt, eos, dotm);
-            stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n)))
+            stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE))
 for n in 1:5; step!(n); end                                  # compile and settle
 
 let                                                          # hard scope for the loops
@@ -30,7 +31,7 @@ if MODE == "time"
     tl = tg = 0.0;  bl = bs = 0;  gl = gs = 0.0;  ts = 0.0
     for n in 1:NST
         a = @timed leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        b = @timed stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n))
+        b = @timed stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE)
         tl += a.time;  bl += a.bytes;  gl += a.gctime
         ts += b.time;  bs += b.bytes;  gs += b.gctime
     end

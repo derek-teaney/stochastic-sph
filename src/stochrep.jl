@@ -62,15 +62,25 @@ struct Star
     ℓi :: SMatrix{2,2,Float64,4}        # ℓ_a⁻¹
 end
 
+# Storage kept between steps so that the per-particle arrays are reused (pass the same
+# StochCache to every stochrep_step! of one simulation; one cache per simulation).
+mutable struct StochCache
+    stars :: Vector{Star}
+    kst   :: Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}
+end
+StochCache() = StochCache(Star[], Vector{Tuple{Int,SVector{2,Float64},Float64}}[])
+
+# With `cache`, the stars are written into cache.stars, reusing the arrays of the
+# previous step's stars.
 function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                     eos::AbstractEOS, V::Vector{Float64})
+                     eos::AbstractEOS, V::Vector{Float64}; cache = nothing)
     N    = length(particles)
     h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.d
     oneD = params.kernel isa WendlandC2_1D
     v0   = zero(SVector{2,Float64})
     ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
-    stars = Vector{Star}(undef, N)
+    stars = cache === nothing ? Vector{Star}(undef, N) : resize!(cache.stars, N)
     threaded_chunks(N) do range
     nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[];  ψb = Float64[]
     for a in range
@@ -111,9 +121,16 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             B = (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ)
         end
         nk = n_a > 0 ? count(>(0), ψs) : 0                 # arrays at their exact size
-        bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
-        ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
-        As = Vector{SVector{2,Float64}}(undef, nk);  j = 0
+        if cache !== nothing && isassigned(stars, a)
+            o = stars[a]
+            bs = resize!(o.nb, nk);  rs = resize!(o.r, nk);  ws = resize!(o.w, nk)
+            cs = resize!(o.c, nk);  As = resize!(o.A, nk)
+        else
+            bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
+            ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
+            As = Vector{SVector{2,Float64}}(undef, nk)
+        end
+        j = 0
         for (k, (b, r, rr)) in enumerate(nb)
             (ψs[k] > 0 && n_a > 0) || continue
             wab = V[b] * ψs[k] / n_a;  j += 1
@@ -338,7 +355,7 @@ end
 # ── The step ─────────────────────────────────────────────────────────────────
 # Frozen data of a step: particle volumes, particle energies, stars.
 function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                         eos::AbstractEOS)
+                         eos::AbstractEOS; cache = nothing)
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
@@ -346,24 +363,25 @@ function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::Cel
     Threads.@threads for a in 1:N
         pa = particles[a];  V[a] = pa.s / pa.S_smooth;  e[a] = particle_energy(pa, eos)
     end
-    return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V))
+    return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V; cache))
 end
 
 # One stochastic viscous step at fixed positions: a stress sweep and a residual sweep,
 # in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
 # given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
 # `frozen = stochrep_frozen(...)` to keep V_a, e_a and the stars fixed across steps
-# (a frozen lattice); otherwise they are recomputed from the current state.
+# (a frozen lattice); otherwise they are recomputed from the current state.  Pass the same
+# `cache = StochCache()` to every step of a simulation to reuse its arrays (faster, same results).
 function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                         dt::Float64, eos::AbstractEOS;
                         λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
                         rng::AbstractRNG = Random.default_rng(),
                         rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                         frozen = nothing, vote::Symbol = :bonds, shift::Bool = true,
-                        gradient::Bool = frozen === nothing)
+                        gradient::Bool = frozen === nothing, cache = nothing)
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
-    fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos) : frozen
+    fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos; cache) : frozen
     V, e, stars = fz.V, fz.e, fz.stars
     N  = length(particles)
     m  = [pa.m for pa in particles]
@@ -375,7 +393,8 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
     # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
     if gradient
-        kst = Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N)
+        kst = cache === nothing ? Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N) :
+                                  resize!(cache.kst, N)
         Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
         s0  = [pa.s for pa in particles]
         μ0  = [pa.m / pa.s for pa in particles]
@@ -383,7 +402,8 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
         threaded_chunks(N) do range
             buf = Tuple{Int,SVector{2,Float64},Float64}[]
             for a in range
-                kst[a] = kernel_star(a, particles, params, cl, buf)
+                kst[a] = cache !== nothing && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl) :
+                                                                   kernel_star(a, particles, params, cl, buf)
                 Cs[a]  = inverse_susceptibility(particles[a], eos)
             end
         end
