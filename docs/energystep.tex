@@ -308,7 +308,41 @@ At $h/a=2$ (C2, $kh=0.31$):
 \item With $\eta/s=0.02$ the amplitude falls below $e^{-\nu k^2t}$ and turns negative: a
   damped transverse oscillation.
 \end{enumerate}
-The scan over kernels and $h/a$ is running.
+
+\paragraph{Kernels and $h/a$.}  \texttt{examples/shearwave\_scan.jl}: ideal step only,
+$A=0.002$, a periodic strip $L_x=1$, $L_y\simeq6h$ (2D, the wave depends on $x$ only;
+560 to 3400 particles), $t\le30$.  $c_t$ is a least-squares fit of $\cos(c_tkt)$, or
+$\cosh(|c_t|kt)$ for an unstable wave (written $c_t<0$), over the first quarter period.
+Dynamic $c_t$ (\texttt{:energy} / \texttt{:smoothed}) against the static phonon values of
+\texttt{rigidity.tex} ($qh\simeq0.26$; here $kh=0.31$):
+\begin{center}
+\begin{tabular}{llccccc}
+\hline
+kernel & & $h/a=2$ & $2.5$ & $3$ & $4$ & $5$ \\ \hline
+C2 & dynamic & $0.0340/0.0335$ & $0.0308/0.0304$ & $0.0214/0.0211$ & $-0.005^{\,a}$ & $-0.0027/-0.0027$ \\
+   & static  & $0.035$ & $0.031$ & $0.022$ & $-0.011$ & $-0.0034$ \\
+C4 & dynamic & grows$^{\,b}$ & $-0.0047/-0.0047$ & $-0.0018/-0.0018$ & $0.0022/0.0022$ & $0.0008/0.0008$ \\
+   & static  & $-0.0054$ & unstable & $-0.0029$ & $0.0029$ & $0.0008$ \\
+C6 & dynamic & $0.0170/0.0169$ & $0.0065/0.0064$ & $0.0027/0.0026$ & $0.0004/0.0004$ & $0.0002/0.0002$ \\
+   & static  & $0.017$ & $0.0066$ & $0.0026$ & $-0.0003$ & $0.0002$ \\
+\hline
+\end{tabular}
+\end{center}
+$^a$ grows, then not linear (poor fit).  $^b$ $A$ rises to $1.03$ by $t\simeq10$, then the
+displacement reaches $0.9a$ and the response is not linear.
+
+\begin{enumerate}
+\item The dynamic and static $c_t$ agree, signs included, wherever the wave stays linear: the
+  transverse sound of the runs is the elastic stiffness of $H$, and the time stepping adds
+  nothing.
+\item The two Hamiltonians agree to $1$--$2\%$, as they must ($H$ is the same function of
+  the positions at $\bm m=0$).  The energy representation by itself does not change the
+  rigidity.
+\item $|c_t|$ falls with $h/a$ and with the kernel order, oscillating in sign (C2, C4); C6
+  is below $10^{-3}$ from $h/a=4$ on.  $\Delta H/H\le10^{-13}$ in every linear run.
+\end{enumerate}
+(The strips at $h/a=3$ and $5$ have two cell rows in $y$; they first blew up through a
+double counting in the cell list for \texttt{ncy}${}=2$, fixed in \texttt{neighbor\_range}.)
 
 %=============================================================================
 \section{Proposal: volumes that add up to the area}
