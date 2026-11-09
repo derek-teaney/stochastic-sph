@@ -16,7 +16,7 @@ for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
     include(joinpath(@__DIR__, "..", "src", "$f.jl"))
 end
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "rigidity")
-const RUNS = ["ha2", "ha2_wc4", "ha2.5", "ha3", "ha2_noham"]
+const RUNS = ["ha2", "ha2.5", "ha3", "ha2_wc4", "ha2.5_wc4", "ha2_wc6", "ha2_det", "ha2_noham"]
 const NSH = 4;  const TBURN = 2.0
 
 function load(run)
@@ -52,7 +52,8 @@ end
 
 isempty(res) && exit()
 figd = joinpath(@__DIR__, "..", "docs", "figs")
-cols = Dict("ha2" => "C0", "ha2_wc4" => "C1", "ha2.5" => "C2", "ha3" => "C3", "ha2_noham" => "k")
+cols = Dict("ha2" => "C0", "ha2.5" => "C2", "ha3" => "C3", "ha2_wc4" => "C1", "ha2.5_wc4" => "C5",
+            "ha2_wc6" => "C4", "ha2_det" => "C7", "ha2_noham" => "k")
 fig, axs = subplots(1, 3, figsize = (18, 5))
 for run in RUNS
     haskey(res, run) || continue;  r = res[run];  c = cols[run]
@@ -72,7 +73,7 @@ axs[3].legend(fontsize = 8)
 tight_layout();  savefig(joinpath(figd, "rigidity_ct.png"), dpi = 110)
 
 # ideal SPH: KE/eq against t
-nv = [r for r in ("nv_ha2", "nv_ha2_wc4", "nv_ha2.5", "nv_ha3") if !isempty(load(r))]
+nv = [r for r in ("nv_ha2", "nv_ha2.5", "nv_ha3", "nv_ha2_wc4", "nv_ha2_wc6") if !isempty(load(r))]
 if !isempty(nv)
     figure(figsize = (7, 5))
     for (i, run) in enumerate(nv)
