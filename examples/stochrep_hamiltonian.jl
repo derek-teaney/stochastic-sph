@@ -11,7 +11,8 @@
 # Environment: SR_ETAS (η/s, default 0.2), SR_S0 (entropy density, default 1e6),
 #   SR_HFIX=1 (after each stochastic step, rescale all s_a by one factor to restore H),
 #   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
-#   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest).
+#   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
+#   SPH_HAMILTONIAN=energy (H = Σ e_a, docs/energystep.tex; plain back map, suffix _energy).
 # Defaults: kinds = full (λ = 1), vote = star, gradient-corrected map, start eq.
 # Run:  julia -t auto --project examples/stochrep_hamiltonian.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
 #   → docs/figs/stochrep_hamiltonian.png
@@ -30,7 +31,8 @@ const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))   
 const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star (single vote) or :bonds
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const SPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split
-const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd")                # gradient-corrected map
+const ENERGYH = get(ENV, "SPH_HAMILTONIAN", "smoothed") == "energy"   # H = Σ e_a (energystep.tex)
+const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
 const ETAS  = parse(Float64, get(ENV, "SR_ETAS", "0.2"))                # η/s
 const S0    = parse(Float64, get(ENV, "SR_S0", "1e6"))                  # entropy density (sets s_a)
 const HFIX  = get(ENV, "SR_HFIX", "0") == "1"                           # restore H after each stochastic step
@@ -39,7 +41,7 @@ const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                     # seeds 
 const START = Symbol(get(ENV, "SR_START", "eq"))                       # eq (hot) | cold | thermal (initial_state!)
 const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") * (GRAD ? "_grad" : "") *
               (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (S0 == 1e6 ? "" : "_S$(S0)") * (HFIX ? "_hfix" : "") *
-              (START === :eq ? "" : "_$(START)")
+              (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
 
 Hof(ps, params, cl, eos) = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos);
                             sum(p.s * p.H_over_S for p in ps))

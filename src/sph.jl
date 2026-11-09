@@ -23,6 +23,7 @@ mutable struct SimParams
     kernel  :: AbstractKernel      # WendlandC2_2D() or WendlandC2_1D()
     dissipation :: Symbol          # :changerep (default), :bond or :two_level — see dissipative_step!
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
+    hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
 end
 
 # dissipation: the viscous step.  :changerep (default) is the bond form in the particle
@@ -31,11 +32,17 @@ end
 #   Default from the environment variable SPH_DISSIPATION (else :bond), so any
 #   script can be run with the two-level form:  SPH_DISSIPATION=two_level julia --project …
 #   The stochastic sweep (particle_sweep!) has noise only for :two_level.
+# hamiltonian: the ideal step.  :smoothed (default) is H = Σ s_a ℰ(S_a, M_a/S_a) with the
+#   smoothed momentum (sph2.tex).  :energy is H = Σ_a e_a, the particle energies at the
+#   particle's own momentum density m_a/V_a, V_a = s_a/S_a (energystep.tex): ẋ_a = v_a,
+#   a pure pressure force, and a viscous step on the particle variables without a change
+#   of representation.  Default from SPH_HAMILTONIAN.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
-                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "changerep")), bond_h=nothing)
+                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "changerep")), bond_h=nothing,
+                   hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", "smoothed")))
     a = h / ha_ratio
     if sim_dim == 1
         Nx      = round(Int, Lx_t / a)
@@ -68,9 +75,14 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
     dissipation in (:changerep, :bond, :two_level) ||
         error("dissipation must be :changerep, :bond or :two_level, got $dissipation")
+    hamiltonian in (:smoothed, :energy) ||
+        error("hamiltonian must be :smoothed or :energy, got $hamiltonian")
+    hamiltonian === :energy && dissipation === :two_level &&
+        error("hamiltonian = :energy needs the bond viscous step (dissipation = :changerep or :bond)")
+    hamiltonian === :energy && @printf("SimParams: hamiltonian = energy (energystep.tex)\n")
     hψ = bond_h === nothing ? Float64(h) : Float64(bond_h)
     0 < hψ <= h || error("bond_h = $hψ must satisfy 0 < bond_h ≤ h (bond support 2·bond_h ≤ 2h stencil)")
-    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ)
+    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian)
 end
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.

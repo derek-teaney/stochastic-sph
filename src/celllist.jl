@@ -143,6 +143,7 @@ end
 """
 function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
                                cl::CellList2D)
+    params.hamiltonian === :energy && return smooth_entropy_energy!(particles, params, cl)
     nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         S_acc = 0.0
@@ -161,10 +162,30 @@ function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
     end
 end
 
+# hamiltonian = :energy (energystep.tex, eqs. Va, H): only the entropy density is
+# smoothed, S_a = Σ_b s_b W_ab.  The momentum density is the particle's own,
+#   M_smooth = m_a / V_a = m_a S_a / s_a ,
+# so solve_eos! returns, unchanged, the particle's own T_a, v_a, p_a and e_a/s_a.
+function smooth_entropy_energy!(particles::Vector{Particle}, params::SimParams,
+                                cl::CellList2D)
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
+        S_acc = 0.0
+        for b in neighbors(nl, a)
+            r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
+            r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
+            S_acc += particles[b].s * wendland_c2(r_mag, params.h, params.kernel)
+        end
+        particles[a].S_smooth = S_acc
+        particles[a].M_smooth = particles[a].m * (S_acc / particles[a].s)
+    end
+end
+
 # Writes pa.dotx = Σ_b s_b (v/S)_b W  and  pa.Teff = H_over_S_a − Σ_b s_b (F/S)_b W
 # for every particle in a single neighbor pass (step 3 of the update chain).
 function update_velocities!(particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
+    params.hamiltonian === :energy && return update_velocities_energy!(particles, params, cl)
     nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         dotx_acc = zero(SVector{2,Float64})
@@ -183,6 +204,27 @@ function update_velocities!(particles::Vector{Particle},
     end
 end
 
+# hamiltonian = :energy (energystep.tex, eqs. xdot, Teff):
+#   ẋ_a = ∂H/∂m_a = v_a                          (local, no neighbour sum)
+#   Teff_a = ∂H/∂s_a = T_a − p_a/S_a + Σ_b s_b (p_b/S_b²) W_ab
+# Needs S_smooth and the EOS fields (smooth_to_particles! + update_thermodynamics!).
+function update_velocities_energy!(particles::Vector{Particle},
+                                   params::SimParams, cl::CellList2D)
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
+        pS2_acc = 0.0
+        for b in neighbors(nl, a)
+            r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
+            r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
+            pb = particles[b]
+            pS2_acc += pb.s * (pb.p / pb.S_smooth^2) * wendland_c2(r_mag, params.h, params.kernel)
+        end
+        pa = particles[a]
+        pa.dotx = pa.v_over_S * pa.S_smooth
+        pa.Teff = pa.T - pa.p / pa.S_smooth + pS2_acc
+    end
+end
+
 # Each particle gathers its own force over its neighbours (threads over particles).
 # The pair term is odd under a ↔ b (bracket symmetric, kernel gradient odd in r), so
 # Σ_a ṁ_a = 0 up to roundoff; the previous pair loop (each pair once, ± to both) made
@@ -190,6 +232,7 @@ end
 function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                              particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
+    params.hamiltonian === :energy && return hamiltonian_force_energy!(dotm, particles, params, cl)
     nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         sa, ma = particles[a].s, particles[a].m
@@ -208,6 +251,30 @@ function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                            (FSa + FSb)*sa*sb
                 acc += bracket * grad
             end
+        end
+        dotm[a] = acc
+    end
+end
+
+# hamiltonian = :energy (energystep.tex, eq. mdot): the symmetric SPH pressure force
+#   ṁ_a = −∂H/∂x_a = −Σ_b s_a s_b (p_a/S_a² + p_b/S_b²) ∂W_ab/∂x_a ,
+# odd under a ↔ b, so Σ_a ṁ_a = 0 up to roundoff.
+function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
+                                   particles::Vector{Particle},
+                                   params::SimParams, cl::CellList2D)
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
+        sa  = particles[a].s
+        pSa = particles[a].p / particles[a].S_smooth^2
+        acc = zero(SVector{2,Float64})
+        for b in neighbors(nl, a)
+            b == a && continue
+            r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
+            r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
+            r_mag >= 2params.h && continue
+            grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
+            pb   = particles[b]
+            acc -= sa * pb.s * (pSa + pb.p / pb.S_smooth^2) * grad
         end
         dotm[a] = acc
     end
@@ -706,6 +773,11 @@ end
 # generic_step!, of length Δt/2, decays every mode monotonically.
 function dissipative_step!(particles::Vector{Particle}, params::SimParams,
                             cl::CellList2D, dt::Float64, eos::AbstractEOS)
+    if params.hamiltonian === :energy
+        eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
+        dissipative_step_energy!(particles, params, cl, dt, eos)
+        return
+    end
     if params.dissipation === :changerep
         # no viscosity: nothing to do (the conversion maps would only round-trip s)
         eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
@@ -725,6 +797,31 @@ function dissipative_step!(particles::Vector{Particle}, params::SimParams,
         particles[a].m += Δm
         particles[a].s -= dot(particles[a].dotx / particles[a].Teff, Δm)   # Δs = −b·Δm ≥ 0
     end
+end
+
+# hamiltonian = :energy (energystep.tex, eq. viscstep): the viscous step on the particle
+# variables, with no change of representation.  β_a = v_a/Teff_a, Teff_a = ∂H/∂s_a;
+#   Δm_a = −Δt ∂K/∂β_a  (bond form, changerep.tex),   Δs_a = −β_a·Δm_a ,
+# so ΔH = 0 to first order in Δt and ΣΔs_a = 2K Δt ≥ 0.  Returns (K, ΣΔs).
+function dissipative_step_energy!(particles::Vector{Particle}, params::SimParams,
+                                  cl::CellList2D, dt::Float64, eos::AbstractEOS)
+    N    = length(particles)
+    dotm = zeros(SVector{2,Float64}, N)
+    smooth_to_particles!(particles, params, cl)
+    update_thermodynamics!(particles, eos)
+    update_velocities!(particles, params, cl)
+    β = [pa.dotx / pa.Teff for pa in particles]
+    K = bond_dissipation(particles, params, cl, eos, β)
+    bond_dissipative_force!(dotm, particles, params, cl, eos, β)
+    ΣΔs = 0.0
+    for a in 1:N
+        Δm = dt .* dotm[a]
+        Δs = -dot(β[a], Δm)
+        particles[a].m += Δm
+        particles[a].s += Δs
+        ΣΔs += Δs
+    end
+    return K, ΣΔs
 end
 
 # Full GENERIC step: Strang splitting D(dt/2) · H(dt) · D(dt/2).

@@ -69,6 +69,35 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `energystep` — 2026-11-09, PROPOSED (not submitted), branch `hamiltonian-energy-step`
+
+Note from the local session for the NERSC session.  Read `docs/energystep.pdf` first.
+- **What it is.**  `SPH_HAMILTONIAN=energy` (default `smoothed`, so nothing else changes):
+  H = Σ_a e_a, each particle's energy at its own momentum density m_a/V_a, V_a = s_a/S_a.
+  ẋ_a = v_a (not smoothed), a pure SPH pressure force, a viscous step with no change of
+  representation.  In `stochrep_step!` the gradient correction is off with `:energy` (an
+  error if forced on); `stochrep_hamiltonian.jl` follows, output suffix `_energy`.
+  `stochrep_equilibrium.jl` needs no change (it uses the defaults).
+- **Checked locally.**  Hamilton's equations against finite differences of H (1e-6);
+  momentum to 1e-16.  Deterministic shear wave (`examples/shearwave_decay.jl`,
+  `shearwave_scan.jl`): the two Hamiltonians agree; the ideal step has the same transverse
+  sound, c_t = 0.034 at h/a = 2 (C2), the static value of `rigidity.tex` — as expected,
+  since H is the same function of the positions at m = 0.  It does **not** cure the
+  rigidity by itself.
+- **Stochastic step, one-step bookkeeping** (`examples/energystep_stoch_onestep.jl`,
+  L = 0.6, h/a = 2, eq start, 20 half steps at fixed positions, 3 seeds):
+  `:smoothed` (gradient map) ΔH/H per step rms 3.4e-5, random sign; `:energy` ΔH = Δ(Σe)
+  exactly, rms 1.8e-7, but systematic: −1.8e-7 per half step (cooling, about −4e-5 per
+  unit time).  Correlated (−0.8) with Σ(Teff−T)Δs but of opposite sign: not understood yet.
+- **Proposed runs** (`nersc/campaign_energystep.txt`, 5 tasks, `-c 8`, the same settings
+  as `rigidity` ha2 and nv_ha2): ≈ 0.15 node-hours, scaled from `rigidity` (28 tasks ≈
+  0.8).  Compare C_T, C_L, ΔH/H(t), KE/eq and UT with ha2 / nv_ha2.  Ask the owner before
+  submitting; run from a separate checkout of `hamiltonian-energy-step` at a fixed commit.
+- **Next idea, not implemented** (`energystep.tex`, "volumes that add up to the area"):
+  V_a = A s_a/S_a / Σ_c(s_c/S_c) makes Σ V_a = A, which removes the pressure-driven
+  modulus G ~ p ε on a lattice; the force becomes the present one with p → p − p̄.  If it
+  is implemented, the same two campaign lines with it are the test.
+
 ### `rigidity` — 2026-11-09, `nersc/campaign_rigidity.txt` (+ `_det`), branch `rigidity`
 
 Where does the transverse rigidity come from (docs/campaigns.pdf)?  L = 1.2, t = 200, 16

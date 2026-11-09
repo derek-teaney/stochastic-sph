@@ -1,0 +1,442 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\bbeta}{\bm\beta}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The ideal step in the energy representation}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The Hamiltonian is written as the sum of the particle energies,
+$H=\sum_ae_a$, each evaluated from the particle's own entropy, momentum and
+volume.  The volume is coarse grained with the entropy weights already in the
+code, $V_a=s_a/S(\bm x_a)$.  Hamilton's equations then give an ideal step in
+which each particle moves with its own velocity and feels only a pressure force.
+Viscosity is left out.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Variables and the volume}
+\label{sec:vars}
+
+Each particle $a$ has a position $\bm x_a$, a momentum $\bm m_a$ and an entropy
+weight $s_a$.  The weights are constants of the ideal step; a convenient start
+is $s_a=1$ for all particles.  The coarse-grained entropy density at the
+particle is the kernel sum
+\st
+S_a\equiv S(\bm x_a)=\sum_bs_b\,W(\bm x_a-\bm x_b),
+\stp
+and the particle's volume is defined by
+\st
+V_a=\frac{s_a}{S_a},\qquad\text{so that}\qquad \frac1{V_a}=\frac{S_a}{s_a}
+\;\xrightarrow{\,s_a=1\,}\;\sum_bW(\bm x_a-\bm x_b).
+\label{Va}
+\stp
+For unit weights $1/V_a$ is the number density of particles.  The particle's
+entropy density $s_a/V_a$ is then the smoothed one, $S_a$.  Its momentum
+density is its own, $\bm m_a/V_a$, not smoothed.
+
+When the particles move, the volume changes as
+\st
+\frac{\dot V_a}{V_a}=-\frac{\dot S_a}{S_a}
+=\frac{1}{S_a}\sum_bs_b\,(\dot{\bm x}_b-\dot{\bm x}_a)\cdot\bm D_{ab},
+\qquad
+\bm D_{ab}\equiv\frac{\partial W(\bm x_a-\bm x_b)}{\partial\bm x_a},
+\label{Vdot}
+\stp
+the SPH estimate of $\nabla\cdot\dot{\bm x}$ at $\bm x_a$.
+
+%=============================================================================
+\section{The particle energy}
+\label{sec:energy}
+
+The equation of state gives the energy density $h(S,\bm M)$ as a function of the
+entropy and momentum densities.  The particle's energy is
+\st
+e_a=E_a(s_a,\bm m_a,V_a)\equiv V_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big),
+\label{ea}
+\stp
+the same particle energy as in the particle representation of
+\texttt{changerep.tex}.  Its differential is the first law for the particle,
+\st
+de_a=T_a\,ds_a+\bm v_a\cdot d\bm m_a-p_a\,dV_a ,
+\label{firstlaw}
+\stp
+where $T_a$ (bare, $T_{\rm rel}/\gamma$), $\bm v_a$ and $p_a$ are the temperature,
+velocity and pressure at the particle's densities $(S_a,\bm m_a/V_a)$.
+
+%=============================================================================
+\section{The Hamiltonian and Hamilton's equations}
+\label{sec:ham}
+
+The Hamiltonian is the sum of the particle energies,
+\st
+\boxed{\;H(\bm x,\bm m)=\sum_ae_a=\sum_aV_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big),
+\qquad V_a=\frac{s_a}{S(\bm x_a)}\;}
+\label{H}
+\stp
+It depends on the positions only through the volumes.  Since $s_a=V_aS_a$,
+\Eq{H} is the same as
+\st
+H=\sum_as_a\,\mathcal E\Big(S_a,\frac{\bm m_a}{s_a}\Big),
+\stp
+with $\mathcal E$ the energy per unit entropy.  The present Hamiltonian
+(\texttt{sph2.tex}) is $\sum_as_a\mathcal E(S_a,\bm M_a/S_a)$, with the smoothed
+momentum $\bm M_a=\sum_b\bm m_bW_{ab}$ in place of the particle's own
+$\bm m_a$; that is the only difference.
+
+Hamilton's equations are
+\st
+\dot{\bm x}_a=\frac{\partial H}{\partial\bm m_a},\qquad
+\dot{\bm m}_a=-\frac{\partial H}{\partial\bm x_a},\qquad \dot s_a=0 .
+\stp
+By \Eq{firstlaw}, $\partial H/\partial\bm m_a=\bm v_a$: the particle moves with
+its own velocity,
+\st
+\boxed{\;\dot{\bm x}_a=\bm v_a\;}
+\label{xdot}
+\stp
+For the force, $\partial H/\partial\bm x_a=-\sum_cp_c\,\partial V_c/\partial\bm x_a$ with
+$\partial V_c/\partial\bm x_a=-(V_c/S_c)\,\partial S_c/\partial\bm x_a$, and
+\st
+\frac{\partial S_c}{\partial\bm x_a}=\delta_{ca}\sum_bs_b\bm D_{ab}+s_a\bm D_{ac}.
+\stp
+Collecting terms,
+\st
+\boxed{\;\dot{\bm m}_a=-\sum_bs_as_b\left(\frac{p_a}{S_a^2}+\frac{p_b}{S_b^2}\right)\bm D_{ab}\;}
+\label{mdot}
+\stp
+This is the standard symmetric SPH pressure force, with $S$ in the role of the
+mass density and $s_a$ in the role of the mass.  Compared with \texttt{sph2.tex},
+the terms in $\Delta\mathcal M_b(\bm x_a)=\bm m_b/s_b-\bm M_a/S_a$ are gone,
+because the momentum is not smoothed.
+
+\paragraph{Continuum limit.}  With $\sum_bV_bf_b\bm D_{ab}\to\nabla f$,
+\Eq{mdot} becomes $\dot{\bm m}_a\to-V_a\nabla p$.  This is the momentum equation
+for a parcel moving with $\bm v$: relative to such a parcel the momentum flux
+$T^{ij}=M^iv^j+p\,\delta^{ij}$ reduces to $p\,\delta^{ij}$.
+
+\paragraph{The particle energies.}  From \Eq{firstlaw} at fixed $s_a$,
+\st
+\dot e_a=\bm v_a\cdot\dot{\bm m}_a-p_a\dot V_a ,
+\label{edot}
+\stp
+with $\dot V_a$ from \Eq{Vdot}.  The particle energies change by the work done on
+the particle; their sum does not.
+
+%=============================================================================
+\section{What is conserved}
+\label{sec:cons}
+
+\begin{enumerate}
+\item \emph{Energy.}  $H=\sum_ae_a$ is conserved by Hamilton's equations, and it is
+  the same sum of particle energies \Eq{ea} that the viscous step of
+  \texttt{changerep.tex} works with: the smoothed and the particle energies are
+  one and the same.
+\item \emph{Momentum.}  $\bm D_{ba}=-\bm D_{ab}$, so the pair forces in
+  \Eq{mdot} cancel and $\sum_a\bm m_a$ is conserved.
+\item \emph{Entropy.}  Each $s_a$ is constant, so $\sum_as_a$ is conserved, and
+  each particle's entropy $S_a(e_a,\bm m_a)$ at volume $V_a$ equals $s_a$.
+\end{enumerate}
+
+%=============================================================================
+\section{What it does not change: the static rigidity}
+\label{sec:rigidity}
+
+At rest, $\bm m_a=0$, the new and the present Hamiltonians are the same function of
+the positions,
+\st
+H\big|_{\bm m=0}=\sum_as_a\,\mathcal E(S_a,0),
+\stp
+because the two differ only in which momentum enters $\mathcal E$.  The static phonon
+spectrum of \texttt{rigidity.tex} (Sect.~``The ideal Hamiltonian's phonons''),
+and with it the static shear modulus $G$ and $c_t$, are therefore unchanged: the
+positions still enter only through the kernel sum $S_a=\sum_bs_bW_{ab}$, which is
+what breaks the relabeling symmetry.  The energy representation is \emph{not} a
+fix for the rigidity.  (Volumes that partition space, $\sum_aV_a=A$, would be; that
+is a different choice of $V_a$ in \Eq{Va}, and \Eq{H}--\Eq{mdot} would carry over
+with $\partial V_c/\partial\bm x_a$ from the partition.)
+
+What does change is the dynamics: the particles move with their own velocities
+rather than a doubly smoothed one, and the force has no $\Delta\mathcal M$ terms.
+Whether that changes the measured transverse oscillation in $C_T$ (its frequency
+or damping) is an open question for the runs, not something this note predicts.
+The gain that is certain is consistency with the viscous step, \Sect{sec:visc}.
+
+%=============================================================================
+\section{The deterministic viscous step}
+\label{sec:visc}
+
+With $H=\sum_ae_a$, the viscous step is done on the particles' own variables; there
+is no change of representation.  The derivative of $H$ with respect to a weight at
+fixed $\bm x$, $\bm m$ is
+\st
+T^{\rm eff}_a\equiv\frac{\partial H}{\partial s_a}
+=T_a-\frac{p_a}{S_a}+\sum_bs_b\frac{p_b}{S_b^2}W_{ab}
+=T_a+O(h^2),
+\label{Teff}
+\stp
+using $\mathcal E-\bm v\cdot\bm m/s=T-p/S$; the last two terms are the smoothed minus
+the local $p/S$.  With
+\st
+\bbeta_a=\frac{\bm v_a}{T^{\rm eff}_a},\qquad
+\Delta\bm m_a=-\Delta t\,\frac{\partial K}{\partial\bbeta_a},\qquad
+\Delta s_a=-\bbeta_a\cdot\Delta\bm m_a ,
+\label{viscstep}
+\stp
+$\Delta H=\sum_a(T^{\rm eff}_a\Delta s_a+\bm v_a\cdot\Delta\bm m_a)=0$ to first order
+in $\Delta t$, and $\sum_a\Delta s_a=2K\Delta t\ge0$, as in \texttt{sph2.tex}.  $K$ is
+the bond dissipative function of \texttt{changerep.tex}, which already takes a
+pointwise $\bbeta_a$.
+
+Compared with \texttt{changerep.tex}: the forward map $s_a\to e_a$ is no longer a
+map, since $e_a$ is already the energy in $H$; the gradient correction $g_a$
+(its Appendix~A) was the difference between $\sum_ae_a$ and the smoothed $H$, and is
+now zero.  The exact back map at fixed $e_a$, $V_a$ does not carry over as it is: a
+change of $s_a$ changes $S_b$, hence $V_b$, at every neighbour, so fixing every
+$e_a$ at fixed $V_a$ does not fix $H$ exactly.  The step \Eq{viscstep} conserves $H$
+to first order in $\Delta t$; the drift is measured (plan, step 6).
+
+%=============================================================================
+\section{Implementation plan}
+\label{sec:plan}
+
+The Hamiltonian is chosen by a new field \texttt{params.hamiltonian} $\in$
+\{\texttt{:smoothed}, \texttt{:energy}\} (environment \texttt{SPH\_HAMILTONIAN}),
+default \texttt{:smoothed}, so that every existing run and test is unchanged.
+
+\paragraph{Unchanged.}  The \texttt{Particle} struct (\texttt{x}, \texttt{s},
+\texttt{m}, \texttt{S\_smooth} and the EOS fields are enough); kernels, cell and
+neighbour lists; the EOS solvers \texttt{eos\_newton}, \texttt{solve\_eos!},
+\texttt{particle\_energy}, \texttt{eos\_from\_energy}; the integrators
+\texttt{leapfrog\_step!} and \texttt{kdk\_step!} (their structure; they call the
+functions below); the bond dissipative function and force; the set-up of initial
+conditions ($s_a=S(\bm x_a)\,{\rm vol}$, or $s_a=1$); the recorders.  The stochastic
+step is left alone.
+
+\paragraph{Changed (all in \texttt{celllist.jl}, dispatched on \texttt{params.hamiltonian}).}
+\begin{enumerate}
+\item \texttt{smooth\_to\_particles!}: sum $S_a$ only, and set the momentum density to
+  the particle's own, \texttt{M\_smooth} $=\bm m_aS_a/s_a=\bm m_a/V_a$.  Then
+  \texttt{solve\_eos!} returns, unchanged, the particle's own $T_a$, $\bm v_a$, $p_a$
+  and $e_a/s_a$ (\texttt{H\_over\_S}).  One neighbour sum fewer.
+\item \texttt{update\_velocities!}: $\dot{\bm x}_a=\bm v_a$, local, no neighbour sum;
+  \texttt{Teff} from \Eq{Teff}, one neighbour sum (needed only by the viscous step and
+  by the bond metric).
+\item \texttt{hamiltonian\_force!}: the pair bracket becomes
+  $-s_as_b(p_a/S_a^2+p_b/S_b^2)$, \Eq{mdot}.
+\item Viscous step: \texttt{dissipative\_step\_changerep!} with $\bbeta_a$ of
+  \Eq{viscstep} read from the particle (no \texttt{pointwise\_state} copy), and
+  $\Delta s_a=-\bbeta_a\cdot\Delta\bm m_a$.  \texttt{dissipative\_step!} calls it, not
+  the gradient-corrected step, when \texttt{params.hamiltonian == :energy}.
+\item Diagnostics: the total energy is $\sum_ae_a=\sum_as_a\,$\texttt{H\_over\_S}$_a$,
+  the same number as $H$.
+\end{enumerate}
+
+\paragraph{Steps and checks.}
+\begin{enumerate}
+\item Implement 1--3 behind the flag; \texttt{test/testregress\_step.jl} must stay
+  bit-identical for \texttt{:smoothed}.
+\item A test \texttt{test/testenergystep.jl}: $\partial H/\partial\bm m_a$ and
+  $\partial H/\partial\bm x_a$ against finite differences of $H$ on a jittered
+  lattice; $\sum_a\dot{\bm m}_a=0$; $\dot s_a=0$.
+\item Ideal runs: energy drift of $H$ versus $\Delta t$ (second order for the
+  leapfrog), a sound wave (speed and damping) against the present step
+  (\texttt{examples/testsound.jl}), and the time step: the unsmoothed $\bm v_a$ may
+  need a smaller CFL.
+\item Static check: the phonon spectrum of \Sect{sec:rigidity} must agree with the
+  present one to roundoff (it is the same $H$ at $\bm m=0$).
+\item Implement 4; check $\sum_a\Delta s_a=2K\Delta t$ and $\Delta H=O(\Delta t^2)$
+  per step; a shear wave against $e^{-\nu k^2t}$ (\texttt{examples/testshearwave.jl}).
+\item Energy drift over long coupled deterministic runs, against the present step with
+  the gradient-corrected map.
+\end{enumerate}
+
+\paragraph{Documentation.}  Each changed function gets a comment that states the
+equation it implements and cites this note by equation; \texttt{params.hamiltonian}
+is described where \texttt{SimParams} is defined; the outcome of each check above
+is added to this note as it is done.
+
+\paragraph{Status (2026-11-09).}  Items 1--3 of the changes and item 4 (the viscous step,
+\texttt{dissipative\_step\_energy!}) are in \texttt{src/sph.jl} and
+\texttt{src/celllist.jl}.  On a jittered lattice with a moving fluid, $\partial H/\partial\bm
+m_a$, $\partial H/\partial\bm x_a$ and $\partial H/\partial s_a$ agree with $\dot{\bm x}_a$,
+$-\dot{\bm m}_a$ and $T^{\rm eff}_a$ to $10^{-6}$ (finite differences); $\sum_a\dot{\bm
+m}_a=7\times10^{-16}$; $H=\sum_a$\texttt{particle\_energy} exactly.  The deterministic
+shear wave is \Sect{sec:shear}.
+
+%=============================================================================
+\section{The deterministic shear wave}
+\label{sec:shear}
+
+\texttt{examples/shearwave\_decay.jl} (viscous and ideal) and
+\texttt{examples/shearwave\_scan.jl} (ideal, kernels and $h/a$).  A uniform fluid with
+\st
+M_y(x,0)=A\sin kx,\qquad k=\frac{2\pi}{L},
+\stp
+evolved with the full deterministic step.  A fluid keeps the amplitude with $\eta=0$
+and decays as $e^{-\nu k^2t}$, $\nu=(\eta/s)/T_{\rm rel}$, with $\eta>0$.  An elastic
+solid with transverse speed $c_t$ instead gives, with $\eta=0$,
+\st
+\frac{A(t)}{A(0)}=\cos(c_tkt).
+\stp
+At $h/a=2$ (C2, $kh=0.31$):
+\begin{enumerate}
+\item The two Hamiltonians agree: amplitudes to $10^{-3}$ with and without viscosity,
+  $|\Delta H/H|\sim10^{-11}$ for the ideal step.  The viscous step drifts by
+  $4\times10^{-8}$ (\texttt{:energy}) and $8\times10^{-9}$ (\texttt{:smoothed}).
+\item For $A\le0.005$ (displacements $\le0.4a$) the ideal wave is an undamped cosine with
+  $c_t=0.0340$ (\texttt{:energy}) and $0.0335$ (\texttt{:smoothed}): the static value
+  $0.034$ of \texttt{rigidity.tex}.  For $A=0.02$ the particles slip by $2.4a$ and the
+  response is not linear.
+\item With $\eta/s=0.02$ the amplitude falls below $e^{-\nu k^2t}$ and turns negative: a
+  damped transverse oscillation.
+\end{enumerate}
+The scan over kernels and $h/a$ is running.
+
+%=============================================================================
+\section{Proposal: volumes that add up to the area}
+\label{sec:norm}
+
+\paragraph{Why the kernel volume gives a modulus.}  Since $H$ depends on the positions only
+through the volumes, to second order in their changes
+\st
+\delta H=-\sum_ap_a\,\delta V_a+\sum_a\frac{K_a}{2V_a}\,\delta V_a^2 ,
+\label{dH}
+\stp
+with $K$ the bulk modulus.  For $V_a=s_a/S_a$ a homogeneous shear $\epsilon$ of a
+lattice changes every volume by the same amount at second order, $\delta V_a=c\,\epsilon^2$,
+so $\sum_a\delta V_a\neq0$, and the first term gives a modulus
+\st
+G\sim p\,c(h/a,\text{kernel}).
+\stp
+This is the $\epsilon$ of \texttt{rigidity.tex}, proportional to the pressure.
+
+\paragraph{The condition.}  If the volumes always add up to the area,
+\st
+\sum_aV_a=A ,
+\label{sumV}
+\stp
+then at uniform pressure $\sum_ap\,\delta V_a=p\sum_a\delta V_a=0$, and the second term of
+\Eq{dH} is of fourth order in $\epsilon$ on a lattice: no modulus.  A partition of space
+(Voronoi cells, or the partition of unity of meshless finite-mass methods) satisfies
+\Eq{sumV}; so does the simplest choice, a global normalization of the kernel volume,
+\st
+V_a=\frac{A}{Z}\,\tilde V_a,\qquad \tilde V_a=\frac{s_a}{S_a},\qquad Z=\sum_c\tilde V_c .
+\label{Vnorm}
+\stp
+The particle's entropy density is then $s_a/V_a=(Z/A)\,S_a$.
+
+\paragraph{Hamilton's equations.}  With \Eq{Vnorm} in \Eq{H},
+$\partial H/\partial\bm x_a=-\sum_cp_c\,\partial V_c/\partial\bm x_a$ and
+\st
+\frac{\partial V_c}{\partial\bm x_a}=\frac AZ\Big(\frac{\partial\tilde V_c}{\partial\bm x_a}
+-\frac{\tilde V_c}{Z}\sum_d\frac{\partial\tilde V_d}{\partial\bm x_a}\Big).
+\stp
+The second term subtracts the volume-averaged pressure
+\st
+\bar p=\frac1A\sum_cp_cV_c ,
+\stp
+and the force is \Eq{mdot} with $p\to p-\bar p$:
+\st
+\dot{\bm m}_a=-\frac AZ\sum_bs_as_b\left(\frac{p_a-\bar p}{S_a^2}+\frac{p_b-\bar p}{S_b^2}\right)\bm D_{ab}.
+\label{mdotnorm}
+\stp
+The same substitution in \Eq{Teff} gives the derivative with respect to the weights,
+\st
+T^{\rm eff}_a=T_a-\frac AZ\left[\frac{p_a-\bar p}{S_a}-\sum_bs_b\,\frac{p_b-\bar p}{S_b^2}\,W_{ab}\right].
+\stp
+Still exact: $H$ is conserved by Hamilton's equations, and the pair terms of
+\Eq{mdotnorm} are odd under $a\leftrightarrow b$, so momentum is conserved.  The continuum
+limit is unchanged, $\nabla(p-\bar p)=\nabla p$.  The cost is one global sum per step.
+In SPH, subtracting a background pressure is a known remedy for the tensile
+instability; here it follows from the Hamiltonian, and energy conservation is kept.
+
+\paragraph{Expected, and tests.}
+\begin{enumerate}
+\item Perfect lattice: $c_t$ falls from $0.034$ to near zero.  Test: the shear-wave scan
+  with \Eq{Vnorm}, against \Sect{sec:shear}.
+\item Thermal state: what is left is driven by the pressure fluctuations $\delta p$
+  rather than by $p$, with random sign; no coherent long-wavelength modulus is expected.
+  Test: the stochastic runs, \Sect{sec:stoch}.
+\item Disordered arrangements: an affine shear changes the individual $\delta V_a$ at first
+  order, with random sign, which leaves a modulus $\propto K\,(\text{disorder})^2$ from the
+  second term of \Eq{dH}: the caveat (a) of \texttt{rigidity.tex} for Voronoi volumes.  A
+  local partition does not remove it either.  Test: the static phonon spectrum on jittered
+  lattices (\texttt{ideal\_lattice\_modes.jl}, \texttt{JITTER}).
+\end{enumerate}
+Implementation: an option \texttt{volume = :normalized} of the \texttt{:energy}
+Hamiltonian; one reduction for $\bar p$ and $Z$, and $p\to p-\bar p$, $S\to(Z/A)S$ where
+the particle state is evaluated.
+
+%=============================================================================
+\section{The stochastic step with \texttt{:energy}}
+\label{sec:stoch}
+
+Not yet tested.  The stochastic step (\texttt{stochrep.tex}) works at fixed positions,
+volumes $V_a=s_a/S_a$ and particle energies $e_a$, which are exactly the variables of
+\Eq{H}; on a frozen lattice it is the same step for both Hamiltonians.  Two differences:
+\begin{enumerate}
+\item \emph{No gradient correction.}  The gradient energy $g_a$ of \texttt{changerep.tex}
+  (Appendix~A) absorbs the difference between $\sum_ae_a$ and the smoothed $H$, which is
+  now zero.  With \texttt{:energy} the step must use the plain back map
+  $s_a'=S_a(e_a,\bm m_a')$ (\texttt{gradient = false}).
+\item \emph{The back map and the volumes.}  The back map holds $e_a$ and $V_a$ fixed, but a
+  change of $s_a$ changes $S_b$ and so $V_b$ at every neighbour.  To first order
+  \st
+  \Delta H\simeq\sum_a\big(T^{\rm eff}_a-T_a\big)\Delta s_a ,
+  \stp
+  with $T^{\rm eff}_a-T_a$ the smoothed minus the local $p/S$, of order $h^2$.  In the
+  deterministic step this is $4\times10^{-8}$ (\Sect{sec:shear}); with noise the $\Delta s_a$
+  are larger and fluctuate, so its size has to be measured.
+\end{enumerate}
+Tests, in order:
+\begin{enumerate}
+\item \texttt{stochrep\_step!} defaults to \texttt{gradient = false} when
+  \texttt{params.hamiltonian == :energy}, and the drivers keep that default.
+\item One step on a thermal state: $\Delta H$ per stochastic step, \texttt{:energy} against
+  \texttt{:smoothed} (with its gradient-corrected map).
+\item Coupled runs, \texttt{stochrep\_hamiltonian.jl}: $L=0.6$, $h/a=2$, $\eta/s=0.2$,
+  $S_0=10^6$, to $t\approx50$, 2--4 realizations per Hamiltonian: $\Delta H/H(t)$,
+  KE/eq, the lattice disorder.  Local.
+\item At NERSC, after 1--3: equilibrium $C_T$, $C_L$ with \texttt{:energy}, as campaign
+  \texttt{second}; the node-hour estimate first.
+\end{enumerate}
+\paragraph{Status.}  Test 1 is done; \texttt{:smoothed} stays bit-identical
+(\texttt{test/testregress\_step.jl}).  Test 2 (\texttt{examples/energystep\_stoch\_onestep.jl},
+$L=0.6$, $h/a=2$, equilibrium start, 20 half steps $\Delta t/2=0.0043$ at fixed positions,
+3 seeds):
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+ & \texttt{:smoothed} (gradient map) & \texttt{:energy} \\ \hline
+$\Delta H/H$ per half step, rms & $3.4\times10^{-5}$ & $1.8\times10^{-7}$ \\
+$\Delta H/H$ per half step, mean & $\pm\,7\times10^{-6}$ (seed to seed) & $-1.8\times10^{-7}$ (every seed) \\
+\hline
+\end{tabular}
+\end{center}
+With \texttt{:energy}, $\Delta H=\Delta\sum_ae_a$ exactly, and the change is $200$ times smaller
+than with \texttt{:smoothed}, but systematic: a cooling of about $4\times10^{-5}$ per unit
+time.  It is correlated ($-0.8$) with $\sum_a(T^{\rm eff}_a-T_a)\Delta s_a$, but of the
+opposite sign and twice the size; not understood yet.
+
+With \Sect{sec:norm}, the same tests with \texttt{volume = :normalized} decide whether the
+transverse oscillation of the equilibrium $C_T$ is the pressure term of \Eq{dH}.
+
+\end{document}
