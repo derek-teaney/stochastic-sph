@@ -156,15 +156,20 @@ end
 # Star of a for the kernel weights: (b, r_ab, λ_ab), including b = a.
 # kernel_star! fills `out` (keeping its capacity); kernel_star returns a fresh vector
 # (with a scratch buffer `buf`, gathered there and copied once at the exact size).
-function kernel_star!(out, a, particles, params, cl)
+# With nl = neighbor_list!(cl, particles, params.h) (built by the caller, outside any
+# threaded loop) the neighbours come from the list, in the same order as the cell scan.
+function kernel_star!(out, a, particles, params, cl; nl = nothing)
     pa = particles[a];  empty!(out)
-    ix, iy = cell_index(pa.x, cl)
-    for dx in -1:1, dy in neighbor_range(cl.ncy)
-        jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
-        for b in particles_in_cell(cl, jx, jy)
-            r = minimum_image(particles[b].x - pa.x, params.L)
-            W = wendland_c2(norm(r), params.h, params.kernel)
-            W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth))
+    add!(b) = (r = minimum_image(particles[b].x - pa.x, params.L);
+               W = wendland_c2(norm(r), params.h, params.kernel);
+               W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth)))
+    if nl !== nothing
+        for b in neighbors(nl, a);  add!(b);  end
+    else
+        ix, iy = cell_index(pa.x, cl)
+        for dx in -1:1, dy in neighbor_range(cl.ncy)
+            jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
+            for b in particles_in_cell(cl, jx, jy);  add!(b);  end
         end
     end
     return out

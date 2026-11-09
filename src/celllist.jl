@@ -10,6 +10,7 @@ mutable struct CellList2D
     ncy        :: Int               # cells in y direction
     cell_size  :: SVector{2,Float64} # (Lx/ncx, Ly/ncy), each ≥ 2h; cells tile the box exactly
     L          :: SVector{2,Float64}
+    nl         :: Any                # NeighborList of the current positions, built on demand
 end
 
 function CellList2D(L::SVector{2,Float64}, h::Float64, N::Int)
@@ -20,7 +21,72 @@ function CellList2D(L::SVector{2,Float64}, h::Float64, N::Int)
     # [0, Ly) when Ly/ncy ≠ Lx/ncx, and the periodic y-stencil then misses pairs
     # across y = 0 (test/testcelllist_box.jl).
     cell_size = SVector(L[1] / ncx, L[2] / ncy)
-    CellList2D(zeros(Int,ncx,ncy), zeros(Int,ncx,ncy), zeros(Int,N), ncx, ncy, cell_size, L)
+    CellList2D(zeros(Int,ncx,ncy), zeros(Int,ncx,ncy), zeros(Int,N), ncx, ncy, cell_size, L, nothing)
+end
+
+# Run body(range) over contiguous chunks of 1:N, one chunk per thread, so that each
+# chunk can allocate its scratch buffers once.  Results do not depend on the chunking
+# as long as body writes only the entries of its own range.
+function threaded_chunks(body, N::Int)
+    n = max(1, min(N, Threads.nthreads()))
+    rs = [((c - 1) * N ÷ n + 1):(c * N ÷ n) for c in 1:n]
+    Threads.@threads for c in 1:n
+        body(rs[c])
+    end
+end
+
+# ── Neighbour list ───────────────────────────────────────────────────────────
+# For each particle a, the particles b (a itself included) with |x_b − x_a| < 2h(1 + 1e-9),
+# in exactly the order of the cell scan (dx in −1:1, dy in neighbor_range(ncy), cell
+# order), so that a pass over the list sums in the same order as the scan.  Each pass
+# keeps its own exact distance test.  The list remembers the positions it was built from
+# and is rebuilt whenever they differ (one comparison per particle per call).
+mutable struct NeighborList
+    offsets :: Vector{Int}                 # neighbours of a: index[offsets[a]:offsets[a+1]-1]
+    index   :: Vector{Int}
+    x       :: Vector{SVector{2,Float64}}  # positions at the build
+    h       :: Float64
+    valid   :: Bool
+    parts   :: Vector{Vector{Int}}         # per-chunk buffers, reused between builds
+    counts  :: Vector{Int}
+end
+NeighborList() = NeighborList(Int[], Int[], SVector{2,Float64}[], 0.0, false, Vector{Int}[], Int[])
+neighbors(nl::NeighborList, a::Int) = @view nl.index[nl.offsets[a]:nl.offsets[a+1]-1]
+
+function neighbor_list!(cl::CellList2D, particles::Vector{Particle}, h::Float64)
+    cl.nl isa NeighborList || (cl.nl = NeighborList())
+    nl = cl.nl::NeighborList;  N = length(particles)
+    if nl.valid && nl.h == h && length(nl.x) == N && all(i -> nl.x[i] == particles[i].x, 1:N)
+        return nl
+    end
+    cut2 = (2h * (1 + 1e-9))^2
+    ncx = cl.ncx;  ncy = cl.ncy
+    nch = max(1, min(N, Threads.nthreads()))
+    length(nl.parts) == nch || (nl.parts = [Int[] for _ in 1:nch])
+    resize!(nl.counts, N);  counts = nl.counts;  parts = nl.parts
+    Threads.@threads for c in 1:nch
+        idx = empty!(parts[c])
+        for a in ((c - 1) * N ÷ nch + 1):(c * N ÷ nch)
+            ix, iy = cell_index(particles[a].x, cl);  n0 = length(idx)
+            for dx in -1:1, dy in neighbor_range(ncy)
+                jx = mod(ix + dx - 1, ncx) + 1
+                jy = mod(iy + dy - 1, ncy) + 1
+                for b in particles_in_cell(cl, jx, jy)
+                    r = minimum_image(particles[a].x - particles[b].x, cl.L)
+                    r[1]^2 + r[2]^2 < cut2 && push!(idx, b)
+                end
+            end
+            counts[a] = length(idx) - n0
+        end
+    end
+    resize!(nl.offsets, N + 1);  nl.offsets[1] = 1
+    for a in 1:N;  nl.offsets[a + 1] = nl.offsets[a] + counts[a];  end
+    resize!(nl.index, nl.offsets[N + 1] - 1);  k = 0
+    for c in 1:nch, b in parts[c];  k += 1;  nl.index[k] = b;  end
+    resize!(nl.x, N)
+    for a in 1:N;  nl.x[a] = particles[a].x;  end
+    nl.h = h;  nl.valid = true
+    return nl
 end
 
 function cell_index(x::SVector{2,Float64}, cl::CellList2D)
@@ -77,15 +143,12 @@ end
 """
 function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
                                cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
+    nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         S_acc = 0.0
         M_acc = zero(SVector{2,Float64})
-        ix, iy = cell_index(particles[a].x, cl)
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
                 w = wendland_c2(r_mag, params.h, params.kernel)
@@ -102,15 +165,12 @@ end
 # for every particle in a single neighbor pass (step 3 of the update chain).
 function update_velocities!(particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
+    nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         dotx_acc = zero(SVector{2,Float64})
         FS_acc   = 0.0
-        ix, iy = cell_index(particles[a].x, cl)
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 w = wendland_c2(r_mag, params.h, params.kernel)
@@ -130,16 +190,13 @@ end
 function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                              particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
+    nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
-        ix, iy = cell_index(particles[a].x, cl)
         sa, ma = particles[a].s, particles[a].m
         vSa, FSa = particles[a].v_over_S, particles[a].F_over_S
         acc = zero(SVector{2,Float64})
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 b == a && continue
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)

@@ -34,17 +34,6 @@ function sqrt_comoving(v::SVector{2,Float64})
     return SMatrix{2,2,Float64}(I) - (1 - sqrt(1 - v2)) * (v * v') / v2
 end
 
-# Run body(range) over contiguous chunks of 1:N, one chunk per thread, so that each
-# chunk can allocate its scratch buffers once.  Results do not depend on the chunking
-# as long as body writes only the entries of its own range.
-function threaded_chunks(body, N::Int)
-    n = max(1, min(N, Threads.nthreads()))
-    rs = [((c - 1) * N ÷ n + 1):(c * N ÷ n) for c in 1:n]
-    Threads.@threads for c in 1:n
-        body(rs[c])
-    end
-end
-
 # ── Frozen star data ─────────────────────────────────────────────────────────
 struct Star
     nb :: Vector{Int}                   # bonds b with w_ab > 0
@@ -81,15 +70,14 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
     ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     stars = cache === nothing ? Vector{Star}(undef, N) : resize!(cache.stars, N)
+    nl = neighbor_list!(cl, particles, h)
     threaded_chunks(N) do range
     nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[];  ψb = Float64[]
     for a in range
         pa = particles[a]
         empty!(nb)
-        ix, iy = cell_index(pa.x, cl)
-        for dx in neighbor_range(cl.ncx), dy in neighbor_range(cl.ncy)
-            jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 b == a && continue
                 r = minimum_image(particles[b].x - pa.x, L);  rm = norm(r)
                 rm < 2h && push!(nb, (b, r, rm))
@@ -399,11 +387,12 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
         s0  = [pa.s for pa in particles]
         μ0  = [pa.m / pa.s for pa in particles]
         g0  = Vector{Float64}(undef, N)
+        nl = neighbor_list!(cl, particles, params.h)
         threaded_chunks(N) do range
             buf = Tuple{Int,SVector{2,Float64},Float64}[]
             for a in range
-                kst[a] = cache !== nothing && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl) :
-                                                                   kernel_star(a, particles, params, cl, buf)
+                kst[a] = cache !== nothing && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl; nl) :
+                                                                   copy(kernel_star!(buf, a, particles, params, cl; nl))
                 Cs[a]  = inverse_susceptibility(particles[a], eos)
             end
         end
