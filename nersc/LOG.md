@@ -59,6 +59,10 @@ or learn something about running the code here.
   with `read_equilibrium` (`src/measure.jl`) or h5py (arrays appear as (nt, nk)).
   `stochrep_hamiltonian.jl` still writes `.jls` (Julia `serialize`; needs the same
   `src/` definitions to load).
+- **Throughput in `shared`: `MaxJobsAccruePU = 2`.**  Only two pending tasks gain
+  priority at a time; array tasks start in pairs about every 5 min (≈ 24 per hour),
+  whatever the `%` limit.  176 tasks take ≈ 7 h just to start.  For many long tasks,
+  consider packing them into whole-node jobs (64 two-thread tasks per node) instead.
 - Recording interval: the sound period at k h = 1.5 is 2π/(c_s k) ≈ 0.36; keep
   `rec_every × Δt ≲ 0.05` (Δt = 8.66e-3 at h/a = 2) if C_L is wanted at large k.
 - Cost model: wall ≈ c × N × steps, steps = t_end / 8.66e-3 at h/a = 2.
