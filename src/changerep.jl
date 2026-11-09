@@ -73,13 +73,7 @@ end
 function eos_from_energy(ε::Float64, M::SVector{2,Float64}, eos::AbstractEOS;
                          tol=1e-15, maxiter=500)
     M2 = dot(M, M)
-    e  = ε
-    for _ in 1:maxiter
-        e_new = ε - M2 / (ε + pressure(eos, e))
-        done  = abs(e_new - e) <= tol * ε
-        e = e_new
-        done && break
-    end
+    e  = rest_energy(ε, M2, eos; tol, maxiter)
     w = e + pressure(eos, e)
     v = M / (ε + pressure(eos, e))
     γ = 1 / sqrt(1 - dot(v, v))
@@ -87,12 +81,36 @@ function eos_from_energy(ε::Float64, M::SVector{2,Float64}, eos::AbstractEOS;
     return S, v, w / S
 end
 
+# Rest-frame energy density from ε and |M|²: fixed point of e = ε − |M|²/(ε + p(e)).
+function rest_energy(ε::Float64, M2::Float64, eos::AbstractEOS; tol=1e-15, maxiter=500)
+    e = ε
+    for _ in 1:maxiter
+        e_new = ε - M2 / (ε + pressure(eos, e))
+        done  = abs(e_new - e) <= tol * ε
+        e = e_new
+        done && break
+    end
+    return e
+end
+# Conformal, p = c² e: the fixed point solves c² e² + (1 − c²) ε e + |M|² − ε² = 0; the
+# positive root, written without cancellation (agrees with the iteration to roundoff).
+function rest_energy(ε::Float64, M2::Float64, eos::ConformalEOS; tol=1e-15, maxiter=500)
+    c2 = eos.cs2_val
+    return 2 * (ε^2 - M2) / ((1 - c2) * ε + sqrt((1 + c2)^2 * ε^2 - 4c2 * M2))
+end
+
 # Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state.
-particle_energy(pa::Particle, eos::AbstractEOS) = begin
-    q = deepcopy(pa)
-    q.M_smooth = pa.m * (pa.S_smooth / pa.s)
-    solve_eos!(q, eos)
-    pa.s * q.H_over_S
+# (Same arithmetic as solve_eos! on a copy with M_smooth = m_a S_a/s_a, without the copy.)
+function particle_energy(pa::Particle, eos::AbstractEOS)
+    S_in  = pa.S_smooth
+    M_vec = pa.m * (pa.S_smooth / pa.s)
+    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
+    e     = eos_newton(S_in, M_mag, pa.e, eos)
+    w     = e + pressure(eos, e)
+    G, _  = eos_wgamma(w, M_mag)
+    γ     = G / w
+    p_v   = pressure(eos, e)
+    return pa.s * ((w * γ^2 - p_v) / S_in)
 end
 
 # One viscous step with the exact back map.  Returns (K, ΣΔs, Σe) with ΣΔs the exact
@@ -136,19 +154,29 @@ end
 # gradient after the momentum transfer, and sets s_a' = S_a(e_a' + g_a', m_a').
 
 # Star of a for the kernel weights: (b, r_ab, λ_ab), including b = a.
-function kernel_star(a, particles, params, cl)
-    pa = particles[a];  out = Tuple{Int,SVector{2,Float64},Float64}[]
-    ix, iy = cell_index(pa.x, cl)
-    for dx in -1:1, dy in neighbor_range(cl.ncy)
-        jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
-        for b in particles_in_cell(cl, jx, jy)
-            r = minimum_image(particles[b].x - pa.x, params.L)
-            W = wendland_c2(norm(r), params.h, params.kernel)
-            W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth))
+# kernel_star! fills `out` (keeping its capacity); kernel_star returns a fresh vector
+# (with a scratch buffer `buf`, gathered there and copied once at the exact size).
+# With nl = neighbor_list!(cl, particles, params.h) (built by the caller, outside any
+# threaded loop) the neighbours come from the list, in the same order as the cell scan.
+function kernel_star!(out, a, particles, params, cl; nl = nothing)
+    pa = particles[a];  empty!(out)
+    add!(b) = (r = minimum_image(particles[b].x - pa.x, params.L);
+               W = wendland_c2(norm(r), params.h, params.kernel);
+               W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth)))
+    if nl !== nothing
+        for b in neighbors(nl, a);  add!(b);  end
+    else
+        ix, iy = cell_index(pa.x, cl)
+        for dx in -1:1, dy in neighbor_range(cl.ncy)
+            jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
+            for b in particles_in_cell(cl, jx, jy);  add!(b);  end
         end
     end
     return out
 end
+kernel_star(a, particles, params, cl, buf = nothing) =
+    buf === nothing ? kernel_star!(Tuple{Int,SVector{2,Float64},Float64}[], a, particles, params, cl) :
+                      copy(kernel_star!(buf, a, particles, params, cl))
 
 # Centred second moment Q_a and the fitted gradient G_a (G[i,j] = ∂_j μ_i) of a field
 # μ_b on a star; returns (G, Q).  Singular stars (1D) use the pseudo-inverse.

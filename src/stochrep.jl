@@ -51,22 +51,33 @@ struct Star
     ℓi :: SMatrix{2,2,Float64,4}        # ℓ_a⁻¹
 end
 
+# Storage kept between steps so that the per-particle arrays are reused (pass the same
+# StochCache to every stochrep_step! of one simulation; one cache per simulation).
+mutable struct StochCache
+    stars :: Vector{Star}
+    kst   :: Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}
+end
+StochCache() = StochCache(Star[], Vector{Tuple{Int,SVector{2,Float64},Float64}}[])
+
+# With `cache`, the stars are written into cache.stars, reusing the arrays of the
+# previous step's stars.
 function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                     eos::AbstractEOS, V::Vector{Float64})
+                     eos::AbstractEOS, V::Vector{Float64}; cache = nothing)
     N    = length(particles)
     h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.d
     oneD = params.kernel isa WendlandC2_1D
     v0   = zero(SVector{2,Float64})
     ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
-    stars = Vector{Star}(undef, N)
-    Threads.@threads for a in 1:N
+    stars = cache === nothing ? Vector{Star}(undef, N) : resize!(cache.stars, N)
+    nl = neighbor_list!(cl, particles, h)
+    threaded_chunks(N) do range
+    nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[];  ψb = Float64[]
+    for a in range
         pa = particles[a]
-        nb = Tuple{Int,SVector{2,Float64},Float64}[]
-        ix, iy = cell_index(pa.x, cl)
-        for dx in neighbor_range(cl.ncx), dy in neighbor_range(cl.ncy)
-            jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        empty!(nb)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 b == a && continue
                 r = minimum_image(particles[b].x - pa.x, L);  rm = norm(r)
                 rm < 2h && push!(nb, (b, r, rm))
@@ -77,7 +88,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
         ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
-                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
+                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
         Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
         η  = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
         if oneD
@@ -97,15 +108,26 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
             B = (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ)
         end
-        bs = Int[];  rs = SVector{2,Float64}[];  ws = Float64[];  cs = Float64[];  As = SVector{2,Float64}[]
+        nk = n_a > 0 ? count(>(0), ψs) : 0                 # arrays at their exact size
+        if cache !== nothing && isassigned(stars, a)
+            o = stars[a]
+            bs = resize!(o.nb, nk);  rs = resize!(o.r, nk);  ws = resize!(o.w, nk)
+            cs = resize!(o.c, nk);  As = resize!(o.A, nk)
+        else
+            bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
+            ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
+            As = Vector{SVector{2,Float64}}(undef, nk)
+        end
+        j = 0
         for (k, (b, r, rr)) in enumerate(nb)
             (ψs[k] > 0 && n_a > 0) || continue
-            wab = V[b] * ψs[k] / n_a
-            push!(bs, b);  push!(rs, r);  push!(ws, wab)
-            push!(cs, (oneD ? κs : 2κs) * Ta * V[a] * wab)
-            push!(As, V[a] * wab * (ℓi * r))
+            wab = V[b] * ψs[k] / n_a;  j += 1
+            bs[j] = b;  rs[j] = r;  ws[j] = wab
+            cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab
+            As[j] = V[a] * wab * (ℓi * r)
         end
         stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi)
+    end
     end
     return stars
 end
@@ -189,6 +211,16 @@ function particle_entropy(e, m, V, eos)
     return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
 end
 
+# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
+# have positive arguments), so the try block, about 17% of a call, is not needed.
+# Same arithmetic as the general method: bit-identical results.
+function particle_entropy(e, m, V, eos::ConformalEOS)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
+    S, v, _ = eos_from_energy(ε, M, eos)
+    return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
+end
+
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
 const GUARD_EVENSPLIT = Threads.Atomic{Int}(0)   # bond split fell back to the even split
@@ -264,7 +296,7 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos
         cg = groups[g]
         order = [shuffle(rng, cells[ix, iy]) for (ix, iy) in cg]
         Threads.@threads for ci in eachindex(cg)
-            δ = SVector{2,Float64}[];  Snew = Float64[]
+            δ = sizehint!(SVector{2,Float64}[], 128);  Snew = sizehint!(Float64[], 128)
             for a in order[ci]
                 st = stars[a];  n = length(st.nb);  n == 0 && continue
                 resize!(δ, n);  resize!(Snew, n)
@@ -318,16 +350,64 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
     end
 end
 
+# ── Gradient-corrected change of representation ─────────────────────────────
+# (changerep.tex, Appendix A): the gradient energy g_a of the long-wavelength momentum
+# profile is frozen during the sweeps, so e_a = e′_a + g_a is fixed there; the back map
+# refits it, s′ = S_a(e′_a + g′_a, m′_a).  Separate functions, so that the threaded loops
+# see concretely typed arrays.
+function gradient_freeze(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                         eos::AbstractEOS, cache)
+    N   = length(particles)
+    kst = cache === nothing ? Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N) :
+                              resize!(cache.kst, N)
+    Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
+    s0  = [pa.s for pa in particles]
+    μ0  = [pa.m / pa.s for pa in particles]
+    g0  = Vector{Float64}(undef, N)
+    nl  = neighbor_list!(cl, particles, params.h)
+    reuse = cache !== nothing
+    threaded_chunks(N) do range
+        buf = Tuple{Int,SVector{2,Float64},Float64}[]
+        for a in range
+            kst[a] = reuse && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl; nl) :
+                                                   copy(kernel_star!(buf, a, particles, params, cl; nl))
+            Cs[a]  = inverse_susceptibility(particles[a], eos)
+        end
+    end
+    Threads.@threads for a in 1:N
+        g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
+    end
+    return (kst = kst, Cs = Cs, s0 = s0, g0 = g0)
+end
+
+function gradient_backmap!(Sc::Vector{Float64}, gr, m::Vector{SVector{2,Float64}},
+                           e::Vector{Float64}, V::Vector{Float64}, eos::AbstractEOS)
+    kst, Cs, s0, g0 = gr.kst, gr.Cs, gr.s0, gr.g0
+    N  = length(Sc)
+    μ1 = [m[a] / s0[a] for a in 1:N]                       # s still old, as in the deterministic step
+    Threads.@threads for a in 1:N
+        g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
+        Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
+        if isfinite(Sg)
+            Sc[a] = Sg
+        else
+            Threads.atomic_add!(GUARD_BACKMAP, 1)          # keep the plain map
+        end
+    end
+end
+
 # ── The step ─────────────────────────────────────────────────────────────────
 # Frozen data of a step: particle volumes, particle energies, stars.
 function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                         eos::AbstractEOS)
+                         eos::AbstractEOS; cache = nothing)
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V = [pa.s / pa.S_smooth for pa in particles]
-    e = [particle_energy(pa, eos) for pa in particles]
-    return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V))
+    N = length(particles);  V = Vector{Float64}(undef, N);  e = Vector{Float64}(undef, N)
+    Threads.@threads for a in 1:N
+        pa = particles[a];  V[a] = pa.s / pa.S_smooth;  e[a] = particle_energy(pa, eos)
+    end
+    return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V; cache))
 end
 
 # Defaults: λ = 1 (detailed balance), the single vote (vote = :star: one factor
@@ -337,31 +417,29 @@ end
 # in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
 # given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
 # `frozen = stochrep_frozen(...)` to keep V_a, e_a and the stars fixed across steps
-# (a frozen lattice); otherwise they are recomputed from the current state.
+# (a frozen lattice); otherwise they are recomputed from the current state.  Pass the same
+# `cache = StochCache()` to every step of a simulation to reuse its arrays (faster, same results).
 function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                         dt::Float64, eos::AbstractEOS;
                         λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
                         rng::AbstractRNG = Random.default_rng(),
                         rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                         frozen = nothing, vote::Symbol = :star, shift::Bool = true,
-                        gradient::Bool = frozen === nothing)
+                        gradient::Bool = frozen === nothing, cache = nothing)
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
-    fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos) : frozen
+    fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos; cache) : frozen
     V, e, stars = fz.V, fz.e, fz.stars
-    m  = [pa.m for pa in particles]
-    Sc = [particle_entropy(e[a], m[a], V[a], eos) for a in eachindex(particles)]
     N  = length(particles)
+    m  = [pa.m for pa in particles]
+    Sc = Vector{Float64}(undef, N)
+    Threads.@threads for a in 1:N
+        Sc[a] = particle_entropy(e[a], m[a], V[a], eos)
+    end
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
     # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
-    if gradient
-        kst = [kernel_star(a, particles, params, cl) for a in 1:N]
-        Cs  = [inverse_susceptibility(pa, eos) for pa in particles]
-        s0  = [pa.s for pa in particles]
-        μ0  = [pa.m / pa.s for pa in particles]
-        g0  = [gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...) for a in 1:N]
-    end
+    gr = gradient ? gradient_freeze(particles, params, cl, eos, cache) : nothing
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
     for kind in kinds
@@ -376,18 +454,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
                                      eos, rngs, rng, vote) / N
         end
     end
-    if gradient
-        μ1 = [m[a] / s0[a] for a in 1:N]                                   # s still old, as in the deterministic step
-        for a in 1:N
-            g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
-            Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
-            if isfinite(Sg)
-                Sc[a] = Sg
-            else
-                Threads.atomic_add!(GUARD_BACKMAP, 1)                 # keep the plain map
-            end
-        end
-    end
+    gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
         pa.m = m[a];  pa.s = Sc[a]
     end

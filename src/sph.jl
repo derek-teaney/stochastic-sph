@@ -100,7 +100,9 @@ ConformalEOS(; d=3, cs2_val=1.0/d, T_scale=T_scale_gluon, η_by_s=0.0, ζ_by_s=0
 pressure(eos::ConformalEOS, e::Float64) = eos.cs2_val * e
 
 # Relativistic temperature
-Trel(eos::ConformalEOS, e::Float64) = eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
+# (exponent 1/4 for c² = 1/3: two square roots, much cheaper than the power)
+Trel(eos::ConformalEOS, e::Float64) = eos.cs2_val == 1/3 ? eos.T_scale * sqrt(sqrt(e)) :
+                                                         eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
 
 # Sound speed squared (two-arg form for generic EOS; one-arg shortcut for ConformalEOS)
 cs2(eos::ConformalEOS,  e::Float64) = eos.cs2_val
@@ -218,14 +220,11 @@ function eos_wgamma(w::Float64, M::Float64)
     return G, dGdw
 end
 
-function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
-    S_in  = pa.S_smooth
-    M_vec = pa.M_smooth
-    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
-
-    # warm start from stored e; cold start falls back to e ~ S_in
-    e = pa.e > 0.0 ? pa.e : S_in
-
+# Newton solve of G(w(e), |M|)/T_rel(e) = S for the rest-frame energy density e, from the
+# warm start e0 (cold start e ~ S if e0 ≤ 0).  Pure: used by solve_eos! and particle_energy.
+function eos_newton(S_in::Float64, M_mag::Float64, e0::Float64, eos::AbstractEOS;
+                    tol=1e-12, maxiter=50, verbose=false)
+    e = e0 > 0.0 ? e0 : S_in
     for iter in 1:maxiter
         w     = e + pressure(eos, e)
         G, Gw = eos_wgamma(w, M_mag)
@@ -242,6 +241,15 @@ function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbo
         end
         e -= Δe
     end
+    return e
+end
+
+function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
+    S_in  = pa.S_smooth
+    M_vec = pa.M_smooth
+    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
+    # warm start from stored e; cold start falls back to e ~ S_in
+    e = eos_newton(S_in, M_mag, pa.e, eos; tol, maxiter, verbose)
 
     # post-convergence expressions (§II.4)
     w    = e + pressure(eos, e)
@@ -261,7 +269,7 @@ function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbo
 end
 
 function update_thermodynamics!(particles::Vector{Particle}, eos::AbstractEOS)
-    for pa in particles
+    Threads.@threads for pa in particles
         solve_eos!(pa, eos)
     end
 end

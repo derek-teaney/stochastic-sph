@@ -52,10 +52,11 @@ function one_realization(seed)
     H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
     Ht = Float64[];  KE = Float64[];  acc = zeros(2);  reset_guards!()
     t0 = time()
-    stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+    cache = StochCache()                                             # reused arrays of the stochastic step
+    stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star, cache)
     for n in 1:nsteps
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; rng, rngs, vote=:star, flip=isodd(n))
+        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache)
         acc .+= (a.stress, a.resid) ./ nsteps
         if n % RECN == 0
             record!(rec, ps, n * dt, eos)

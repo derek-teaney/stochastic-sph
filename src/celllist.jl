@@ -10,6 +10,7 @@ mutable struct CellList2D
     ncy        :: Int               # cells in y direction
     cell_size  :: SVector{2,Float64} # (Lx/ncx, Ly/ncy), each ≥ 2h; cells tile the box exactly
     L          :: SVector{2,Float64}
+    nl         :: Any                # NeighborList of the current positions, built on demand
 end
 
 function CellList2D(L::SVector{2,Float64}, h::Float64, N::Int)
@@ -20,7 +21,72 @@ function CellList2D(L::SVector{2,Float64}, h::Float64, N::Int)
     # [0, Ly) when Ly/ncy ≠ Lx/ncx, and the periodic y-stencil then misses pairs
     # across y = 0 (test/testcelllist_box.jl).
     cell_size = SVector(L[1] / ncx, L[2] / ncy)
-    CellList2D(zeros(Int,ncx,ncy), zeros(Int,ncx,ncy), zeros(Int,N), ncx, ncy, cell_size, L)
+    CellList2D(zeros(Int,ncx,ncy), zeros(Int,ncx,ncy), zeros(Int,N), ncx, ncy, cell_size, L, nothing)
+end
+
+# Run body(range) over contiguous chunks of 1:N, one chunk per thread, so that each
+# chunk can allocate its scratch buffers once.  Results do not depend on the chunking
+# as long as body writes only the entries of its own range.
+function threaded_chunks(body, N::Int)
+    n = max(1, min(N, Threads.nthreads()))
+    rs = [((c - 1) * N ÷ n + 1):(c * N ÷ n) for c in 1:n]
+    Threads.@threads for c in 1:n
+        body(rs[c])
+    end
+end
+
+# ── Neighbour list ───────────────────────────────────────────────────────────
+# For each particle a, the particles b (a itself included) with |x_b − x_a| < 2h(1 + 1e-9),
+# in exactly the order of the cell scan (dx in −1:1, dy in neighbor_range(ncy), cell
+# order), so that a pass over the list sums in the same order as the scan.  Each pass
+# keeps its own exact distance test.  The list remembers the positions it was built from
+# and is rebuilt whenever they differ (one comparison per particle per call).
+mutable struct NeighborList
+    offsets :: Vector{Int}                 # neighbours of a: index[offsets[a]:offsets[a+1]-1]
+    index   :: Vector{Int}
+    x       :: Vector{SVector{2,Float64}}  # positions at the build
+    h       :: Float64
+    valid   :: Bool
+    parts   :: Vector{Vector{Int}}         # per-chunk buffers, reused between builds
+    counts  :: Vector{Int}
+end
+NeighborList() = NeighborList(Int[], Int[], SVector{2,Float64}[], 0.0, false, Vector{Int}[], Int[])
+neighbors(nl::NeighborList, a::Int) = @view nl.index[nl.offsets[a]:nl.offsets[a+1]-1]
+
+function neighbor_list!(cl::CellList2D, particles::Vector{Particle}, h::Float64)
+    cl.nl isa NeighborList || (cl.nl = NeighborList())
+    nl = cl.nl::NeighborList;  N = length(particles)
+    if nl.valid && nl.h == h && length(nl.x) == N && all(i -> nl.x[i] == particles[i].x, 1:N)
+        return nl
+    end
+    cut2 = (2h * (1 + 1e-9))^2
+    ncx = cl.ncx;  ncy = cl.ncy
+    nch = max(1, min(N, Threads.nthreads()))
+    length(nl.parts) == nch || (nl.parts = [Int[] for _ in 1:nch])
+    resize!(nl.counts, N);  counts = nl.counts;  parts = nl.parts
+    Threads.@threads for c in 1:nch
+        idx = empty!(parts[c])
+        for a in ((c - 1) * N ÷ nch + 1):(c * N ÷ nch)
+            ix, iy = cell_index(particles[a].x, cl);  n0 = length(idx)
+            for dx in -1:1, dy in neighbor_range(ncy)
+                jx = mod(ix + dx - 1, ncx) + 1
+                jy = mod(iy + dy - 1, ncy) + 1
+                for b in particles_in_cell(cl, jx, jy)
+                    r = minimum_image(particles[a].x - particles[b].x, cl.L)
+                    r[1]^2 + r[2]^2 < cut2 && push!(idx, b)
+                end
+            end
+            counts[a] = length(idx) - n0
+        end
+    end
+    resize!(nl.offsets, N + 1);  nl.offsets[1] = 1
+    for a in 1:N;  nl.offsets[a + 1] = nl.offsets[a] + counts[a];  end
+    resize!(nl.index, nl.offsets[N + 1] - 1);  k = 0
+    for c in 1:nch, b in parts[c];  k += 1;  nl.index[k] = b;  end
+    resize!(nl.x, N)
+    for a in 1:N;  nl.x[a] = particles[a].x;  end
+    nl.h = h;  nl.valid = true
+    return nl
 end
 
 function cell_index(x::SVector{2,Float64}, cl::CellList2D)
@@ -65,7 +131,7 @@ function particles_in_cell(cl::CellList2D, ix::Int, iy::Int)
 end
 
 function wrap_positions!(particles::Vector{Particle}, L::SVector{2,Float64})
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x = mod.(particles[a].x, L)
     end
 end
@@ -77,15 +143,12 @@ end
 """
 function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
                                cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
-    for a in eachindex(particles)
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
         S_acc = 0.0
         M_acc = zero(SVector{2,Float64})
-        ix, iy = cell_index(particles[a].x, cl)
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
                 w = wendland_c2(r_mag, params.h, params.kernel)
@@ -102,15 +165,12 @@ end
 # for every particle in a single neighbor pass (step 3 of the update chain).
 function update_velocities!(particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
-    for a in eachindex(particles)
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
         dotx_acc = zero(SVector{2,Float64})
         FS_acc   = 0.0
-        ix, iy = cell_index(particles[a].x, cl)
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 w = wendland_c2(r_mag, params.h, params.kernel)
@@ -123,36 +183,33 @@ function update_velocities!(particles::Vector{Particle},
     end
 end
 
+# Each particle gathers its own force over its neighbours (threads over particles).
+# The pair term is odd under a ↔ b (bracket symmetric, kernel gradient odd in r), so
+# Σ_a ṁ_a = 0 up to roundoff; the previous pair loop (each pair once, ± to both) made
+# it exact but could not be threaded.
 function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                              particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
-    ncx = cl.ncx;  ncy = cl.ncy
-    fill!(dotm, zero(SVector{2,Float64}))
-    for a in eachindex(particles)
-        ix, iy = cell_index(particles[a].x, cl)
-        for dx in -1:1, dy in neighbor_range(ncy)
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
-                b <= a && continue # avoid double counting and self-interaction
-
+    nl = neighbor_list!(cl, particles, params.h)
+    Threads.@threads for a in eachindex(particles)
+        sa, ma = particles[a].s, particles[a].m
+        vSa, FSa = particles[a].v_over_S, particles[a].F_over_S
+        acc = zero(SVector{2,Float64})
+        begin                                            # neighbours in cell-scan order
+            for b in neighbors(nl, a)
+                b == a && continue
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2params.h && continue
                 grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
-
-                sa, sb   = particles[a].s,        particles[b].s
-                ma, mb   = particles[a].m,        particles[b].m
-                vSa, vSb = particles[a].v_over_S, particles[b].v_over_S
-                FSa, FSb = particles[a].F_over_S, particles[b].F_over_S
-
+                sb, mb = particles[b].s, particles[b].m
+                vSb, FSb = particles[b].v_over_S, particles[b].F_over_S
                 bracket = -(dot(vSa, mb)*sa + dot(vSb, ma)*sb) +
                            (FSa + FSb)*sa*sb
-                force_a  = bracket * grad
-                dotm[a] += force_a
-                dotm[b] -= force_a
+                acc += bracket * grad
             end
         end
+        dotm[a] = acc
     end
 end
 
@@ -227,7 +284,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x += (dt/2) * particles[a].dotx
     end
     wrap_positions!(particles, params.L)
@@ -237,7 +294,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     hamiltonian_force!(dotm, particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].m += dt * dotm[a]
     end
 
@@ -245,7 +302,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x += (dt/2) * particles[a].dotx
     end
     wrap_positions!(particles, params.L)
@@ -462,9 +519,17 @@ end
 # Returns (ψ_b, n_a) with
 #   Σ_b V_b ψ_b r_b r_bᵀ = n_a ℓ   exactly,   ψ_b = ψ(ρ_b) (1 + r_bᵀ Λ r_b),  ℓ:Λ = 0.
 # Falls back to Λ = 0 (n_a = ½ tr(ℓ⁻¹ M)) if a corrected weight would be negative.
-function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
-    ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
-    Vb = [particles[b].s / particles[b].S_smooth for (b, r, rr) in nb]
+# Optional buffers ψ0, Vb, ψ (resized here) avoid allocation; the returned weights may
+# then alias one of them, valid until the next call with the same buffers.
+function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ;
+                               ψ0 = Vector{Float64}(undef, length(nb)),
+                               Vb = Vector{Float64}(undef, length(nb)),
+                               ψ  = Vector{Float64}(undef, length(nb)))
+    resize!(ψ0, length(nb));  resize!(Vb, length(nb));  resize!(ψ, length(nb))
+    for (k, (b, r, rr)) in enumerate(nb)
+        ψ0[k] = bond_weight(sqrt(dot(r, ℓi * r)), hψ)
+        Vb[k] = particles[b].s / particles[b].S_smooth
+    end
     # unknowns z = (Λxx, Λxy, Λyy, n):  M + N:Λ − n ℓ = 0  (3 eqs),  ℓ:Λ = 0
     # (static 4×4 system: no allocation)
     A3 = zero(SMatrix{3,3,Float64});  r3 = zero(SVector{3,Float64})
@@ -487,7 +552,9 @@ function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
                                 fill(NaN, SVector{4,Float64}) end) :
                           fill(NaN, SVector{4,Float64})
     Λ = SMatrix{2,2,Float64}(z[1], z[2], z[2], z[3])
-    ψ = [ψ0[k] * (1 + dot(r, Λ * r)) for (k, (b, r, rr)) in enumerate(nb)]
+    for (k, (b, r, rr)) in enumerate(nb)
+        ψ[k] = ψ0[k] * (1 + dot(r, Λ * r))
+    end
     if all(>=(0), ψ) && isfinite(z[4]) && z[4] > 0
         return ψ, z[4]
     end
