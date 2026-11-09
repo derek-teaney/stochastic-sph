@@ -14,6 +14,9 @@ for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
 end
 const HAS = length(ARGS) > 0 ? parse.(Float64, ARGS) : [2.0]
 const LBOX = 1.2;  const S0 = 1e6;  const EPS = 0.01;  const QHMAX = parse(Float64, get(ENV, "QHMAX", "3.0"))
+# amplitude: ε = EPS·a, or, if STRAIN is set, ε = STRAIN/|q| (fixed strain amplitude q ε; needed at
+# large h/a, where the transverse energy change is a tiny fraction of H)
+const STRAIN = parse(Float64, get(ENV, "STRAIN", "0"))
 
 function energy!(ps, params, cl, eos, x0, ê, q, ε)
     for (a, p) in enumerate(ps)
@@ -39,11 +42,12 @@ for ha in HAS
     println("   q h     ω_L/(c_s q)   ω_T/q (= c_t)   ω_T²·sign")
     for kn in sort(collect(keys(byshell)))
         q = byshell[kn];  q̂ = q / norm(q);  t̂ = SVector(-q̂[2], q̂[1])
+        ε = STRAIN > 0 ? STRAIN / kn : EPS * a
         K = map((q̂, t̂)) do ê
-            Up = energy!(ps, params, cl, eos, x0, ê, q, EPS * a)
-            Um = energy!(ps, params, cl, eos, x0, ê, q, -EPS * a)
+            Up = energy!(ps, params, cl, eos, x0, ê, q, ε)
+            Um = energy!(ps, params, cl, eos, x0, ê, q, -ε)
             ΔU = (Up + Um - 2U0) / 2
-            ΔU / (0.5 * (EPS * a)^2 * N / 2)
+            ΔU / (0.5 * ε^2 * N / 2)
         end
         ωL2, ωT2 = K ./ (w * V)
         @printf("   %.3f   %9.4f      %s        %+.3e\n", kn * params.h, sqrt(max(ωL2, 0)) / (cs * kn),
