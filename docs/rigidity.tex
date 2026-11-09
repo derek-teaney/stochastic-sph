@@ -1,0 +1,181 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The transverse rigidity of the particle arrangement: hypotheses and tests}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The equilibrium runs (\texttt{campaigns.tex}) show transverse sound: the shear mode
+oscillates with $c_t=0.022$ instead of diffusing.  This note separates what is measured
+from what is conjectured, states the conjectures with the tests that can falsify them (all
+in the campaign \texttt{rigidity}, now running), and lists ways to remove the rigidity, to be
+discussed before any is implemented.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{What is measured}
+\label{sec:facts}
+
+All at $h/a=2$, Wendland C2 kernel, $\delta v=0.043$ ($s_a=541$), $\eta/s=0.2$
+($\nu=\eta/w=2.2\times10^{-3}$).
+\begin{enumerate}
+\item $C_T(k,\tau)$ is fitted, within its errors, by the velocity correlator of a damped
+  oscillator,
+  \st
+  C_T(k,\tau)=A\,e^{-\gamma\tau}\Big[\cos\omega\tau-\frac{\gamma}{\omega}\sin\omega\tau\Big],
+  \qquad \omega^2+\gamma^2=c_t^2k^2,
+  \label{osc}
+  \stp
+  with $c_t=0.022$ for $kh=0.13$--$0.74$, in boxes $1.2$ and $2.4$, from two starts and two
+  versions of the code.  The fit recovers $c_t$ and $\gamma$ from synthetic data with known
+  values, and returns $c_t=0$ for a synthetic fluid.
+\item $2\gamma/\nu k^2=1.1$--$1.2$ at $kh\ge0.5$, rising to $\approx2$ at $kh=0.13$.
+\item The local disorder (rms change of nearest-neighbour distances) saturates at $0.3a$: the
+  particles do not exchange neighbours.
+\item Ideal SPH alone (no viscous step), box $0.6$: from the lattice with thermal momenta
+  the kinetic energy grows from $0.9$ to $6.8$ times its equilibrium value by $t=20$, still
+  rising, while $H$ is conserved to $10^{-7}$.
+\item Ideal SPH alone from random positions (smoothed entropy made uniform): the kinetic energy
+  reaches $420$ times its equilibrium value by $t=5$.  The full scheme from random positions
+  heats by $64\%$ in $H$ by $t=10$.
+\end{enumerate}
+
+%=============================================================================
+\section{Hypothesis A: a broken relabeling symmetry gives a shear modulus}
+\label{sec:A}
+
+\paragraph{The continuum.}  The energy of a perfect fluid depends on the density and entropy
+fields only.  A volume-preserving relabeling of the fluid elements leaves the fields, and so
+the energy, unchanged: a transverse displacement $\bm u$ with $\nabla\cdot\bm u=0$ costs no
+energy, and there is no shear modulus.
+
+\paragraph{SPH.}  The smoothed entropy at particle $a$ is $S_a=\sum_bs_bW(\bm x_a-\bm x_b)$.  On a
+lattice with equal $s_b=sV$,
+\st
+S_a=s\sum_{\bm G}\tilde W(\bm G)\,e^{i\bm G\cdot\bm x_a},
+\stp
+a sum over the reciprocal lattice.  The term $\bm G=0$ is the exact density; the others, set by
+$\tilde W$ at $|\bm G|\ge b=4\pi/(\sqrt3a)$, are the lattice error.  A shear at fixed area changes
+the $|\bm G|$, hence the sum, at second order in the strain $\epsilon$: the energy rises by
+$\tfrac12G\epsilon^2$ per volume with, by this estimate,
+\st
+\frac{G}{p}\sim C\,(bh)^2\,\big|\tilde W''(bh)\big|\sim C\,m(m+1)\,\big|\tilde W(bh)\big|,
+\label{Gest}
+\stp
+where $\tilde W\propto(bh)^{-m}$ asymptotically and $C$ is a number of order the count of
+shortest $\bm G$ (six).  This is an order-of-magnitude argument, not a calculation; in
+particular the forces in SPH depend on $\nabla W$ as well, and the stochastic step may add to
+or remove from $G$.
+
+\paragraph{Predictions.}  $\tilde W$ at the first reciprocal vector:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+kernel & $\avg{r^2}/h^2$ & $\tilde W(bh)$, $h/a=2$ & $2.5$ & $3$ \\ \hline
+Wendland C2 & $0.56$ & $1.2\times10^{-4}$ & $3.7\times10^{-5}$ & $1.5\times10^{-5}$ \\
+Wendland C4 & $0.42$ & $3.5\times10^{-5}$ & $7.6\times10^{-6}$ & $2.2\times10^{-6}$ \\
+Wendland C6 & $0.34$ & $1.6\times10^{-5}$ & $2.3\times10^{-6}$ & $5.0\times10^{-7}$ \\
+\hline
+\end{tabular}
+\end{center}
+If $G\propto\tilde W(bh)$, then $c_t=(G/w)^{1/2}\propto\tilde W(bh)^{1/2}$, and from $c_t=0.022$
+for C2 at $h/a=2$:
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+run & $c_t$ if $G\propto\tilde W$ & $c_t$ if $G\propto\tilde W^2$ \\ \hline
+C2, $h/a=2.5$ & $0.012$ & $0.0068$ \\
+C2, $h/a=3$ & $0.0078$ & $0.0028$ \\
+C4, $h/a=2$ & $0.012$ & $0.0064$ \\
+C4, $h/a=2.5$ & $0.0055$ & $0.0014$ \\
+C6, $h/a=2$ & $0.0081$ & $0.0030$ \\
+\hline
+\end{tabular}
+\end{center}
+\paragraph{Falsified if:} $c_t$ does not fall with $h/a$ and with the kernel order; or C6 at
+$h/a=2$ and C2 at $h/a=3$ (equal $\tilde W(bh)$, different $h/a$) give different $c_t$; or the
+rigidity is absent when the positions are frozen \emph{and} present only with the stochastic
+step (then it is not a property of $H$).
+
+\paragraph{Second test of the same quantity.}  The runs record the displacements $\bm u_a$
+from the initial sites.  For an elastic medium $\avg{|\dot u_T|^2}=c_t^2k^2\avg{|u_T|^2}$, and
+$\bm M_{\bm k}\simeq wV\dot{\bm u}_{\bm k}$, so the statics alone give
+\st
+c_t^2=\frac{\avg{|M_T(\bm k)|^2}}{(wV)^2k^2\avg{|u_T(\bm k)|^2}} .
+\stp
+In a fluid $\avg{|u_T|^2}$ grows linearly in time without bound.  Agreement with the fit of
+\Eq{osc} is a check that the oscillation is elastic.
+
+%=============================================================================
+\section{Hypothesis B: the arrangement carries energy}
+\label{sec:B}
+
+Facts 4 and 5 show that at fixed $s_a$ the SPH energy depends on the arrangement, by a lot for
+a random one ($\sim400T$ per particle released) and by a little for the lattice ($\sim6T$ per
+particle by $t=20$, still growing).  The conjecture is that at temperature $T$ the equilibrium
+of the positions lies near a minimum of this energy, so the particles form a solid whatever
+the start, and a random arrangement is not an equilibrium state.
+
+This is \emph{not} established.  Fact 4 says that the hexagonal lattice is not itself the
+minimum (ideal SPH moves away from it, releasing energy), so the relevant minimum is some
+nearby disordered arrangement, and why the full scheme stays at a disorder of $0.3a$ is not
+explained.  The ideal-SPH runs at $h/a=2$, $2.5$, $3$ and for C4, C6 (to $t=50$) show whether
+the kinetic energy saturates, and how the released energy scales with $\tilde W(bh)$.  If it
+scales like $G$, A and B are the same effect.
+
+%=============================================================================
+\section{Ways out, if A holds}
+\label{sec:ways}
+
+\paragraph{Smaller lattice error.}  A fluid needs $c_tk\ll\nu k^2/2$ at the smallest $k$ of
+interest,
+\st
+c_t\ll\frac{\nu k_{\rm min}}{2}=\frac{\pi\nu}{L},
+\stp
+about $3\times10^{-3}$ for $L=2.4$: a factor $7$ in $c_t$, $50$ in $G$.  Whether a kernel and
+$h/a$ reach this at acceptable cost is what the runs measure.
+
+\paragraph{Noise in $d\bm x/dt$.}  Particles that exchange neighbours relax shear stress in a
+Maxwell time $\tau_M\sim a^2/D_x$ (diffusion constant $D_x$ of the positions relative to the
+fluid), turning the solid into a fluid with an added viscosity $G\tau_M$.  This is small
+compared with $\eta$ when
+\st
+D_x\gg\frac{c_t^2a^2}{\nu}\approx0.06\,\nu .
+\stp
+Three versions, with their expected outcomes:
+\begin{enumerate}
+\item \emph{Displacements alone} ($s_a$, $\bm m_a$ fixed): each move raises the arrangement
+  energy (Hypothesis B), which ends up as heat; expected to heat strongly.
+\item \emph{Displacements with a Metropolis test on $e^{S}$}: samples the true equilibrium of
+  the positions; if B holds that is the solid, and $G$ is unchanged.
+\item \emph{Relabeling}: displace a particle and refit $s_a$, $\bm m_a$, $e_a$ so that the
+  smoothed fields are unchanged, as molecular self-diffusion leaves the hydrodynamic fields
+  unchanged.  The energy change is then only the error of the refit, which a Metropolis test
+  can absorb.  This restores the relabeling symmetry to the accuracy of the refit.  It needs a
+  local linear solve per move that conserves $E$ and $\bm M$, and a check that it does not
+  spoil the detailed balance of the stochastic step.
+\end{enumerate}
+A quick test of each at $L=0.6$ (heating and $c_t$ against $D_x$) would settle 1 and 2.
+
+\paragraph{Not proposed.}  Lowering $s_a$ to melt the arrangement: the scheme blows up at
+$\delta v=0.14$ (\texttt{campaigns.tex}).
+
+\end{document}
