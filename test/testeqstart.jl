@@ -120,7 +120,7 @@ for (S0, v) in ((1e6, 0.0), (1e6, 0.3), (1e5, 0.0))
     K = 3000;  rng = Xoshiro(21)
     tot = [sum(draw_configuration(V, β0, β, mom, eos, rng)[1]) for _ in 1:K]
     μ = mean(tot);  Ct = sum((t - μ) * (t - μ)' for t in tot) / (K - 1)
-    Cpred = sum(mom[v_].cov for v_ in V)                          # N · C_a (equal volumes)
+    Cpred = sum(mom(v_).cov for v_ in V)                          # N · C_a (equal volumes)
     sd = sqrt.(diag(Cpred))
     # thermodynamics: Var E = V_tot T² c_v, Var P = V_tot w T at rest (bare T = T_rel at rest)
     T = 1 / β0;  Vt = sum(V);  st = state_from_beta(β0, β, eos)

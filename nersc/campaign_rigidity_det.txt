@@ -1,0 +1,3 @@
+# λ = ∞ companion to campaign_rigidity.txt (2026-11-09): is the transverse oscillation there
+# when the lattice modes are cold?  Same as ha2 there.  Submit with -c 8 (4 seeds per task).
+ha2_det    4  SR_SEEDSTRIDE=4 SR_LAMBDA=Inf          -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2_det

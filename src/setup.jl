@@ -204,11 +204,11 @@ end
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Lattice kwargs: jitter, lattice.  Returns (params, particles, cl, eos).
 function setup_ic(h, ha_ratio, eos, S_func, M_func;
-                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, d=3)
+                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, d=3, seed=42)
     if L !== nothing
         Lx = Float64(L); Ly = Float64(L)
     end
-    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, d)
+    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, d, seed)
     particles = if sim_dim == 1
         make_1d_particles!(params, 1.0; jitter)
     elseif lattice == :hex

@@ -37,7 +37,19 @@ const COMMIT = try
 catch
     "unknown"
 end
-const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0+1 … SEED0+NREAL
+const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0·STRIDE+1 … +NREAL
+const STRIDE = parse(Int, get(ENV, "SR_SEEDSTRIDE", "1"))             # = NREAL when an array task runs NREAL seeds
+# Controls for the rigidity tests: SR_NOVISC=1 skips the stochastic step (ideal SPH only),
+# SR_NOHAM=1 skips the leapfrog (positions frozen, stochastic step only).  SPH_KERNEL=wc4
+# selects the Wendland C4 kernel (src/sph.jl).  Displacements from the initial sites are
+# recorded (UL, UT) in every run.
+const NOVISC = get(ENV, "SR_NOVISC", "0") == "1"
+const NOHAM  = get(ENV, "SR_NOHAM", "0") == "1"
+const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
+# SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
+# positions), then rescale the s_a so that the smoothed entropy density is uniform again.
+const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
+const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
@@ -51,7 +63,7 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
-     tag = TAG, start = string(START), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 function one_realization(seed)
@@ -63,7 +75,16 @@ function one_realization(seed)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
         params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
-                                       L=LBOX, lattice=:hex)
+                                       L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
+        if JITTER > 0                            # uniform smoothed entropy: s_a ← s_a S0 / S_a, iterated
+            for _ in 1:30
+                for q in ps;  q.s *= S0 / q.S_smooth;  end
+                thermalize!(ps, params, cl, eos)
+            end
+            @printf("seed %d: jitter %.2f a: smoothed S/S0 − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, JITTER,
+                    sqrt(sum(abs2, [q.S_smooth / S0 - 1 for q in ps]) / length(ps)),
+                    (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
+        end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
         initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
@@ -71,9 +92,10 @@ function one_realization(seed)
         nsteps = ceil(Int, TEND / dt)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
-        stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+        x0 = [q.x for q in ps]
+        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=:star)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
-              dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX)),
+              dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
               Ht = Float64[], KE = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
     end
@@ -81,10 +103,13 @@ function one_realization(seed)
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
-        leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache)
-        acc .+= (a.stress, a.resid) ./ nsteps
+        NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
+        if !NOVISC
+            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=:star, flip=isodd(n), cache)
+            acc .+= (a.stress, a.resid) ./ nsteps
+        end
         if n % RECN == 0
+            (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
             record!(rec, ps, n * dt, eos)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
             push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
@@ -106,7 +131,7 @@ function one_realization(seed)
             Ht[end], guards())
 end
 
-Threads.@threads for s in SEED0 .+ (1:NREAL)
+Threads.@threads for s in SEED0 * STRIDE .+ (1:NREAL)
     one_realization(s)
 end
 println("done")

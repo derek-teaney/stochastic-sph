@@ -104,20 +104,47 @@ function particle_moments(V, β0, β::SVector{2,Float64}, eos::AbstractEOS; nq::
             cov = SMatrix{3,3,Float64}(Cq), L = L, Hn = Hn)
 end
 
+# Single-particle moments for every volume in V, as a function V_a -> moments.  Particles of
+# equal volume share them (a lattice: one quadrature).  When there are many distinct
+# volumes (jittered or random positions), the quadrature is done at nnode volumes spanning
+# [min V, max V] and, per particle:
+#   ē = V ε̄, m̄ = V M̄ (extensive, exact); the offsets ⟨x⟩ − x̄ and Cov(x), which are smooth
+#   in V (≈ const and ∝ V), are interpolated linearly; the sampler's Gaussian is rescaled
+#   from the nearest node (Hn ∝ 1/V, L ∝ √V).  The draws stay exact (the Metropolis target
+#   is the particle's own S_a); the interpolation only enters the averages used for β.
+function moments_table(V::Vector{Float64}, β0, β::SVector{2,Float64}, eos::AbstractEOS;
+                       nq::Int = 41, nnode::Int = 9, maxgroups::Int = 32)
+    vs = unique(V)
+    if length(vs) <= maxgroups
+        d = Dict(v => particle_moments(v, β0, β, eos; nq) for v in vs)
+        return v -> d[v]
+    end
+    st = state_from_beta(β0, β, eos)
+    nodes = collect(range(minimum(V), maximum(V), length = nnode))
+    P = [particle_moments(v, β0, β, eos; nq) for v in nodes]
+    off = [p.mean - SVector(p.ē, p.m̄[1], p.m̄[2]) for p in P]
+    return function (v)
+        j = clamp(searchsortedlast(nodes, v), 1, nnode - 1);  f = (v - nodes[j]) / (nodes[j+1] - nodes[j])
+        n = f < 0.5 ? j : j + 1;  r = v / nodes[n]
+        ē = v * st.ε;  m̄ = v * st.M
+        (ē = ē, m̄ = m̄, mean = SVector(ē, m̄[1], m̄[2]) + (1 - f) * off[j] + f * off[j+1],
+         cov = (1 - f) * P[j].cov + f * P[j+1].cov, L = sqrt(r) * P[n].L, Hn = P[n].Hn / r)
+    end
+end
+
 # The global multipliers whose *average* totals are (E, M): Σ_a ⟨e_a⟩ = E, Σ_a ⟨m_a⟩ = M.
 # Newton in θ = (−β⁰, β), conjugate to x = (e, m), with ∂⟨x⟩/∂θ = Cov(x) (exact for this
 # exponential family).  Starts from the most probable state at the mean densities.
-# Particles with equal volume share their moments.
+# Returns (β⁰, β, mom) with mom(V_a) the moments of a particle of volume V_a.
 function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64},
                             eos::AbstractEOS; nq::Int = 41, iters::Int = 8)
     Vtot = sum(V);  _, v0, T0 = eos_from_energy(E / Vtot, M / Vtot, eos)
     θ = SVector(-1 / T0, v0[1] / T0, v0[2] / T0);  target = SVector(E, M[1], M[2])
-    groups = Dict{Float64,Int}();  for v in V;  groups[v] = get(groups, v, 0) + 1;  end
     mom = nothing
     for it in 1:iters
         β0 = -θ[1];  β = SVector(θ[2], θ[3])
-        mom = Dict(v => particle_moments(v, β0, β, eos; nq) for v in keys(groups))
-        X = sum(n * mom[v].mean for (v, n) in groups);  Ct = sum(n * mom[v].cov for (v, n) in groups)
+        mom = moments_table(V, β0, β, eos; nq)
+        ms = mom.(V);  X = sum(p.mean for p in ms);  Ct = sum(p.cov for p in ms)
         r = target - X
         abs(r[1]) <= 1e-12 * abs(E) && norm(r[2:3]) <= 1e-12 * abs(E) && break
         θ = θ + Ct \ r
@@ -125,7 +152,7 @@ function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64
     return -θ[1], SVector(θ[2], θ[3]), mom
 end
 
-# Draw (e_a, m_a) for all particles at the multipliers (β⁰, β) (moments from
+# Draw (e_a, m_a) for all particles at the multipliers (β⁰, β) (moments mom(V_a) from
 # beta_from_averages): independent draws from the canonical ensemble, so the totals
 # fluctuate about their averages (E, M).  With exact_totals = true the difference between
 # the drawn totals and (E, M) is then removed uniformly, i.e. in proportion to the
@@ -135,7 +162,7 @@ function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int
                             exact_totals::Bool = false, E = nothing, M = nothing)
     N = length(V);  X = Vector{SVector{3,Float64}}(undef, N);  nacc = 0
     for a in 1:N
-        p = mom[V[a]]
+        p = mom(V[a])
         x, na = draw_particle(p.ē, p.m̄, V[a], β0, β, eos, p.L, p.Hn, rng; nmh)
         X[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
     end
@@ -215,14 +242,33 @@ mutable struct Recorder
     S    :: Vector{Vector{ComplexF64}}
     E    :: Vector{Vector{ComplexF64}}
     energies :: Bool
+    # displacements from the initial sites x0 (minimum image in the box L), if x0 is given:
+    # u_k = Σ_a (x_a − x0_a) e^{−i k·x0_a}, split as for M.  Then M_k ≈ wV u̇_k.
+    UL   :: Vector{Vector{ComplexF64}}
+    UT   :: Vector{Vector{ComplexF64}}
+    x0   :: Vector{SVector{2,Float64}}
+    L    :: SVector{2,Float64}
 end
-Recorder(ks; energies = false) = Recorder(ks, Float64[], [], [], [], [], energies)
+Recorder(ks; energies = false, x0 = SVector{2,Float64}[], L = SVector(0.0, 0.0)) =
+    Recorder(ks, Float64[], [], [], [], [], energies, [], [], x0, L)
+Recorder(ks, t, ML, MT, S, E, energies) = Recorder(ks, t, ML, MT, S, E, energies, [], [], SVector{2,Float64}[], SVector(0.0, 0.0))
 
 function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::AbstractEOS)
     nk = length(rec.ks)
     ML = zeros(ComplexF64, nk);  MT = zeros(ComplexF64, nk);  S = zeros(ComplexF64, nk)
     E  = zeros(ComplexF64, rec.energies ? nk : 0)
     ea = rec.energies ? [particle_energy(pa, eos) for pa in particles] : Float64[]
+    disp = !isempty(rec.x0)
+    if disp
+        UL = zeros(ComplexF64, nk);  UT = zeros(ComplexF64, nk)
+        u = [minimum_image(pa.x - rec.x0[a], rec.L) for (a, pa) in enumerate(particles)]
+        Threads.@threads for i in 1:nk
+            k = rec.ks[i];  kh = k / norm(k);  U = zero(SVector{2,ComplexF64})
+            for a in eachindex(u);  U += u[a] * cis(-dot(k, rec.x0[a]));  end
+            UL[i] = kh[1] * U[1] + kh[2] * U[2];  UT[i] = kh[1] * U[2] - kh[2] * U[1]
+        end
+        push!(rec.UL, UL);  push!(rec.UT, UT)
+    end
     Threads.@threads for i in 1:nk
         k = rec.ks[i];  kh = k / norm(k)
         M = zero(SVector{2,ComplexF64});  s = 0.0im;  en = 0.0im
@@ -274,6 +320,40 @@ function shell_correlators(rec::Recorder, field::Symbol; t0 = 0.0, maxlag_t = 5.
     return shells, (0:maxlag) .* dtr, C
 end
 
+# ── Transverse mode as a damped oscillator ───────────────────────────────────
+# Viscous fluid with a shear modulus G (Kelvin–Voigt): ü = −2γ u̇ − ω0² u, with
+# 2γ = νk², ω0 = c_t k.  Velocity (momentum) autocorrelation, normalized at τ = 0:
+#   ω0 > γ:  e^{−γτ}[cos ωτ − (γ/ω) sin ωτ],     ω = (ω0² − γ²)^{1/2}
+#   ω0 < γ:  e^{−γτ}[cosh κτ − (γ/κ) sinh κτ],   κ = (γ² − ω0²)^{1/2}
+# ω0 = 0 gives e^{−2γτ} = e^{−νk²τ}, the pure fluid.
+function oscillator_corr(τ, γ, ω0)
+    d = ω0^2 - γ^2
+    if d > 1e-14
+        ω = sqrt(d);  return @. exp(-γ * τ) * (cos(ω * τ) - (γ / ω) * sin(ω * τ))
+    elseif d < -1e-14
+        κ = sqrt(-d);  return @. exp(-γ * τ) * (cosh(κ * τ) - (γ / κ) * sinh(κ * τ))
+    else
+        return @. exp(-γ * τ) * (1 - γ * τ)
+    end
+end
+
+# Least-squares fit of A·oscillator_corr(τ, γ, ω0) to C(τ): coarse grid, then a fine grid
+# around the best point; A is linear.  Returns (A, γ, ω0).
+function fit_oscillator(τ, C; γmax = 0.4, ω0max = 0.6, n = 120)
+    best = (Inf, 0.0, 0.0, 0.0)
+    function scan(γs, ωs)
+        for γ in γs, ω0 in ωs
+            f = oscillator_corr(τ, γ, ω0);  ff = dot(f, f);  ff > 0 || continue
+            A = dot(f, C) / ff;  r = sum(abs2, C .- A .* f)
+            r < best[1] && (best = (r, A, γ, ω0))
+        end
+    end
+    scan(range(0, γmax, length = n), range(0, ω0max, length = n))
+    dγ, dω = γmax / n, ω0max / n
+    scan(range(max(best[3] - 2dγ, 0), best[3] + 2dγ, length = 41), range(max(best[4] - 2dω, 0), best[4] + 2dω, length = 41))
+    return best[2], best[3], best[4]
+end
+
 # ── Output: one HDF5 file per realization ────────────────────────────────────
 # Datasets (Julia shape; h5py/numpy sees the axes reversed, e.g. MT as (nt, nk)):
 #   ks (2, nk)  t (nt)  ML, MT, S (nk, nt) complex  [E (nk, nt) if recorded]  H, KE (nt)
@@ -291,6 +371,7 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
         f["ks"] = reduce(hcat, Vector.(rec.ks));  f["t"] = rec.t
         f["ML"] = stack(rec.ML);  f["MT"] = stack(rec.MT);  f["S"] = stack(rec.S)
         rec.energies && (f["E"] = stack(rec.E))
+        isempty(rec.UT) || (f["UL"] = stack(rec.UL);  f["UT"] = stack(rec.UT))
         f["H"] = H;  f["KE"] = KE
         at = attributes(f)
         for (k, v) in pairs(meta)
@@ -328,7 +409,8 @@ function read_equilibrium(path::AbstractString)
         meta = NamedTuple(Symbol(k) => read(at[k]) for k in keys(at))
         ks = [SVector{2,Float64}(c) for c in eachcol(read(f["ks"]))]
         cols(name) = haskey(f, name) ? [Vector(c) for c in eachcol(read(f[name]))] : Vector{ComplexF64}[]
-        rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"))
+        rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"),
+                       cols("UL"), cols("UT"), SVector{2,Float64}[], SVector(0.0, 0.0))
         return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]))
     end
 end
