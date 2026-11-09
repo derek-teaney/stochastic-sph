@@ -94,6 +94,45 @@ the lattice modes; if not, look at the ideal step on a disordered arrangement.
 - Tasks 7, 8 of 61019642 (ref seeds 7, 8) cancelled and rerun as job **61020605** (see
   Lessons); their cancelled records are kept as `*.cancelled.txt`.
 
+**Outcome (2026-11-09 morning).**
+- Stability scan complete except `s1e5_hfix`: all 16 tasks died with a SingularException in
+  the 4×4 solve of `bond_weights_comoving` (melting lattice → nearly singular star).
+  Fixed in `34c1c32` (fallback to Λ = 0); rerun as job **61035596**.
+- eqL1.2: 32/32 done.  eqL2.4: only 12/32 done; 20 hit the 8 h limit (they needed more
+  than 8 h on shared nodes, estimate was 5.8 h), and the .h5 is written only at the end,
+  so they are lost.  To be rerun (see the speedup branch, validated first).
+- Figures: `docs/figs/campaign_first_stability.png` (`examples/campaign_stability_plot.jl`),
+  `docs/figs/correlators_L1.2.png` (`examples/stochrep_correlators.jl`).
+
+**What the stability scan shows** (t = 200, 16 seeds per set, box 0.6, h/a = 2 unless noted):
+
+| set | ΔH/H | KE/eq | disorder | melted |
+|---|---|---|---|---|
+| S0=1e6 (δv=0.043), λ=1 | +4.6e-2 | 1.06 | 0.31 a | 0/16 |
+| S0=1e6, λ=∞ | +3.2e-3 | 0.05 | 0.19 a | 0/16 |
+| S0=3e5 (δv=0.078), λ=1 | +0.47 | 1.66 | 0.83 a | 1/16 (t≈198) |
+| S0=3e5, λ=∞ | +4.1e-2 | 0.06 | 0.38 a | 0/16 |
+| S0=1e5 (δv=0.14), λ=1 | blow-up | 3e8 | 4.7 a | 16/16 (t≈28) |
+| S0=1e5, λ=∞ | +0.40 | 0.09 | 0.93 a | 8/16 (t≈147) but no blow-up |
+| S0=1e5, λ=1, h/a=3 | blow-up | 5e10 | 9.9 a | 16/16 (t≈11) |
+
+- The heating grows about ×10–12 per factor 1.83 in δv, i.e. roughly as δv⁴, for λ = 1 and
+  λ = ∞ alike; λ = 1 heats 10–14× faster than λ = ∞ at the same δv.
+- The λ = 1 instability sets in between δv = 0.078 and 0.14 (h/a = 2).  λ = ∞ never blows
+  up, even where its lattice disorders to ~1 a: the runaway goes through the lattice modes.
+- h/a = 3 at the same S0 has more particles in the box, so a larger δv per particle: not a
+  clean comparison at fixed δv.
+
+**What the L = 1.2 correlators show** (32 realizations, t = 400, S0 = 1e6):
+- Statics C_T(k,0), C_L(k,0) ≈ 1.04–1.10 at kh ≳ 0.5: 5–10% high, about what the slow
+  heating does to wT over the run.
+- **C_T is not diffusive: it is a damped oscillation** (transverse sound).  At kh = 0.26,
+  0.37, 0.52 the first zero is at τ ≈ 11, 7.5, 5 and the first minimum (C ≈ −0.3) at τ ≈ 22,
+  14.5, 10: ω ∝ k with c_t ≈ 0.029 (c_s = 0.577), i.e. a shear modulus G = w c_t² ≈ 0.003 p.
+  The particle arrangement (disorder 0.3 a, never melts) responds as a weakly rigid
+  solid.  The fitted "ν_fit/ν ≈ 2 at small k" is this oscillation, not a viscosity.
+  Testing e^{−νk²τ} needs the lattice rigidity understood or removed first.
+
 Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl`-style
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
 examples/stochrep_correlators.jl L1.2` (and L2.4, in an interactive job), then a short
