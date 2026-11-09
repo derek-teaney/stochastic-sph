@@ -62,13 +62,24 @@ squeue --me                      # status
 sacct -j <jobid> --format=JobID,State,Elapsed,MaxRSS
 ```
 
-- Output: `$SCRATCH/sph/<campaign name>/<run>/…jls`, one file per realization.
+To keep the Slurm logs in scratch too, submit from there and point the job at the code:
+
+```bash
+R=$HOME/stochastic-sph
+mkdir -p $SCRATCH/sph/slurm && cd $SCRATCH/sph
+N=$($R/nersc/ntasks.sh $R/nersc/campaign_example.txt)
+sbatch --array=1-$N%64 -A <account> --export=ALL,SR_REPO=$R \
+       $R/nersc/array.sh $R/nersc/campaign_example.txt first
+```
+
+- Output: `$SCRATCH/sph/<campaign name>/<run>/`: `equilibrium_*.h5` (HDF5) or
+  `stochrep_hamiltonian_*.jls`, one file per realization, with the job script, campaign file and a per-task record.
   `$SCRATCH` is purged after 8 weeks of no access: copy results worth keeping to CFS
   (`/global/cfs/cdirs/<project>`) or home.
 - `%64` limits how many tasks run at once.
 - Time per task: `t_end` × (steps per unit time) × (cost per step); see
   `docs/plan.tex`, "Where the time goes".  At `h/a = 2`, `N = 672`: about 8 minutes per
-  realization to `t = 100` on 8 cores.  Raise `#SBATCH -t` for bigger boxes.
+  realization to `t = 100`; 2 cores are as fast as 8 (`nersc/LOG.md`).  Raise `#SBATCH -t` for bigger boxes.
 
 ## Analysis
 

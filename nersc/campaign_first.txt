@@ -1,0 +1,17 @@
+# First production campaign (2026-11-08).  See nersc/LOG.md.
+# One run per line: <name> <nseeds> <env assignments ...> -- <driver> <driver args>
+# Submitted with the array.sh defaults: -q shared -c 2 -t 08:00:00.
+#
+# Stability scan (stochrep_hamiltonian.jl): args  h/a t_end nreal kinds vote dtfactor
+#   S0 = total entropy of the box; s_a = S0/N, thermal velocity ∝ S0^{-1/2}
+#   (S0=1e6: s_a=541, δv=0.043; S0=1e5: s_a=54, δv=0.14, melted at t≈40 in fullruns.tex)
+ref        16  SR_S0=1e6                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full,det star 1.0
+s3e5       16  SR_S0=3e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5       16  SR_S0=1e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5_hfix  16  SR_S0=1e5 SR_HFIX=1       -- examples/stochrep_hamiltonian.jl 2.0 200 1 full star 1.0
+s1e5_ha3   16  SR_S0=1e5                 -- examples/stochrep_hamiltonian.jl 3.0 200 1 full star 1.0
+#
+# Equilibrium ensembles (stochrep_equilibrium.jl, HDF5 output): args  L h/a t_end nreal rec_every tag
+#   rec_every: Δt_rec must resolve the sound period 2π/(c_s k) ≈ 0.36 at k h = 1.5 → ≤ 5 steps
+eqL1.2     32  SR_S0=1e6                 -- examples/stochrep_equilibrium.jl 1.2 2.0 400 1 2 L1.2
+eqL2.4     32  SR_S0=1e6                 -- examples/stochrep_equilibrium.jl 2.4 2.0 400 1 4 L2.4

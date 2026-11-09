@@ -17,6 +17,8 @@ the `.tex`).  Owner: D. Teaney.
   Plotting scripts next to them.
 - `test/` — checks; run the relevant ones after any change to `src/`.
 - `nersc/` — run-only environment, Slurm job array, campaign files, `nersc/README.md`.
+- **`nersc/LOG.md` — where things stand at NERSC: setup, lessons, campaigns and their job
+  IDs.  Read it first; add to it when you submit or learn something.**
 
 ## Conventions (important)
 
@@ -38,7 +40,9 @@ You may be running on a Perlmutter login node.  Rules:
    report the estimate (tasks × cores × hours / 128) before submitting.
 3. Use the run-only environment: `julia --project=nersc`.  The depot is set by
    `JULIA_DEPOT_PATH` (see `nersc/README.md`); precompile on the login node first.
-4. Output goes to `$SCRATCH/sph/<campaign>/<run>/`.  Never commit `.jls` data.
+4. Output goes to `$SCRATCH/sph/<campaign>/<run>/`.  Never commit `.jls` or `.h5` data.
+   Account m3722; submit from `$SCRATCH/sph` with `SR_REPO` set (`nersc/LOG.md`).
+   Short tests in `-q debug`.
 5. Monitor with `squeue --me`, `sacct`; read `slurm/*.out` for failures.  If a task fails,
    find the cause before resubmitting.
 6. Report back through git: commit **summaries** (tables, plots, a short note in

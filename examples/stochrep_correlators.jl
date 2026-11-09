@@ -7,7 +7,8 @@
 # decay rate, as an effective ν(k).
 #
 # Run:  julia --project examples/stochrep_correlators.jl tag [t_burn] [maxlag]
-#   reads data/equilibrium_<tag>_r*.jls → docs/figs/correlators_<tag>.png
+#   reads <dir>/equilibrium_<tag>_r*.h5 (or old .jls) → docs/figs/correlators_<tag>.png,
+#   with <dir> = $SR_DATADIR, default data/ (e.g. SR_DATADIR=$SCRATCH/sph/<campaign>/<run>)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Serialization, Statistics, LsqFit
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
@@ -18,9 +19,11 @@ include(joinpath(@__DIR__, "..", "src", "measure.jl"))
 const TAG    = ARGS[1]
 const TBURN  = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 2.0
 const MAXLAG = length(ARGS) > 2 ? parse(Float64, ARGS[3]) : 6.0
-dir = joinpath(@__DIR__, "..", "data")
-files = filter(f -> startswith(f, "equilibrium_$(TAG)_r") && endswith(f, ".jls"), readdir(dir))
-runs = [deserialize(joinpath(dir, f)) for f in files]
+dir = get(ENV, "SR_DATADIR", joinpath(@__DIR__, "..", "data"))
+pick(ext) = filter(f -> startswith(f, "equilibrium_$(TAG)_r") && endswith(f, ext), readdir(dir))
+files = isempty(pick(".h5")) ? pick(".jls") : pick(".h5")          # never mix the two formats
+isempty(files) && error("no equilibrium_$(TAG)_r*.h5 in $dir")
+runs = [read_equilibrium(joinpath(dir, f)) for f in files]
 m = runs[1].meta
 norm0 = m.N * m.V * m.w * m.T
 ν = m.etas / m.Trel;  Γs = 4 / 3 * ν;  cs = sqrt(m.cs2)

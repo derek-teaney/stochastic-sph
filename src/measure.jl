@@ -1,7 +1,7 @@
 # measure.jl — equilibrium initial states, recording of Fourier modes, and correlators
 # (docs/plan.tex, "Measurements in thermalized ensembles").  Include after stochrep.jl;
-# needs FFTW and BinningAnalysis.
-using FFTW, BinningAnalysis
+# needs FFTW, BinningAnalysis and HDF5.
+using FFTW, BinningAnalysis, HDF5, Serialization
 
 # ── Equilibrium initial state ────────────────────────────────────────────────
 # Single-particle covariance of δm at fixed e_a: [−∂²S_a/∂m∂m]⁻¹ (numerical Hessian).
@@ -116,4 +116,45 @@ function shell_correlators(rec::Recorder, field::Symbol; t0 = 0.0, maxlag_t = 5.
         C[j, :] ./= length(idx)
     end
     return shells, (0:maxlag) .* dtr, C
+end
+
+# ── Output: one HDF5 file per realization ────────────────────────────────────
+# Datasets (Julia shape; h5py/numpy sees the axes reversed, e.g. MT as (nt, nk)):
+#   ks (2, nk)  t (nt)  ML, MT, S (nk, nt) complex  [E (nk, nt) if recorded]  H, KE (nt)
+# Complex numbers are stored as the compound {r, i}, which h5py reads as complex.
+# The run parameters are attributes of the root group; NamedTuple entries are flattened
+# as <name>_<field> (e.g. guards_rejected).
+function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recorder,
+                              H::Vector{Float64}, KE::Vector{Float64})
+    nk = length(rec.ks)
+    stack(v) = isempty(v) ? zeros(ComplexF64, nk, 0) : reduce(hcat, v)
+    h5open(path, "w") do f
+        f["ks"] = reduce(hcat, Vector.(rec.ks));  f["t"] = rec.t
+        f["ML"] = stack(rec.ML);  f["MT"] = stack(rec.MT);  f["S"] = stack(rec.S)
+        rec.energies && (f["E"] = stack(rec.E))
+        f["H"] = H;  f["KE"] = KE
+        at = attributes(f)
+        for (k, v) in pairs(meta)
+            if v isa NamedTuple
+                for (k2, v2) in pairs(v);  at["$(k)_$(k2)"] = v2;  end
+            else
+                at[string(k)] = v isa AbstractVector ? collect(v) : v
+            end
+        end
+    end
+    return path
+end
+
+# Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE),
+# with meta a NamedTuple of the attributes and rec a Recorder.
+function read_equilibrium(path::AbstractString)
+    endswith(path, ".jls") && return deserialize(path)
+    h5open(path, "r") do f
+        at = attributes(f)
+        meta = NamedTuple(Symbol(k) => read(at[k]) for k in keys(at))
+        ks = [SVector{2,Float64}(c) for c in eachcol(read(f["ks"]))]
+        cols(name) = haskey(f, name) ? [Vector(c) for c in eachcol(read(f[name]))] : Vector{ComplexF64}[]
+        rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"))
+        return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]))
+    end
 end

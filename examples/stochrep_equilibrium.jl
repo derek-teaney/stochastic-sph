@@ -7,7 +7,8 @@
 # step of length Δt between consecutive leapfrogs (half the cost of S(Δt/2) L S(Δt/2) per step).
 #
 # Run:  julia -t auto --project examples/stochrep_equilibrium.jl L h/a t_end nreal [rec_every] [tag]
-#   → data/equilibrium_<tag>_r<seed>.jls  (one file per realization)
+#   → data/equilibrium_<tag>_r<seed>.h5  (one HDF5 file per realization; see
+#     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
 # Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX.
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
@@ -27,6 +28,12 @@ const ETAS  = parse(Float64, get(ENV, "SR_ETAS", "0.2"))
 const S0    = parse(Float64, get(ENV, "SR_S0", "1e6"))
 const KHMAX = parse(Float64, get(ENV, "SR_KHMAX", "1.5"))
 const OUT   = get(ENV, "SR_OUTDIR", joinpath(@__DIR__, "..", "data"));  mkpath(OUT)
+const COMMIT = try
+    c = readchomp(`git -C $(@__DIR__) rev-parse --short HEAD`)
+    success(`git -C $(@__DIR__) diff --quiet HEAD`) ? c : c * "+dirty"
+catch
+    "unknown"
+end
 const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0+1 … SEED0+NREAL
 
 function one_realization(seed)
@@ -56,8 +63,9 @@ function one_realization(seed)
     end
     meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = N, dt = dt, nsteps = nsteps,
             etas = ETAS, S0 = S0, V = V, w = w, T = T, Trel = Trel, cs2 = 1/3, seed = seed,
-            acc = acc, guards = guards(), wall = time() - t0)
-    serialize(joinpath(OUT, "equilibrium_$(TAG)_r$(seed).jls"), (meta = meta, rec = rec, H = Ht, KE = KE))
+            acc = acc, guards = guards(), wall = time() - t0, rec_every = RECN, khmax = KHMAX,
+            tag = TAG, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+    write_equilibrium_h5(joinpath(OUT, "equilibrium_$(TAG)_r$(seed).h5"), meta, rec, Ht, KE)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, time() - t0, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
