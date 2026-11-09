@@ -46,6 +46,9 @@ const STRIDE = parse(Int, get(ENV, "SR_SEEDSTRIDE", "1"))             # = NREAL 
 const NOVISC = get(ENV, "SR_NOVISC", "0") == "1"
 const NOHAM  = get(ENV, "SR_NOHAM", "0") == "1"
 const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
+# SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
+# positions), then rescale the s_a so that the smoothed entropy density is uniform again.
+const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
 const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
@@ -60,7 +63,7 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
-     tag = TAG, start = string(START), novisc = NOVISC, lambda = LAMBDA, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 function one_realization(seed)
@@ -72,7 +75,16 @@ function one_realization(seed)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
         params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
-                                       L=LBOX, lattice=:hex)
+                                       L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
+        if JITTER > 0                            # uniform smoothed entropy: s_a ← s_a S0 / S_a, iterated
+            for _ in 1:30
+                for q in ps;  q.s *= S0 / q.S_smooth;  end
+                thermalize!(ps, params, cl, eos)
+            end
+            @printf("seed %d: jitter %.2f a: smoothed S/S0 − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, JITTER,
+                    sqrt(sum(abs2, [q.S_smooth / S0 - 1 for q in ps]) / length(ps)),
+                    (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
+        end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
         initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))

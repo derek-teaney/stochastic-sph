@@ -104,20 +104,47 @@ function particle_moments(V, β0, β::SVector{2,Float64}, eos::AbstractEOS; nq::
             cov = SMatrix{3,3,Float64}(Cq), L = L, Hn = Hn)
 end
 
+# Single-particle moments for every volume in V, as a function V_a -> moments.  Particles of
+# equal volume share them (a lattice: one quadrature).  When there are many distinct
+# volumes (jittered or random positions), the quadrature is done at nnode volumes spanning
+# [min V, max V] and, per particle:
+#   ē = V ε̄, m̄ = V M̄ (extensive, exact); the offsets ⟨x⟩ − x̄ and Cov(x), which are smooth
+#   in V (≈ const and ∝ V), are interpolated linearly; the sampler's Gaussian is rescaled
+#   from the nearest node (Hn ∝ 1/V, L ∝ √V).  The draws stay exact (the Metropolis target
+#   is the particle's own S_a); the interpolation only enters the averages used for β.
+function moments_table(V::Vector{Float64}, β0, β::SVector{2,Float64}, eos::AbstractEOS;
+                       nq::Int = 41, nnode::Int = 9, maxgroups::Int = 32)
+    vs = unique(V)
+    if length(vs) <= maxgroups
+        d = Dict(v => particle_moments(v, β0, β, eos; nq) for v in vs)
+        return v -> d[v]
+    end
+    st = state_from_beta(β0, β, eos)
+    nodes = collect(range(minimum(V), maximum(V), length = nnode))
+    P = [particle_moments(v, β0, β, eos; nq) for v in nodes]
+    off = [p.mean - SVector(p.ē, p.m̄[1], p.m̄[2]) for p in P]
+    return function (v)
+        j = clamp(searchsortedlast(nodes, v), 1, nnode - 1);  f = (v - nodes[j]) / (nodes[j+1] - nodes[j])
+        n = f < 0.5 ? j : j + 1;  r = v / nodes[n]
+        ē = v * st.ε;  m̄ = v * st.M
+        (ē = ē, m̄ = m̄, mean = SVector(ē, m̄[1], m̄[2]) + (1 - f) * off[j] + f * off[j+1],
+         cov = (1 - f) * P[j].cov + f * P[j+1].cov, L = sqrt(r) * P[n].L, Hn = P[n].Hn / r)
+    end
+end
+
 # The global multipliers whose *average* totals are (E, M): Σ_a ⟨e_a⟩ = E, Σ_a ⟨m_a⟩ = M.
 # Newton in θ = (−β⁰, β), conjugate to x = (e, m), with ∂⟨x⟩/∂θ = Cov(x) (exact for this
 # exponential family).  Starts from the most probable state at the mean densities.
-# Particles with equal volume share their moments.
+# Returns (β⁰, β, mom) with mom(V_a) the moments of a particle of volume V_a.
 function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64},
                             eos::AbstractEOS; nq::Int = 41, iters::Int = 8)
     Vtot = sum(V);  _, v0, T0 = eos_from_energy(E / Vtot, M / Vtot, eos)
     θ = SVector(-1 / T0, v0[1] / T0, v0[2] / T0);  target = SVector(E, M[1], M[2])
-    groups = Dict{Float64,Int}();  for v in V;  groups[v] = get(groups, v, 0) + 1;  end
     mom = nothing
     for it in 1:iters
         β0 = -θ[1];  β = SVector(θ[2], θ[3])
-        mom = Dict(v => particle_moments(v, β0, β, eos; nq) for v in keys(groups))
-        X = sum(n * mom[v].mean for (v, n) in groups);  Ct = sum(n * mom[v].cov for (v, n) in groups)
+        mom = moments_table(V, β0, β, eos; nq)
+        ms = mom.(V);  X = sum(p.mean for p in ms);  Ct = sum(p.cov for p in ms)
         r = target - X
         abs(r[1]) <= 1e-12 * abs(E) && norm(r[2:3]) <= 1e-12 * abs(E) && break
         θ = θ + Ct \ r
@@ -125,7 +152,7 @@ function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64
     return -θ[1], SVector(θ[2], θ[3]), mom
 end
 
-# Draw (e_a, m_a) for all particles at the multipliers (β⁰, β) (moments from
+# Draw (e_a, m_a) for all particles at the multipliers (β⁰, β) (moments mom(V_a) from
 # beta_from_averages): independent draws from the canonical ensemble, so the totals
 # fluctuate about their averages (E, M).  With exact_totals = true the difference between
 # the drawn totals and (E, M) is then removed uniformly, i.e. in proportion to the
@@ -135,7 +162,7 @@ function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int
                             exact_totals::Bool = false, E = nothing, M = nothing)
     N = length(V);  X = Vector{SVector{3,Float64}}(undef, N);  nacc = 0
     for a in 1:N
-        p = mom[V[a]]
+        p = mom(V[a])
         x, na = draw_particle(p.ē, p.m̄, V[a], β0, β, eos, p.L, p.Hn, rng; nmh)
         X[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
     end
