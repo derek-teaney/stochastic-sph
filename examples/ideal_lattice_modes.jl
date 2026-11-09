@@ -17,6 +17,10 @@ const LBOX = 1.2;  const S0 = 1e6;  const EPS = 0.01;  const QHMAX = parse(Float
 # amplitude: ε = EPS·a, or, if STRAIN is set, ε = STRAIN/|q| (fixed strain amplitude q ε; needed at
 # large h/a, where the transverse energy change is a tiny fraction of H)
 const STRAIN = parse(Float64, get(ENV, "STRAIN", "0"))
+# disordered configurations: JITTER=j displaces the sites by up to ±j·a/2 (j ≳ 3: random), the
+# s_a are then rescaled so that the smoothed entropy is uniform; NSEED configurations, results
+# averaged (the affine "Born" modulus: an upper bound on G, the non-affine relaxation is not done).
+const JITTER = parse(Float64, get(ENV, "JITTER", "0"));  const NSEED = parse(Int, get(ENV, "NSEED", "1"))
 
 function energy!(ps, params, cl, eos, x0, ê, q, ε)
     for (a, p) in enumerate(ps)
@@ -30,15 +34,20 @@ end
 
 for ha in HAS
     eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
-    params, ps, cl, eos = setup_ic(0.05, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex)
+  for seed in 1:NSEED
+    params, ps, cl, eos = setup_ic(0.05, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex,
+                                   jitter = JITTER, seed = 100 + seed)
+    if JITTER > 0
+        for _ in 1:30;  for q in ps;  q.s *= S0 / q.S_smooth;  end;  thermalize!(ps, params, cl, eos);  end
+    end
     x0 = [p.x for p in ps];  N = params.N;  a = params.a
-    p1 = ps[1];  V = p1.s / p1.S_smooth;  w = p1.e + p1.p;  cs = sqrt(1/3)
+    V = params.L[1] * params.L[2] / params.N;  w = sum(p.e + p.p for p in ps) / params.N;  cs = sqrt(1/3)
     U0 = energy!(ps, params, cl, eos, x0, SVector(1.0, 0.0), SVector(0.0, 0.0), 0.0)
     qs = box_wavevectors(params, QHMAX)
     # one q per shell, in two directions
     byshell = Dict{Float64,SVector{2,Float64}}()
     for q in qs;  kn = round(norm(q); digits = 6);  haskey(byshell, kn) || (byshell[kn] = q);  end
-    println(@sprintf("== %s, h/a = %.1f, N = %d, a = %.4f   (c_s = %.3f)", string(params.kernel), ha, N, a, cs))
+    println(@sprintf("== %s, h/a = %.1f, N = %d, a = %.4f, jitter %.2f a, seed %d   (c_s = %.3f)", string(params.kernel), ha, N, a, JITTER, seed, cs))
     println("   q h     ω_L/(c_s q)   ω_T/q (= c_t)   ω_T²·sign")
     for kn in sort(collect(keys(byshell)))
         q = byshell[kn];  q̂ = q / norm(q);  t̂ = SVector(-q̂[2], q̂[1])
@@ -53,4 +62,5 @@ for ha in HAS
         @printf("   %.3f   %9.4f      %s        %+.3e\n", kn * params.h, sqrt(max(ωL2, 0)) / (cs * kn),
                 ωT2 >= 0 ? @sprintf("%.5f", sqrt(ωT2) / kn) : "unstable", ωT2)
     end
+  end
 end
