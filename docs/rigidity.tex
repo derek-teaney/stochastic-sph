@@ -171,6 +171,26 @@ speed.
   the kinetic energy in ideal SPH (fact 4: energy flowing into neutral modes through the
   anharmonic terms) and for what the $\lambda=1$ noise drives into the melt.
 \end{enumerate}
+\paragraph{Larger $h/a$.}  The same test for $h/a=2$--$8$, with the amplitude fixed by the strain,
+$q\epsilon=10^{-2}$ (repeated at $3\times10^{-2}$ with the same results, so these are not
+round-off).  Signed $c_t$ at $qh\simeq0.26$ (negative: $\omega_T^2<0$, unstable to shear):
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+kernel & $h/a=2$ & $3$ & $4$ & $5$ & $6$ & $8$ \\ \hline
+C2 & $+0.035$ & $+0.022$ & $-0.011$ & $-0.0034$ & $+0.0069$ & $-0.0027$ \\
+C4 & $-0.0054$ & $-0.0029$ & $+0.0029$ & $+0.0008$ & $-0.0008$ & $+0.0003$ \\
+C6 & $+0.017$ & $+0.0026$ & $-0.0003$ & $+0.0002$ & $+0.0002$ & $<10^{-4}$ \\
+\hline
+\end{tabular}
+\end{center}
+The shear modulus goes to zero as $h/a\to\infty$, as the continuum limit requires, oscillating
+in sign with a decaying envelope: slowly for C2 (about $(h/a)^{-1.7}$), faster for C4, and
+fastest for C6, which is below $3\times10^{-3}$ from $h/a=3$ on.  The requirement
+$c_t\lesssim\pi\nu/L\approx3\times10^{-3}$ for $L=2.4$ is met on the perfect lattice by C6 at
+$h/a\ge3$, C4 at $h/a\ge4$, and C2 only near $h/a\approx8$.  Whether the thermally disordered
+state follows the perfect lattice is for the runs to show.
+
 Consequences: (i) $G$ can be positive or negative depending on kernel and $h/a$, so it can be
 made small, perhaps zero, on the perfect lattice by the choice of kernel and $h/a$; but the
 relevant state is the thermally disordered one, where $c_t$ is smaller (0.022 against 0.034).
