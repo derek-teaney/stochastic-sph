@@ -1,0 +1,6 @@
+# λ = ∞ (deterministic residual, kind `det`) companion to campaign_first.txt (2026-11-08).
+# Question: does λ = ∞, which kept the lattice modes cold in fullruns.tex, stay stable
+# at the fluctuation levels where λ = 1 melts?  Compare with s3e5 and s1e5 in `first`.
+# Hamiltonian scans: args  h/a t_end nreal kinds vote dtfactor
+s3e5_det   16  SR_S0=3e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 det star 1.0
+s1e5_det   16  SR_S0=1e5                 -- examples/stochrep_hamiltonian.jl 2.0 200 1 det star 1.0
