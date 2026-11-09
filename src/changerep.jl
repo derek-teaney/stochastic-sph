@@ -73,18 +73,30 @@ end
 function eos_from_energy(ε::Float64, M::SVector{2,Float64}, eos::AbstractEOS;
                          tol=1e-15, maxiter=500)
     M2 = dot(M, M)
-    e  = ε
+    e  = rest_energy(ε, M2, eos; tol, maxiter)
+    w = e + pressure(eos, e)
+    v = M / (ε + pressure(eos, e))
+    γ = 1 / sqrt(1 - dot(v, v))
+    S = w * γ / Trel(eos, e)
+    return S, v, w / S
+end
+
+# Rest-frame energy density from ε and |M|²: fixed point of e = ε − |M|²/(ε + p(e)).
+function rest_energy(ε::Float64, M2::Float64, eos::AbstractEOS; tol=1e-15, maxiter=500)
+    e = ε
     for _ in 1:maxiter
         e_new = ε - M2 / (ε + pressure(eos, e))
         done  = abs(e_new - e) <= tol * ε
         e = e_new
         done && break
     end
-    w = e + pressure(eos, e)
-    v = M / (ε + pressure(eos, e))
-    γ = 1 / sqrt(1 - dot(v, v))
-    S = w * γ / Trel(eos, e)
-    return S, v, w / S
+    return e
+end
+# Conformal, p = c² e: the fixed point solves c² e² + (1 − c²) ε e + |M|² − ε² = 0; the
+# positive root, written without cancellation (agrees with the iteration to roundoff).
+function rest_energy(ε::Float64, M2::Float64, eos::ConformalEOS; tol=1e-15, maxiter=500)
+    c2 = eos.cs2_val
+    return 2 * (ε^2 - M2) / ((1 - c2) * ε + sqrt((1 + c2)^2 * ε^2 - 4c2 * M2))
 end
 
 # Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state.

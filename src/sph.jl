@@ -100,7 +100,9 @@ ConformalEOS(; d=3, cs2_val=1.0/d, T_scale=T_scale_gluon, η_by_s=0.0, ζ_by_s=0
 pressure(eos::ConformalEOS, e::Float64) = eos.cs2_val * e
 
 # Relativistic temperature
-Trel(eos::ConformalEOS, e::Float64) = eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
+# (exponent 1/4 for c² = 1/3: two square roots, much cheaper than the power)
+Trel(eos::ConformalEOS, e::Float64) = eos.cs2_val == 1/3 ? eos.T_scale * sqrt(sqrt(e)) :
+                                                         eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
 
 # Sound speed squared (two-arg form for generic EOS; one-arg shortcut for ConformalEOS)
 cs2(eos::ConformalEOS,  e::Float64) = eos.cs2_val
