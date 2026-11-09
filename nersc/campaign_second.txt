@@ -1,0 +1,7 @@
+# Second campaign (2026-11-09): the validated fast code (main, speedup merged) with the new
+# defaults: hot start (SR_START=eq, equilibrium_init! with exact totals), single vote,
+# λ = 1, gradient-corrected map; checkpoints every 20 min (a timed-out task is resubmitted
+# and resumes).  Compare with eqL1.2 / eqL2.4 of campaign first (thermal start, old code).
+# Equilibrium ensembles: args  L h/a t_end nreal rec_every tag
+eqL1.2     32  SR_S0=1e6 SR_START=eq     -- examples/stochrep_equilibrium.jl 1.2 2.0 400 1 2 L1.2
+eqL2.4     32  SR_S0=1e6 SR_START=eq     -- examples/stochrep_equilibrium.jl 2.4 2.0 400 1 4 L2.4
