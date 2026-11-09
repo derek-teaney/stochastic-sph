@@ -40,6 +40,8 @@ fields = (:KE, :Es, :Hs, :loc)
 titles = ("kinetic energy / equilibrium", "particle energies  Σe/Σe₀ − 1",
           "smoothed energy  H/H₀ − 1", "local disorder / a")
 rows = String[]
+heat = []          # (δv, kind, h/a, median H/H₀−1 at t = 100, 200, blown up?)
+dvof = Dict("S0=1e6" => 0.043, "S0=3e5" => 0.078, "S0=1e5" => 0.14)
 for (lab, dir, kind, c, ls) in sets
     rs = load(dir, kind)
     isempty(rs) && (push!(rows, @sprintf("%-28s  (no data yet)", lab)); continue)
@@ -56,6 +58,10 @@ for (lab, dir, kind, c, ls) in sets
     melt = [let i = findfirst(>(1.0), r.loc); i === nothing ? NaN : r.ts[i] end for r in rs]
     nmelt = count(isfinite, melt)
     blown = count(r -> !(isfinite(r.KE[end]) && r.KE[end] < 10), rs)
+    if !occursin("energy fix", lab)
+        hat(tq) = median([r.Hs[findfirst(>=(tq - 1e-9), r.ts)] for r in rs if r.ts[end] >= tq])
+        push!(heat, (dvof[lab[1:6]], kind, occursin("h/a=3", lab) ? 3 : 2, hat(100.0), hat(200.0), blown > length(rs) ÷ 2))
+    end
     push!(rows, @sprintf("%-28s %3d seeds  t_end %5.0f  KE/eq %8.3g  ΔΣe/Σe %+9.2e  ΔH/H %+9.2e  disorder %5.2f a  melted %2d/%d %s  KE/eq>10 %d",
                          lab, length(rs), median(tend), median(fin(:KE)), median(fin(:Es)), median(fin(:Hs)),
                          median(fin(:loc)), nmelt, length(rs),
@@ -70,4 +76,21 @@ axs[1].legend(fontsize=8, loc="upper left")
 suptitle("Stability scan (campaigns first, first_det): box 0.6 × 0.6, h = 0.05, η/s = 0.2 (N = 672 at h/a = 2); band = min–max over seeds, line = median")
 tight_layout()
 savefig(OUT, dpi=110);  println("Saved ", OUT)
+
+# heating versus thermal velocity: median H/H₀ − 1 at t = 100 and 200, log-log
+figure(figsize=(7, 5))
+for (tcol, mkr) in ((4, "o"), (5, "s"))
+    for (kind, c) in ((:full, "C3"), (:det, "C0"))
+        pts = [(h[1], h[tcol]) for h in heat if h[2] == kind && h[3] == 2 && !h[6]]
+        isempty(pts) && continue
+        plot(first.(pts), last.(pts), mkr * "-", color=c, mfc=tcol == 4 ? "none" : c,
+             label=(kind == :full ? "λ = 1" : "λ = ∞") * (tcol == 4 ? ", t = 100" : ", t = 200"))
+    end
+end
+dv = [0.04, 0.15];  plot(dv, 4.6e-2 .* (dv ./ 0.043) .^ 4, "k:", lw=0.8, label="∝ δv⁴")
+xscale("log");  yscale("log");  xlabel("thermal velocity per component δv");  ylabel("median H/H₀ − 1")
+title("heating of the smoothed energy, box 0.6, h/a = 2\n(λ = 1 at δv = 0.14 blows up at t ≈ 45: not shown)", fontsize=10)
+legend(fontsize=8);  tight_layout()
+savefig(replace(OUT, ".png" => "_heating.png"), dpi=110)
+for h in heat;  println(h);  end
 foreach(println, rows)

@@ -69,7 +69,21 @@ or learn something about running the code here.
 
 ## Campaigns
 
-### `second` — 2026-11-09, `nersc/campaign_second.txt`, 64 tasks, ≈ 0.8 node-hours
+### `rigidity` — 2026-11-09, `nersc/campaign_rigidity.txt` (+ `_det`), branch `rigidity`
+
+Where does the transverse rigidity come from (docs/campaigns.pdf)?  L = 1.2, t = 200, 16
+realizations per set, displacements UL/UT recorded: h/a = 2, 2.5, 3; Wendland C4 at h/a = 2
+(`SPH_KERNEL=wc4`); positions frozen (`SR_NOHAM=1`); λ = ∞ (`SR_LAMBDA=Inf`); ideal SPH alone
+(`SR_NOVISC=1`, thermal start, L = 0.6, t = 50) at each h/a.  4 seeds per task
+(`SR_SEEDSTRIDE=4`, nreal 4, `-c 8`).
+- Job **61045626** (24 tasks, run checkout `~/stochastic-sph-run2` at `4663c3f`) and job
+  **61045885** (λ = ∞, 4 tasks, `~/stochastic-sph-run3` at the next commit).  ≈ 0.8 node-hours.
+  Output `$SCRATCH/sph/rigidity/`.  Analysis: `examples/rigidity_analysis.jl`.
+- Found while setting up (L = 0.6, interactive): ideal SPH alone does not hold the lattice
+  (KE/eq 0.9 → 6.8 by t = 20 from the thermal start, H conserved); random positions release
+  ≈ 400 T per particle (KE/eq → 420 by t = 5) and heat the full scheme (ΔH/H +0.64 by t = 10).
+
+### `second` — 2026-11-09 (done 10:56, 64/64), `nersc/campaign_second.txt`, 64 tasks, ≈ 0.8 node-hours
 
 The fast code (`main` at `f355cd0`: speedup merged after validation, equilibrium start,
 defaults star / λ = 1 / hot start, checkpoints every 20 min).  eqL1.2 and eqL2.4, 32
@@ -80,6 +94,12 @@ realizations each, t = 400, SR_START=eq.  Compare with the same runs of `first`.
 - Submitted as job **61037106** (`-q shared -c 2 -t 8:00:00`, m3722).  Tasks 1–32 eqL1.2,
   33–64 eqL2.4.  Output `$SCRATCH/sph/second/`.  A task that times out leaves a `.chk` and
   a partial `.h5`; resubmitting the same array index resumes it.
+
+**Outcome.**  All 64 completed (eqL2.4 ≈ 3.7 h per task).  Same as `first` within the spread:
+ΔH/H(t=400) = 0.219 (L1.2), 0.221 (L2.4); KE/eq 1.31.  The transverse correlator is a damped
+oscillation with c_t = 0.022 at all kh = 0.13–0.74 in both boxes; damping 2γ/νk² = 1.1–1.2 at
+kh ≥ 0.5, rising to ≈ 2 at kh = 0.13 (extra rate ∝ k^{2/3}).  C_T(k,0) = 0.75 at kh = 0.13.
+Report: `docs/campaigns.pdf` (figures `docs/figs/compare_*.png`, `transverse_*.png`).
 
 **Validation of the fast code** (before `second`): 32 vs 32 realizations of the
 equilibrium driver, L = 0.6, t = 50, S0 = 1e6, old (`nextstage`) vs new (`speedup`).  All
