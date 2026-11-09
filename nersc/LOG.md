@@ -30,6 +30,14 @@ or learn something about running the code here.
 
 ## Lessons
 
+- **Never edit the checkout that queued jobs run from.**  Each task loads the code from
+  `SR_REPO` when it *starts*, so edits reach every task that has not started yet.  On
+  2026-11-08 the speedup work was done in `~/stochastic-sph` for ~10 min while `first`
+  was queued; tasks 7 and 8 started then (task 7 recorded `7b657c9+dirty`).  They were
+  cancelled and rerun as job 61020605 from `nextstage`.  Development now happens in the
+  worktree `~/stochastic-sph-speedup` (branch `speedup`); `~/stochastic-sph` stays on
+  `nextstage` for the runs.  Check `repo` in the `run_seed*.txt` records.
+
 - `array.sh` had three launch bugs, now fixed: it located the repository from `$0`
   (Slurm runs a spooled copy), did not load the Julia module, and split campaign lines
   on single spaces (aligned columns broke `env`).  Dry-run changes with a stand-in
@@ -78,6 +86,9 @@ the lattice modes; if not, look at the ideal step on a disordered arrangement.
 
 - 2026-11-08 ~19:30: submitted as job **61019836** (`-q shared -c 2`, m3722, commit
   `7295450`).  Tasks 1–16 s3e5_det, 17–32 s1e5_det.  Output `$SCRATCH/sph/first_det/`.
+
+- Tasks 7, 8 of 61019642 (ref seeds 7, 8) cancelled and rerun as job **61020605** (see
+  Lessons); their cancelled records are kept as `*.cancelled.txt`.
 
 Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl`-style
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
