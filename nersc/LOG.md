@@ -69,7 +69,17 @@ Output `$SCRATCH/sph/first/`.
   Tasks 1–80 stability (ref 1–16, s3e5 17–32, s1e5 33–48, s1e5_hfix 49–64,
   s1e5_ha3 65–80), 81–112 eqL1.2, 113–144 eqL2.4.
 
-Next once it finishes: stability plots (`examples/stochrep_longruns_plot.jl`-style
+### `first_det` — 2026-11-08, `nersc/campaign_first_det.txt`, 32 tasks, ≈ 0.12 node-hours
+
+λ = ∞ (kind `det`) at S0 = 3e5 and 1e5, 16 seeds each, t = 200; same seeds as s3e5 and
+s1e5 in `first`, so each pair starts from the same state.  Question: does λ = ∞ (cold
+lattice modes) stay stable where λ = 1 melts?  If it does, the melting is fed through
+the lattice modes; if not, look at the ideal step on a disordered arrangement.
+
+- 2026-11-08 ~19:30: submitted as job **61019836** (`-q shared -c 2`, m3722, commit
+  `7295450`).  Tasks 1–16 s3e5_det, 17–32 s1e5_det.  Output `$SCRATCH/sph/first_det/`.
+
+Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl`-style
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
 examples/stochrep_correlators.jl L1.2` (and L2.4, in an interactive job), then a short
 note in `docs/` with the tables and figures.
