@@ -286,7 +286,7 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos
         cg = groups[g]
         order = [shuffle(rng, cells[ix, iy]) for (ix, iy) in cg]
         Threads.@threads for ci in eachindex(cg)
-            δ = SVector{2,Float64}[];  Snew = Float64[]
+            δ = sizehint!(SVector{2,Float64}[], 128);  Snew = sizehint!(Float64[], 128)
             for a in order[ci]
                 st = stars[a];  n = length(st.nb);  n == 0 && continue
                 resize!(δ, n);  resize!(Snew, n)
@@ -340,6 +340,52 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
     end
 end
 
+# ── Gradient-corrected change of representation ─────────────────────────────
+# (changerep.tex, Appendix A): the gradient energy g_a of the long-wavelength momentum
+# profile is frozen during the sweeps, so e_a = e′_a + g_a is fixed there; the back map
+# refits it, s′ = S_a(e′_a + g′_a, m′_a).  Separate functions, so that the threaded loops
+# see concretely typed arrays.
+function gradient_freeze(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                         eos::AbstractEOS, cache)
+    N   = length(particles)
+    kst = cache === nothing ? Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N) :
+                              resize!(cache.kst, N)
+    Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
+    s0  = [pa.s for pa in particles]
+    μ0  = [pa.m / pa.s for pa in particles]
+    g0  = Vector{Float64}(undef, N)
+    nl  = neighbor_list!(cl, particles, params.h)
+    reuse = cache !== nothing
+    threaded_chunks(N) do range
+        buf = Tuple{Int,SVector{2,Float64},Float64}[]
+        for a in range
+            kst[a] = reuse && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl; nl) :
+                                                   copy(kernel_star!(buf, a, particles, params, cl; nl))
+            Cs[a]  = inverse_susceptibility(particles[a], eos)
+        end
+    end
+    Threads.@threads for a in 1:N
+        g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
+    end
+    return (kst = kst, Cs = Cs, s0 = s0, g0 = g0)
+end
+
+function gradient_backmap!(Sc::Vector{Float64}, gr, m::Vector{SVector{2,Float64}},
+                           e::Vector{Float64}, V::Vector{Float64}, eos::AbstractEOS)
+    kst, Cs, s0, g0 = gr.kst, gr.Cs, gr.s0, gr.g0
+    N  = length(Sc)
+    μ1 = [m[a] / s0[a] for a in 1:N]                       # s still old, as in the deterministic step
+    Threads.@threads for a in 1:N
+        g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
+        Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
+        if isfinite(Sg)
+            Sc[a] = Sg
+        else
+            Threads.atomic_add!(GUARD_BACKMAP, 1)          # keep the plain map
+        end
+    end
+end
+
 # ── The step ─────────────────────────────────────────────────────────────────
 # Frozen data of a step: particle volumes, particle energies, stars.
 function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
@@ -380,26 +426,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
     # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
-    if gradient
-        kst = cache === nothing ? Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N) :
-                                  resize!(cache.kst, N)
-        Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
-        s0  = [pa.s for pa in particles]
-        μ0  = [pa.m / pa.s for pa in particles]
-        g0  = Vector{Float64}(undef, N)
-        nl = neighbor_list!(cl, particles, params.h)
-        threaded_chunks(N) do range
-            buf = Tuple{Int,SVector{2,Float64},Float64}[]
-            for a in range
-                kst[a] = cache !== nothing && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl; nl) :
-                                                                   copy(kernel_star!(buf, a, particles, params, cl; nl))
-                Cs[a]  = inverse_susceptibility(particles[a], eos)
-            end
-        end
-        Threads.@threads for a in 1:N
-            g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
-        end
-    end
+    gr = gradient ? gradient_freeze(particles, params, cl, eos, cache) : nothing
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
     for kind in kinds
@@ -414,18 +441,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
                                      eos, rngs, rng, vote) / N
         end
     end
-    if gradient
-        μ1 = [m[a] / s0[a] for a in 1:N]                                   # s still old, as in the deterministic step
-        Threads.@threads for a in 1:N
-            g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
-            Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
-            if isfinite(Sg)
-                Sc[a] = Sg
-            else
-                Threads.atomic_add!(GUARD_BACKMAP, 1)                 # keep the plain map
-            end
-        end
-    end
+    gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
         pa.m = m[a];  pa.s = Sc[a]
     end
