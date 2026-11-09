@@ -546,7 +546,11 @@ function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ;
                              A3[1,3], A3[2,3], A3[3,3], ℓ[2,2],
                              -ℓ[1,1], -ℓ[1,2], -ℓ[2,2], 0.0)
     rhs = SVector(r3[1], r3[2], r3[3], 0.0)
-    z = abs(det(A)) > 0 ? A \ rhs : fill(NaN, SVector{4,Float64})
+    # a nearly singular A (a star distorted by a melting lattice) can still make the LU
+    # solve throw: take the fallback below (Λ = 0) instead
+    z = abs(det(A)) > 0 ? (try A \ rhs catch err; err isa SingularException || rethrow();
+                                fill(NaN, SVector{4,Float64}) end) :
+                          fill(NaN, SVector{4,Float64})
     Λ = SMatrix{2,2,Float64}(z[1], z[2], z[2], z[3])
     for (k, (b, r, rr)) in enumerate(nb)
         ψ[k] = ψ0[k] * (1 + dot(r, Λ * r))
