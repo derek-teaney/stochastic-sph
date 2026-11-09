@@ -175,6 +175,36 @@ Three versions, with their expected outcomes:
 \end{enumerate}
 A quick test of each at $L=0.6$ (heating and $c_t$ against $D_x$) would settle 1 and 2.
 
+\paragraph{A different Hamiltonian: $H=\sum_ae_a$ with a partition of space (owner's suggestion).}
+Write the energy as the sum of the particle energies,
+\st
+H=\sum_ae_a(s_a,\bm m_a,V_a),\qquad \sum_aV_a=A\ \text{exactly},
+\label{Hpart}
+\stp
+with the volumes $V_a(\{\bm x\})$ a partition of the area $A$: Voronoi cells, or the partition of
+unity $\psi_a(\bm x)=W(\bm x-\bm x_a)/\sum_bW(\bm x-\bm x_b)$, $V_a=\int\psi_a\,d^2x$, of the
+meshless finite-mass methods.  Then:
+\begin{enumerate}
+\item \emph{No shear modulus for homogeneous strain (exact).}  An area-preserving affine map takes
+  a Bravais lattice into another Bravais lattice, on which all cells are equivalent, so every
+  $V_a$ stays $A/N$ and $H$ is unchanged: $G=0$.  The present kernel sum
+  $S_a=\sum_bs_bW(\bm x_a-\bm x_b)$ has no such property; its change under shear is the lattice
+  error of \Sect{sec:A}.
+\item \emph{Conjecture:} non-affine motions change the $V_a$ at second order in the strain
+  gradients, so the effective modulus vanishes as $(ka)^2$ at long wavelength, which is what a
+  fluid needs.  Test: $c_t(k)$ in a run with \Eq{Hpart}; it should fall linearly with $k$.
+\item \emph{One energy.}  The stochastic step conserves $\sum_ae_a$ exactly; with \Eq{Hpart} the
+  Hamiltonian step conserves the same quantity, and the mismatch between the smoothed $H$ and
+  $\sum_ae_a$, a candidate source of the slow heating, is gone by construction.
+\end{enumerate}
+Costs: the particles move with their own velocities, $\dot{\bm x}_a=\partial H/\partial\bm m_a$,
+not smoothed ones, so the lattice-scale modes are less filtered; the forces need
+$\partial V_b/\partial\bm x_a$ (Voronoi geometry or the partition-of-unity integrals).  And with
+$e_a(s_a,V_a)$ each particle is its own thermodynamic system: the pressure and the equilibrium
+distribution $e^{\sum_as_a}$ live at the scale $a$, and how the coarse-grained pressure and
+entropy follow from them has to be worked out (the factor $9/16$ in the energy variance of
+\texttt{eqstart.tex} is an instance).
+
 \paragraph{Not proposed.}  Lowering $s_a$ to melt the arrangement: the scheme blows up at
 $\delta v=0.14$ (\texttt{campaigns.tex}).
 
