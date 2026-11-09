@@ -1,6 +1,8 @@
 # With ncy==1 (1D mode), mod(anything, 1)==0 maps all three dy offsets to the same
 # cell, triple-counting every particle.  Clamp the stencil to a single offset.
-neighbor_range(n::Int) = n == 1 ? (0:0) : (-1:1)
+# With ncy==2 the offsets −1 and +1 both reach the other cell, double-counting it
+# (thin strips, e.g. examples/shearwave_scan.jl): use the offsets 0 and 1.
+neighbor_range(n::Int) = n == 1 ? (0:0) : n == 2 ? (0:1) : (-1:1)
 
 mutable struct CellList2D
     cell_start :: Matrix{Int}       # (ncx, ncy)  start index into flat array
