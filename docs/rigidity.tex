@@ -310,6 +310,18 @@ meshless finite-mass methods.  Then:
   Hamiltonian step conserves the same quantity, and the mismatch between the smoothed $H$ and
   $\sum_ae_a$, a candidate source of the slow heating, is gone by construction.
 \end{enumerate}
+Two caveats.  (a) On a \emph{disordered} arrangement an affine shear does change the
+individual Voronoi volumes (cell boundaries are perpendicular bisectors, which a shear does not
+preserve); with equal pressures the first-order change $p\sum_a\delta V_a$ vanishes, but the
+second-order one, $\sum_a(K/2V)\,\delta V_a^2$, gives an affine modulus $\propto$ (cell-shape
+disorder).  It should relax away: $N$ volume constraints on $2N$ coordinates leave an
+$N$-dimensional family of motions at fixed $V_a$, along which the particles can absorb the
+shear at no cost, as volume-preserving flows cost nothing in a fluid (an argument, to be
+checked with the static test after relaxation).  (b) That family also contains lattice-scale
+zero modes (cells degenerating into long thin shapes), which nothing in $H$ restores; moving-mesh
+codes add a mild regularization (steering each generator toward its cell's centroid).  The
+static test should count them.
+
 Costs: the particles move with their own velocities, $\dot{\bm x}_a=\partial H/\partial\bm m_a$,
 not smoothed ones, so the lattice-scale modes are less filtered; the forces need
 $\partial V_b/\partial\bm x_a$ (Voronoi geometry or the partition-of-unity integrals).  And with
