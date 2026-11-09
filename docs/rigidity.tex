@@ -125,6 +125,60 @@ In a fluid $\avg{|u_T|^2}$ grows linearly in time without bound.  Agreement with
 \Eq{osc} is a check that the oscillation is elastic.
 
 %=============================================================================
+\section{The ideal Hamiltonian's phonons (static test)}
+\label{sec:phonons}
+
+\texttt{examples/ideal\_lattice\_modes.jl} (branch \texttt{rigidity}).  On the perfect hexagonal
+lattice (box $1.2$, fixed $s_a$, zero momenta), displace the particles from their sites by one
+plane wave,
+\st
+\bm u_a\equiv\bm x_a-\bm x_a^0=\epsilon\,\hat{\bm e}\cos(\bm q\cdot\bm x_a^0),\qquad
+\hat{\bm e}\parallel\bm q\ \text{(L)}\ \text{or}\ \perp\bm q\ \text{(T)},\qquad \epsilon=0.01a,
+\stp
+re-smooth, and take the second difference of $U=H(\{\bm x\})$:
+\st
+\Delta U=\tfrac12\big[U(\epsilon)+U(-\epsilon)-2U(0)\big]=\tfrac12\epsilon^2\,\frac N2\,K(\bm q),
+\qquad \omega^2(\bm q)=\frac{K(\bm q)}{wV} .
+\stp
+This is the phonon spectrum of the ideal step, from the energy alone: no time stepping, no
+noise.  A fluid has $\omega_L=c_sq$ and $\omega_T=0$.  Results ($c_t=\omega_T/q$ at
+$qh=0.26$--$0.37$; it is constant there):
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+kernel & $h/a=2$ & $2.5$ & $3$ \\ \hline
+C2 & $c_t=0.034$ & $0.031$ & $0.022$ \\
+C4 & $\omega_T^2<0$ (unstable) & unstable & unstable \\
+C6 & $0.017$ & $0.0066$ & $0.0026$ \\
+\hline
+\end{tabular}
+\end{center}
+In every case $\omega_L/c_sq=1.000\pm0.003$ at $qh\le0.37$: the ideal step has the right sound
+speed.
+\begin{enumerate}
+\item \emph{The rigidity is a property of $H$.}  C2 at $h/a=2$ has a linear transverse branch
+  with $c_t=0.034$ on the perfect lattice; the runs give $0.022$, the same effect softened by
+  the thermal disorder.
+\item \emph{The simple estimate of \Sect{sec:A} fails quantitatively.}  For C2, $c_t$ falls by
+  only $1.6$ from $h/a=2$ to $3$ while $\tilde W(bh)$ falls by $8$; for C4 the sign of the
+  shear modulus is \emph{negative}: the hexagonal lattice is unstable to shear.  The shear
+  modulus is a lattice sum whose terms change sign, not a single $\tilde W(bh)$.  C6 falls fast,
+  a factor $6.5$ from $h/a=2$ to $3$, close to $\tilde W(bh)^{1/2}$.
+\item \emph{Zero modes.}  For C2 at $h/a=2$ (all 648 shells up to $qh=7.5$), the only
+  vanishing frequencies are at the zone boundary, $qh=7.255$ ($q=b/2$, neighbouring rows moving
+  in opposite directions): $\omega_L=0$ and $\omega_T^2\approx-10^{-6}$.  These modes do not
+  change $H$ to second order, so nothing restores them.  They are a candidate for the growth of
+  the kinetic energy in ideal SPH (fact 4: energy flowing into neutral modes through the
+  anharmonic terms) and for what the $\lambda=1$ noise drives into the melt.
+\end{enumerate}
+Consequences: (i) $G$ can be positive or negative depending on kernel and $h/a$, so it can be
+made small, perhaps zero, on the perfect lattice by the choice of kernel and $h/a$; but the
+relevant state is the thermally disordered one, where $c_t$ is smaller (0.022 against 0.034).
+(ii) The C4 runs now going start on a lattice that is unstable to shear.  (iii) Any revision
+of the ideal step, including $H=\sum_ae_a$, should be checked first with this static test:
+$\omega_L=c_sq$, $\omega_T\to0$, and no zero or negative modes in the zone.
+
+%=============================================================================
 \section{Hypothesis B: the arrangement carries energy}
 \label{sec:B}
 
