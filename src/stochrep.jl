@@ -229,6 +229,9 @@ const GUARD_SUBDIV = Threads.Atomic{Int}(0)      # deterministic residual step s
 reset_guards!() = foreach(c -> (c[] = 0), (GUARD_REJECTED, GUARD_EVENSPLIT, GUARD_BACKMAP, GUARD_SUBDIV))
 guards() = (rejected = GUARD_REJECTED[], evensplit = GUARD_EVENSPLIT[], backmap = GUARD_BACKMAP[],
             subdiv = GUARD_SUBDIV[])
+# restore the counters from a checkpoint (the NamedTuple returned by guards())
+restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_EVENSPLIT[] = g.evensplit;
+                      GUARD_BACKMAP[] = g.backmap;  GUARD_SUBDIV[] = g.subdiv;  g)
 
 # Ask the bonds: accept with Π_b min(1, exp(λ ΔS_ab)), all or nothing.  The bond
 # factor is ΔS_ab = ΔS_b + σ_ab + R/n_a, with σ_ab the share of ΔS_a due to the

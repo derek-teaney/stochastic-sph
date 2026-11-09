@@ -9,6 +9,7 @@
 # Run:  julia -t auto --project examples/stochrep_equilibrium.jl L h/a t_end nreal [rec_every] [tag]
 #   → data/equilibrium_<tag>_r<seed>.h5  (one HDF5 file per realization; see
 #     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
+# Restart: a run that stops early resumes from equilibrium_<tag>_r<seed>.chk (SR_CHECKPOINT_MIN).
 # Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX,
 #   SR_START (cold | eq | thermal; default eq; campaign `first` used thermal).
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
@@ -38,23 +39,48 @@ catch
 end
 const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0+1 … SEED0+NREAL
 
+# Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
+# the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
+# start, the run resumes from it (bit-identically), so a task that hit its time limit is
+# simply resubmitted.  SR_STOP_AFTER (tests only) stops after that step, after a checkpoint.
+const CHKMIN    = parse(Float64, get(ENV, "SR_CHECKPOINT_MIN", "20"))
+const STOPAFTER = parse(Int, get(ENV, "SR_STOP_AFTER", "0"))
+
+function run_meta(params, st, n, wall, complete)
+    (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, dt = st.dt, nsteps = st.nsteps,
+     nsteps_done = n, complete = complete,
+     etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
+     acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
+     tag = TAG, start = string(START), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+end
+
 function one_realization(seed)
+    base = joinpath(OUT, "equilibrium_$(TAG)_r$(seed)");  chk = base * ".chk"
     eos = ConformalEOS(1/3, 1.0, ETAS, 0.0)
-    params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
-                                   L=LBOX, lattice=:hex)
-    N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-    p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
-    initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
-    dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
-    nsteps = ceil(Int, TEND / dt)
-    rec = Recorder(box_wavevectors(params, KHMAX))
-    dotm = zeros(SVector{2,Float64}, N)
-    H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
-    Ht = Float64[];  KE = Float64[];  acc = zeros(2);  reset_guards!()
-    t0 = time()
-    cache = StochCache()                                             # reused arrays of the stochastic step
-    stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star, cache)
-    for n in 1:nsteps
+    if isfile(chk)
+        st = load_checkpoint(chk)
+        restore_guards!(st.guards)
+        @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
+    else
+        params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+                                       L=LBOX, lattice=:hex)
+        N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
+        p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
+        initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
+        dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
+        nsteps = ceil(Int, TEND / dt)
+        H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
+        reset_guards!()
+        stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+        st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
+              dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX)),
+              Ht = Float64[], KE = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
+              H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
+    end
+    (; params, ps, cl, rngs, rng, dotm, rec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
+    N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
+    t0 = time();  tchk = time()
+    for n in st.n+1:nsteps
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
         a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache)
         acc .+= (a.stress, a.resid) ./ nsteps
@@ -63,14 +89,20 @@ function one_realization(seed)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
             push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
         end
+        stop = STOPAFTER > 0 && n == STOPAFTER
+        if n < nsteps && (stop || time() - tchk > 60CHKMIN)
+            wall = st.wall + time() - t0
+            save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE)
+            tchk = time()
+            stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
+        end
     end
-    meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = N, dt = dt, nsteps = nsteps,
-            etas = ETAS, S0 = S0, V = V, w = w, T = T, Trel = Trel, cs2 = 1/3, seed = seed,
-            acc = acc, guards = guards(), wall = time() - t0, rec_every = RECN, khmax = KHMAX,
-            tag = TAG, start = string(START), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
-    write_equilibrium_h5(joinpath(OUT, "equilibrium_$(TAG)_r$(seed).h5"), meta, rec, Ht, KE)
+    wall = st.wall + time() - t0
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE)
+    rm(chk; force = true)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
-            seed, N, dt, nsteps, time() - t0, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
+            seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
 end
 

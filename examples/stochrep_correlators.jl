@@ -24,6 +24,8 @@ pick(ext) = filter(f -> startswith(f, "equilibrium_$(TAG)_r") && endswith(f, ext
 files = isempty(pick(".h5")) ? pick(".jls") : pick(".h5")          # never mix the two formats
 isempty(files) && error("no equilibrium_$(TAG)_r*.h5 in $dir")
 runs = [read_equilibrium(joinpath(dir, f)) for f in files]
+nincomplete = count(r -> haskey(r.meta, :complete) && !r.meta.complete, runs)
+nincomplete > 0 && println("note: $nincomplete of $(length(runs)) runs are still in progress (partial series, complete = false)")
 m = runs[1].meta
 norm0 = m.N * m.V * m.w * m.T
 ν = m.etas / m.Trel;  Γs = 4 / 3 * ν;  cs = sqrt(m.cs2)

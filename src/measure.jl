@@ -280,11 +280,14 @@ end
 # Complex numbers are stored as the compound {r, i}, which h5py reads as complex.
 # The run parameters are attributes of the root group; NamedTuple entries are flattened
 # as <name>_<field> (e.g. guards_rejected).
+# The file is written to path.tmp and renamed, so a reader (or a run killed while
+# writing) never sees a half-written file.
 function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recorder,
                               H::Vector{Float64}, KE::Vector{Float64})
     nk = length(rec.ks)
     stack(v) = isempty(v) ? zeros(ComplexF64, nk, 0) : reduce(hcat, v)
-    h5open(path, "w") do f
+    tmp = path * ".tmp"
+    h5open(tmp, "w") do f
         f["ks"] = reduce(hcat, Vector.(rec.ks));  f["t"] = rec.t
         f["ML"] = stack(rec.ML);  f["MT"] = stack(rec.MT);  f["S"] = stack(rec.S)
         rec.energies && (f["E"] = stack(rec.E))
@@ -298,8 +301,23 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
             end
         end
     end
+    mv(tmp, path; force = true)
     return path
 end
+
+# ── Checkpoints ──────────────────────────────────────────────────────────────
+# The complete state of a run (any NamedTuple: particles with all their fields, the cell
+# list, the random streams, counters, the time series so far), serialized to path,
+# atomically (path.tmp, then renamed).  A restart from it continues bit-identically.
+# Julia serialization: read back with the same code version only (a run resumes with
+# the checkout it started from).
+function save_checkpoint(path::AbstractString, state::NamedTuple)
+    tmp = path * ".tmp"
+    open(io -> serialize(io, state), tmp, "w")
+    mv(tmp, path; force = true)
+    return path
+end
+load_checkpoint(path::AbstractString) = open(deserialize, path)
 
 # Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE),
 # with meta a NamedTuple of the attributes and rec a Recorder.
