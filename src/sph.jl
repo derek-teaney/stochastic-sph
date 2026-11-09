@@ -9,6 +9,7 @@ abstract type AbstractKernel end
 struct WendlandC2_2D <: AbstractKernel end   # sim dimension = 2 (default)
 struct WendlandC2_1D <: AbstractKernel end   # sim dimension = 1
 struct WendlandC4_2D <: AbstractKernel end   # 2D, smoother (SPH_KERNEL=wc4); same support 2h
+struct WendlandC6_2D <: AbstractKernel end   # 2D, smoother still (SPH_KERNEL=wc6); same support 2h
 
 mutable struct SimParams
     L       :: SVector{2,Float64}  # (Lx, Ly) after snapping to lattice
@@ -50,7 +51,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
         Lx = Nx * a;  Ly = Ny * dy
         N  = Nx * Ny
         vol = a^2 * sqrt(3) / 2
-        kernel  = get(ENV, "SPH_KERNEL", "wc2") == "wc4" ? WendlandC4_2D() : WendlandC2_2D()
+        kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[get(ENV, "SPH_KERNEL", "wc2")]
     else
         Nx = round(Int, Lx_t / a)
         Ny = round(Int, Ly_t / a)
@@ -60,7 +61,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
         kernel  = WendlandC2_2D()
     end
     L = SVector(Lx, Ly)
-    dim_str = kernel isa WendlandC2_1D ? "1D" : kernel isa WendlandC4_2D ? "2D (Wendland C4)" : "2D"
+    dim_str = kernel isa WendlandC2_1D ? "1D" : kernel isa WendlandC4_2D ? "2D (Wendland C4)" : kernel isa WendlandC6_2D ? "2D (Wendland C6)" : "2D"
     @printf("SimParams: Lx=%-6g  Ly=%-6g  a=%-8g  h=%-8g  N=%-6d  h/a=%.3g  vol=%.4g  lattice=%s  sim=%s  dissipation=%s\n",
             Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
@@ -218,6 +219,20 @@ function wendland_c2_grad(r_vec::SVector{2,Float64},
 end
 
 wendland_c2_grad(rv, r, h) = wendland_c2_grad(rv, r, h, WendlandC2_2D())
+
+# Wendland C6 in 2D, support 2h:  W = 78/(28π h²) (1 − q/2)⁸ (1 + 4q + 25q²/4 + 4q³),  q = r/h
+function wendland_c2(r::Float64, h::Float64, ::WendlandC6_2D)::Float64
+    q = r / h
+    q >= 2.0 && return 0.0
+    return (78.0 / (28π * h^2)) * (1.0 - q/2.0)^8 * (1.0 + 4.0*q + 6.25*q^2 + 4.0*q^3)
+end
+function wendland_c2_grad(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC6_2D)
+    q = r / h
+    (q >= 2.0 || r < 1e-10) && return SVector(0.0, 0.0)
+    s = q / 2;  C = 78.0 / (28π * h^2)
+    dWdr = -22.0 * C * s * (1 + 7s + 16s^2) * (1 - s)^7 / (2h)
+    return dWdr / r .* r_vec
+end
 
 function minimum_image(r::SVector{2,Float64}, L::SVector{2,Float64})
     r .- L .* round.(r ./ L)

@@ -1,0 +1,5 @@
+# Kernel companion to campaign_rigidity.txt (2026-11-09): Wendland C6 at h/a = 2, and C4 at
+# h/a = 2.5 (kernel and h/a together).  Submit with -c 8 (4 seeds per task).
+ha2_wc6      4  SR_SEEDSTRIDE=4 SPH_KERNEL=wc6    -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2_wc6
+ha2.5_wc4    4  SR_SEEDSTRIDE=4 SPH_KERNEL=wc4    -- examples/stochrep_equilibrium.jl 1.2 2.5 200 4 2 L1.2_ha2.5_wc4
+nv_ha2_wc6   1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal SPH_KERNEL=wc6 -- examples/stochrep_equilibrium.jl 0.6 2.0 50 4 2 nv_ha2_wc6
