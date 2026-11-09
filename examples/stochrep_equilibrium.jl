@@ -1,6 +1,6 @@
 # stochrep_equilibrium.jl — equilibrium runs of the full stochastic scheme for measuring
-# correlators (docs/plan.tex).  A uniform 2D fluid at rest, started from a thermal draw of
-# the momenta (thermal_init!), evolved with the Hamiltonian step and the stochastic step
+# correlators (docs/plan.tex).  A uniform 2D fluid at rest, started in equilibrium
+# (SR_START, default eq: initial_state! in src/measure.jl), evolved with the Hamiltonian step and the stochastic step
 # in the particle representation, recording the Fourier modes M_k, S_k (and E_k).
 #
 # Time stepping (Strang, merged): S(Δt/2) [L(Δt) S(Δt)]… L(Δt) S(Δt/2), i.e. one stochastic
@@ -9,7 +9,8 @@
 # Run:  julia -t auto --project examples/stochrep_equilibrium.jl L h/a t_end nreal [rec_every] [tag]
 #   → data/equilibrium_<tag>_r<seed>.h5  (one HDF5 file per realization; see
 #     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
-# Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX.
+# Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX,
+#   SR_START (cold | eq | thermal; default eq; campaign `first` used thermal).
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
@@ -27,6 +28,7 @@ const TAG   = length(ARGS) > 5 ? ARGS[6] : "L$(LBOX)_ha$(HA)"
 const ETAS  = parse(Float64, get(ENV, "SR_ETAS", "0.2"))
 const S0    = parse(Float64, get(ENV, "SR_S0", "1e6"))
 const KHMAX = parse(Float64, get(ENV, "SR_KHMAX", "1.5"))
+const START = Symbol(get(ENV, "SR_START", "eq"))
 const OUT   = get(ENV, "SR_OUTDIR", joinpath(@__DIR__, "..", "data"));  mkpath(OUT)
 const COMMIT = try
     c = readchomp(`git -C $(@__DIR__) rev-parse --short HEAD`)
@@ -42,7 +44,7 @@ function one_realization(seed)
                                    L=LBOX, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
     p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
-    thermal_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 3))
+    initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     nsteps = ceil(Int, TEND / dt)
     rec = Recorder(box_wavevectors(params, KHMAX))
@@ -64,7 +66,7 @@ function one_realization(seed)
     meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = N, dt = dt, nsteps = nsteps,
             etas = ETAS, S0 = S0, V = V, w = w, T = T, Trel = Trel, cs2 = 1/3, seed = seed,
             acc = acc, guards = guards(), wall = time() - t0, rec_every = RECN, khmax = KHMAX,
-            tag = TAG, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+            tag = TAG, start = string(START), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
     write_equilibrium_h5(joinpath(OUT, "equilibrium_$(TAG)_r$(seed).h5"), meta, rec, Ht, KE)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, time() - t0, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),

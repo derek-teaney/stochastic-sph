@@ -67,6 +67,19 @@ julia --project test/teststochastic.jl
 julia --project examples/testsound.jl
 ```
 
+### Initial state of the stochastic runs
+
+`examples/stochrep_equilibrium.jl` and `examples/stochrep_hamiltonian.jl` take
+`SR_START`:
+
+- `cold` — the uniform state at rest; the run thermalizes from it (default of the
+  Hamiltonian driver).
+- `eq` — energies and momenta drawn from the equilibrium at a global $\beta^\mu$ whose
+  averages are the totals, then shifted to them exactly; no thermalization step is
+  needed (`docs/eqstart.pdf`, `equilibrium_init!`; default of the equilibrium driver).
+- `thermal` — momenta only, at fixed particle energies (`thermal_init!`, used by the
+  first NERSC campaign).
+
 ### Dissipative function
 
 Three viscous steps are available, selected by `params.dissipation`:

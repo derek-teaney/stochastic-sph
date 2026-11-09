@@ -170,6 +170,26 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
     return (β0 = β0, β = β, T = 1 / β0, v = β / β0, e = e, V = V, acc = acc, E = Etot, M = Mtot)
 end
 
+# Initial state of a stochastic run (drivers: SR_START):
+#   :cold     the state as set up (uniform, at rest): no fluctuations; the run thermalizes
+#   :eq       equilibrium_init! with exact_totals = true: energy and momentum fluctuations
+#             at the global β^μ whose averages are the current totals, totals shifted to
+#             them exactly, so no thermalization step is needed (docs/eqstart.tex)
+#   :thermal  thermal_init!: momenta only, at fixed particle energies (campaign `first`)
+function initial_state!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                        eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng())
+    if start === :cold
+        thermalize!(particles, params, cl, eos)
+    elseif start === :eq
+        equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true)
+    elseif start === :thermal
+        thermal_init!(particles, params, cl, eos; rng)
+    else
+        error("unknown start $start (use cold, eq or thermal)")
+    end
+    return particles
+end
+
 # ── Recording ────────────────────────────────────────────────────────────────
 # Wave vectors of the periodic box with |k| h ≤ khmax, one of each ±k pair.
 function box_wavevectors(params::SimParams, khmax::Float64)
