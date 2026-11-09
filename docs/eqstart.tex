@@ -1,0 +1,202 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Starting in equilibrium: energy and momentum fluctuations at a global temperature}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The present thermal start (\texttt{thermal\_init!}) draws the particle momenta at fixed
+particle energies, so the energy fluctuations are missing, and the stochastic step,
+which holds every particle energy fixed, never creates them.  Here every particle
+energy and momentum is drawn from the equilibrium at one global $\beta^\mu$: the
+maximum of the total entropy at fixed total energy and momentum, and the fluctuations
+about it.  We define the global $\beta^\mu$ from the average totals, draw configurations
+whose totals fluctuate with the thermodynamic susceptibilities, optionally shift them
+to the exact targets so that a run needs no thermalization, and test the draws.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Maximum entropy at fixed totals}
+\label{sec:max}
+
+At fixed positions each particle has a volume $V_a$, an energy $e_a$ and a momentum
+$\bm m_a$, and its entropy is the function
+\st
+S_a(e_a,\bm m_a)=V_a\,\sigma\big(e_a/V_a,\ \bm m_a/V_a\big),
+\stp
+with $\sigma(\varepsilon,\bm M)$ the entropy density at energy density $\varepsilon=T^{00}$ and
+momentum density $\bm M=T^{0i}$ (\texttt{stochrep.tex}).  The totals
+\st
+E=\sum_ae_a,\qquad \bm M_{\rm tot}=\sum_a\bm m_a
+\stp
+are conserved.  The most probable state maximizes $\sum_aS_a$ at fixed $E$ and
+$\bm M_{\rm tot}$.  With multipliers $\beta^0$ and $\bm\beta$, each particle maximizes the same
+function,
+\st
+\Phi_a(e_a,\bm m_a)=S_a(e_a,\bm m_a)-\beta^0e_a+\bm\beta\cdot\bm m_a ,
+\label{Phi}
+\stp
+so that at the maximum
+\st
+\frac{\partial S_a}{\partial e_a}=\beta^0=\frac1T,\qquad
+\frac{\partial S_a}{\partial\bm m_a}=-\bm\beta=-\frac{\bm v}{T} ,
+\label{stat}
+\stp
+with $T=T_{\rm rel}/\gamma$ the bare temperature and $\bm v$ the fluid velocity, common
+to all particles.  In covariant form, with $\beta_\mu=u_\mu/T_{\rm rel}$ and the metric
+$(-,+,+)$, $\Phi_a=S_a+\beta_\mu T^{0\mu}_a$, since $\beta_0=-\gamma/T_{\rm rel}=-\beta^0$ and
+$\beta_i=u^i/T_{\rm rel}=\beta^i$.  The particle quantity in \Eq{Phi} is the entropy
+function $S_a$ of the particle's energy and momentum, not the entropy $s_a$ itself;
+$s_a=S_a(e_a,\bm m_a)$ once $e_a$ and $\bm m_a$ are drawn.
+
+%=============================================================================
+\section{Fluctuations and the global $\beta^\mu$}
+\label{sec:fluct}
+
+\paragraph{One particle.}  In equilibrium the probability of a configuration is
+$e^{\sum_aS_a}$ at the fixed totals.  For a system of many particles each particle is
+then distributed independently as
+\st
+p_a(e,\bm m)\propto e^{\Phi_a(e,\bm m)}=e^{S_a(e,\bm m)-\beta^0e+\bm\beta\cdot\bm m} .
+\label{pa}
+\stp
+To quadratic order about the maximum, $x=(\delta e,\delta\bm m)$ is Gaussian with covariance
+\st
+C_a=\big(-\partial^2S_a\big)^{-1},
+\label{Ca}
+\stp
+the particle's susceptibility.  At rest, with $c_v=d\varepsilon/dT$ and $w=e+p$,
+\st
+\avg{\delta e^2}=V_aT^2c_v,\qquad \avg{\delta m^i\delta m^j}=V_a\,wT\,\delta^{ij} .
+\stp
+For the conformal equation of state $V_aT^2c_v=4V_a\varepsilon T$.
+
+\paragraph{The average is not the maximum.}  The distribution \Eq{pa} is skewed: the mean
+of $e$ lies above its most probable value by $0.16$ standard deviations at $s_a=720$
+and by $0.58$ at $s_a=54$, and at $s_a=54$ the momentum variance is $16\%$ above
+\Eq{Ca}.  We therefore define the global $\beta^\mu$ by the \emph{average} totals,
+\st
+\sum_a\avg{e_a}_\beta=E,\qquad \sum_a\avg{\bm m_a}_\beta=\bm M_{\rm tot} .
+\label{avg}
+\stp
+With $\theta=(-\beta^0,\bm\beta)$ conjugate to $x=(e,\bm m)$, \Eq{pa} is an exponential family,
+so $\partial\avg{x}/\partial\theta=\mathrm{Cov}(x)$ exactly, and \Eq{avg} is solved by Newton's
+method,
+\st
+\theta\to\theta+\Big[\sum_a\mathrm{Cov}_a(x)\Big]^{-1}\Big[(E,\bm M_{\rm tot})-\sum_a\avg{x_a}\Big],
+\stp
+starting from the most probable state at the mean densities.  The resulting $T$ is
+$0.5\%$ below the temperature of the most probable state at $s_a=541$ and $5\%$ below at
+$s_a=54$.
+
+\paragraph{Fluctuating or exact totals.}  The particles are drawn independently from
+\Eq{pa}, the canonical ensemble; the totals then fluctuate about $(E,\bm M_{\rm tot})$
+with the global susceptibility
+\st
+\mathrm{Cov}\big(E,\bm M_{\rm tot}\big)=\sum_a\mathrm{Cov}_a(x)\ \simeq\ V_{\rm tot}\,\chi ,
+\label{global}
+\stp
+$V_{\rm tot}=\sum_aV_a$ and $\chi$ the susceptibility of $T^{0\mu}$ per volume.  To start an
+SPH run at exactly the target $E$ and $\bm M_{\rm tot}$, the difference between the drawn
+totals and the targets is then removed uniformly,
+\st
+x_a\to x_a-\frac{V_a}{V_{\rm tot}}\Big[\sum_bx_b-(E,\bm M_{\rm tot})\Big],
+\stp
+a uniform shift of the energy and momentum densities (an equal share per particle on an
+equal-volume lattice).  This changes each particle's distribution only at order $1/N$,
+so the run can start without a thermalization step.
+
+%=============================================================================
+\section{Implementation}
+\label{sec:impl}
+
+In \texttt{src/measure.jl}:
+\begin{itemize}
+\item \texttt{particle\_moments}: the exact $\avg{x}$ and $\mathrm{Cov}(x)$ of \Eq{pa} by
+  quadrature on a $41^3$ grid around the maximum ($-6$ to $+10$ standard deviations in
+  $e$, $\pm9$ in $\bm m$); particles of equal volume share them.
+\item \texttt{beta\_from\_averages}: the Newton solution of \Eq{avg}.
+\item \texttt{draw\_particle}: one exact draw from \Eq{pa}, an independence Metropolis
+  chain of 30 steps whose proposal is the Gaussian of \Eq{Ca} with twice its covariance
+  (wide enough to cover the skewed tail); the acceptance is $0.59$.
+\item \texttt{equilibrium\_init!(ps, params, cl, eos; exact\_totals = false)}: from the
+  totals of the current state (or given $E$, $\bm M_{\rm tot}$), solves for $\beta^\mu$,
+  draws $(e_a,\bm m_a)$ at the current volumes $V_a=s_a/S_a$, sets $s_a=S_a(e_a,\bm m_a)$
+  and re-smooths.  With \texttt{exact\_totals = true} the totals are then shifted to
+  the targets as above.
+\end{itemize}
+
+%=============================================================================
+\section{Tests}
+\label{sec:tests}
+
+\texttt{test/testeqstart.jl}; conformal equation of state, $h/a=2$, box $0.6$
+($N=672$), $V_a=5.4\times10^{-4}$.
+
+\paragraph{One particle.}  The draws of \texttt{draw\_particle} ($4\times10^4$) agree
+with direct quadrature of \Eq{pa} in mean, variances and the $e$--$m_x$ covariance, at
+rest and at $v=0.5$, at $s_a\simeq700$ and at $s_a\simeq50$, within the statistical
+errors; the maximum satisfies \Eq{stat} to $10^{-6}$.
+
+\paragraph{The lattice.}  With \texttt{exact\_totals = true} the totals are exact to $10^{-12}$,
+the averages at the solved $\beta^\mu$ reproduce them, and the spread of $(e_a,\bm m_a)$
+over the particles equals the single-particle covariance (at rest and at $v=0.32$).
+
+\paragraph{Global susceptibility.}  $3000$ canonical configurations of the lattice:
+\begin{center}
+\begin{tabular}{lccccc}
+\hline
+ & $\avg{E}/E-1$ & $\frac{\mathrm{Var}\,E}{\sum_a C_a^{ee}}$ & $\frac{\mathrm{Var}\,M_x}{\sum_a C_a^{xx}}$ & corr$(E,M_x)$ & predicted \\ \hline
+$s_a=541$, rest & $(-1.3\pm0.7)\times10^{-4}$ & $0.988$ & $0.968$ & $-0.003$ & $0$ \\
+$s_a=541$, $v=0.32$ & $(-1.4\pm0.7)\times10^{-4}$ & $0.996$ & $0.975$ & $0.724$ & $0.727$ \\
+$s_a=54$, rest & $(-2.0\pm2.0)\times10^{-4}$ & $0.967$ & $0.991$ & $-0.008$ & $0$ \\
+\hline
+\end{tabular}
+\end{center}
+(statistical error of the variance ratios $\pm0.026$).  At rest and $s_a=541$,
+$\mathrm{Var}\,E=0.993\,V_{\rm tot}T^2c_v$ and $\mathrm{Var}\,M_x=0.983\,V_{\rm tot}wT$; at
+$s_a=54$, $\mathrm{Var}\,M_x=1.17\,V_{\rm tot}wT$, the non-Gaussian excess, which \Eq{global}
+with the exact $\mathrm{Cov}_a$ includes.  The two means at $s_a=541$ lie $2\sigma$ low with
+the same sign, a possible bias of order $10^{-4}$ to be checked with more configurations.
+
+%=============================================================================
+\section{The SPH representation after the draw}
+\label{sec:sph}
+
+The draw holds the volumes $V_a$ fixed.  After re-smoothing, the code's volumes are
+$V_a'=s_a/S_a'$, which follow the drawn entropy: a particle with more entropy has more
+volume at nearly the same smoothed density.  Its energy recomputed from the SPH state,
+$e_a'=s_a\,\mathcal E(S_a',\dots)$, then changes by
+\st
+\delta e_a'=\frac{\varepsilon}{S}\,\delta s_a=\tfrac34\,T\,\delta s_a
+\qquad\text{instead of}\qquad \delta e_a=T\,\delta s_a
+\stp
+at fixed momentum (conformal, $\varepsilon=\tfrac34TS$), so $\mathrm{Var}\,e'/\mathrm{Var}\,e\simeq9/16$.
+Measured: $0.62$, with $\mathrm{corr}(e',e)=0.997$ and $\mathrm{rms}(V'/V-1)=0.07$.
+
+In a coupled run (leapfrog and stochastic step, $S=10^6$) the variance of the
+recomputed particle energies, in units of the drawn one, stays at $0.57$--$0.61$ over
+$t=3$ from this start, and at $0$--$0.004$ from \texttt{thermal\_init!}: on this time
+scale the dynamics neither create nor remove these fluctuations, so they must be put in
+at the start.  Which energy variance is the equilibrium one for the particle
+representation, $\mathrm{Var}\,e$ or $\tfrac{9}{16}\mathrm{Var}\,e$, is open.
+
+\end{document}
