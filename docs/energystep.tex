@@ -344,6 +344,30 @@ displacement reaches $0.9a$ and the response is not linear.
 (The strips at $h/a=3$ and $5$ have two cell rows in $y$; they first blew up through a
 double counting in the cell list for \texttt{ncy}${}=2$, fixed in \texttt{neighbor\_range}.)
 
+\paragraph{The deterministic test suite.}  \texttt{examples/test*.jl} with
+\texttt{SPH\_HAMILTONIAN=smoothed} and \texttt{energy} (one thread; PyPlot does not run in a
+multithreaded process).  Residuals are rms against the analytic solution:
+\begin{center}
+\begin{tabular}{llcc}
+\hline
+test & & \texttt{:smoothed} & \texttt{:energy} \\ \hline
+Gaussian 2D, $t=2.2$ & $\Delta S/S$ & $0.0362$ & $0.0363$ \\
+ & $\Delta H/H$ & $1.9\times10^{-5}$ & $2.4\times10^{-5}$ \\
+Gaussian 1D, $t=2.2$ & $\Delta S/S$ & $0.0512$ & $0.0513$ \\
+ & $\Delta H/H$ & $1.4\times10^{-4}$ & $1.8\times10^{-4}$ \\
+viscous sound 2D (amplitude $2.5\times10^{-3}$) & residual & $1.9\times10^{-4}$ & $3.4\times10^{-5}$ \\
+ & $\Delta H/H$ & $1.1\times10^{-8}$ & $4.0\times10^{-8}$ \\
+viscous sound 1D (amplitude $5.2\times10^{-3}$) & residual & $2.2\times10^{-5}$ & $1.5\times10^{-5}$ \\
+ & $\Delta H/H$ & $7\times10^{-10}$ & $2.5\times10^{-9}$ \\
+ideal sound, one period (amplitude $5.2\times10^{-3}$) & residual & $5.6\times10^{-3}$ & $1.8\times10^{-3}$ \\
+shear diffusion (amplitude $1.0\times10^{-3}$) & residual & $1.55\times10^{-5}$ & $1.24\times10^{-5}$ \\
+\hline
+\end{tabular}
+\end{center}
+The entropy production agrees to $0.1\%$; \texttt{:energy} follows the analytic waves as well
+or better (no doubly smoothed velocity); its energy drift is larger by $1.3$--$4$, from the
+viscous step, which conserves $H$ to first order in $\Delta t$.
+
 %=============================================================================
 \section{Proposal: volumes that add up to the area}
 \label{sec:norm}
@@ -354,7 +378,37 @@ through the volumes, to second order in their changes
 \delta H=-\sum_ap_a\,\delta V_a+\sum_a\frac{K_a}{2V_a}\,\delta V_a^2 ,
 \label{dH}
 \stp
-with $K$ the bulk modulus.  For $V_a=s_a/S_a$ a homogeneous shear $\epsilon$ of a
+with $K$ the bulk modulus.
+
+\paragraph{The bulk modulus of a moving particle.}  At fixed $s_a$ and $\bm m_a$ a change of
+$V_a$ scales the densities along a ray, $S\to\lambda S$, $\bm M\to\lambda\bm M$,
+$\lambda=V_0/V$: a line of constant $\bm M/S$, the adiabat of \texttt{theory.tex}.  Along
+it $d\varepsilon=(TS+\bm v\cdot\bm M)\,d\lambda/\lambda=(\varepsilon+p)\,d\lambda/\lambda$,
+with $\varepsilon=T^{00}$, so
+\st
+\delta T^{0\nu}=\frac{\delta\lambda}{\lambda}\,w\gamma\,u^\nu ,
+\stp
+and
+\st
+\frac{\partial e_a}{\partial V_a}=-p_a,\qquad
+K_a\equiv V_a\frac{\partial^2e_a}{\partial V_a^2}
+=(\varepsilon+p)\Big(\frac{dp}{d\varepsilon}\Big)_{\bm M/S}
+=\frac{w\,c_s^2}{1-c_s^2v^2} .
+\label{Kmov}
+\stp
+In terms of the inverse susceptibility $\chi^{-1}_{\mu\nu}=\partial\beta_\mu/\partial T^{0\nu}$
+of \texttt{theory.tex} (eq.~\texttt{inversesusc}),
+\st
+K_a=\frac{w^2\gamma}{\beta}\,u^\mu\chi^{-1}_{\mu\nu}u^\nu ,
+\stp
+since $u^\mu(u_\mu+\Delta^0_\mu/\gamma)=-1$ and $u^\mu\Delta_{\mu\nu}=0$ leave only the
+adiabat term.  At rest $K=w\,c_s^2=s\,dp/ds$, the adiabatic bulk modulus; in a moving fluid
+it is larger by $1/(1-c_s^2v^2)$, the factor of transverse sound in \texttt{theory.tex}.
+To second order the position dependence of $H$ is thus set by $p$ and by the adiabat
+projection of $\chi^{-1}$.  Checked against finite differences of the particle energy (conformal
+EOS, $v=0$--$0.9$): $\partial e/\partial V=-p$ and \Eq{Kmov} to $10^{-6}$.
+
+For $V_a=s_a/S_a$ a homogeneous shear $\epsilon$ of a
 lattice changes every volume by the same amount at second order, $\delta V_a=c\,\epsilon^2$,
 so $\sum_a\delta V_a\neq0$, and the first term gives a modulus
 \st
