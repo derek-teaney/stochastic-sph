@@ -325,8 +325,10 @@ function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::Cel
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V = [pa.s / pa.S_smooth for pa in particles]
-    e = [particle_energy(pa, eos) for pa in particles]
+    N = length(particles);  V = Vector{Float64}(undef, N);  e = Vector{Float64}(undef, N)
+    Threads.@threads for a in 1:N
+        pa = particles[a];  V[a] = pa.s / pa.S_smooth;  e[a] = particle_energy(pa, eos)
+    end
     return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V))
 end
 
@@ -346,18 +348,28 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     oneD = params.kernel isa WendlandC2_1D
     fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos) : frozen
     V, e, stars = fz.V, fz.e, fz.stars
-    m  = [pa.m for pa in particles]
-    Sc = [particle_entropy(e[a], m[a], V[a], eos) for a in eachindex(particles)]
     N  = length(particles)
+    m  = [pa.m for pa in particles]
+    Sc = Vector{Float64}(undef, N)
+    Threads.@threads for a in 1:N
+        Sc[a] = particle_entropy(e[a], m[a], V[a], eos)
+    end
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
     # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
     if gradient
-        kst = [kernel_star(a, particles, params, cl) for a in 1:N]
-        Cs  = [inverse_susceptibility(pa, eos) for pa in particles]
+        kst = Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N)
+        Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
         s0  = [pa.s for pa in particles]
         μ0  = [pa.m / pa.s for pa in particles]
-        g0  = [gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...) for a in 1:N]
+        g0  = Vector{Float64}(undef, N)
+        Threads.@threads for a in 1:N
+            kst[a] = kernel_star(a, particles, params, cl)
+            Cs[a]  = inverse_susceptibility(particles[a], eos)
+        end
+        Threads.@threads for a in 1:N
+            g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
+        end
     end
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
@@ -375,7 +387,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     end
     if gradient
         μ1 = [m[a] / s0[a] for a in 1:N]                                   # s still old, as in the deterministic step
-        for a in 1:N
+        Threads.@threads for a in 1:N
             g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
             Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
             if isfinite(Sg)

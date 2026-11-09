@@ -88,11 +88,17 @@ function eos_from_energy(ε::Float64, M::SVector{2,Float64}, eos::AbstractEOS;
 end
 
 # Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state.
-particle_energy(pa::Particle, eos::AbstractEOS) = begin
-    q = deepcopy(pa)
-    q.M_smooth = pa.m * (pa.S_smooth / pa.s)
-    solve_eos!(q, eos)
-    pa.s * q.H_over_S
+# (Same arithmetic as solve_eos! on a copy with M_smooth = m_a S_a/s_a, without the copy.)
+function particle_energy(pa::Particle, eos::AbstractEOS)
+    S_in  = pa.S_smooth
+    M_vec = pa.m * (pa.S_smooth / pa.s)
+    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
+    e     = eos_newton(S_in, M_mag, pa.e, eos)
+    w     = e + pressure(eos, e)
+    G, _  = eos_wgamma(w, M_mag)
+    γ     = G / w
+    p_v   = pressure(eos, e)
+    return pa.s * ((w * γ^2 - p_v) / S_in)
 end
 
 # One viscous step with the exact back map.  Returns (K, ΣΔs, Σe) with ΣΔs the exact

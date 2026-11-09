@@ -65,7 +65,7 @@ function particles_in_cell(cl::CellList2D, ix::Int, iy::Int)
 end
 
 function wrap_positions!(particles::Vector{Particle}, L::SVector{2,Float64})
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x = mod.(particles[a].x, L)
     end
 end
@@ -78,7 +78,7 @@ end
 function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
                                cl::CellList2D)
     ncx = cl.ncx;  ncy = cl.ncy
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         S_acc = 0.0
         M_acc = zero(SVector{2,Float64})
         ix, iy = cell_index(particles[a].x, cl)
@@ -103,7 +103,7 @@ end
 function update_velocities!(particles::Vector{Particle},
                              params::SimParams, cl::CellList2D)
     ncx = cl.ncx;  ncy = cl.ncy
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         dotx_acc = zero(SVector{2,Float64})
         FS_acc   = 0.0
         ix, iy = cell_index(particles[a].x, cl)
@@ -227,7 +227,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x += (dt/2) * particles[a].dotx
     end
     wrap_positions!(particles, params.L)
@@ -237,7 +237,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     hamiltonian_force!(dotm, particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].m += dt * dotm[a]
     end
 
@@ -245,7 +245,7 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)
-    for a in eachindex(particles)
+    Threads.@threads for a in eachindex(particles)
         particles[a].x += (dt/2) * particles[a].dotx
     end
     wrap_positions!(particles, params.L)
