@@ -142,8 +142,9 @@ end
 # gradient after the momentum transfer, and sets s_a' = S_a(e_a' + g_a', m_a').
 
 # Star of a for the kernel weights: (b, r_ab, λ_ab), including b = a.
-function kernel_star(a, particles, params, cl)
-    pa = particles[a];  out = Tuple{Int,SVector{2,Float64},Float64}[]
+# With a scratch buffer `buf`, the star is gathered there and copied once at its exact size.
+function kernel_star(a, particles, params, cl, buf = nothing)
+    pa = particles[a];  out = buf === nothing ? Tuple{Int,SVector{2,Float64},Float64}[] : empty!(buf)
     ix, iy = cell_index(pa.x, cl)
     for dx in -1:1, dy in neighbor_range(cl.ncy)
         jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
@@ -153,7 +154,7 @@ function kernel_star(a, particles, params, cl)
             W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth))
         end
     end
-    return out
+    return buf === nothing ? out : copy(out)
 end
 
 # Centred second moment Q_a and the fitted gradient G_a (G[i,j] = ∂_j μ_i) of a field

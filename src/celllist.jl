@@ -462,9 +462,17 @@ end
 # Returns (ψ_b, n_a) with
 #   Σ_b V_b ψ_b r_b r_bᵀ = n_a ℓ   exactly,   ψ_b = ψ(ρ_b) (1 + r_bᵀ Λ r_b),  ℓ:Λ = 0.
 # Falls back to Λ = 0 (n_a = ½ tr(ℓ⁻¹ M)) if a corrected weight would be negative.
-function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
-    ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
-    Vb = [particles[b].s / particles[b].S_smooth for (b, r, rr) in nb]
+# Optional buffers ψ0, Vb, ψ (resized here) avoid allocation; the returned weights may
+# then alias one of them, valid until the next call with the same buffers.
+function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ;
+                               ψ0 = Vector{Float64}(undef, length(nb)),
+                               Vb = Vector{Float64}(undef, length(nb)),
+                               ψ  = Vector{Float64}(undef, length(nb)))
+    resize!(ψ0, length(nb));  resize!(Vb, length(nb));  resize!(ψ, length(nb))
+    for (k, (b, r, rr)) in enumerate(nb)
+        ψ0[k] = bond_weight(sqrt(dot(r, ℓi * r)), hψ)
+        Vb[k] = particles[b].s / particles[b].S_smooth
+    end
     # unknowns z = (Λxx, Λxy, Λyy, n):  M + N:Λ − n ℓ = 0  (3 eqs),  ℓ:Λ = 0
     # (static 4×4 system: no allocation)
     A3 = zero(SMatrix{3,3,Float64});  r3 = zero(SVector{3,Float64})
@@ -483,7 +491,9 @@ function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
     rhs = SVector(r3[1], r3[2], r3[3], 0.0)
     z = abs(det(A)) > 0 ? A \ rhs : fill(NaN, SVector{4,Float64})
     Λ = SMatrix{2,2,Float64}(z[1], z[2], z[2], z[3])
-    ψ = [ψ0[k] * (1 + dot(r, Λ * r)) for (k, (b, r, rr)) in enumerate(nb)]
+    for (k, (b, r, rr)) in enumerate(nb)
+        ψ[k] = ψ0[k] * (1 + dot(r, Λ * r))
+    end
     if all(>=(0), ψ) && isfinite(z[4]) && z[4] > 0
         return ψ, z[4]
     end

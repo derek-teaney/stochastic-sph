@@ -34,6 +34,17 @@ function sqrt_comoving(v::SVector{2,Float64})
     return SMatrix{2,2,Float64}(I) - (1 - sqrt(1 - v2)) * (v * v') / v2
 end
 
+# Run body(range) over contiguous chunks of 1:N, one chunk per thread, so that each
+# chunk can allocate its scratch buffers once.  Results do not depend on the chunking
+# as long as body writes only the entries of its own range.
+function threaded_chunks(body, N::Int)
+    n = max(1, min(N, Threads.nthreads()))
+    rs = [((c - 1) * N ÷ n + 1):(c * N ÷ n) for c in 1:n]
+    Threads.@threads for c in 1:n
+        body(rs[c])
+    end
+end
+
 # ── Frozen star data ─────────────────────────────────────────────────────────
 struct Star
     nb :: Vector{Int}                   # bonds b with w_ab > 0
@@ -60,9 +71,11 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
     ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     stars = Vector{Star}(undef, N)
-    Threads.@threads for a in 1:N
+    threaded_chunks(N) do range
+    nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[];  ψb = Float64[]
+    for a in range
         pa = particles[a]
-        nb = Tuple{Int,SVector{2,Float64},Float64}[]
+        empty!(nb)
         ix, iy = cell_index(pa.x, cl)
         for dx in neighbor_range(cl.ncx), dy in neighbor_range(cl.ncy)
             jx = mod(ix + dx - 1, cl.ncx) + 1;  jy = mod(iy + dy - 1, cl.ncy) + 1
@@ -77,7 +90,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
         ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
-                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
+                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
         Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
         η  = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
         if oneD
@@ -97,15 +110,19 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
             B = (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ)
         end
-        bs = Int[];  rs = SVector{2,Float64}[];  ws = Float64[];  cs = Float64[];  As = SVector{2,Float64}[]
+        nk = n_a > 0 ? count(>(0), ψs) : 0                 # arrays at their exact size
+        bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
+        ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
+        As = Vector{SVector{2,Float64}}(undef, nk);  j = 0
         for (k, (b, r, rr)) in enumerate(nb)
             (ψs[k] > 0 && n_a > 0) || continue
-            wab = V[b] * ψs[k] / n_a
-            push!(bs, b);  push!(rs, r);  push!(ws, wab)
-            push!(cs, (oneD ? κs : 2κs) * Ta * V[a] * wab)
-            push!(As, V[a] * wab * (ℓi * r))
+            wab = V[b] * ψs[k] / n_a;  j += 1
+            bs[j] = b;  rs[j] = r;  ws[j] = wab
+            cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab
+            As[j] = V[a] * wab * (ℓi * r)
         end
         stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi)
+    end
     end
     return stars
 end
@@ -363,9 +380,12 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
         s0  = [pa.s for pa in particles]
         μ0  = [pa.m / pa.s for pa in particles]
         g0  = Vector{Float64}(undef, N)
-        Threads.@threads for a in 1:N
-            kst[a] = kernel_star(a, particles, params, cl)
-            Cs[a]  = inverse_susceptibility(particles[a], eos)
+        threaded_chunks(N) do range
+            buf = Tuple{Int,SVector{2,Float64},Float64}[]
+            for a in range
+                kst[a] = kernel_star(a, particles, params, cl, buf)
+                Cs[a]  = inverse_susceptibility(particles[a], eos)
+            end
         end
         Threads.@threads for a in 1:N
             g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
