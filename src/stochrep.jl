@@ -211,6 +211,16 @@ function particle_entropy(e, m, V, eos)
     return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
 end
 
+# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
+# have positive arguments), so the try block, about 17% of a call, is not needed.
+# Same arithmetic as the general method: bit-identical results.
+function particle_entropy(e, m, V, eos::ConformalEOS)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
+    S, v, _ = eos_from_energy(ε, M, eos)
+    return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
+end
+
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
 const GUARD_EVENSPLIT = Threads.Atomic{Int}(0)   # bond split fell back to the even split
