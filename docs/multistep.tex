@@ -1,0 +1,204 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Time steps of the Hamiltonian and viscous steps for $h/a\gg1$}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The Hamiltonian step resolves the fields on the smoothing length $h$; the
+viscous (stochastic) step acts on the particles, spacing $a$.  We list the rates
+that limit each step, work out how they scale for $h/a\gg1$, and propose a
+splitting with one long Hamiltonian step and several viscous sub-steps at fixed
+positions.  The main finding: in the present scheme the viscous rates are set by
+the bond range $h_\psi$, which is $h$, not $a$; the spacing $a$ enters through the
+thermal velocity of a particle, which sets the stability limit.  Whether many
+viscous sub-steps are needed depends on choosing $h_\psi\sim a$.  For discussion;
+nothing is implemented.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The rates}
+\label{sec:rates}
+
+Symbols: sound speed $c_s$, kinematic viscosity $\nu=\eta/w$ (and $\kappa_b=2\eta+\zeta_{\rm eff}$,
+the largest viscosity carried by the bonds), smoothing length $h$, particle spacing
+$a$, bond range $h_\psi\le h$, particle volume $V_a\simeq\frac{\sqrt3}{2}a^2$ (hexagonal lattice),
+entropy per particle $s_a=SV_a$.  Numbers are for the present runs: $h=0.05$, $h/a=2$,
+$h_\psi=h$, $\eta/s=0.2$, $S=10^6$.
+
+\paragraph{Hamiltonian step.}  The forces and velocities are smoothed over $h$, so the
+fastest resolved motion is a sound wave with $k\sim1/h$,
+\st
+\Omega_H=\frac{c_s}{h}=11.5 .
+\stp
+Particle-scale momentum modes ($kh\gg1$) enter the smoothed fields with the weight
+$\tilde W(kh)\ll1$: in the Hamiltonian step they are carried along, not oscillating.
+The leapfrog needs $\Omega_H\Delta t\lesssim1$; the code uses
+$\Delta t=\tfrac12\times0.2\,h/c_s=8.66\times10^{-3}$, i.e.\ $\Omega_H\Delta t=0.10$.
+
+\paragraph{Viscous step.}  The bond form damps a mode of wavenumber $k$ at
+\st
+\Gamma(k)=\nu k^2\quad(kh_\psi\ll1),\qquad
+\Gamma(k)\to\Gamma_{\max}\simeq2\,\frac{\kappa_b}{w}\,\frac{c_d}{h_\psi^2}\quad(kh_\psi\gtrsim1),
+\label{Gamma}
+\stp
+the saturation coming from $\sum_bw_{ab}\le c_d/h_\psi^2$, $c_2=7/2$ (\texttt{changerep.tex}: the
+Gershgorin bound is $4\kappa_bc_d/(wh_\psi^2)=29$, the measured zone-edge rate about half of it).
+The resolved modes ($kh<1$) relax at $\nu k^2\le\nu/h^2=0.88$, the unresolved ones at
+up to $\Gamma_{\max}\simeq14$.
+
+\paragraph{Acceptance.}  For a residual move the entropy change of the star is, to
+leading order, $\Delta S=\sum_b\Delta\beta_{ab}\cdot\bm y_{ab}$ plus a quadratic cost, with
+$\avg{y^2}=2\Delta t\,c_{ab}$ and the thermal $\Delta\beta_{ab}$ of two particles.  Summing over
+the bonds,
+\st
+\avg{\Delta S^2}\simeq 8\,\frac{\kappa_b}{w}\,\Delta t\sum_bw_{ab}\sim\Gamma_{\max}\Delta t ,
+\qquad 1-\text{acceptance}\simeq c\,\sqrt{\Gamma_{\max}\Delta t} ,
+\label{acc}
+\stp
+independent of $a$ at fixed $h_\psi$.  Measured: residual acceptance $0.88$ at
+$\Gamma_{\max}\Delta t\simeq0.06$ (split half steps) and $0.77$ at $0.12$ (merged), so $c\simeq0.5$--$0.65$
+(the rejection grows somewhat faster than the square root).
+The Metropolis sweep samples $e^{\mathbb S}$ for \emph{any} $\Delta t$: a long step is not
+unstable, it is rejected, and the rejected moves damp nothing.  So the viscous step
+needs $\Gamma_{\max}\Delta t\lesssim0.1$ (acceptance $\gtrsim0.8$) for its rates, not for its stability.
+
+\paragraph{The particle scale.}  The spacing enters through the thermal velocity of
+one particle,
+\st
+\delta v^2=\frac{T}{V_a\,w}\propto\frac1{a^2}\qquad(\text{fixed }S,T),
+\label{dv}
+\stp
+$\delta v=0.043$ at $S=10^6$, $h/a=2$.  The stability scan (\texttt{nersc/LOG.md}) puts the
+$\lambda=1$ melting threshold between $\delta v=0.078$ and $0.14$ at $h/a=2$; at $h/a=3$
+and $S=10^5$ ($\delta v=0.20$, the same smoothed fluctuation $\delta v\,a/h$ as $h/a=2$) the
+lattice melted earlier, $t\approx11$ against $28$.  So the particle velocity, not the
+smoothed one, appears to control melting.
+
+%=============================================================================
+\section{The limit $h/a\gg1$}
+\label{sec:limit}
+
+Hold $h$, $c_s$, $\nu$ and $T$ fixed and let $a\to0$.  The number of neighbours within
+$2h$ grows as $N_{\rm nb}\simeq\frac{8\pi}{\sqrt3}(h/a)^2$.
+
+\paragraph{Bond range $h_\psi=h$ (the present scheme).}  Nothing in
+\Eq{Gamma} or \Eq{acc} depends on $a$:
+\st
+\frac{\Gamma_{\max}}{\Omega_H}\simeq 2c_d\,\frac{\kappa_b}{\eta}\,\frac{1}{{\rm Re}_h}=1.25,\qquad
+{\rm Re}_h=\frac{c_sh}{\nu}=13 ,
+\stp
+a fixed ratio.  The two steps then want
+comparable time steps for all $h/a$, and both cost $\propto N\,N_{\rm nb}\propto(h/a)^4$ per area.
+There is no gain from sub-stepping the viscous step.  At the present numbers the
+Hamiltonian step is run far below its stability limit ($\Omega_H\Delta t=0.10$), while the viscous
+step is near its target ($\Gamma_{\max}\Delta t=0.12$ merged); the viscous step is also the more
+expensive one.
+The limit is instead set by \Eq{dv}: at fixed $S$ the particle velocity grows as
+$h/a$, from $0.043$ at $h/a=2$ ($S=10^6$) into the range $0.08$--$0.14$ where the $h/a=2$ runs
+melt by $h/a\simeq4$--$6$, unless $S$ (i.e.\ $s_a$) grows with $(h/a)^2$.
+
+\paragraph{Bond range $h_\psi=b\,a$ (local bonds, $b=O(1)$).}  Now
+\st
+\Gamma_{\max}\simeq2\,\frac{\kappa_b}{w}\frac{c_d}{b^2a^2},\qquad
+\frac{\Gamma_{\max}}{\Omega_H}\simeq\frac{2c_d}{b^2}\frac{\kappa_b}{\eta}\frac{1}{{\rm Re}_h}\Big(\frac ha\Big)^2\gg1 ,
+\label{local}
+\stp
+the regime of a long Hamiltonian step and many viscous steps.  The modes separate:
+\begin{itemize}
+\item the resolved modes, $k<1/h$, relax at $\nu k^2\le\nu/h^2\ll\Omega_H$; the bond form gives
+  the right $\nu$ for smooth fields for any $h_\psi$ (its normalization
+  $\sum_bw_{ab}\bm r_{ab}\bm r_{ab}^T=\one$);
+\item the unresolved modes, $1/h<k<1/a$, $(h/a)^2$ of them per resolved mode, relax at up to
+  $\Gamma_{\max}\propto1/a^2$, much faster than anything the Hamiltonian step does.
+\end{itemize}
+In the limit the unresolved modes are a fast heat bath in equilibrium at the
+current positions; the resolved fields obey fluctuating hydrodynamics on the
+scale $h$, their noise the sum of $(h/a)^2$ independent particle noises.  The
+Hamiltonian step needs $\Omega_H\Delta t_H\lesssim0.2$; the viscous step needs
+$\Gamma_{\max}\Delta t_V\lesssim0.1$ by \Eq{acc}; the number of viscous sub-steps is
+\st
+n_V=\frac{\Delta t_H}{\Delta t_V}\simeq2\,\frac{\Gamma_{\max}}{\Omega_H}\propto\Big(\frac ha\Big)^2 .
+\stp
+A star then has $O(b^2)$ bonds instead of $O((h/a)^2)$, so a sub-step costs
+$\propto N$, and $n_V$ sub-steps cost $\propto N(h/a)^2$, the same order as one Hamiltonian step.
+
+%=============================================================================
+\section{Proposal}
+\label{sec:proposal}
+
+\paragraph{The splitting.}  One step of length $\Delta t_H$,
+\st
+\Big[S\big(\tfrac{\Delta t_H}{2n_V}\big)\Big]^{n_V}\;H(\Delta t_H)\;\Big[S\big(\tfrac{\Delta t_H}{2n_V}\big)\Big]^{n_V},
+\label{split}
+\stp
+with the two blocks of consecutive steps merged as now.  During the viscous
+sub-steps the positions do not move, so everything that depends only on them is
+computed once per Hamiltonian step: the volumes $V_a$, the particle energies $e_a$,
+the stars (comoving weights, coefficients) and the kernel stars of the gradient
+correction.  A sub-step is then only the two sweeps and the back map, about half
+of the present stochastic step.  (Strictly the stars depend on the particle
+velocities through the comoving metric; for $v\ll1$ freezing them over $\Delta t_H$ is
+an error of order $\Delta v$.)
+
+\paragraph{Choices.}
+\begin{enumerate}
+\item $\Delta t_H=C\,h/c_s$, with the Courant number $C$ raised from the present $0.1$
+  until the resolved sound and shear rates or the stability degrade (to be measured).
+\item $n_V=\lceil\Gamma_{\max}\Delta t_H/0.1\rceil$, i.e.\ a residual acceptance $\gtrsim0.8$ per
+  sub-step, with $\Gamma_{\max}$ half the bound of \texttt{compute\_dt}.
+\item $h_\psi$: keep $h$ (then $n_V=1$--$2$, and the gain is only the larger $C$), or go to
+  $h_\psi\simeq a$--$2a$ (local bonds, cheaper stars, $n_V\propto(h/a)^2$).  The second changes the
+  dissipative function at $kh_\psi\gtrsim1$, so the deterministic tests of
+  \texttt{changerep.tex} and the frozen-lattice tests of \texttt{stochrep.tex} would have
+  to be redone.
+\end{enumerate}
+
+\paragraph{Tests.}  On a frozen lattice nothing changes: sub-steps are exact Metropolis
+steps of $e^{\mathbb S}$.  With the Hamiltonian step on: (i) the sound and shear decay
+rates of resolved modes against $\Delta t_H$ and $n_V$ (splitting error $O(\Delta t_H^2)$);
+(ii) equilibrium statics, the energy drift and the melting threshold against $C$;
+(iii) cost per unit time.
+
+\paragraph{Expected gain.}  At $h/a=2$, $h_\psi=h$: from $C$ alone, perhaps a factor $2$--$3$
+if $C\simeq0.3$ is stable.  For $h/a\gg1$ with local bonds: the cost per unit time
+becomes $\propto N(h/a)^2$ instead of $\propto N(h/a)^4$ with $h_\psi=h$.
+
+%=============================================================================
+\section{Points for discussion}
+\label{sec:discuss}
+
+\begin{itemize}
+\item In the present scheme ($h_\psi=h$) the viscous step is not limited by $a$; is the
+  intended scheme one with local bonds, $h_\psi\sim a$?
+\item At fixed $S$ the particle velocity grows as $h/a$ (\Eq{dv}), into the melting range
+  by $h/a\simeq4$--$6$.  $h/a\gg1$ needs either $s_a\propto(h/a)^{-2}S$ kept above a
+  few hundred (larger $S$) or a scheme whose stability does not depend on $\delta v$; the
+  stability scan at fixed $\delta v$ and varying $h/a$ would decide which velocity matters.
+\item With $\Gamma_{\max}\Delta t_V\ll1$ the unresolved modes are in equilibrium at every
+  Hamiltonian step.  Instead of $n_V$ sub-steps one could redraw them directly from
+  $e^{\mathbb S}$ at fixed resolved fields (a heat bath for the residual part), and use
+  sub-steps only for the resolved part, which is slow.
+\end{itemize}
+
+\end{document}
