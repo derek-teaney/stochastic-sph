@@ -36,13 +36,15 @@ or learn something about running the code here.
   `julia` on PATH (prints its arguments) before submitting.
 - **Threads barely help.**  Benchmark to t = 2 (231 steps), debug queue:
 
-  | run | N | 8 cores | 2 cores | µs / particle / step (8 cores) |
+  | run | N | `-c 8` | `-c 2` | µs / particle / step (`-c 8`) |
   |---|---|---|---|---|
   | hamiltonian, h/a=2 | 672 | 15 s | 16 s | 97 (two stochastic half steps) |
   | equilibrium L=1.2 | 2688 | 25 s | 28 s | 40 (merged half steps) |
   | equilibrium L=2.4 | 10560 | 92 s | 102 s | 38 |
 
-  Results are identical for any thread count.  Default is now `-c 2`.  Speed-up needs
+  A Slurm CPU on Perlmutter is a hardware thread (2 per physical core), so `-c 8` is 4
+  physical cores and `-c 2` is one core with 2 threads; shared QOS charges per physical
+  core.  Results are identical for any thread count.  Default is now `-c 2`.  Speed-up needs
   threading the serial parts (star rebuild, fits, smoothing, leapfrog), `docs/plan.tex`.
 - Output of `stochrep_equilibrium.jl` is HDF5 (`equilibrium_<tag>_r<seed>.h5`):
   datasets `ks t ML MT S H KE`, parameters as root attributes (incl. `commit`).  Read
@@ -55,12 +57,17 @@ or learn something about running the code here.
 
 ## Campaigns
 
-### `first` — 2026-11-08, `nersc/campaign_first.txt`, 144 tasks, ≈ 4.3 node-hours
+### `first` — 2026-11-08, `nersc/campaign_first.txt`, 144 tasks, ≈ 2.1 node-hours
 
 Stability scan in S0 (thermal velocity), the energy fix and h/a, to t = 200 (16 seeds
 each); equilibrium ensembles L = 1.2 and 2.4 to t = 400 (32 seeds each).  Estimated
 per task: hamiltonian ≈ 0.45 h, eqL1.2 ≈ 1.6 h, eqL2.4 ≈ 5.8 h (limit 8 h).
-Output `$SCRATCH/sph/first/`.  Job ID and outcome: see below.
+Output `$SCRATCH/sph/first/`.
+
+- 2026-11-08 19:20: submitted as job **61019642** (`-q shared -c 2 -t 8:00:00`, m3722,
+  from `$SCRATCH/sph`, commit `1834b6a`).  Logs `$SCRATCH/sph/slurm/sph-61019642_<task>.out`.
+  Tasks 1–80 stability (ref 1–16, s3e5 17–32, s1e5 33–48, s1e5_hfix 49–64,
+  s1e5_ha3 65–80), 81–112 eqL1.2, 113–144 eqL2.4.
 
 Next once it finishes: stability plots (`examples/stochrep_longruns_plot.jl`-style
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
