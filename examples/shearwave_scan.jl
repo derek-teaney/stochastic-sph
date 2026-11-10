@@ -112,8 +112,10 @@ for (j, kern) in enumerate(KERNELS)
     ax = axs[1, j]
     for (i, (ha, amp)) in enumerate(Iterators.product(HAS, AMPS)), ham in HAMS
         r = res[(kern, ha, ham, amp)]
-        ax.plot(r.t, r.A, ham === :energy ? "--" : ham === :energy_n ? ":" : "-", color = "C$(mod(i-1, 10))",
-                label = @sprintf("h/a=%g A=%g %s (c_t=%+.4f)", ha, amp, ham, r.ct))
+        # identical curves must stay visible: energy_n as open markers on top of the line
+        ax.plot(r.t, r.A, ham === :energy ? "--" : ham === :energy_n ? "" : "-", color = "C$(mod(i-1, 10))",
+                marker = ham === :energy_n ? "o" : "", markevery = max(1, length(r.t) ÷ 20), ms = 5, mfc = "none",
+                lw = ham === :energy_n ? 0 : 1.5, label = @sprintf("h/a=%g A=%g %s (c_t=%+.4f)", ha, amp, ham, r.ct))
     end
     ax.axhline(0, color = "k", lw = 0.5)
     ax.set_ylim(-1.1, 1.3);  ax.set_xlabel("t");  ax.set_ylabel("A(t)/A(0)")

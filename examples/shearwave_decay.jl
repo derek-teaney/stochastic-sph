@@ -88,9 +88,12 @@ cols = Dict(:smoothed => "C0", :energy => "C3", :energy_n => "C2")
 for ham in HAMS, η in (ETA, 0.0)
     r = runs[(ham, η)];  ls = η > 0 ? "-" : ":"
     lab = @sprintf("%s, η/s=%g", ham, η)
-    ax[1].plot(r.t, r.A, ls, color = cols[ham], label = lab)
-    ax[2].plot(r.t, r.dH, ls, color = cols[ham], label = lab)
-    ax[3].plot(r.t, r.dS, ls, color = cols[ham], label = lab)
+    # identical curves must stay visible: wide lines first, thin ones on top, markers for energy_n
+    kw = (color = cols[ham], label = lab, lw = Dict(:smoothed => 3.5, :energy => 2.2, :energy_n => 1.0)[ham],
+          marker = ham === :energy_n ? "o" : "", markevery = max(1, length(r.t) ÷ 15), ms = 5, mfc = "none")
+    ax[1].plot(r.t, r.A, ls; kw...)
+    ax[2].plot(r.t, r.dH, ls; kw...)
+    ax[3].plot(r.t, r.dS, ls; kw...)
 end
 r = runs[(HAMS[1], ETA)]
 ax[1].plot(r.t, exp.(-r.ν * r.k^2 .* r.t), "k--", lw = 1, label = "e^{−νk²t}")
