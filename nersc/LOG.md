@@ -106,6 +106,18 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `cl` — continuum limit, 2026-11-10, `nersc/campaign_cl.txt`, docs/continuum_limit.tex
+
+n-scheme, h = 0.05, S0 = 1e6, η/s = 0.2; s_a = 2165/(h/a)² lowered stage by stage, equilibrium
+start.  Output `$SCRATCH/sph/cl/`.  Each stage one regular node, 3 h, `node.sh` with a task range.
+- Benchmark debug 61110291 (cost per step ∝ (h/a)^4 or faster); short runs 61110825
+  (`$SCRATCH/sph/cl_short`); Δt scan 61111926/7 (`$SCRATCH/sph/cl_dtscan`).
+- Stage 1 (tasks 1-32, THREADS=4) job **61110829**, checkout `~/stochastic-sph-run` (632f29f code).
+- Stages 2 (33-40, THREADS=16) **61113602** and 3 (41-44, THREADS=32) **61113633**, checkout
+  `~/stochastic-sph-run2`.  Stages 4, 5 after stage 3 is seen to be sane; stage 6 not run (the
+  equilibrium draw fails at s_a = 2.1).
+- Δt criterion: residual acceptance ≈ 0.75 (f = 1, 1/2, 1/4, 1/16 at h/a = 8, 12, 16, 23).
+
 ### Default scheme changed — 2026-11-10, `main` at `91d9e66`
 
 With no environment variables the code now runs the **n-scheme**: `SPH_HAMILTONIAN=energy`,
