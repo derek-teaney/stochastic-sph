@@ -462,7 +462,13 @@ of each other.}
 
 \paragraph{Next.}  (a) The remaining first-order heating: a symmetric splitting of the
 stochastic step.  (b) Longer runs for the spread of the entropy per particle.  (c) The
-deterministic tests with the number volume (\texttt{number\_tests.tex}).  (d) With the owner,
-whether to make \texttt{SPH\_VOLUME=number} the default with \texttt{:energy}.
+deterministic tests with the number volume (\texttt{number\_tests.tex}).  
+
+\paragraph{The default.}  Since 2026-11-10 the n-scheme is the default: with no environment
+variables set, \texttt{SPH\_HAMILTONIAN=energy} and \texttt{SPH\_VOLUME=number}.  The old schemes
+remain as options (\texttt{SPH\_HAMILTONIAN=smoothed}; \texttt{SPH\_VOLUME=entropy}), and
+\texttt{SPH\_DISSIPATION=two\_level} still defaults to \texttt{smoothed}.  All \texttt{test/*.jl}
+pass with the new default; \texttt{testregress\_step} and \texttt{testchangerep} pin the
+smoothed Hamiltonian, whose machinery they test.
 
 \end{document}

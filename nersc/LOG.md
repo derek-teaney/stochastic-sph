@@ -98,6 +98,15 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### Default scheme changed — 2026-11-10, `main` at `91d9e66`
+
+With no environment variables the code now runs the **n-scheme**: `SPH_HAMILTONIAN=energy`,
+`SPH_VOLUME=number`.  Old schemes: `SPH_HAMILTONIAN=smoothed` (with `SPH_VOLUME=entropy` implied),
+or `SPH_HAMILTONIAN=energy SPH_VOLUME=entropy`.  Earlier campaign files that relied on the
+default (first, second, rigidity, frozen `s_*`) must now set `SPH_HAMILTONIAN=smoothed` to be
+reproduced.  Unit tests: debug job 61109430 (`nersc/unittests.sh`), all pass after pinning
+`testchangerep` to smoothed (61109670).
+
 ### `volume_n` and the deterministic suite — 2026-11-10, `main` at `0d3e3e9` / `e87d5d5`
 
 New option `SPH_VOLUME=number` (V_a = 1/n_a) with `SPH_HAMILTONIAN=energy`; the old volume
