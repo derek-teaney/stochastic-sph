@@ -30,6 +30,15 @@ or learn something about running the code here.
 
 ## Lessons
 
+- **Packing a whole node: `nersc/node.sh` (2026-11-10).**  Runs the tasks of a campaign file
+  inside one allocation as job steps, `srun --exact -n1 -c 2T --cpu-bind=cores`, NSLOT =
+  128/T at a time, refilling as tasks finish (`wait -n`); each task is `array.sh` as in an array
+  job.  Two traps it avoids: Slurm's `-c` counts hardware threads (2 per core), so `-c 2T` for T
+  cores; and `srun` resets `SLURM_CPUS_PER_TASK` in the step, so the thread count is passed as
+  `SR_THREADS`.  Without `--exact`, steps grab the whole allocation and run one after another.
+  Test (debug job 61088563): 64 tasks, T = 4: 32 ran at once, each on its own 4 cores.
+  Note: in the shared-queue arrays, `-c 8` is 4 physical cores with 8 Julia threads.
+
 - **Type stability of the kernel (2026-11-10).**  Commit `037b464` (C6 kernel) made every run 5×
   slower: `SimParams.kernel` was typed `AbstractKernel`, and with a fourth kernel method Julia
   stopped union-splitting, so each kernel call in the neighbour loops became a dynamic

@@ -24,7 +24,7 @@ REPO=${SR_REPO:-$SLURM_SUBMIT_DIR}
 OUTROOT=${SR_OUTROOT:-$SCRATCH/sph/$NAME}
 command -v julia >/dev/null || module load ${SR_JULIA_MODULE:-julia/1.12.1}
 export JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH:-/global/common/software/m3722/$USER/julia_depot}
-export JULIA_NUM_THREADS=${SLURM_CPUS_PER_TASK:-2}
+export JULIA_NUM_THREADS=${SR_THREADS:-${SLURM_CPUS_PER_TASK:-2}}   # SR_THREADS: set by node.sh
 
 # map the array index to (line, seed)
 mapfile -t LINES < <(grep -v '^\s*#' "$CAMPAIGN" | grep -v '^\s*$')
