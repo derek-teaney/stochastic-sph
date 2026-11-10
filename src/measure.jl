@@ -205,16 +205,22 @@ end
 #   :thermal  thermal_init!: momenta only, at fixed particle energies (campaign `first`)
 function initial_state!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                         eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng())
+    # returns a description of the start, for the run record (src/runinfo.jl)
     if start === :cold
         thermalize!(particles, params, cl, eos)
+        return (type = "cold", what = "the state as set up (uniform, at rest), no fluctuations; the run thermalizes")
     elseif start === :eq
-        equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true)
+        r = equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true)
+        acc = r.acc isa AbstractArray ? sum(r.acc) / length(r.acc) : r.acc
+        return (type = "eq", what = "equilibrium draw of (e_a, m_a) at the global beta^mu of the totals, totals shifted to them exactly",
+                T0 = r.T, v0 = collect(r.v), E_total = r.E, M_total = collect(r.M), exact_totals = true, nmh = 30,
+                mh_acceptance = acc)
     elseif start === :thermal
         thermal_init!(particles, params, cl, eos; rng)
+        return (type = "thermal", what = "momenta drawn at fixed particle energies (momentum covariance)")
     else
         error("unknown start $start (use cold, eq or thermal)")
     end
-    return particles
 end
 
 # ── Recording ────────────────────────────────────────────────────────────────

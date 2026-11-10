@@ -80,8 +80,9 @@ function runinfo(base, params, eos, st, n, complete)
     out = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
     write_runinfo(base, vcat(run_settings(params, eos; driver = "stochrep_equilibrium.jl", tag = TAG, seed = st.seed,
         S0 = S0, s_a = S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
-        nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, start = string(START), jitter = JITTER, lambda = LAMBDA,
+        nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, jitter = JITTER, lambda = LAMBDA,
         novisc = NOVISC, noham = NOHAM,
+        start = haskey(st, :start) ? st.start : (type = string(START),),
         # the scheme, as this driver runs it (the stochrep_step! defaults it relies on spelled out)
         stoch = (vote = string(VOTE), lambda = LAMBDA, residual = true, gradient_map = params.hamiltonian !== :energy,
                  grid_shift = true, sweeps = "stress then residual, order alternating each step",
@@ -114,7 +115,7 @@ function one_realization(seed)
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
-        initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
+        start = initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
@@ -126,7 +127,11 @@ function one_realization(seed)
               prec = ParticleRecorder(ps, params),
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
-              H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
+              H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
+              start = merge((lattice = "hex", jitter = JITTER, S0 = S0, M0 = [0.0, 0.0], s_a = S0 * params.vol,
+                             T_rel_uniform = Trel, w_uniform = w,
+                             rng_seeds = "lattice $(1000seed + 4), start $(1000seed + 3), physics $(1000seed + 1), sweeps $(1000seed + 2)"),
+                            start))
     end
     (; params, ps, cl, rngs, rng, dotm, rec, prec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
     haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
