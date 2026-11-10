@@ -137,10 +137,13 @@ $h/a$ & $s_a$ & acceptance, stress & acceptance, residual & rejected for $|v|\ge
 \item The proposals that would make a particle superluminal appear at $s_a\approx30$ and grow
   steeply: $4\times10^{-4}$ of all proposals at $s_a=34$, $2\%$ at $15$, $10\%$ at $8.5$.  The
   residual moves are accepted less often as $s_a$ falls; the stress moves are unaffected.
-\item The kinetic energy falls with them, to $0.71$ of its equilibrium value within half a unit
-  of time at $s_a=8.5$.  A possible reason, to be tested: rejecting every proposal that would
-  take a particle past $|v|=1$ cuts off the fast tail of the velocity distribution, so the noise
-  cools the particles.  The long stages show whether this is a transient or a drift.
+\item The kinetic energy does \emph{not} fall: it starts below 1 and rises.  At the first record
+  and at $t=0.5$ KE/eq is $0.95\to1.01$ ($h/a=2$), $0.91\to0.93$ ($8$), $0.76\to0.85$ ($12$),
+  $0.53\to0.72$ ($16$, still rising).  Two things are mixed here.  (a) The reference value 1 is
+  the large-$s_a$ one, $\avg{m^2}=2VwT$; a particle carrying a few units of entropy has a bounded
+  momentum, $|m_a|<e_a$, and its exact $\avg{m^2}$ is smaller, so KE/eq $<1$ need not be wrong.
+  (b) The equilibrium draw and the dynamics do not agree at large $h/a$: the run leaves the
+  drawn state.  One of the two does not sample the same distribution; to be found.
 \item At $h/a=32$ ($s_a=2.1$) the run does not start: the equilibrium draw gives a particle with
   $|m_a|\ge e_a$, a state no fluid can have.  The Gaussian-like draw at the global temperature
   does not respect $|v|<1$ when a particle carries two units of entropy.  This is a first wall,
