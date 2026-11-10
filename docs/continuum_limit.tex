@@ -170,6 +170,66 @@ $h/a$ & $s_a$ & acceptance, stress & acceptance, residual & rejected for $|v|\ge
 One step of $10^4$--$4\times10^4$ particles took $0.03$--$7.4$\,s here (8 threads for $h/a\le8$, 16
 above).
 
+\paragraph{The exact equilibrium of one particle.}  A particle of volume $V$ in the fluid has
+energy and momentum distributed as
+\st
+P(e,\bm m)\propto\exp\!\Big[S(e,\bm m;V)-\frac{e}{T_*}\Big],\qquad|\bm m|<e,
+\stp
+with $S$ the particle entropy of the code and $T_*$ fixed by $\avg{e}=\bar e$ (the total energy is
+fixed).  Integrated numerically (\texttt{examples/cl\_exact\_m2.jl}):
+\begin{center}
+\begin{tabular}{rrcccc}
+\hline
+$h/a$ & $s_a$ & $T_*/T$ & $\avg{m^2}/2VwT$ (= KE/eq) & $P(|v|>0.9)$ & $P(|v|>0.99)$ \\ \hline
+2 & 541 & 0.995 & 0.993 & $10^{-55}$ & --- \\
+4 & 135 & 0.982 & 0.972 & $10^{-15}$ & --- \\
+6 & 60 & 0.958 & 0.938 & $2.8\times10^{-8}$ & $10^{-10}$ \\
+8 & 34 & 0.926 & 0.893 & $1.3\times10^{-5}$ & $1.2\times10^{-7}$ \\
+12 & 15 & 0.838 & 0.779 & $1.3\times10^{-3}$ & $2.8\times10^{-5}$ \\
+16 & 8.5 & 0.731 & 0.654 & $7.7\times10^{-3}$ & $2.6\times10^{-4}$ \\
+23 & 4.1 & 0.547 & 0.463 & $2.8\times10^{-2}$ & $1.4\times10^{-3}$ \\
+32 & 2.1 & 0.369 & 0.299 & $5.3\times10^{-2}$ & $3.5\times10^{-3}$ \\
+\hline
+\end{tabular}
+\end{center}
+So KE/eq below 1 is mostly the true equilibrium of a particle with few units of entropy: the bound
+$|\bm m|<e$ cuts the momentum distribution off.  The value 1 holds only for large $s_a$.
+
+\paragraph{The time-step scan.}  48 steps from the equilibrium start at $\Delta t\times f$,
+$f=1,\tfrac12,\tfrac14,\tfrac18$ (debug jobs 61111926/7; box $0.6$, $0.32$ for $h/a=23$):
+\begin{center}
+\begin{tabular}{rrcccccc}
+\hline
+$h/a$ & $f$ & acc.\ stress & acc.\ residual & $|v|\ge1$: stress & $|v|\ge1$: residual & $P(|v|>0.9)$ & KE/eq \\ \hline
+8 & 1 & 0.991 & 0.729 & 0 & $8.6\times10^{-4}$ & $2.4\times10^{-5}$ & 0.93 \\
+8 & 1/8 & 0.997 & 0.903 & 0 & $1.6\times10^{-4}$ & $1.2\times10^{-5}$ & 0.93 \\
+12 & 1 & 0.991 & 0.662 & $4.3\times10^{-4}$ & $4.1\times10^{-2}$ & $1.4\times10^{-3}$ & 0.85 \\
+12 & 1/2 & 0.994 & 0.756 & $2.7\times10^{-4}$ & $2.5\times10^{-2}$ & $1.5\times10^{-3}$ & 0.84 \\
+12 & 1/8 & 0.997 & 0.879 & $6.1\times10^{-5}$ & $9.4\times10^{-3}$ & $1.5\times10^{-3}$ & 0.80 \\
+16 & 1 & 0.989 & 0.538 & $2.2\times10^{-3}$ & $0.19$ & $8.0\times10^{-3}$ & 0.70 \\
+16 & 1/4 & 0.995 & 0.756 & $1.1\times10^{-3}$ & $0.082$ & $7.6\times10^{-3}$ & 0.67 \\
+16 & 1/8 & 0.996 & 0.831 & $9.0\times10^{-4}$ & $0.052$ & $6.7\times10^{-3}$ & 0.62 \\
+23 & 1 & 0.981 & 0.247 & $1.1\times10^{-2}$ & $0.64$ & $2.7\times10^{-2}$ & 0.42 \\
+23 & 1/8 & 0.994 & 0.679 & $3.3\times10^{-3}$ & $0.23$ & $2.0\times10^{-2}$ & 0.39 \\
+\hline
+\end{tabular}
+\end{center}
+\begin{enumerate}
+\item The tail of particle speeds is the equilibrium one: $P(|v|>0.9)$ matches the exact value at
+  every $h/a$ and every $\Delta t$.  The rejections do not distort the equilibrium; they come from
+  particles that really are near the light cone.
+\item The rejections for $|v|\ge1$ fall only slowly with $\Delta t$, roughly as $\sqrt{\Delta t}$: a
+  residual proposal touches every particle of a star (about $15(h/a)^2$ of them), and one particle
+  near the light cone suffices.  Holding them below $10^{-3}$, the first half of
+  \Eq{criterion}, is impossible beyond $h/a=8$.
+\item The residual acceptance can be held at $0.75$ by the time step: $f=1$ at $h/a=8$, $\tfrac12$
+  at $12$, $\tfrac14$ at $16$, and about $\tfrac1{16}$ at $23$ (extrapolated).  This is the criterion
+  used from here on.
+\item KE/eq after 48 steps approaches the exact value as $\Delta t$ falls ($h/a=12$: $0.85\to0.80$,
+  exact $0.78$; $16$: $0.70\to0.62$, exact $0.65$); these short runs cover less time at small $f$,
+  so the long stages settle it.
+\end{enumerate}
+
 (The long stages are filled in as they finish.)
 
 \end{document}
