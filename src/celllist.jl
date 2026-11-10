@@ -168,16 +168,19 @@ end
 # smoothed, S_a = Σ_b s_b W_ab.  The momentum density is the particle's own,
 #   M_smooth = m_a / V_a = m_a S_a / s_a ,
 # so solve_eos! returns, unchanged, the particle's own T_a, v_a, p_a and e_a/s_a.
+# volume = :number (volume_n.tex): S_a = s_a n_a, n_a = Σ_b W_ab, so V_a = 1/n_a.
 function smooth_entropy_energy!(particles::Vector{Particle}, params::SimParams,
                                 cl::CellList2D)
     nl = neighbor_list!(cl, particles, params.h)
+    number = params.volume === :number
     Threads.@threads for a in eachindex(particles)
         S_acc = 0.0
         for b in neighbors(nl, a)
             r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
             r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
-            S_acc += particles[b].s * wendland_c2(r_mag, params.h, params.kernel)
+            S_acc += (number ? 1.0 : particles[b].s) * wendland_c2(r_mag, params.h, params.kernel)
         end
+        number && (S_acc *= particles[a].s)
         particles[a].S_smooth = S_acc
         particles[a].M_smooth = particles[a].m * (S_acc / particles[a].s)
     end
@@ -210,8 +213,15 @@ end
 #   ẋ_a = ∂H/∂m_a = v_a                          (local, no neighbour sum)
 #   Teff_a = ∂H/∂s_a = T_a − p_a/S_a + Σ_b s_b (p_b/S_b²) W_ab
 # Needs S_smooth and the EOS fields (smooth_to_particles! + update_thermodynamics!).
+# volume = :number (volume_n.tex): V_a does not depend on s, so Teff_a = T_a exactly.
 function update_velocities_energy!(particles::Vector{Particle},
                                    params::SimParams, cl::CellList2D)
+    if params.volume === :number
+        Threads.@threads for a in eachindex(particles)
+            pa = particles[a];  pa.dotx = pa.v_over_S * pa.S_smooth;  pa.Teff = pa.T
+        end
+        return
+    end
     nl = neighbor_list!(cl, particles, params.h)
     Threads.@threads for a in eachindex(particles)
         pS2_acc = 0.0
@@ -261,13 +271,18 @@ end
 # hamiltonian = :energy (energystep.tex, eq. mdot): the symmetric SPH pressure force
 #   ṁ_a = −∂H/∂x_a = −Σ_b s_a s_b (p_a/S_a² + p_b/S_b²) ∂W_ab/∂x_a ,
 # odd under a ↔ b, so Σ_a ṁ_a = 0 up to roundoff.
+# volume = :number (volume_n.tex), V_a = 1/n_a:
+#   ṁ_a = −Σ_b (p_a V_a² + p_b V_b²) ∂W_ab/∂x_a ,
+# the same loop with s → 1 and S → n (p/n² = p V², V = s/S_smooth).
 function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
                                    particles::Vector{Particle},
                                    params::SimParams, cl::CellList2D)
     nl = neighbor_list!(cl, particles, params.h)
+    number = params.volume === :number
     Threads.@threads for a in eachindex(particles)
-        sa  = particles[a].s
-        pSa = particles[a].p / particles[a].S_smooth^2
+        sa  = number ? 1.0 : particles[a].s
+        pSa = number ? particles[a].p * (particles[a].s / particles[a].S_smooth)^2 :
+                       particles[a].p / particles[a].S_smooth^2
         acc = zero(SVector{2,Float64})
         for b in neighbors(nl, a)
             b == a && continue
@@ -276,7 +291,8 @@ function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
             r_mag >= 2params.h && continue
             grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
             pb   = particles[b]
-            acc -= sa * pb.s * (pSa + pb.p / pb.S_smooth^2) * grad
+            acc -= number ? (pSa + pb.p * (pb.s / pb.S_smooth)^2) * grad :
+                            sa * pb.s * (pSa + pb.p / pb.S_smooth^2) * grad
         end
         dotm[a] = acc
     end

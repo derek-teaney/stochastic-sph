@@ -64,8 +64,10 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
-     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
+
+relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
 function one_realization(seed)
     base = joinpath(OUT, "equilibrium_$(TAG)_r$(seed)");  chk = base * ".chk"
@@ -98,10 +100,12 @@ function one_realization(seed)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
               prec = ParticleRecorder(ps, params),
-              Ht = Float64[], KE = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
+              Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
     end
     (; params, ps, cl, rngs, rng, dotm, rec, prec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
+    haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
+    sspr, Vspr = st.sspr, st.Vspr
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
@@ -116,18 +120,20 @@ function one_realization(seed)
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
             push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
+            push!(sspr, relspread(q.s for q in ps))                         # rms s_a/s̄ − 1
+            push!(Vspr, relspread(q.s / q.S_smooth for q in ps))            # rms V_a/V̄ − 1
         end
         stop = STOPAFTER > 0 && n == STOPAFTER
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec)
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr))
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec)
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr))
     rm(chk; force = true)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),

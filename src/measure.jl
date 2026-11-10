@@ -431,7 +431,7 @@ end
 # The file is written to path.tmp and renamed, so a reader (or a run killed while
 # writing) never sees a half-written file.
 function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recorder,
-                              H::Vector{Float64}, KE::Vector{Float64}; prec = nothing)
+                              H::Vector{Float64}, KE::Vector{Float64}; prec = nothing, extra = NamedTuple())
     nk = length(rec.ks)
     stack(v) = isempty(v) ? zeros(ComplexF64, nk, 0) : reduce(hcat, v)
     tmp = path * ".tmp"
@@ -441,6 +441,7 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
         rec.energies && (f["E"] = stack(rec.E))
         isempty(rec.UT) || (f["UL"] = stack(rec.UL);  f["UT"] = stack(rec.UT))
         f["H"] = H;  f["KE"] = KE
+        for (k, v) in pairs(extra);  f[string(k)] = v;  end            # further time series
         if prec !== nothing && !isempty(prec.t)
             f["part_t"] = prec.t;  f["part_rs"] = prec.rs;  f["part_D2"] = reduce(hcat, prec.D2)
             f["part_MSD"] = prec.MSD;  f["part_B"] = prec.B;  f["part_Fs"] = prec.Fs
