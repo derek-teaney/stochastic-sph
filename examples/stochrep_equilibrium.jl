@@ -19,6 +19,7 @@ include(joinpath(@__DIR__, "..", "src", "setup.jl"))
 include(joinpath(@__DIR__, "..", "src", "rng.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
 include(joinpath(@__DIR__, "..", "src", "measure.jl"))
+include(joinpath(@__DIR__, "..", "src", "monitor.jl"))
 
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
@@ -64,6 +65,7 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
+     monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
@@ -108,6 +110,8 @@ function one_realization(seed)
     haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
     haskey(st, :acc_s) || (st = merge(st, (acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[])))
     sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej_s, st.grej_r, st.vmax
+    haskey(st, :mon) || (st = merge(st, (mon = StepMonitor(params.N),)))
+    mon = st.mon;  REP = max(1, nsteps ÷ 20)          # a log line every 5% of the run
     win = zeros(4)                                   # acceptances and guard fractions since the last record
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
@@ -117,6 +121,7 @@ function one_realization(seed)
             a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=:star, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
             win .+= (a.stress, a.resid, a.gstress, a.gresid)
+            observe_step!(mon, a)
         end
         if n % RECN == 0
             (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
@@ -132,7 +137,9 @@ function one_realization(seed)
             push!(acc_s, win[1] / RECN);  push!(acc_r, win[2] / RECN)
             push!(grej_s, win[3] / RECN);  push!(grej_r, win[4] / RECN);  win .= 0
             push!(vmax, maximum(norm(q.v_over_S * q.S_smooth) for q in ps))
+            observe_particles!(mon, ps)
         end
+        (n % REP == 0 || n == nsteps) && report(mon, n * dt; label = "seed $seed")
         stop = STOPAFTER > 0 && n == STOPAFTER
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
@@ -145,6 +152,7 @@ function one_realization(seed)
     wall = st.wall + time() - t0
     write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
     rm(chk; force = true)
+    print_summary(mon; label = "seed $seed")
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
