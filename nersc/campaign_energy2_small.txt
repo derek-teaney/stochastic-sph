@@ -1,0 +1,12 @@
+# Energy representation, follow-up 1 (2026-11-10), small box: submit with -c 2, one seed per task.
+# (1) The linear loss of H with SPH_HAMILTONIAN=energy against the time step: L = 0.6, h/a = 2,
+#     eq start, t = 100, Δt × 1, 1/2, 1/4 (SR_DTFAC); and with the positions frozen (SR_NOHAM=1).
+# (4) The stability scan of campaign `first` with :energy: S0 = 1e6, 3e5, 1e5 (δv = 0.043, 0.078,
+#     0.14), λ = 1 and λ = ∞ in each task (full,det), t = 200.
+dt1        8  SPH_HAMILTONIAN=energy SR_DTFAC=1     -- examples/stochrep_equilibrium.jl 0.6 2.0 100 1 2 dt1
+dt0.5      8  SPH_HAMILTONIAN=energy SR_DTFAC=0.5   -- examples/stochrep_equilibrium.jl 0.6 2.0 100 1 4 dt0.5
+dt0.25     8  SPH_HAMILTONIAN=energy SR_DTFAC=0.25  -- examples/stochrep_equilibrium.jl 0.6 2.0 100 1 8 dt0.25
+noham      8  SPH_HAMILTONIAN=energy SR_NOHAM=1     -- examples/stochrep_equilibrium.jl 0.6 2.0 100 1 2 noham
+ref        16 SPH_HAMILTONIAN=energy SR_S0=1e6      -- examples/stochrep_hamiltonian.jl 2.0 200 1 full,det star 1.0
+s3e5       16 SPH_HAMILTONIAN=energy SR_S0=3e5      -- examples/stochrep_hamiltonian.jl 2.0 200 1 full,det star 1.0
+s1e5       16 SPH_HAMILTONIAN=energy SR_S0=1e5      -- examples/stochrep_hamiltonian.jl 2.0 200 1 full,det star 1.0

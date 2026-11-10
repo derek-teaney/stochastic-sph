@@ -1,0 +1,8 @@
+# Energy representation, follow-up 1 (2026-11-10), equilibrium correlators: submit with -c 8,
+# 4 seeds per task (nreal 4, SR_SEEDSTRIDE=4), 2 threads each.
+# (3) Is the fluid behaviour of energystep (h/a = 2, L = 1.2) general?  h/a = 2.5 and 3 at L = 1.2
+#     (16 seeds, t = 200, as the rigidity sets ha2.5, ha3), and h/a = 2 in the L = 2.4 box
+#     (kh down to 0.13; 32 seeds, t = 400, as eqL2.4 of `second`).  C_T and C_L.
+ha2.5_energy  4  SR_SEEDSTRIDE=4 SPH_HAMILTONIAN=energy  -- examples/stochrep_equilibrium.jl 1.2 2.5 200 4 2 L1.2_ha2.5_energy
+ha3_energy    4  SR_SEEDSTRIDE=4 SPH_HAMILTONIAN=energy  -- examples/stochrep_equilibrium.jl 1.2 3.0 200 4 2 L1.2_ha3_energy
+L2.4_energy   8  SR_SEEDSTRIDE=4 SPH_HAMILTONIAN=energy  -- examples/stochrep_equilibrium.jl 2.4 2.0 400 4 4 L2.4_energy
