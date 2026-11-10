@@ -101,14 +101,14 @@ function one_realization(seed)
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
               prec = ParticleRecorder(ps, params),
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
-              acc_s = Float64[], acc_r = Float64[], grej = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
+              acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
     end
     (; params, ps, cl, rngs, rng, dotm, rec, prec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
     haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
-    haskey(st, :acc_s) || (st = merge(st, (acc_s = Float64[], acc_r = Float64[], grej = Float64[], vmax = Float64[])))
-    sspr, Vspr, acc_s, acc_r, grej, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej, st.vmax
-    win = zeros(2);  g0 = GUARD_REJECTED[]          # acceptances and guard count since the last record
+    haskey(st, :acc_s) || (st = merge(st, (acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[])))
+    sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej_s, st.grej_r, st.vmax
+    win = zeros(4)                                   # acceptances and guard fractions since the last record
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
@@ -116,7 +116,7 @@ function one_realization(seed)
         if !NOVISC
             a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=:star, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
-            win .+= (a.stress, a.resid)
+            win .+= (a.stress, a.resid, a.gstress, a.gresid)
         end
         if n % RECN == 0
             (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
@@ -126,24 +126,24 @@ function one_realization(seed)
             push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
             push!(sspr, relspread(q.s for q in ps))                         # rms s_a/s̄ − 1
             push!(Vspr, relspread(q.s / q.S_smooth for q in ps))            # rms V_a/V̄ − 1
-            # the stochastic step since the last record: acceptance of the stress and residual
-            # moves, and the fraction of all proposals (2N per step) rejected by the guard
-            # (an unphysical state: |v| ≥ 1 or no EOS solution); the largest particle speed
+            # the stochastic step since the last record: acceptance of the stress (star) and the
+            # residual proposals, and the fraction of each rejected by the guard (a state no
+            # fluid can have; for the conformal EOS exactly |v| ≥ 1); the largest particle speed
             push!(acc_s, win[1] / RECN);  push!(acc_r, win[2] / RECN)
-            push!(grej, (GUARD_REJECTED[] - g0) / (2N * RECN));  win .= 0;  g0 = GUARD_REJECTED[]
+            push!(grej_s, win[3] / RECN);  push!(grej_r, win[4] / RECN);  win .= 0
             push!(vmax, maximum(norm(q.v_over_S * q.S_smooth) for q in ps))
         end
         stop = STOPAFTER > 0 && n == STOPAFTER
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej, vmax))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej, vmax))
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
     rm(chk; force = true)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),

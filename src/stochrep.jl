@@ -450,6 +450,7 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     gr = gradient ? gradient_freeze(particles, params, cl, eos, cache) : nothing
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
+    grj = Dict(:stress => 0.0, :resid => 0.0)          # fraction of proposals rejected by the guard
     for kind in kinds
         if kind === :resid && isinf(λ)
             resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
@@ -458,13 +459,17 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
             u = shift ? SVector(rand(rng) * cl.cell_size[1], oneD ? 0.0 : rand(rng) * cl.cell_size[2]) :
                         zero(SVector{2,Float64})
             cells = shifted_cells(particles, cl, u)
+            g0 = GUARD_REJECTED[]
             acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
                                      eos, rngs, rng, vote) / N
+            grj[kind] = (GUARD_REJECTED[] - g0) / N
         end
     end
     gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
         pa.m = m[a];  pa.s = Sc[a]
     end
-    return (stress = acc[:stress], resid = acc[:resid])
+    # acceptances, and the fractions of proposals rejected by the guard (a state no fluid can
+    # have; for the conformal EOS exactly |v| ≥ 1), for the stress and the residual sweep
+    return (stress = acc[:stress], resid = acc[:resid], gstress = grj[:stress], gresid = grj[:resid])
 end
