@@ -12,15 +12,17 @@ cl_ha6_dt   2  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.6 6  60 1 4 cl
 # stage 2 (tasks 33-40, THREADS=16): s_a = 34
 cl_ha8      6  -- examples/stochrep_equilibrium.jl 0.6 8  100 1 2 cl_ha8
 cl_ha8_dt   2  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.6 8  50 1 4 cl_ha8_dt
-# stage 3 (tasks 41-44, THREADS=32): s_a = 15
-cl_ha12     3  -- examples/stochrep_equilibrium.jl 0.6 12 25  1 2 cl_ha12
-cl_ha12_dt  1  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.6 12 12  1 4 cl_ha12_dt
-# stage 4 (tasks 45-48, THREADS=32): s_a = 8.5
-cl_ha16     3  -- examples/stochrep_equilibrium.jl 0.6 16 10  1 2 cl_ha16
-cl_ha16_dt  1  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.6 16 5   1 4 cl_ha16_dt
-# stage 5 (tasks 49-52, THREADS=32): s_a = 4.1, box 0.32 (cells need L ≥ 6h)
-cl_ha23     3  -- examples/stochrep_equilibrium.jl 0.32 23 10  1 2 cl_ha23
-cl_ha23_dt  1  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.32 23 5   1 4 cl_ha23_dt
-# stage 6 (tasks 53-56, THREADS=32): s_a = 2.1, box 0.32
-cl_ha32     3  -- examples/stochrep_equilibrium.jl 0.32 32 3   1 2 cl_ha32
-cl_ha32_dt  1  SR_DTFAC=0.5 -- examples/stochrep_equilibrium.jl 0.32 32 1.5 1 4 cl_ha32_dt
+# From stage 3 on, Δt is chosen to keep the residual acceptance ≈ 0.75 (Δt scan, continuum_limit.tex);
+# the record interval rec_every = 2/f keeps the recorded time spacing the same.
+# stage 3 (tasks 41-44, THREADS=32): s_a = 15, f = 1/2 (check 1/4)
+cl_ha12     3  SR_DTFAC=0.5    -- examples/stochrep_equilibrium.jl 0.6 12 15  1 4  cl_ha12
+cl_ha12_dt  1  SR_DTFAC=0.25   -- examples/stochrep_equilibrium.jl 0.6 12 8   1 8  cl_ha12_dt
+# stage 4 (tasks 45-48, THREADS=32): s_a = 8.5, f = 1/4 (check 1/8)
+cl_ha16     3  SR_DTFAC=0.25   -- examples/stochrep_equilibrium.jl 0.6 16 4   1 8  cl_ha16
+cl_ha16_dt  1  SR_DTFAC=0.125  -- examples/stochrep_equilibrium.jl 0.6 16 2   1 16 cl_ha16_dt
+# stage 5 (tasks 49-52, THREADS=32): s_a = 4.1, box 0.32 (cells need L ≥ 6h), f = 1/16 (check 1/32)
+cl_ha23     3  SR_DTFAC=0.0625 -- examples/stochrep_equilibrium.jl 0.32 23 1  1 32 cl_ha23
+cl_ha23_dt  1  SR_DTFAC=0.03125 -- examples/stochrep_equilibrium.jl 0.32 23 0.5 1 64 cl_ha23_dt
+# stage 6 (tasks 53-56): s_a = 2.1 — the equilibrium draw fails here (continuum_limit.tex); not run as is
+cl_ha32     3  SR_DTFAC=0.03125 -- examples/stochrep_equilibrium.jl 0.32 32 0.5 1 64 cl_ha32
+cl_ha32_dt  1  SR_DTFAC=0.015625 -- examples/stochrep_equilibrium.jl 0.32 32 0.25 1 128 cl_ha32_dt
