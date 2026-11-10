@@ -1,0 +1,9 @@
+# Campaign `frozen` (2026-11-10): does the particle arrangement freeze, and how fast do
+# particles separate?  docs/frozen.tex.  L = 1.2, h/a = 2, C2, eq start, t = 200, one
+# realization per task, recorded: C_T, C_L, displacement modes, pair separation D2(r).
+# Submit packed on one node: nersc/node.sh with THREADS=4 (32 tasks at a time).
+# :energy at three temperatures (δv = s_a^{-1/2} = 0.043, 0.014, 0.0043), :smoothed reference.
+e_s1e6   16  SPH_HAMILTONIAN=energy   SR_S0=1e6  -- examples/stochrep_equilibrium.jl 1.2 2.0 200 1 2 e_s1e6
+e_s1e7   16  SPH_HAMILTONIAN=energy   SR_S0=1e7  -- examples/stochrep_equilibrium.jl 1.2 2.0 200 1 2 e_s1e7
+e_s1e8   16  SPH_HAMILTONIAN=energy   SR_S0=1e8  -- examples/stochrep_equilibrium.jl 1.2 2.0 200 1 2 e_s1e8
+s_s1e6   16  SPH_HAMILTONIAN=smoothed SR_S0=1e6  -- examples/stochrep_equilibrium.jl 1.2 2.0 200 1 2 s_s1e6
