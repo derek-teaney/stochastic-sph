@@ -450,26 +450,104 @@ internal energy.
 \section{The energy representation}
 \label{sec:energy}
 
-The ideal step of \texttt{energystep.tex} (branch \texttt{hamiltonian-energy-step},
-\texttt{SPH\_HAMILTONIAN=energy}): $H=\sum_ae_a$, each particle moving with its own velocity
-and feeling only a pressure force; the stochastic step without the gradient correction.  The
-same set as C2, $h/a=2$ above (jobs 61067905, 61073581, 16 realizations), \Fig{fig:energy};
-details in \texttt{energystep.tex}.
+\paragraph{What changes.}  The ideal step of \texttt{energystep.tex}
+(\texttt{SPH\_HAMILTONIAN=energy}, now on \texttt{main}; the default is still
+\texttt{smoothed}).  The Hamiltonian is the sum of the particle energies,
+\st
+H=\sum_ae_a\big(s_a,\bm m_a,V_a\big),\qquad V_a=\frac{s_a}{S_a},\qquad S_a=\sum_bs_bW_{ab},
+\stp
+each evaluated with the particle's own momentum density $\bm m_a/V_a$.  Hamilton's equations
+then move each particle with its own velocity, $\dot{\bm x}_a=\bm v_a$, instead of a
+smoothed one, and give a pure pressure force.  The stochastic step is unchanged except that
+the gradient correction of the change of representation is off (it is zero for this $H$).
+Everything else (C2, $h/a=2$, $\eta/s=0.2$, $\delta v=0.043$, $\lambda=1$, $\Delta t$) is as
+in the \texttt{smoothed} runs it is compared with.
+
+\paragraph{1. Equilibration and heating} (debug job 61055621; box $0.6$, $t=200$, 4
+realizations per curve), \Fig{fig:eequil}.  Purpose: does it run, does it equilibrate, does it
+heat?  Left, the full scheme from a cold start (all momenta zero); right, the ideal step alone
+(no viscous step) from the thermal start.
 \begin{figure}[t]
-\includegraphics[width=\textwidth]{figs/energystep_ha2.png}
-\caption{\texttt{:energy} (blue) against \texttt{:smoothed} (red), $L=1.2$, $h/a=2$: KE/eq,
-$\Delta H/H$, $C_T(k,\tau)$ in the two smallest shells with the fit (dashed) and the fluid
-(dotted), $c_t$, the damping, the equal-time correlators and the transverse displacements.}
-\label{fig:energy}
+\includegraphics[width=\textwidth]{figs/energystep_equilibration.png}
+\caption{\texttt{:energy} (blue) against \texttt{:smoothed} (red), box $0.6$.  Top: kinetic
+energy over its equilibrium value; bottom: $\Delta H/H$; thin lines single realizations,
+thick lines the mean.  Left: full scheme, cold start.  Right: ideal step only, thermal start.
+Script \texttt{examples/energystep\_equilibration.jl}.}
+\label{fig:eequil}
 \end{figure}
 \begin{enumerate}
-\item The transverse oscillation is gone: $c_t=0.000$--$0.002$ from the fit, $C_T$ close to
-  $e^{-\nu k^2\tau}$ with a damping $1.03$--$1.33$ times the input, $C_T(k,0)=0.93$--$1.04$, and
-  displacements that keep growing.
-\item No heating: KE/eq $=0.99$ throughout.  Instead $H$ falls linearly,
-  $\Delta H/H=-6.9\times10^{-3}$ at $t=200$, in every realization (not yet understood).
-\item The ideal step alone does not run away (KE/eq $\approx0.67$ to $t=200$).
+\item Both reach KE/eq $\approx1$ within $t\approx1$ from the cold start.  \texttt{smoothed}
+  then heats faster than linearly ($\Delta H/H=+5.7\times10^{-2}$ at $t=200$, KE/eq drifting to
+  $1.05$--$1.10$); \texttt{:energy} stays at KE/eq $=0.99$.
+\item \texttt{:energy} instead loses energy at a constant rate, the same in every realization,
+  \st
+  \frac1H\frac{dH}{dt}\simeq-3.4\times10^{-5}.
+  \stp
+  Its source is being tested (campaign \texttt{energy2}: $\Delta t$, frozen positions).
+\item The ideal step alone: \texttt{smoothed} conserves $H$ but its kinetic energy runs away
+  (KE/eq $60$--$95$ by $t=200$; \Sect{sec:rigidity} shows the same for every $h/a$ and
+  kernel).  \texttt{:energy} settles at KE/eq $\approx0.67$, with $H$ drifting by
+  $+1.4\times10^{-6}$ per unit time.
 \end{enumerate}
+
+\paragraph{2. Transverse correlator} (jobs 61067905, 61073581; $L=1.2$, $t=200$, 16
+realizations, against the \texttt{smoothed} set C2, $h/a=2$ of \Sect{sec:rigidity}),
+\Fig{fig:eCT}.  Purpose: is the shear mode now the diffusive mode of \Eq{hydro}?
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energystep_CT.png}
+\caption{$C_T(k,\tau)$, normalized by $NV_awT$, in the six smallest shells: \texttt{:energy}
+(blue) and \texttt{smoothed} (red), bands $\pm1$ standard error over realizations; dotted, the
+fluid $e^{-\nu k^2\tau}$ with the input $\nu$ (no fit).  Script
+\texttt{examples/energystep\_correlators.jl}.}
+\label{fig:eCT}
+\end{figure}
+\begin{enumerate}
+\item \texttt{smoothed}: in every shell $C_T$ crosses zero and swings to $-0.2$ to $-0.4$, the
+  transverse sound of \Sect{sec:corr}.
+\item \texttt{:energy}: no zero crossing in any shell; $C_T$ lies on or just below
+  $e^{-\nu k^2\tau}$.  Fitted to the damped oscillator, $c_t=0.000$--$0.002$ (against
+  $0.020$--$0.023$) and $2\gamma/\nu k^2=1.03$--$1.33$ (against $1.26$--$1.63$), \Fig{fig:energy}.
+\item $C_T(k,0)$ is $0.93$--$1.04$ (against $0.89$--$0.97$); with errors of $0.02$--$0.07$ both
+  are within about $2\sigma$ of one, so the earlier deficit at small $k$ is not significant here.
+\end{enumerate}
+
+\paragraph{3. Longitudinal correlator} (same runs), \Fig{fig:eCL}.  Purpose: does the new
+ideal step keep the sound mode?
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energystep_CL.png}
+\caption{$C_L(k,\tau)$ in three shells, \texttt{:energy} (blue) and \texttt{smoothed} (red),
+with the sound mode $\cos(c_sk\tau)\,e^{-\Gamma_sk^2\tau/2}$ of \Eq{hydro} (dotted, no fit).}
+\label{fig:eCL}
+\end{figure}
+Both carry sound at $c_s$.  With \texttt{:energy} the oscillation stays in phase with the
+prediction to $\tau=30$ and decays slightly faster than it; with \texttt{smoothed} it falls
+behind in phase and decays more slowly.  $C_L(k,0)=0.89$--$1.06$ for both.
+
+\paragraph{4. All observables together}, \Fig{fig:energy}: the run averages, the fit of
+$C_T$, and the transverse displacements, which with \texttt{:energy} grow far beyond the
+\texttt{smoothed} plateau (they are taken by minimum image in the box, so they wrap once the
+particles have moved far, which is why the curve turns down).
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energystep_ha2.png}
+\caption{\texttt{:energy} (blue) against \texttt{:smoothed} (red), $L=1.2$, $h/a=2$.  Top: KE/eq,
+$\Delta H/H$, and $C_T(k,\tau)$ in the two smallest shells with the fit (dashed) and the fluid
+(dotted).  Bottom: $c_t$ from the fit (circles) and from the displacements (squares, meaningful
+only for a solid); the damping $2\gamma/\nu k^2$; the equal-time $C_{T,L}(k,0)$; and
+$\avg{|u_T(k,t)|^2}$ in the smallest shell.  Script \texttt{examples/energystep\_compare.jl}.}
+\label{fig:energy}
+\end{figure}
+
+\paragraph{Cost.}  Per step \texttt{:energy} is slightly cheaper than \texttt{smoothed} (59 against
+64 s for 4 realizations to $t=10$ on 8 threads); the stochastic step dominates.  (The
+\texttt{energystep} jobs ran 5 times slower than this because of a kernel-dispatch bug, since
+fixed; \texttt{nersc/LOG.md}.)
+
+\paragraph{Why the rigidity goes away} is not established.  The static shear modulus of the
+lattice is the same for both Hamiltonians (at $\bm m=0$ they are the same function of the
+positions), and the ideal step alone is still a solid (KE/eq $\approx0.67$, equipartition with
+the elastic energy).  A possible reason: with $\dot{\bm x}_a=\bm v_a$ neighbouring particles can
+slip past one another under the noise, while the smoothed velocity moves them together and
+keeps the arrangement locked.
 
 %=============================================================================
 \section{Random particle positions}
