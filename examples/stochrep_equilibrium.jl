@@ -97,10 +97,11 @@ function one_realization(seed)
         NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=:star)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
+              prec = ParticleRecorder(ps, params),
               Ht = Float64[], KE = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards())
     end
-    (; params, ps, cl, rngs, rng, dotm, rec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
+    (; params, ps, cl, rngs, rng, dotm, rec, prec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
@@ -111,7 +112,8 @@ function one_realization(seed)
         end
         if n % RECN == 0
             (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
-            record!(rec, ps, n * dt, eos)
+            u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
+            record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
             push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
         end
@@ -119,13 +121,13 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE)
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE)
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec)
     rm(chk; force = true)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),

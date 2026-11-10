@@ -253,7 +253,8 @@ Recorder(ks; energies = false, x0 = SVector{2,Float64}[], L = SVector(0.0, 0.0))
     Recorder(ks, Float64[], [], [], [], [], energies, [], [], x0, L)
 Recorder(ks, t, ML, MT, S, E, energies) = Recorder(ks, t, ML, MT, S, E, energies, [], [], SVector{2,Float64}[], SVector(0.0, 0.0))
 
-function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::AbstractEOS)
+function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::AbstractEOS;
+                 u::Union{Nothing,Vector{SVector{2,Float64}}} = nothing)
     nk = length(rec.ks)
     ML = zeros(ComplexF64, nk);  MT = zeros(ComplexF64, nk);  S = zeros(ComplexF64, nk)
     E  = zeros(ComplexF64, rec.energies ? nk : 0)
@@ -261,7 +262,8 @@ function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::Ab
     disp = !isempty(rec.x0)
     if disp
         UL = zeros(ComplexF64, nk);  UT = zeros(ComplexF64, nk)
-        u = [minimum_image(pa.x - rec.x0[a], rec.L) for (a, pa) in enumerate(particles)]
+        # displacements: unwrapped ones if given (ParticleRecorder), else by minimum image
+        u === nothing && (u = [minimum_image(pa.x - rec.x0[a], rec.L) for (a, pa) in enumerate(particles)])
         Threads.@threads for i in 1:nk
             k = rec.ks[i];  kh = k / norm(k);  U = zero(SVector{2,ComplexF64})
             for a in eachindex(u);  U += u[a] * cis(-dot(k, rec.x0[a]));  end
@@ -283,6 +285,72 @@ function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::Ab
     push!(rec.t, t);  push!(rec.ML, ML);  push!(rec.MT, MT);  push!(rec.S, S)
     rec.energies && push!(rec.E, E)
     return rec
+end
+
+# ── Particle motion: pair separation and the lattice's Fourier components ───────────
+# Unwrapped displacements u_a(t) = x_a(t) − x_a(0), accumulated record by record by minimum
+# image (a particle moves far less than L/2 between records), with the mean drift removed.
+#   D2[c](t) = ⟨|u_i − u_j|²⟩ over the pairs (i, j) at distance rs[c]·a at t = 0
+#              (saturates in a solid; grows as 4 D_rel t in a 2D fluid),
+#   MSD(t)   = ⟨|u_a|²⟩,
+#   B(t)     = ⟨|Σ_a e^{−i b·x_a}|²⟩_b / N²   (Bragg peak: ≈ 1 crystal, ≈ 1/N melted),
+#   Fs(t)    = ⟨Re (1/N) Σ_a e^{−i b·u_a}⟩_b   (self part: plateau in a solid, → 0 in a fluid),
+# over the shortest reciprocal-lattice vectors b of the starting arrangement (box wave vectors
+# with |k| ≈ 4π/(√3 a) and |Σ_a e^{−ik·x_a}|/N > 0.5 at t = 0; none for a random start).
+mutable struct ParticleRecorder
+    L     :: SVector{2,Float64}
+    x0    :: Vector{SVector{2,Float64}}
+    xu    :: Vector{SVector{2,Float64}}       # unwrapped positions
+    xprev :: Vector{SVector{2,Float64}}
+    rs    :: Vector{Float64}                  # pair distances / a
+    pairs :: Vector{Vector{Tuple{Int,Int}}}
+    bs    :: Vector{SVector{2,Float64}}
+    t     :: Vector{Float64}
+    D2    :: Vector{Vector{Float64}}
+    MSD   :: Vector{Float64}
+    B     :: Vector{Float64}
+    Fs    :: Vector{Float64}
+end
+
+function ParticleRecorder(particles::Vector{Particle}, params; rs = (1.0, 2.0, 4.0, 8.0))
+    x0 = [pa.x for pa in particles];  N = length(x0);  a = params.a;  L = params.L
+    pairs = [Tuple{Int,Int}[] for _ in rs]
+    for i in 1:N, j in i+1:N
+        d = norm(minimum_image(x0[j] - x0[i], L)) / a
+        for (c, r) in enumerate(rs);  abs(d - r) < 0.05 && push!(pairs[c], (i, j));  end
+    end
+    bmag = 4π / (sqrt(3) * a);  bs = SVector{2,Float64}[]
+    nxm = ceil(Int, 1.2bmag * L[1] / 2π);  nym = ceil(Int, 1.2bmag * L[2] / 2π)
+    for nx in -nxm:nxm, ny in -nym:nym
+        k = SVector(2π * nx / L[1], 2π * ny / L[2])
+        abs(norm(k) / bmag - 1) < 0.1 || continue
+        abs(sum(cis(-dot(k, x)) for x in x0)) / N > 0.5 && push!(bs, k)
+    end
+    ParticleRecorder(L, x0, copy(x0), copy(x0), collect(Float64, rs), pairs, bs,
+                     Float64[], Vector{Float64}[], Float64[], Float64[], Float64[])
+end
+
+# current displacements (unwrapped, mean drift removed); call update! first
+function displacements(pr::ParticleRecorder)
+    u = pr.xu .- pr.x0;  ū = sum(u) / length(u)
+    return [v - ū for v in u]
+end
+
+function record!(pr::ParticleRecorder, particles::Vector{Particle}, t::Float64)
+    for (a, pa) in enumerate(particles)
+        pr.xu[a] += minimum_image(pa.x - pr.xprev[a], pr.L);  pr.xprev[a] = pa.x
+    end
+    u = displacements(pr);  N = length(u)
+    push!(pr.t, t)
+    push!(pr.D2, [isempty(P) ? NaN : sum(sum(abs2, u[i] - u[j]) for (i, j) in P) / length(P) for P in pr.pairs])
+    push!(pr.MSD, sum(sum(abs2, v) for v in u) / N)
+    if isempty(pr.bs)
+        push!(pr.B, NaN);  push!(pr.Fs, NaN)
+    else
+        push!(pr.B, sum(abs2(sum(cis(-dot(b, pa.x)) for pa in particles)) for b in pr.bs) / (length(pr.bs) * N^2))
+        push!(pr.Fs, sum(real(sum(cis(-dot(b, v)) for v in u)) for b in pr.bs) / (length(pr.bs) * N))
+    end
+    return u
 end
 
 # ── Correlators ──────────────────────────────────────────────────────────────
@@ -363,7 +431,7 @@ end
 # The file is written to path.tmp and renamed, so a reader (or a run killed while
 # writing) never sees a half-written file.
 function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recorder,
-                              H::Vector{Float64}, KE::Vector{Float64})
+                              H::Vector{Float64}, KE::Vector{Float64}; prec = nothing)
     nk = length(rec.ks)
     stack(v) = isempty(v) ? zeros(ComplexF64, nk, 0) : reduce(hcat, v)
     tmp = path * ".tmp"
@@ -373,6 +441,11 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
         rec.energies && (f["E"] = stack(rec.E))
         isempty(rec.UT) || (f["UL"] = stack(rec.UL);  f["UT"] = stack(rec.UT))
         f["H"] = H;  f["KE"] = KE
+        if prec !== nothing && !isempty(prec.t)
+            f["part_t"] = prec.t;  f["part_rs"] = prec.rs;  f["part_D2"] = reduce(hcat, prec.D2)
+            f["part_MSD"] = prec.MSD;  f["part_B"] = prec.B;  f["part_Fs"] = prec.Fs
+            f["part_npairs"] = length.(prec.pairs);  f["part_nbragg"] = length(prec.bs)
+        end
         at = attributes(f)
         for (k, v) in pairs(meta)
             if v isa NamedTuple
@@ -411,6 +484,8 @@ function read_equilibrium(path::AbstractString)
         cols(name) = haskey(f, name) ? [Vector(c) for c in eachcol(read(f[name]))] : Vector{ComplexF64}[]
         rec = Recorder(ks, read(f["t"]), cols("ML"), cols("MT"), cols("S"), cols("E"), haskey(f, "E"),
                        cols("UL"), cols("UT"), SVector{2,Float64}[], SVector(0.0, 0.0))
-        return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]))
+        part = haskey(f, "part_t") ? (t = read(f["part_t"]), rs = read(f["part_rs"]), D2 = read(f["part_D2"]),
+                                      MSD = read(f["part_MSD"]), B = read(f["part_B"]), Fs = read(f["part_Fs"])) : nothing
+        return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]), part = part)
     end
 end
