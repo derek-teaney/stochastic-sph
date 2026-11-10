@@ -50,6 +50,7 @@ const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
 const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
+const DTFAC  = parse(Float64, get(ENV, "SR_DTFAC", "1"))             # Δt / default (time-step tests)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
@@ -63,7 +64,7 @@ function run_meta(params, st, n, wall, complete)
      nsteps_done = n, complete = complete,
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
-     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, noham = NOHAM, kernel = KERNEL, commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 function one_realization(seed)
@@ -88,7 +89,7 @@ function one_realization(seed)
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
         initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
-        dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
+        dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()

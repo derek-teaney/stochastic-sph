@@ -11,7 +11,11 @@ struct WendlandC2_1D <: AbstractKernel end   # sim dimension = 1
 struct WendlandC4_2D <: AbstractKernel end   # 2D, smoother (SPH_KERNEL=wc4); same support 2h
 struct WendlandC6_2D <: AbstractKernel end   # 2D, smoother still (SPH_KERNEL=wc6); same support 2h
 
-mutable struct SimParams
+# The kernel type is a parameter, so that every function taking params is compiled for one
+# concrete kernel: with the field typed AbstractKernel and four kernel methods, Julia stops
+# union-splitting and each kernel call in the neighbour loops becomes a dynamic dispatch with
+# an allocation (5× slower, and worse with several realizations in one process).
+mutable struct SimParams{K<:AbstractKernel}
     L       :: SVector{2,Float64}  # (Lx, Ly) after snapping to lattice
     a       :: Float64             # lattice constant (= h/ha_ratio); uniform in x and y
     h       :: Float64             # smoothing length
@@ -20,7 +24,7 @@ mutable struct SimParams
     seed    :: Int
     d       :: Int                 # physical dimension (2 or 3); drives cs²=1/d and kappa
     lattice :: Symbol              # :square or :hex
-    kernel  :: AbstractKernel      # WendlandC2_2D() or WendlandC2_1D()
+    kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL) or WendlandC2_1D()
     dissipation :: Symbol          # :changerep (default), :bond or :two_level — see dissipative_step!
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below

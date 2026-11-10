@@ -30,6 +30,19 @@ or learn something about running the code here.
 
 ## Lessons
 
+- **Type stability of the kernel (2026-11-10).**  Commit `037b464` (C6 kernel) made every run 5×
+  slower: `SimParams.kernel` was typed `AbstractKernel`, and with a fourth kernel method Julia
+  stopped union-splitting, so each kernel call in the neighbour loops became a dynamic
+  dispatch with an allocation; with several realizations in one process the GC stalls them all.
+  Affected: rigidity job 61046892 (C4/C6), campaign `energystep` (61067905, 61073581), and the
+  debug jobs since 2026-11-09 11:00 — results unaffected, cost only.  Fixed by `SimParams{K}`
+  (bit-identical, `testregress_step`).  Smoothed, L = 1.2, 4 seeds on 8 threads to t = 10:
+  62 s before `037b464`, 315 s after, 64 s fixed (energy 59 s).  Check speed after touching
+  types in `sph.jl`.
+- **Threads vs realizations.**  One realization scales poorly beyond 4 threads (energy, 231
+  steps: L = 1.2 13/5/4 s and L = 2.4 52/17/12 s at 1/4/16 threads); realizations side by side
+  scale almost perfectly.  Use 1–4 threads per realization and many realizations per node.
+
 - **Never edit the checkout that queued jobs run from.**  Each task loads the code from
   `SR_REPO` when it *starts*, so edits reach every task that has not started yet.  On
   2026-11-08 the speedup work was done in `~/stochastic-sph` for ~10 min while `first`
