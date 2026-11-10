@@ -5,7 +5,8 @@
 *.h5
 *.png
 
-# LaTeX build files (docs/*.pdf are committed)
+# LaTeX build files (docs/*.pdf are built from the .tex, not committed)
+docs/*.pdf
 *.aux
 *.bbl
 *.blg
