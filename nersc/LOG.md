@@ -82,6 +82,17 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `energy2` — 2026-11-10, `nersc/campaign_energy2_{small,large}.txt`, `main` at `3c5f387`
+
+Follow-up of `energystep`, all with `SPH_HAMILTONIAN=energy`, the kernel-speed fix in.  Run
+checkout `~/stochastic-sph-run` (detached at `3c5f387`).  Output `$SCRATCH/sph/energy2/`.
+- Job **61086213** (small, 80 tasks, `-c 2 -t 3:00:00`): the loss of H against Δt (SR_DTFAC =
+  1, 0.5, 0.25) and with positions frozen, L = 0.6, t = 100, 8 seeds each; the stability scan of
+  `first` (S0 = 1e6, 3e5, 1e5, λ = 1 and ∞), 16 seeds each, t = 200.
+- Job **61086214** (large, 16 tasks, `-c 8 -t 6:00:00`, 4 seeds per task): h/a = 2.5, 3 at L = 1.2
+  (16 seeds, t = 200); L = 2.4, h/a = 2 (32 seeds, t = 400).
+- Estimate ≈ 2 node-hours.
+
 ### `energystep` — 2026-11-09/10, branch `hamiltonian-energy-step`, done
 
 - Run checkout `~/stochastic-sph-run5` (detached at `934aa86`).  Debug jobs 61055259 (t = 10,
