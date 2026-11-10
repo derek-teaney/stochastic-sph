@@ -116,6 +116,7 @@ start.  Output `$SCRATCH/sph/cl/`.  Each stage one regular node, 3 h, `node.sh` 
 - Stages 2 (33-40, THREADS=16) **61113602** and 3 (41-44, THREADS=32) **61113633**, checkout
   `~/stochastic-sph-run2`.  Stages 4, 5 after stage 3 is seen to be sane; stage 6 not run (the
   equilibrium draw fails at s_a = 2.1).
+- Stages 4 (45-48) **61116238** and 5 (49-52) **61116239**, -t 4:00:00, THREADS=32, checkout `~/stochastic-sph-run2`.
 - Δt criterion: residual acceptance ≈ 0.75 (f = 1, 1/2, 1/4, 1/16 at h/a = 8, 12, 16, 23).
 
 ### Default scheme changed — 2026-11-10, `main` at `91d9e66`
