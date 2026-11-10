@@ -173,6 +173,130 @@ $D^2(a,t)$ saturating, and $c_t\approx0.022$ as before.
 \section{Results}
 \label{sec:results}
 
-To be filled in when job 61090342 is complete.
+Job 61090342 ran all 64 realizations in 22 minutes on one node.  Diffusion constants are
+straight-line fits of $D^2(t)$ and $\avg{|\bm u|^2}$ over $50\le t\le200$, averaged over the 16
+realizations (statistical errors about $1$--$3\%$).
+
+\paragraph{1. Do neighbours separate?}  \Fig{fig:D2t}.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/frozen_D2t.png}
+\caption{Pair separation of nearest neighbours, $D^2(a,t)/a^2$ (\Eq{D2}), against $t$, log--log,
+mean of 16 realizations.  Dashed, same colour: the fluctuating-hydrodynamics estimate
+$4D_{\rm rel}(a)\,t$ of \Eq{Drel} for that set ($\nu$ and $T/w$ differ between the sets; the
+two $S_0=10^6$ sets share theirs).  Dotted: $D^2=a^2$.  A line of slope one is a fluid; a
+plateau is a solid.}
+\label{fig:D2t}
+\end{figure}
+\begin{itemize}
+\item \texttt{:energy}, $S_0=10^6$ and $10^7$: after a short ballistic start ($D^2\propto t^2$)
+  $D^2$ grows linearly without bound, reaching $500a^2$ and $50a^2$ at $t=200$.  These are
+  fluids: neighbours separate.
+\item \texttt{:energy}, $S_0=10^8$: $D^2$ levels off at $0.016a^2$ (a relative vibration of
+  $0.13a$) by $t\approx1$ and stays there.  A solid.
+\item \texttt{smoothed}, $S_0=10^6$: $D^2$ reaches $0.3a^2$ and is still creeping at $t=200$, but
+  about $300$ times below the hydrodynamic line.  A solid, at the same temperature at which
+  \texttt{:energy} flows.
+\end{itemize}
+
+\paragraph{2. Is the separation that of a fluid?}  \Fig{fig:D2r} and the right panel of
+\Fig{fig:summary}.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{figs/frozen_D2r.png}
+\caption{$D^2(r,t=200)/a^2$ against the initial separation $r/a$.  Dashed: the
+hydrodynamic estimate $4D_{\rm rel}(r)\,t$, which grows as $\ln(\pi r/a)$.}
+\label{fig:D2r}
+\end{figure}
+\begin{itemize}
+\item $S_0=10^6$ (\texttt{:energy}): $D_{\rm rel}=4.0\times10^{-4}$ for every $r$ from $a$ to $8a$, and
+  $D_{\rm rel}=1.95\,D_{\rm self}$.  The particles walk independently of their neighbours, $2$--$5$
+  times faster than fluid elements would ($D_{\rm rel}(a)$ is $4.9$ times \Eq{Drel},
+  $D_{\rm self}$ is $1.8$ times \Eq{Dself}).  This is the random walk of \Eq{walk}, with
+  $\tau_v=D_{\rm self}/\delta v^2=0.11$.
+\item $S_0=10^7$ (\texttt{:energy}): $D_{\rm rel}$ rises with $r$, from $4.1$ to $5.0\times10^{-5}$,
+  and approaches the hydrodynamic value: the ratio to \Eq{Drel} is $2.3$, $1.5$, $1.1$, $1.0$ at
+  $r=a$, $2a$, $4a$, $8a$, and $D_{\rm self}$ is $1.1$ times \Eq{Dself}.  Close to fluid
+  elements, with an excess of independent motion only at the shortest distance.
+\item The two \texttt{:energy} fluids differ by a factor $10$ in $D_{\rm rel}(a)$, the ratio of
+  $\delta v^2$ (hydrodynamics would give $4.6$).  The walk scales as $\delta v^2$ there
+  ($\tau_v=0.11$ and $0.15$).
+\end{itemize}
+
+\paragraph{3. Does the transverse sound come back when the particles freeze?}  \Fig{fig:CT}
+and the left panels of \Fig{fig:summary}.
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/frozen_CT.png}
+\caption{$C_T(k,\tau)/C_T(k,0)$ in three shells, the four sets; dotted, the fluid
+$e^{-\nu k^2\tau}$ with each set's $\nu$.}
+\label{fig:CT}
+\end{figure}
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/frozen_summary.png}
+\caption{Against $\delta v$, one point per shell ($kh=0.26$--$0.52$).  Left: $c_t$ from the fit
+of $C_T$, with the static value $0.034$ of the $T=0$ lattice (dashed).  Middle: the damping
+$2\gamma/\nu k^2$.  Right: $D_{\rm rel}(a)$ (filled) and $D_{\rm self}$ (open) with the
+hydrodynamic $D_{\rm rel}(a)$ (bar); the frozen sets are off scale below ($|D|<10^{-9}$ for
+\texttt{:energy} at $10^8$).}
+\label{fig:summary}
+\end{figure}
+Yes.  \texttt{:energy} at $S_0=10^8$ oscillates strongly in every shell with
+$c_t=0.031$, close to the static $0.034$; at $10^6$ and $10^7$, where the particles flow,
+$c_t=0.000$--$0.003$.  \texttt{smoothed} at $10^6$ gives $c_t=0.020$--$0.023$, as in all earlier
+runs.  The damping is $1.0$--$1.45$ times the input in all sets.  The transverse sound
+goes with the frozen arrangement, and is absent exactly when neighbours separate.
+
+\paragraph{4. Energy.}  \Fig{fig:energy}.
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/frozen_energy.png}
+\caption{KE/eq and $\Delta H/H$ against $t$, mean of 16 realizations.}
+\label{fig:energy}
+\end{figure}
+KE/eq is $0.99$--$1.00$ for every \texttt{:energy} set; \texttt{smoothed} heats as before
+($\Delta H/H=+7.8\times10^{-2}$, KE/eq rising to $1.10$).  The linear loss of \texttt{:energy}
+falls steeply with temperature, $\Delta H/H(200)=-6.9\times10^{-3}$, $-3.2\times10^{-5}$,
+$-1.4\times10^{-7}$ at $S_0=10^6$, $10^7$, $10^8$: a factor $\approx220$ per decade of $S_0$,
+roughly $\delta v^{4.7}$.  It is there in the frozen set too, so it is not caused by the
+particles flowing.
+
+%=============================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+
+\begin{enumerate}
+\item \emph{The transverse sound is the rigidity of a frozen particle arrangement, and it
+  disappears when the arrangement melts.}  With \texttt{:energy} the particles form a solid at
+  $\delta v=0.0043$ ($c_t=0.031$, neighbours vibrate by $0.13a$ and never separate) and a fluid at
+  $\delta v=0.014$ and $0.043$ ($c_t\approx0$, neighbours separate diffusively).  The melting lies
+  between $\delta v=0.0043$ and $0.014$ at $h/a=2$.
+\item \emph{With \texttt{smoothed} the arrangement stays frozen at $\delta v=0.043$,} where
+  \texttt{:energy} flows, and three times hotter in $\delta v$ (ten times in $T/w$) than the
+  coolest set at which \texttt{:energy} is already fluid.
+  Its particles move with the smoothed velocity, \Eq{xdot}, which leaves neighbours almost no
+  relative motion; this is why the two Hamiltonians, with the same static modulus, behave so
+  differently.
+\item \emph{How fast particles separate.}  At $\delta v=0.014$ the \texttt{:energy} particles
+  separate like fluid elements of fluctuating hydrodynamics, within a factor $2$ at $r=a$ and
+  within $10\%$ at $r\ge4a$, with no fitted parameter.  At $\delta v=0.043$ they walk
+  independently of their neighbours, $2$--$5$ times faster than fluid elements: there the
+  particle-level noise, not the hydrodynamic flow, moves them.
+\item \emph{So, for \texttt{:energy} at $h/a=2$, there is a window in $\delta v$} in which the
+  particles are a fluid that moves like one.  Below it they freeze into a solid; above it
+  their individual thermal motion dominates.  The window's location will depend on $h/a$,
+  since the static rigidity falls with $h/a$ (\texttt{rigidity.tex}).
+\item The loss of energy with \texttt{:energy} is unrelated to the flow and falls roughly as
+  $\delta v^{4.7}$; at $\delta v=0.014$ it is $-3\times10^{-5}$ over $t=200$.
+\end{enumerate}
+
+\paragraph{Open, and possible next runs.}
+\begin{enumerate}
+\item Locate the melting: $S_0=2\times10^7$, $3\times10^7$, $5\times10^7$ with \texttt{:energy}.
+  Check for hysteresis by starting at $10^8$ from a melted arrangement.
+\item The window against $h/a$ ($2.5$, $3$) and the kernel.
+\item Does \texttt{smoothed} ever flow at higher $\delta v$ (where it heats and becomes unstable,
+  \texttt{campaigns.tex})?
+\item The $L=2.4$ box at $\delta v=0.014$ with \texttt{:energy}, where the fluid looks closest to
+  hydrodynamics: $C_T$ against $e^{-\nu k^2\tau}$ down to $kh=0.13$.
+\end{enumerate}
 
 \end{document}

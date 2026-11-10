@@ -100,6 +100,11 @@ Do the particles rearrange?  Pair separation D²(r) (new `ParticleRecorder`) wit
 - Job **61090342**: one regular node, `nersc/node.sh` THREADS=4 (32 at a time), `-t 1:30:00`,
   64 tasks (one realization each).  Run checkout `~/stochastic-sph-run2` (detached at `1ffc82f`).
   Output `$SCRATCH/sph/frozen/`.  Analysis `examples/frozen_analysis.jl`.  ≤ 1.5 node-hours.
+- **Outcome** (done 07:19, 64/64 in 22 min, ≈ 0.4 node-hours; docs/frozen.pdf): `:energy` is a solid
+  at S0 = 1e8 (D² plateau 0.016a², c_t = 0.031 ≈ static 0.034) and a fluid at 1e7 and 1e6 (c_t ≈ 0);
+  `smoothed` at 1e6 is a solid (D² ≈ 0.3a², creeping).  At 1e7 the pair separation matches
+  fluctuating hydrodynamics (D_rel/hydro 2.3 → 1.0 from r = a to 8a); at 1e6 particles walk
+  independently, 2–5× faster than hydro.  The H loss of :energy falls ≈ δv^4.7.
 
 ### `energy2` — 2026-11-10, `nersc/campaign_energy2_{small,large}.txt`, `main` at `3c5f387`
 
