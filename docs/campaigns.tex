@@ -550,6 +550,71 @@ slip past one another under the noise, while the smoothed velocity moves them to
 keeps the arrangement locked.
 
 %=============================================================================
+\section{The energy representation: loss of $H$, stability, $h/a$}
+\label{sec:energy2}
+
+Campaign \texttt{energy2} (\texttt{nersc/LOG.md}), all with \texttt{SPH\_HAMILTONIAN=energy},
+$\eta/s=0.2$, the C2 kernel.  It asks three questions: where the steady loss of $H$ comes
+from, whether \texttt{:energy} is stable at the temperatures where \texttt{smoothed} blew up,
+and whether the absence of transverse sound holds at larger $h/a$.  Why the arrangement flows
+at all is the subject of \texttt{frozen.tex}.
+
+\paragraph{1. The loss of $H$ is made by the noise, not by the time step}, \Fig{fig:e2dt}.
+Box $L=0.6$, $h/a=2$, $\delta v=0.043$, $t=100$, 8 seeds per set.  The time step is halved
+and quartered, and in a fourth set the positions are frozen (no ideal step; the stochastic
+step alone).  Every run loses $H$ linearly.  The rate
+\[
+-\frac{1}{H}\frac{dH}{dt} = 3.45,\ 4.15,\ 4.64\times10^{-5}
+\qquad (\Delta t,\ \Delta t/2,\ \Delta t/4)
+\]
+does not fall with $\Delta t$; it grows slightly.  With the positions frozen it is
+$3.70\times10^{-5}$, the same as with them moving.  So the loss is not an integration error
+of either step: it is a property of the stochastic step itself, present as $\Delta t\to0$.
+The stability scan below adds that it comes with the random residual moves: with
+$\lambda=\infty$ (deterministic residual) the loss at $\delta v=0.043$ is $5000$ times smaller.
+A possible reason, not tested: the stochastic step was built for the smoothed representation
+(change of representation, gradient correction), and with \texttt{:energy} the noise-induced
+drift it should carry is not matched to $H=\sum_a e_a$.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energy2_dt.png}
+\caption{Left: $\Delta H/H$ against $t$ (mean of 8 runs) for three time steps and with the
+positions frozen.  Right: the loss rate (slope of each run) against $\Delta t$; a step error
+would follow the dotted or dashed line.  Script \texttt{examples/energy2\_analysis.jl}.}
+\label{fig:e2dt}
+\end{figure}
+
+\paragraph{2. Stability: \texttt{:energy} does not blow up}, \Fig{fig:e2stab}.  The scan of
+\Sect{sec:stab} repeated with \texttt{:energy}: $L=0.6$, $t=200$, 16 seeds, $\delta v=0.043$,
+$0.078$, $0.136$, with $\lambda=1$ (full) and $\lambda=\infty$ (det).  With \texttt{smoothed}
+the full scheme blew up at $\delta v=0.136$ after $t\approx45$.  With \texttt{:energy} all 96
+runs reach $t=200$.  Instead of heating, the system cools: KE/eq at the end is $0.99$, $0.81$,
+$0.61$, and $H$ has lost $0.8\%$, $15\%$, $31\%$.  The loss grows as about $\delta v^{4.7}$
+until it saturates.  So \texttt{:energy} trades the runaway for a loss of energy of the same
+order in $\delta v$, and at $\delta v\gtrsim0.08$ the temperature is not held.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energy2_stability.png}
+\caption{Stability scan with \texttt{:energy}.  Left: KE/eq at $t=200$ against $\delta v$
+(mean $\pm$ s.e. of 16).  Right: $-\Delta H/H$ at $t=200$; dotted, $\propto\delta v^4$.  The
+$\lambda=\infty$ runs keep KE/eq $\approx0.05$ because their residual move only dissipates.}
+\label{fig:e2stab}
+\end{figure}
+
+\paragraph{3. No transverse sound at $h/a=2.5$ and $3$}, \Fig{fig:e2ha}.  Box $L=1.2$, $t=200$,
+16 seeds per set, $h$ fixed (so the same $kh$ in each shell, more particles at larger $h/a$).
+$C_T(k,\tau)$ follows $e^{-\nu k^2\tau}$ in every shell; the fitted $c_t$ is below $0.004$
+(the \texttt{smoothed} value was $0.022$ at $h/a=2$), and the damping $2\gamma/\nu k^2$ is
+$0.9$--$1.2$.  At fixed $S_0$ the thermal velocity grows with $h/a$ ($\delta v=0.043$,
+$0.054$, $0.065$), and the loss of $H$ by $t=200$ with it ($0.7\%$, $2.0\%$, $4.4\%$); these
+follow the same $\delta v^{4.7}$, so the loss depends on $h/a$ mainly through $\delta v$.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energy2_ha.png}
+\caption{\texttt{:energy}, $L=1.2$: $C_T(k,\tau)/C_T(k,0)$ for $h/a=2$, $2.5$, $3$ in shells 1,
+3, 6 (band $\pm1$ s.e.; dotted, $e^{-\nu k^2\tau}$), and the fitted $c_t$ in the six smallest
+shells (dashed: the static $c_t$ of the $h/a=2$ lattice).}
+\label{fig:e2ha}
+\end{figure}
+
+%=============================================================================
 \section{Random particle positions}
 \label{sec:random}
 
@@ -630,11 +695,14 @@ bit for bit.
 \item \emph{Rigidity} (\Sect{sec:rigidity}).  It comes with the \texttt{:smoothed} Hamiltonian
   step, falls as $(h/a)^{-1}$, not with the kernel order, and is gone with the energy
   representation (\Sect{sec:energy}).
+\item \emph{Energy representation} (\Sect{sec:energy2}).  No transverse sound at $h/a=2$, $2.5$,
+  $3$; no blow-up up to $\delta v=0.136$.  But the stochastic step loses $H$ at a rate $\propto
+  \delta v^{4.7}$ that does not vanish as $\Delta t\to0$ and needs the random residual moves.
 \end{enumerate}
 
-\paragraph{Next.}\label{sec:next}  The energy representation: understand its linear loss of
-$H$, check it at $h/a=2.5$, $3$ and in the $L=2.4$ box ($kh=0.13$), and redo the stability scan
-with it.
+\paragraph{Next.}\label{sec:next}  Find the noise-induced loss of $H$ in the stochastic step with
+\texttt{:energy} (a single-pair test at frozen positions should show it); the melting point of
+the arrangement (\texttt{frozen.tex}).
 
 \paragraph{Open questions.}
 \begin{enumerate}
