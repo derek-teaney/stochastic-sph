@@ -85,6 +85,22 @@ On the scale of $h$ the step stays within the CFL bound, but at large $h/a$ part
 their neighbours within a step.  Each stage therefore has runs at $\Delta t/2$ (one or two
 seeds) to show whether the results depend on the step.
 
+\paragraph{The time step as a second axis.}  Smaller steps make each proposal a smaller jump
+in momentum, so fewer proposals reach $|v|=1$ and the system equilibrates instead of piling
+up rejections.  The campaign therefore moves along $h/a$ and $\Delta t$ together, with a
+constant criterion: $\Delta t(h/a)$ is chosen so that the stochastic step behaves as at small
+$h/a$,
+\st
+\text{(proposals rejected for }|v|\ge1)\lesssim10^{-3},\qquad
+\text{acceptance of the residual moves}\approx0.75 .
+\label{criterion}
+\stp
+Both rates are recorded by the monitor.  A short scan (48 steps from the equilibrium start at
+$\Delta t$, $\Delta t/2$, $\Delta t/4$, $\Delta t/8$, for $h/a=8$, $12$, $16$, $23$) fixes $\Delta t(h/a)$; each
+long stage then runs at that $\Delta t$ with a check at half of it.  The equilibrium does not
+depend on $\Delta t$ (the rejections keep detailed balance); the dynamics should converge as
+$\Delta t\to0$.
+
 \paragraph{How we proceed.}  Equilibrium start; each stage is one 3-hour node
 (\texttt{nersc/campaign\_cl.txt}, \texttt{nersc/node.sh}).  A stage is launched only when the
 previous one is sane: KE/eq near 1, $H$ finite and not running away, few rejected moves.
