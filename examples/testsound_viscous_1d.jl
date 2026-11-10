@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -113,7 +113,7 @@ function evolution_plot_1d!(fig_ax, particles, params, cl, step, t, n_steps, mp;
         if flag == :end
             ax.legend(fontsize=7, loc="upper right", ncol=2)
             tight_layout()
-            savefig(joinpath(@__DIR__, "testsound_viscous_1d_evolution.png"), dpi=150)
+            savefig(figpath("testsound_viscous_1d_evolution.png"), dpi=150)
             println("Saved testsound_viscous_1d_evolution.png")
         end
         return fig, ax
@@ -194,7 +194,7 @@ function plot_amplitude_decay(t_vals, amp_vals, Γ_s, k, params, η_by_s, ζ_by_
     ax.set_title("Viscous sound 1D attenuation — $label")
     ax.legend()
     tight_layout()
-    savefig(joinpath(@__DIR__, "testsound_viscous_1d_decay.png"), dpi=150)
+    savefig(figpath("testsound_viscous_1d_decay.png"), dpi=150)
     println("Saved testsound_viscous_1d_decay.png")
 end
 
@@ -222,7 +222,7 @@ function plot_final_viscous_sound_1d(particles, params, cl,
                            nx, t_end, t_end/T_period, rms))
     ax.legend(fontsize=9)
     tight_layout()
-    savefig(joinpath(@__DIR__, "testsound_viscous_1d_final.png"), dpi=150)
+    savefig(figpath("testsound_viscous_1d_final.png"), dpi=150)
     println("Saved testsound_viscous_1d_final.png")
 end
 
@@ -242,7 +242,7 @@ params, particles, cl, eos, kx, ky, khat, k, cs, ωR, T_period, T_rel_0, Γ_s =
     initialize_viscous_sound_1d(h, ha, Lx, s0, A, cs2v, nx, η_by_s, ζ_by_s)
 
 fig_ic = plot_ic_viscous_sound_1d(particles, params; nx)
-savefig(joinpath(@__DIR__, "testsound_viscous_1d_ic.png"), dpi=150)
+savefig(figpath("testsound_viscous_1d_ic.png"), dpi=150)
 println("Saved testsound_viscous_1d_ic.png")
 
 t_end = 1 * T_period

@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -43,7 +43,7 @@ axes1[3].set_title("y-slice at x=$(round(L/2,digits=2))")
 axes1[3].legend(fontsize=8)
 
 tight_layout()
-savefig(joinpath(@__DIR__, "testshearwave_gaussian2d.png"), dpi=150)
+savefig(figpath("testshearwave_gaussian2d.png"), dpi=150)
 println("Saved testshearwave_gaussian2d.png")
 
 # ── Test 2: 1D Gaussian stripe  (σx finite, σy = Inf) ────────────────────────
@@ -71,7 +71,7 @@ axes2[3].set_xlabel("y"); axes2[3].set_ylabel("S(y)"); axes2[3].set_title("y-sli
 axes2[3].legend(fontsize=8)
 
 tight_layout()
-savefig(joinpath(@__DIR__, "testshearwave_gaussian1d.png"), dpi=150)
+savefig(figpath("testshearwave_gaussian1d.png"), dpi=150)
 println("Saved testshearwave_gaussian1d.png")
 
 # ── Test 3: Shear wave ────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ axes3[3].set_title("S(x) slice  (should be flat)")
 axes3[3].legend(fontsize=8)
 
 tight_layout()
-savefig(joinpath(@__DIR__, "testshearwave_shearwave.png"), dpi=150)
+savefig(figpath("testshearwave_shearwave.png"), dpi=150)
 println("Saved testshearwave_shearwave.png")
 
 # ── Test 4: overlay p.s/vol vs p.S_smooth on the same axis ───────────────────
@@ -131,7 +131,7 @@ ax4.set_title("Test 4: p.s/vol vs p.S_smooth  (2D Gaussian x-slice)")
 ax4.legend(fontsize=9)
 
 tight_layout()
-savefig(joinpath(@__DIR__, "testshearwave_compare.png"), dpi=150)
+savefig(figpath("testshearwave_compare.png"), dpi=150)
 println("Saved testshearwave_compare.png")
 
 # ── Test 5: overlay p.M[2]/vol vs p.M_smooth[2] on the shear wave ────────────
@@ -151,6 +151,6 @@ ax5.set_title("Test 5: p.m[2]/vol vs p.M_smooth[2]  (shear wave x-slice)")
 ax5.legend(fontsize=9)
 
 tight_layout()
-savefig(joinpath(@__DIR__, "testshearwave_Mcompare.png"), dpi=150)
+savefig(figpath("testshearwave_Mcompare.png"), dpi=150)
 println("Saved testshearwave_Mcompare.png")
 

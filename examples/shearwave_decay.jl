@@ -15,8 +15,10 @@
 # Run:  julia -t 4 --project examples/shearwave_decay.jl   → docs/figs/shearwave_decay.png
 # Env:  SW_H (0.05)  SW_HA (2.0)  SW_L (1.0)  SW_N (1, wave number in units of 2π/L)
 #       SW_ETA (0.02)  SW_AMP (0.02)  SW_TEND (decay times, 2.0)  SW_CFL (0.2)
-#       SW_OUT (figure name in docs/figs)
-using PyPlot, StaticArrays, LinearAlgebra, Printf
+#       SW_OUT (figure name in docs/figs, or in SR_FIGDIR if set)
+#       SW_HAMS (smoothed,energy,energy_n; energy_n = energy with SPH_VOLUME=number, volume_n.tex)
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs
+using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -33,7 +35,8 @@ const CFL  = envf("SW_CFL", 0.2)
 const S0   = 2.0
 
 function run_shear(ham::Symbol, η_by_s::Float64)
-    ENV["SPH_HAMILTONIAN"] = string(ham)
+    ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)
+    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "kernel"
     eos = ConformalEOS(1/3, 1.0, η_by_s, 0.0)
     params, ps, cl, eos = setup_ic(H_, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L)
     k = 2π * NW / params.L[1]
@@ -75,20 +78,21 @@ end
 
 println("Shear wave: h=$H_ h/a=$HA L=$L n=$NW η/s=$ETA amp=$AMP tend=$TEND decay times")
 runs = Dict{Tuple{Symbol,Float64},Any}()
-for ham in (:smoothed, :energy), η in (ETA, 0.0)
+const HAMS = Symbol.(split(get(ENV, "SW_HAMS", "smoothed,energy,energy_n"), ","))
+for ham in HAMS, η in (ETA, 0.0)
     runs[(ham, η)] = run_shear(ham, η)
 end
 
 fig, ax = subplots(1, 3, figsize = (15, 4.4))
-cols = Dict(:smoothed => "C0", :energy => "C3")
-for ham in (:smoothed, :energy), η in (ETA, 0.0)
+cols = Dict(:smoothed => "C0", :energy => "C3", :energy_n => "C2")
+for ham in HAMS, η in (ETA, 0.0)
     r = runs[(ham, η)];  ls = η > 0 ? "-" : ":"
     lab = @sprintf("%s, η/s=%g", ham, η)
     ax[1].plot(r.t, r.A, ls, color = cols[ham], label = lab)
     ax[2].plot(r.t, r.dH, ls, color = cols[ham], label = lab)
     ax[3].plot(r.t, r.dS, ls, color = cols[ham], label = lab)
 end
-r = runs[(:smoothed, ETA)]
+r = runs[(HAMS[1], ETA)]
 ax[1].plot(r.t, exp.(-r.ν * r.k^2 .* r.t), "k--", lw = 1, label = "e^{−νk²t}")
 ax[1].set_xlabel("t");  ax[1].set_ylabel("A(t)/A(0)");  ax[1].set_title("shear-wave amplitude")
 ax[2].set_xlabel("t");  ax[2].set_ylabel("ΔH/H");      ax[2].set_title("energy")
@@ -96,6 +100,7 @@ ax[3].set_xlabel("t");  ax[3].set_ylabel("ΔS/S");      ax[3].set_title("total e
 for a in ax; a.legend(fontsize = 7); end
 fig.suptitle(@sprintf("shear wave, h=%g, h/a=%g, kh=%.3f, A=%g", H_, HA, r.k * H_, AMP))
 tight_layout()
-out = joinpath(@__DIR__, "..", "docs", "figs", get(ENV, "SW_OUT", "shearwave_decay.png"))
+out = haskey(ENV, "SR_FIGDIR") ? figpath(get(ENV, "SW_OUT", "shearwave_decay.png")) :
+      joinpath(@__DIR__, "..", "docs", "figs", get(ENV, "SW_OUT", "shearwave_decay.png"))
 savefig(out, dpi = 130)
 println("Saved ", out)

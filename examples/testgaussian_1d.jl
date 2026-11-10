@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -96,7 +96,7 @@ params, particles, cl, eos, cs =
 
 fig_ic = plot_gaussian_1d(particles, params, cl;
                            title_prefix="IC: Gaussian 1D  A=$A  σ=$sigma")
-savefig(joinpath(@__DIR__, "testgaussian_1d_ic.png"), dpi=150)
+savefig(figpath("testgaussian_1d_ic.png"), dpi=150)
 println("Saved testgaussian_1d_ic.png")
 
 @printf("t_end=%.4g\n", t_end)
@@ -111,6 +111,6 @@ n_steps, s_init, s_final, H_init, H_final =
 
 fig_final = plot_gaussian_1d(particles, params, cl;
                               title_prefix="Final: Gaussian 1D  t=$(round(t_end, digits=3))")
-savefig(joinpath(@__DIR__, "testgaussian_1d_final.png"), dpi=150)
+savefig(figpath("testgaussian_1d_final.png"), dpi=150)
 println("Saved testgaussian_1d_final.png")
 

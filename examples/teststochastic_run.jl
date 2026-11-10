@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 using StaticArrays
 using Random
 using LinearAlgebra
@@ -266,5 +266,5 @@ ax[2,2].set_xlabel("t"); ax[2,2].set_ylabel("|Σm(t) − Σm(0)| / (σm √N)")
 ax[2,2].set_title("total momentum conserved")
 
 tight_layout()
-savefig(joinpath(@__DIR__, "teststochastic_run.png"), dpi=150)
+savefig(figpath("teststochastic_run.png"), dpi=150)
 println("Saved teststochastic_run.png")

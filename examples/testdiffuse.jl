@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -86,7 +86,7 @@ function plot_diffusion_ic(params, particles, cl, eos, k, M_amp)
     ax3.legend(fontsize=8)
 
     tight_layout()
-    savefig(joinpath(@__DIR__, "testdiffuse.png"), dpi=150)
+    savefig(figpath("testdiffuse.png"), dpi=150)
     println("Saved testdiffuse.png")
 end
 
@@ -150,7 +150,7 @@ function plot_diffusion_evolve(t_vals, amp_vals, γ_k, M_amp, params, eos)
     ax.set_title("Shear wave decay — $label")
     ax.legend()
     tight_layout()
-    savefig(joinpath(@__DIR__, "testdiffuse_evolve.png"), dpi=150)
+    savefig(figpath("testdiffuse_evolve.png"), dpi=150)
     println("Saved testdiffuse_evolve.png")
 end
 
@@ -171,7 +171,7 @@ function plot_diffusion_final(particles, params, cl, k, M_amp, t_end, γ_k)
                            t_end, t_end*γ_k, rms))
     ax.legend(fontsize=9)
     tight_layout()
-    savefig(joinpath(@__DIR__, "testdiffuse_final.png"), dpi=150)
+    savefig(figpath("testdiffuse_final.png"), dpi=150)
     println("Saved testdiffuse_final.png")
 end
 

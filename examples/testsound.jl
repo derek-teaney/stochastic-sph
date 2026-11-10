@@ -1,4 +1,4 @@
-using PyPlot
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -110,7 +110,7 @@ params, particles, cl, eos, kx, ky, khat, k, cs, T_period =
     initialize_sound_wave(h, ha, L, s0, A, cs2v, nx, ny)
 
 fig_ic = plot_ic_sound_wave(particles, params; nx, ny, title = "Initial Particles")
-savefig(joinpath(@__DIR__, "testsound_ic.png"), dpi=150)
+savefig(figpath("testsound_ic.png"), dpi=150)
 println("Saved testsound_ic.png")
 
 t_end = T_period
@@ -124,10 +124,10 @@ dt, n_steps, s_init, s_final =
 fig_final = plot_final_sound_wave(particles, params, cl,
                                    t_end, A, cs, k, kx, ky, khat;
                                    nx, ny, T_period)
-savefig(joinpath(@__DIR__, "testsound_final.png"), dpi=150)
+savefig(figpath("testsound_final.png"), dpi=150)
 println("Saved testsound_final.png")
 
 fig_fc = plot_ic_sound_wave(particles, params; nx, ny, title = "Final Particles")
-savefig(joinpath(@__DIR__, "testsound_fc.png"), dpi=150)
+savefig(figpath("testsound_fc.png"), dpi=150)
 println("Saved testsound_fc.png")
 

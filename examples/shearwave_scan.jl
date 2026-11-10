@@ -15,11 +15,12 @@
 # SC_AMPS ("0.02") scans the amplitude.
 #
 # Run:  julia -t 4 --project examples/shearwave_scan.jl   → docs/figs/shearwave_scan.png
-# Env:  SC_KERNELS ("C2,C4,C6")  SC_HA ("2,2.5,3,4")  SC_HAMS ("smoothed,energy")
+# Env:  SC_KERNELS ("C2,C4,C6")  SC_HA ("2,2.5,3,4")  SC_HAMS ("smoothed,energy"; energy_n = energy with SPH_VOLUME=number)
 #       SC_H (0.05)  SC_L (1.0)  SC_LY (Ly/h, 6)  SC_AMP (0.002, linear: U_max ≲ 0.2a)  SC_TEND (30)  SC_CFL (0.2)
 #       SC_OUT (figure name in docs/figs; the data go to examples/data/<name>.jls)
 #       SC_REPLOT=<file.jls>: no runs, only redo the plot from saved data
-using PyPlot, StaticArrays, LinearAlgebra, Printf, Serialization
+include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs
+using StaticArrays, LinearAlgebra, Printf, Serialization
 include(joinpath(@__DIR__, "..", "src", "sph.jl"))
 include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
 include(joinpath(@__DIR__, "..", "src", "setup.jl"))
@@ -38,7 +39,8 @@ const CFL  = envf("SC_CFL", 0.2)
 const S0   = 2.0
 
 function run_ideal(kern::Symbol, ha::Float64, ham::Symbol, AMP::Float64)
-    ENV["SPH_HAMILTONIAN"] = string(ham);  ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
+    ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)     # energy_n: SPH_VOLUME=number
+    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "kernel";  ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
     eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
     params, ps, cl, eos = setup_ic(H_, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
                                    Lx = L, Ly = LY)
@@ -99,7 +101,7 @@ else
     for kern in KERNELS, ha in HAS, ham in HAMS, amp in AMPS
         res[(kern, ha, ham, amp)] = run_ideal(kern, ha, ham, amp)
     end
-    datadir = joinpath(@__DIR__, "data");  mkpath(datadir)
+    datadir = get(ENV, "SR_FIGDIR", joinpath(@__DIR__, "data"));  mkpath(datadir)
     datafile = joinpath(datadir, splitext(OUTNAME)[1] * ".jls")
     serialize(datafile, (; res, KERNELS, HAS, HAMS, AMPS, H_, L, LY, TEND, CFL, S0))
     println("Saved data ", datafile)
@@ -110,7 +112,7 @@ for (j, kern) in enumerate(KERNELS)
     ax = axs[1, j]
     for (i, (ha, amp)) in enumerate(Iterators.product(HAS, AMPS)), ham in HAMS
         r = res[(kern, ha, ham, amp)]
-        ax.plot(r.t, r.A, ham === :energy ? "--" : "-", color = "C$(mod(i-1, 10))",
+        ax.plot(r.t, r.A, ham === :energy ? "--" : ham === :energy_n ? ":" : "-", color = "C$(mod(i-1, 10))",
                 label = @sprintf("h/a=%g A=%g %s (c_t=%+.4f)", ha, amp, ham, r.ct))
     end
     ax.axhline(0, color = "k", lw = 0.5)
@@ -118,6 +120,6 @@ for (j, kern) in enumerate(KERNELS)
     ax.set_title("Wendland $kern, ideal step");  ax.legend(fontsize = 6)
 end
 tight_layout()
-out = joinpath(@__DIR__, "..", "docs", "figs", OUTNAME)
+out = haskey(ENV, "SR_FIGDIR") ? figpath(OUTNAME) : joinpath(@__DIR__, "..", "docs", "figs", OUTNAME)
 savefig(out, dpi = 130)
 println("Saved ", out)
