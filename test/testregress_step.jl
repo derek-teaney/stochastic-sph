@@ -9,6 +9,9 @@
 # tolerance tol (default 0: bit-identical).  Results must not depend on the number of
 # threads, so compare across -t 1 and -t 4 as well as across code versions.
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
+# The reference path is the smoothed Hamiltonian with the gradient-corrected map (the default
+# until 2026-11-10); set SPH_HAMILTONIAN=energy to check the n-scheme instead.
+ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "smoothed")
 const ROOT = joinpath(@__DIR__, "..")
 for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
     include(joinpath(ROOT, "src", "$f.jl"))

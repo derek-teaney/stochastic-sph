@@ -37,23 +37,27 @@ end
 #   Default from the environment variable SPH_DISSIPATION (else :bond), so any
 #   script can be run with the two-level form:  SPH_DISSIPATION=two_level julia --project …
 #   The stochastic sweep (particle_sweep!) has noise only for :two_level.
-# hamiltonian: the ideal step.  :smoothed (default) is H = Σ s_a ℰ(S_a, M_a/S_a) with the
-#   smoothed momentum (sph2.tex).  :energy is H = Σ_a e_a, the particle energies at the
+# Default scheme (2026-11-10): hamiltonian = :energy with volume = :number, the n-scheme
+#   (volume_n.tex, number_tests.tex).  The old schemes are kept: SPH_HAMILTONIAN=smoothed,
+#   SPH_VOLUME=entropy.  With SPH_DISSIPATION=two_level the default Hamiltonian is :smoothed
+#   (:energy needs the bond viscous step).
+# hamiltonian: the ideal step.  :smoothed is H = Σ s_a ℰ(S_a, M_a/S_a) with the
+#   smoothed momentum (sph2.tex).  :energy (default) is H = Σ_a e_a, the particle energies at the
 #   particle's own momentum density m_a/V_a, V_a = s_a/S_a (energystep.tex): ẋ_a = v_a,
 #   a pure pressure force, and a viscous step on the particle variables without a change
-#   of representation.  Default from SPH_HAMILTONIAN.
-# volume (hamiltonian = :energy only): the particle volume.  :entropy (default) is
-#   V_a = s_a/S_a, S_a = Σ_b s_b W_ab; :number is V_a = 1/n_a, n_a = Σ_b W_ab, independent
+#   of representation.  Default from SPH_HAMILTONIAN, else :energy.
+# volume (hamiltonian = :energy only): the particle volume.  :entropy is
+#   V_a = s_a/S_a, S_a = Σ_b s_b W_ab; :number (default) is V_a = 1/n_a, n_a = Σ_b W_ab, independent
 #   of the weights s, so the back map of the stochastic step at fixed positions conserves
 #   H exactly (volume_n.tex).  Stored as S_smooth = s_a n_a, so V_a = s_a/S_smooth either
-#   way.  Default from SPH_VOLUME.
+#   way.  Default from SPH_VOLUME, else :number with :energy (:entropy with :smoothed).
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
                    dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "changerep")), bond_h=nothing,
-                   hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", "smoothed")),
-                   volume=Symbol(get(ENV, "SPH_VOLUME", "entropy")))
+                   hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", dissipation === :two_level ? "smoothed" : "energy")),
+                   volume=Symbol(get(ENV, "SPH_VOLUME", hamiltonian === :energy ? "number" : "entropy")))
     a = h / ha_ratio
     if sim_dim == 1
         Nx      = round(Int, Lx_t / a)
