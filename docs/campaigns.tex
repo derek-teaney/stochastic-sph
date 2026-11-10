@@ -614,6 +614,21 @@ shells (dashed: the static $c_t$ of the $h/a=2$ lattice).}
 \label{fig:e2ha}
 \end{figure}
 
+\paragraph{4. The large box: a fluid down to $kh=0.13$}, \Fig{fig:e2L24}.  $L=2.4$, $h/a=2$,
+$\delta v=0.043$, $t=400$, 32 seeds.  In the six smallest shells $C_T(k,\tau)$ follows
+$e^{-\nu k^2\tau}$ within the errors: $C_T(k,0)=0.97$--$1.11$ ($\pm0.03$--$0.09$), the damping
+$2\gamma/\nu k^2=0.92$--$1.14$, $c_t\le0.0024$.  With \texttt{smoothed} the same box gave
+$C_T(k,0)$ below one and an extra damping $\propto k^{2/3}$ at the smallest $k$ (open
+question 3); with \texttt{:energy} neither is there, so both came with the rigidity.  KE/eq
+is $0.98$ and $H$ has lost $1.4\%$ by $t=400$.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energy2_L24.png}
+\caption{\texttt{:energy}, $L=2.4$, $h/a=2$: $C_T(k,\tau)/(NVwT)$ in the six smallest shells
+(band $\pm1$ s.e. of 32 runs) against the fluid $e^{-\nu k^2\tau}$ with the input $\nu$ (dotted).
+No parameter is fitted.}
+\label{fig:e2L24}
+\end{figure}
+
 %=============================================================================
 \section{Random particle positions}
 \label{sec:random}
@@ -696,7 +711,7 @@ bit for bit.
   step, falls as $(h/a)^{-1}$, not with the kernel order, and is gone with the energy
   representation (\Sect{sec:energy}).
 \item \emph{Energy representation} (\Sect{sec:energy2}).  No transverse sound at $h/a=2$, $2.5$,
-  $3$; no blow-up up to $\delta v=0.136$.  But the stochastic step loses $H$ at a rate $\propto
+  $3$; $C_T$ is the fluid one, with the input viscosity, down to $kh=0.13$; no blow-up up to $\delta v=0.136$.  But the stochastic step loses $H$ at a rate $\propto
   \delta v^{4.7}$ that does not vanish as $\Delta t\to0$ and needs the random residual moves.
 \end{enumerate}
 
@@ -714,7 +729,7 @@ the arrangement (\texttt{frozen.tex}).
 \item Where does the heating come from?  Tests: its dependence on $\Delta t$ (a step error
   falls as a power of $\Delta t$) and on $\eta/s$, with $\lambda=1$ and $\lambda=\infty$.
 \item Why are $C_T(k,0)$, and less so $C_L(k,0)$, below one at the smallest $k$, and where does
-  the extra damping $\propto k^{2/3}$ come from?
+  the extra damping $\propto k^{2/3}$ come from?  (Gone with \texttt{:energy}, \Sect{sec:energy2}: they came with the rigidity.)
 \item Which particle-energy variance is the equilibrium one in the particle representation,
   the drawn one or $9/16$ of it (\texttt{eqstart.tex})?
 \end{enumerate}

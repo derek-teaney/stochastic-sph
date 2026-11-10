@@ -116,6 +116,14 @@ checkout `~/stochastic-sph-run` (detached at `3c5f387`).  Output `$SCRATCH/sph/e
 - Job **61086214** (large, 16 tasks, `-c 8 -t 6:00:00`, 4 seeds per task): h/a = 2.5, 3 at L = 1.2
   (16 seeds, t = 200); L = 2.4, h/a = 2 (32 seeds, t = 400).
 - Estimate ≈ 2 node-hours.
+- **Outcome** (all 96 tasks done by 10:53, no failures; docs/campaigns.pdf, section
+  "loss of H, stability, h/a"; `examples/energy2_analysis.jl`): the loss of H does not fall with
+  Δt (3.45, 4.15, 4.64e-5 per unit time at Δt, Δt/2, Δt/4) and is the same with positions frozen
+  (3.70e-5) — it is made by the random residual moves of the stochastic step (λ = ∞ loses 5000×
+  less).  No blow-up to δv = 0.136, but the system cools (KE/eq 0.99, 0.81, 0.61; ΔH/H −0.8%,
+  −15%, −31% at t = 200).  No transverse sound at h/a = 2.5, 3; at L = 2.4 C_T is the fluid one
+  down to kh = 0.13 (C_T(0) ≈ 1, damping 0.92–1.14×), the smoothed small-k anomalies are gone.
+  Run checkout `~/stochastic-sph-run` removed.
 
 ### `energystep` — 2026-11-09/10, branch `hamiltonian-energy-step`, done
 
