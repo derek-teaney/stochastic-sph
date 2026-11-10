@@ -8,6 +8,8 @@
 \def\stp{\end{equation}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
 \newcommand{\bbeta}{\bm\beta}
 \let\oldparagraph\paragraph
 \renewcommand{\paragraph}{\par\bigskip\oldparagraph}
@@ -176,8 +178,8 @@ with $\partial V_c/\partial\bm x_a$ from the partition.)
 What does change is the dynamics: the particles move with their own velocities
 rather than a doubly smoothed one, and the force has no $\Delta\mathcal M$ terms.
 Whether that changes the measured transverse oscillation in $C_T$ (its frequency
-or damping) is an open question for the runs, not something this note predicts.
-The gain that is certain is consistency with the viscous step, \Sect{sec:visc}.
+or damping) was left to the runs.  It does: in the full stochastic scheme the
+oscillation is gone (\Sect{sec:stochruns}), although the static $c_t$ is the same.
 
 %=============================================================================
 \section{The deterministic viscous step}
@@ -526,5 +528,90 @@ opposite sign and twice the size; not understood yet.
 
 With \Sect{sec:norm}, the same tests with \texttt{volume = :normalized} decide whether the
 transverse oscillation of the equilibrium $C_T$ is the pressure term of \Eq{dH}.
+
+%=============================================================================
+\section{Stochastic runs at NERSC}
+\label{sec:stochruns}
+
+Tests 3 and 4, run from commit \texttt{934aa86} with \texttt{stochrep\_equilibrium.jl};
+everything as in campaign \texttt{rigidity} (C2, $h/a=2$, $\eta/s=0.2$, $S_0=10^6$,
+$\Delta t=8.66\times10^{-3}$), only \texttt{SPH\_HAMILTONIAN} differs.  Record in
+\texttt{nersc/LOG.md}.
+
+\paragraph{Equilibration (debug job 61055621).}  Box $0.6$ ($N=672$), $t=200$, 4 seeds per
+run, both Hamiltonians side by side on one node, \Fig{fig:equil}.  Left: the full scheme from
+a cold start (all momenta zero).  Right: the ideal step alone (no viscous step) from a thermal
+start.  Purpose: does \texttt{:energy} run at all, and does it heat?
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/energystep_equilibration.png}
+\caption{KE divided by its equilibrium value (top) and $\Delta H/H$ (bottom) against $t$;
+blue \texttt{:energy}, red \texttt{:smoothed}; thin lines single seeds, thick the mean.
+Script \texttt{examples/energystep\_equilibration.jl}.}
+\label{fig:equil}
+\end{figure}
+\begin{enumerate}
+\item Full scheme: both equilibrate within $t\approx1$ and no step is rejected.
+  \texttt{:smoothed} heats, faster than linearly ($\Delta H/H=+5.7\times10^{-2}$ at $t=200$,
+  KE/eq drifting to $1.05$--$1.10$).  \texttt{:energy} stays at KE/eq $=0.99$ and cools
+  linearly,
+  \st
+  \frac{1}{H}\frac{dH}{dt}\simeq-3.4\times10^{-5},
+  \stp
+  the same in every seed: the drift of test 2, now over $2\times10^4$ steps.
+\item Ideal step alone: \texttt{:smoothed} conserves $H$ to $10^{-5}$ but its kinetic energy
+  runs away, KE/eq $=60$--$95$ at $t=200$, taken from the internal energy.  \texttt{:energy}
+  settles at KE/eq $\approx0.67$, the equipartition of a harmonic solid (half of the
+  energy in the elastic modes), with $H$ drifting by $+1.4\times10^{-6}$ per unit time.
+\end{enumerate}
+
+\paragraph{Equilibrium correlators (job 61067905, resumed as 61073581).}  Box $1.2$
+($N=2688$), equilibrium start, $t=200$, 16 seeds, against the \texttt{:smoothed} set
+\texttt{ha2} of campaign \texttt{rigidity} (16 seeds), \Fig{fig:ha2}.  The transverse
+correlator is fitted to the damped oscillator of \texttt{campaigns.tex},
+\st
+\frac{C_T(k,\tau)}{C_T(k,0)}=e^{-\gamma\tau}\Big[\cos\omega\tau-\frac{\gamma}{\omega}\sin\omega\tau\Big],
+\qquad \omega^2=c_t^2k^2-\gamma^2,
+\stp
+which is the fluid $e^{-\nu k^2\tau}$ for $c_t=0$, $2\gamma=\nu k^2$.
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/energystep_ha2.png}
+\caption{\texttt{:energy} (blue) against \texttt{:smoothed} (red), $L=1.2$, $h/a=2$.
+Top: KE/eq and $\Delta H/H$ against $t$; $C_T(k,\tau)/C_T(k,0)$ in the two smallest shells
+with the fit (dashed) and the fluid $e^{-\nu k^2\tau}$ (dotted).  Bottom: $c_t$ from the fit
+(circles) and from the displacements (squares, meaningful only for a solid); the damping
+$2\gamma/\nu k^2$; the equal-time $C_{T,L}(k,0)$; and $\avg{|u_T(k,t)|^2}$ in the smallest
+shell (displacements by minimum image in the box, so they wrap once the particles have
+wandered far).  Script \texttt{examples/energystep\_compare.jl}.}
+\label{fig:ha2}
+\end{figure}
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+ & \texttt{:smoothed} & \texttt{:energy} \\ \hline
+$c_t$ from the fit, $kh=0.26$--$0.52$ & $0.020$--$0.023$ & $0.000$--$0.002$ \\
+$2\gamma/\nu k^2$ & $1.26$--$1.63$ & $1.03$--$1.33$ \\
+$C_T(k,0)/NV_awT$ & $0.89$--$0.93$ & $0.93$--$1.04$ \\
+KE/eq & $1.05$--$1.10$, rising & $0.99$ \\
+$\Delta H/H$ at $t=200$ & $+7.8\times10^{-2}$ & $-6.9\times10^{-3}$ \\
+wall time per seed (8 threads per 4 seeds) & $1.6\times10^3$ s & $7.3\times10^3$ s \\
+\hline
+\end{tabular}
+\end{center}
+\begin{enumerate}
+\item With \texttt{:energy} the transverse oscillation is gone: $C_T$ decays monotonically,
+  close to $e^{-\nu k^2\tau}$, with a damping $0$--$30\%$ above the input one, and the
+  transverse displacements grow far beyond the \texttt{:smoothed} plateau: the particles
+  flow.  The deficit $C_T(k,0)<1$ at small $k$ is mostly gone too.
+\item This is not what \Sect{sec:rigidity} and the shear wave suggested, since the static
+  $c_t$ is the same.  A possible reason (not tested): with $\dot{\bm x}_a=\bm v_a$ neighbours
+  can slip past one another, while the doubly smoothed velocity of \texttt{:smoothed} moves
+  them together and keeps the arrangement locked.  The ideal step alone is still a solid
+  (KE/eq $\approx0.67$ above); the flow needs the stochastic step.
+\item The cooling of test 2 remains, at the same rate per unit time as in the small box.
+\item At $L=1.2$ \texttt{:energy} took $4.5$ times longer per seed than \texttt{:smoothed}
+  (which ran from the older commit \texttt{4663c3f}).  The code is not slower: on one node,
+  one seed with 8 threads to $t=10$, it is $1.4$ times faster ($51$ against $75$ s).  The
+  slowdown builds up during the run; being measured.
+\end{enumerate}
 
 \end{document}

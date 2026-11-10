@@ -69,7 +69,21 @@ or learn something about running the code here.
 
 ## Campaigns
 
-### `energystep` — 2026-11-09, PROPOSED (not submitted), branch `hamiltonian-energy-step`
+### `energystep` — 2026-11-09/10, branch `hamiltonian-energy-step`, done
+
+- Run checkout `~/stochastic-sph-run5` (detached at `934aa86`).  Debug jobs 61055259 (t = 10,
+  no crash) and **61055621** (L = 0.6, t = 200, 4 seeds: energy/smoothed, cold start and ideal
+  step alone; `$SCRATCH/sph/energystep_debug2/`, `examples/energystep_equilibration.jl`).
+- Campaign job **61067905** (`-q shared -c 8 -t 2:00:00`); tasks 1 and 3 timed out and resumed
+  as **61073581**.  Output `$SCRATCH/sph/energystep/`.  Analysis `examples/energystep_compare.jl`
+  against rigidity `ha2`.
+- Outcome (docs/energystep.pdf, last section): the transverse oscillation is gone (c_t fit
+  0.000–0.002, C_T ≈ e^{−νk²τ}, damping 1.0–1.3× input, C_T(k,0) 0.93–1.04); KE/eq 0.99, no
+  heating; H falls linearly, −3.5e−5 per unit time, every seed.  Ideal step alone: KE/eq ≈ 0.67,
+  no runaway (smoothed: 60–95).  Wall 4.5× longer than smoothed at L = 1.2, though 1.4×
+  faster at t ≤ 10 on one node: the slowdown builds up during the run (being measured).
+
+#### Original proposal
 
 Note from the local session for the NERSC session.  Read `docs/energystep.pdf` first.
 - **What it is.**  `SPH_HAMILTONIAN=energy` (default `smoothed`, so nothing else changes):
