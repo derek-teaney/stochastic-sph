@@ -93,6 +93,14 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `frozen` — 2026-11-10, `nersc/campaign_frozen.txt`, `main` at `1ffc82f`, docs/frozen.tex
+
+Do the particles rearrange?  Pair separation D²(r) (new `ParticleRecorder`) with C_T:
+`:energy` at S0 = 1e6, 1e7, 1e8 and `smoothed` at 1e6; L = 1.2, h/a = 2, t = 200, 16 seeds each.
+- Job **61090342**: one regular node, `nersc/node.sh` THREADS=4 (32 at a time), `-t 1:30:00`,
+  64 tasks (one realization each).  Run checkout `~/stochastic-sph-run2` (detached at `1ffc82f`).
+  Output `$SCRATCH/sph/frozen/`.  Analysis `examples/frozen_analysis.jl`.  ≤ 1.5 node-hours.
+
 ### `energy2` — 2026-11-10, `nersc/campaign_energy2_{small,large}.txt`, `main` at `3c5f387`
 
 Follow-up of `energystep`, all with `SPH_HAMILTONIAN=energy`, the kernel-speed fix in.  Run
