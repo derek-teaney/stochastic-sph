@@ -35,8 +35,10 @@ or learn something about running the code here.
   128/T at a time, refilling as tasks finish (`wait -n`); each task is `array.sh` as in an array
   job.  Two traps it avoids: Slurm's `-c` counts hardware threads (2 per core), so `-c 2T` for T
   cores; and `srun` resets `SLURM_CPUS_PER_TASK` in the step, so the thread count is passed as
-  `SR_THREADS`.  Without `--exact`, steps grab the whole allocation and run one after another.
-  Test (debug job 61088563): 64 tasks, T = 4: 32 ran at once, each on its own 4 cores.
+  `SR_THREADS`.  Test (debug job 61088563): 64 tasks, T = 4: 32 ran at once, each on its own
+  4 cores.  Demonstration (debug job 61089773): 40 steps of 4 cores, 32 at once, the rest as slots
+  freed; core n's sibling is CPU n+128 (0-3,128-131).  `--exact` turned out not to be needed when
+  `-c` is given (steps without it also ran in parallel); kept as harmless.
   Note: in the shared-queue arrays, `-c 8` is 4 physical cores with 8 Julia threads.
 
 - **Type stability of the kernel (2026-11-10).**  Commit `037b464` (C6 kernel) made every run 5×
