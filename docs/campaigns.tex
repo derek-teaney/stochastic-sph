@@ -79,6 +79,8 @@ campaign & set & what varies & box & runs & to \\ \hline
  & s1e5\_ha3 & $S_0=10^5$, $\lambda=1$, $h/a=3$ & $0.6$ & 16 & $200$ \\
  & s1e5\_hfix & $S_0=10^5$, $\lambda=1$, energy fix & $0.6$ & 16 & failed \\
 \texttt{first\_det} & s3e5\_det, s1e5\_det & $\lambda=\infty$, same seeds & $0.6$ & 16+16 & $200$ \\
+\texttt{rigidity} & \Sect{sec:rigidity} & $h/a$, kernel, $\lambda$, no $H$ step, no viscous step & $1.2$, $0.6$ & 16 per set & $200$ \\
+\texttt{energystep} & \Sect{sec:energy} & $H=\sum_ae_a$ & $1.2$, $0.6$ & 16+4 & $200$ \\
 \texttt{first} & eqL1.2, eqL2.4 & thermal start, old code & $1.2$, $2.4$ & 32+32 & $400$ \\
 \texttt{second} & eqL1.2, eqL2.4 & equilibrium start, fast code & $1.2$, $2.4$ & 32+32 & $400$ \\
 \hline
@@ -376,6 +378,100 @@ Three checks of the analysis (scripts on the branch \texttt{rigidity}).
 \end{enumerate}
 
 %=============================================================================
+\section{The rigidity campaign}
+\label{sec:rigidity}
+
+\paragraph{Purpose.}  Find what sets the transverse sound speed $c_t$ of
+\Sect{sec:corr}: the smoothing length in units of the spacing, the kernel, the noise in
+the lattice modes, or the viscous step.  Campaign \texttt{rigidity} (jobs 61045626,
+61045885, 61046892; \texttt{nersc/campaign\_rigidity*.txt}): $L=1.2$, $t=200$, the
+equilibrium start, $\delta v=0.043$, 16 realizations per set, and the particle
+displacements $\bm u_a=\bm x_a-\bm x_a^0$ recorded besides $\bm M_{\bm k}$.  The sets: C2 at
+$h/a=2$, $2.5$, $3$; Wendland C4 at $h/a=2$, $2.5$ and C6 at $h/a=2$; $\lambda=\infty$; the
+positions frozen (no Hamiltonian step); and the ideal step alone (no viscous step, thermal
+start, $L=0.6$, $t=50$).  Analysis \texttt{examples/rigidity\_analysis.jl}.
+
+Two measures of $c_t$ in each shell.  The \emph{fit}: $C_T(k,\tau)/C_T(k,0)$ fitted to the
+damped oscillator of \Sect{sec:corr}.  The \emph{displacements}: an elastic mode has
+$\avg{|\dot u_T|^2}=c_t^2k^2\avg{|u_T|^2}$, and $\bm M_{\bm k}\simeq wV_a\dot{\bm u}_{\bm k}$, so
+\st
+c_t^2=\frac{\avg{|M_T(k)|^2}}{(wV_a)^2k^2\avg{|u_T(k)|^2}} ,
+\stp
+which goes to zero in a fluid, where $\avg{|u_T|^2}$ grows without bound.
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/rigidity_ct.png}
+\caption{Left: $C_T(k,\tau)/C_T(k,0)$ in the smallest shell for every set; dotted, the
+fluid $e^{-\nu k^2\tau}$.  Middle: $c_t$ from the fit (circles) and from the displacements
+(squares) against $kh$.  Right: $\avg{|u_T(k,t)|^2}$ in the smallest shell, divided by its
+final value.}
+\label{fig:rigct}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+set & $c_t$ (fit) & $c_t$ (displacements) & $2\gamma/\nu k^2$ \\ \hline
+C2, $h/a=2$ & $0.022$ & $0.017$ & $1.26$--$1.63$ \\
+C2, $h/a=2.5$ & $0.015$ & $0.012$ & $1.06$--$1.54$ \\
+C2, $h/a=3$ & $0.012$ & $0.008$ & $1.04$--$1.62$ \\
+C4, $h/a=2$ & $0.023$ & $0.017$ & $1.34$--$2.17$ \\
+C4, $h/a=2.5$ & $0.016$ & $0.011$ & $1.29$--$1.59$ \\
+C6, $h/a=2$ & $0.026$ & $0.019$ & $1.25$--$1.90$ \\
+C2, $h/a=2$, $\lambda=\infty$ & $0.020$ & $0.015$ & $1.49$--$1.79$ \\
+positions frozen & $0.000$--$0.003$ & -- & $0.99$--$1.09$ \\
+\hline
+\end{tabular}
+\end{center}
+($c_t$ at $kh=0.37$; the damping over $kh=0.26$--$0.52$.)
+\begin{enumerate}
+\item The viscous step alone is a fluid: with the positions frozen $C_T=e^{-\nu k^2\tau}$ with
+  the input viscosity.  The rigidity and the extra damping come with the Hamiltonian step.
+\item $c_t$ falls with $h/a$, roughly as $(h/a)^{-1}$, and does not fall with the order of the
+  kernel: C4 and C6 are as stiff as C2 or stiffer.
+\item The static phonon test of \texttt{rigidity.tex} (the $T=0$ lattice) does not predict
+  these numbers: there the C4 lattice at $h/a=2$ is unstable to shear and C6 is half as stiff
+  as C2.  The rigidity at temperature $T$ is not the harmonic lattice's.
+\item The displacement estimate is $25$--$35\%$ below the fit everywhere; not understood.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figs/rigidity_idealsph.png}
+\caption{The ideal step alone (\texttt{:smoothed}, no viscous step) from the thermal start,
+$L=0.6$: KE/eq against $t$, 4 realizations per set.}
+\label{fig:rigideal}
+\end{figure}
+\paragraph{The ideal step alone} (\Fig{fig:rigideal}) runs away at every $h/a$ and kernel:
+KE/eq reaches $40$--$90$ by $t=50$ while $H$ is conserved, the kinetic energy taken from the
+internal energy.
+
+%=============================================================================
+\section{The energy representation}
+\label{sec:energy}
+
+The ideal step of \texttt{energystep.tex} (branch \texttt{hamiltonian-energy-step},
+\texttt{SPH\_HAMILTONIAN=energy}): $H=\sum_ae_a$, each particle moving with its own velocity
+and feeling only a pressure force; the stochastic step without the gradient correction.  The
+same set as C2, $h/a=2$ above (jobs 61067905, 61073581, 16 realizations), \Fig{fig:energy};
+details in \texttt{energystep.tex}.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/energystep_ha2.png}
+\caption{\texttt{:energy} (blue) against \texttt{:smoothed} (red), $L=1.2$, $h/a=2$: KE/eq,
+$\Delta H/H$, $C_T(k,\tau)$ in the two smallest shells with the fit (dashed) and the fluid
+(dotted), $c_t$, the damping, the equal-time correlators and the transverse displacements.}
+\label{fig:energy}
+\end{figure}
+\begin{enumerate}
+\item The transverse oscillation is gone: $c_t=0.000$--$0.002$ from the fit, $C_T$ close to
+  $e^{-\nu k^2\tau}$ with a damping $1.03$--$1.33$ times the input, $C_T(k,0)=0.93$--$1.04$, and
+  displacements that keep growing.
+\item No heating: KE/eq $=0.99$ throughout.  Instead $H$ falls linearly,
+  $\Delta H/H=-6.9\times10^{-3}$ at $t=200$, in every realization (not yet understood).
+\item The ideal step alone does not run away (KE/eq $\approx0.67$ to $t=200$).
+\end{enumerate}
+
+%=============================================================================
 \section{Random particle positions}
 \label{sec:random}
 
@@ -452,13 +548,15 @@ bit for bit.
   shear viscosity comes out $10$--$20\%$ above the input one at $kh\ge0.5$; at smaller $k$
   there is an extra damping that does not scale as $k^2$.
 \item \emph{Code.}  The fast code and the equilibrium start reproduce the old ensembles.
+
+\item \emph{Rigidity} (\Sect{sec:rigidity}).  It comes with the \texttt{:smoothed} Hamiltonian
+  step, falls as $(h/a)^{-1}$, not with the kernel order, and is gone with the energy
+  representation (\Sect{sec:energy}).
 \end{enumerate}
 
-\paragraph{Next.}\label{sec:next}  Campaign \texttt{rigidity} (jobs 61045626, 61045885; $L=1.2$, $t=200$,
-16 runs each, displacements recorded): $h/a=2$, $2.5$, $3$; the Wendland C4 kernel at $h/a=2$;
-positions frozen; $\lambda=\infty$; and ideal SPH alone from the thermal start at each $h/a$.
-How fast $c_t$ falls with $h/a$ and the kernel decides between a parameter choice and a change
-of the scheme.
+\paragraph{Next.}\label{sec:next}  The energy representation: understand its linear loss of
+$H$, check it at $h/a=2.5$, $3$ and in the $L=2.4$ box ($kh=0.13$), and redo the stability scan
+with it.
 
 \paragraph{Open questions.}
 \begin{enumerate}

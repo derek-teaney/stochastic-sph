@@ -79,6 +79,13 @@ realizations per set, displacements UL/UT recorded: h/a = 2, 2.5, 3; Wendland C4
 - Job **61045626** (24 tasks, run checkout `~/stochastic-sph-run2` at `4663c3f`) and job
   **61045885** (λ = ∞, 4 tasks, `~/stochastic-sph-run3` at the next commit).  ≈ 0.8 node-hours.
   Output `$SCRATCH/sph/rigidity/`.  Analysis: `examples/rigidity_analysis.jl`.
+- Job **61046892** (9 tasks, `~/stochastic-sph-run4`): C6 at h/a = 2, C4 at h/a = 2.5, ideal SPH C6.
+- **Outcome** (all 37 tasks done 2026-11-09 19:35; docs/campaigns.pdf, "The rigidity campaign"):
+  c_t (fit, kh = 0.37) = 0.022, 0.015, 0.012 at h/a = 2, 2.5, 3 (C2); C4 0.023, 0.016; C6 0.026;
+  λ = ∞ 0.020; positions frozen 0.000–0.003 with the input viscosity.  Not the T = 0 phonon
+  values (C4 lattice is unstable there).  Displacement estimate 25–35% below the fit.  Ideal
+  SPH alone runs away at every h/a and kernel (KE/eq 40–90 by t = 50).  With
+  `SPH_HAMILTONIAN=energy` the rigidity is gone (see `energystep`, branch `hamiltonian-energy-step`).
 - Found while setting up (L = 0.6, interactive): ideal SPH alone does not hold the lattice
   (KE/eq 0.9 → 6.8 by t = 20 from the thermal start, H conserved); random positions release
   ≈ 400 T per particle (KE/eq → 420 by t = 5) and heat the full scheme (ΔH/H +0.64 by t = 10).
