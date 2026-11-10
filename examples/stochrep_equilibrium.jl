@@ -20,6 +20,7 @@ include(joinpath(@__DIR__, "..", "src", "rng.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
 include(joinpath(@__DIR__, "..", "src", "measure.jl"))
 include(joinpath(@__DIR__, "..", "src", "monitor.jl"))
+include(joinpath(@__DIR__, "..", "src", "runinfo.jl"))
 
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
@@ -71,6 +72,19 @@ end
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
+# Everything this run is (defaults included) and, once there, how it went: <base>.json and
+# <base>.csv (src/runinfo.jl); written at the start, at each checkpoint and at the end.
+function runinfo(base, params, eos, st, n, complete)
+    nk = length(st.KE);  h2 = nk ÷ 2 + 1
+    out = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
+    write_runinfo(base, vcat(run_settings(params, eos; driver = "stochrep_equilibrium.jl", tag = TAG, seed = st.seed,
+        S0 = S0, s_a = S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
+        nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, start = string(START), jitter = JITTER, lambda = LAMBDA,
+        vote = "star", novisc = NOVISC, noham = NOHAM),
+        Pair{String,Any}["steps_done" => n, "complete" => complete, "wall_s" => st.wall],
+        Pair{String,Any}["outcome" => out, "monitor" => haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), "guards" => guards()]))
+end
+
 function one_realization(seed)
     base = joinpath(OUT, "equilibrium_$(TAG)_r$(seed)");  chk = base * ".chk"
     eos = ConformalEOS(1/3, 1.0, ETAS, 0.0)
@@ -112,6 +126,7 @@ function one_realization(seed)
     sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej_s, st.grej_r, st.vmax
     haskey(st, :mon) || (st = merge(st, (mon = StepMonitor(params.N),)))
     mon = st.mon;  REP = max(1, nsteps ÷ 20)          # a log line every 5% of the run
+    st.n == 0 && runinfo(base, params, eos, st, 0, false)
     win = zeros(4)                                   # acceptances and guard fractions since the last record
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
@@ -145,12 +160,14 @@ function one_realization(seed)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
             write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
+            runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
     write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
+    runinfo(base, params, eos, merge(st, (wall = wall,)), nsteps, true)
     rm(chk; force = true)
     print_summary(mon; label = "seed $seed")
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
