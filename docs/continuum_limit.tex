@@ -1,0 +1,120 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Towards the continuum limit: fewer units of entropy per particle}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+At fixed physics (smoothing length, entropy density, $\eta/s$) the continuum limit of SPH
+is $h/a\to\infty$: more particles, each carrying less entropy.  The thermal velocity of a
+particle grows as its entropy falls, and the scheme must break somewhere above one unit of
+entropy per particle.  Campaign \texttt{cl} lowers the entropy per particle step by step,
+from $s_a=541$ to $s_a\approx2$, in equilibrium, with the n-scheme (\texttt{volume\_n.tex}),
+and records the correlators, the energy, the spread of the entropies and the separation of
+particles.  This note gives the choices and collects the results as they arrive.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The scan}
+\label{sec:scan}
+
+Everything that defines the fluid is held fixed: the smoothing length $h=0.05$, the entropy
+density $S_0=10^6$ (hence $T$, $w$), $\eta/s=0.2$, and the box.  Only the particle spacing
+$a$ changes.  On the hexagonal lattice each particle has the volume $V=\tfrac{\sqrt3}{2}a^2$
+and the entropy
+\st
+s_a=S_0V=\frac{2165}{(h/a)^2},
+\stp
+and its thermal velocity per component is
+\st
+\delta v=\sqrt{\frac{T}{wV}}=\frac{1}{\sqrt{s_a}}=\frac{h/a}{46.5}.
+\stp
+The fields smoothed over $h$ have the same fluctuations at every $h/a$
+($\avg{\delta M^2}\sim wT/h^2$): in a continuum limit the correlators at fixed $kh$ should
+not change, while each particle becomes hotter and its own entropy fluctuates more,
+$\delta s_a/s_a=\sqrt{3/s_a}$ (\texttt{volume\_n.tex}).  At $s_a\approx3$ this spread is of
+order one and particles of zero entropy appear: that is the wall.
+\begin{center}
+\begin{tabular}{ccccccccc}
+\hline
+stage & $h/a$ & $s_a$ & $\delta v$ & $\sqrt{3/s_a}$ & $N$ & box & $t$ & runs ($\Delta t$ + $\Delta t/2$) \\ \hline
+1 & 2, 3, 4 & 541, 241, 135 & 0.043--0.086 & 7--15\% & 672--2688 & 0.6 & 100 & 8 each \\
+1 & 6 & 60 & 0.13 & 22\% & 6048 & 0.6 & 100 / 60 & 6 + 2 \\
+2 & 8 & 34 & 0.17 & 30\% & 10560 & 0.6 & 100 / 50 & 6 + 2 \\
+3 & 12 & 15 & 0.26 & 45\% & 23904 & 0.6 & 25 / 12 & 3 + 1 \\
+4 & 16 & 8.5 & 0.34 & 59\% & 42624 & 0.6 & 10 / 5 & 3 + 1 \\
+5 & 23 & 4.1 & 0.49 & 86\% & $\approx22000$ & 0.3 & 10 / 5 & 3 + 1 \\
+6 & 32 & 2.1 & 0.69 & 120\% & $\approx42000$ & 0.3 & 3 / 1.5 & 3 + 1 \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{Cost.}  The number of particles grows as $(h/a)^2$ and so does the number of
+neighbours of each, so a step costs $\propto(h/a)^4$.  Measured on 8 threads (debug job
+61110291, box $0.6$): $0.25$\,s per step at $h/a=6$, $0.72$\,s at $8$, $5.5$\,s at $12$
+(faster than $(h/a)^4$ would say).  The time step does not depend on $a$, so the late
+stages are short runs: $t=10$ is about 1100 steps.  The last two stages use half the box
+($kh\ge1$): they test whether the scheme survives, not the hydrodynamics.
+
+\paragraph{The time step.}  $\Delta t$ is set by $h$ (acoustic CFL, the viscous bound), not by
+$a$.  A particle then moves farther, in units of its spacing, per step:
+\st
+\frac{\delta v\,\Delta t}{a}\approx0.24\ (h/a=8),\quad0.94\ (16),\quad3.8\ (32),
+\qquad\frac{(c_s+\delta v)\,\Delta t}{h}\approx0.11\to0.22 .
+\stp
+On the scale of $h$ the step stays within the CFL bound, but at large $h/a$ particles pass
+their neighbours within a step.  Each stage therefore has runs at $\Delta t/2$ (one or two
+seeds) to show whether the results depend on the step.
+
+\paragraph{How we proceed.}  Equilibrium start; each stage is one 3-hour node
+(\texttt{nersc/campaign\_cl.txt}, \texttt{nersc/node.sh}).  A stage is launched only when the
+previous one is sane: KE/eq near 1, $H$ finite and not running away, few rejected moves.
+If a stage gives nonsense (a blow-up, a runaway of $H$ or of the kinetic energy), we stop
+there.
+
+%=============================================================================
+\section{What is measured}
+\label{sec:outputs}
+
+Every run (\texttt{examples/stochrep\_equilibrium.jl}) records, every second step:
+\begin{enumerate}
+\item \emph{Stability and energy}: KE/eq and $\Delta H/H$ against $t$.  The n-scheme heats at a
+  rate $\propto\delta v^{3.6}\Delta t$ (\texttt{volume\_n.tex}); here $\delta v$ grows sixteenfold.
+\item \emph{Equal-time correlators} $C_T(k,0)$, $C_L(k,0)$ per $NVwT$, and the entropy
+  correlator: equal to 1 in a fluid in equilibrium, at every $h/a$ if the limit exists.
+\item \emph{Transverse dynamics}: $C_T(k,\tau)$ against $e^{-\nu k^2\tau}$; the fitted damping
+  $2\gamma/\nu k^2$ and $c_t$.
+\item \emph{Sound}: $C_L(k,\tau)$ against $\cos(c_sk\tau)\,e^{-\Gamma_sk^2\tau/2}$.
+\item \emph{The particles}: the spread of the entropies $s_a$ and of the volumes $1/n_a$ against
+  $\sqrt{3/s_a}$; the separation of particle pairs $D^2(r,t)$ and the mean square
+  displacement, against fluctuating hydrodynamics (\texttt{frozen.tex}).
+\item \emph{The stochastic step}: acceptance rates and guard events (rejected moves to states
+  with $|v|\ge1$ or no solution).
+\end{enumerate}
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+(Filled in stage by stage.)
+
+\end{document}
