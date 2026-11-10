@@ -230,6 +230,55 @@ $h/a$ & $f$ & acc.\ stress & acc.\ residual & $|v|\ge1$: stress & $|v|\ge1$: res
   so the long stages settle it.
 \end{enumerate}
 
+\paragraph{How much of the energy is resolved.}  The n-scheme conserves $E_p=\sum_ae_a$, each
+particle's own $T^{00}$ times its volume.  The fields a hydrodynamic observer sees are the
+coarse-grained ones, $\bar S(\bm x)=\sum_bs_bW(\bm x-\bm x_b)$ and $\bar{\bm M}(\bm x)=\sum_b\bm m_bW(\bm x-\bm x_b)$,
+with energy $E_{cg}=\int d^2x\,T^{00}(\bar S,\bar{\bm M})$ (grid of spacing $h/8$).  Both lie above
+$E_0=A\,T^{00}(S_{tot}/A,M_{tot}/A)$, the uniform state with the same totals; the excess is the thermal
+energy of the fluctuations, all of them in $E_p$, only the modes $k\lesssim1/h$ in $E_{cg}$.  The
+resolved fraction is
+\st
+f_{res}=\frac{E_{cg}-E_0}{E_p-E_0}.
+\stp
+Equipartition (three fields, $T/2$ each per mode, uncorrelated particles) gives, to second order,
+\st
+\frac{E_p-E_0}{E_0}\simeq\frac{2}{s_a},\qquad
+\frac{E_{cg}-E_0}{E_0}\simeq\frac{2f_{ref}}{s_a},\qquad
+f_{ref}=\frac1N\sum_{\bm k\ne0}|\tilde W(\bm k)|^2\propto\Big(\frac ah\Big)^2 ,
+\stp
+so the coarse-grained excess, $\approx2.1\times10^{-4}$ here, is the same at every $h/a$ (it is a property
+of the fluid smoothed over $h$), while the particle excess grows as $(h/a)^2$.
+\Fig{fig:split} (\texttt{examples/cl\_energy\_split.jl}, \texttt{cl\_energy\_split\_plot.jl};
+table \texttt{docs/figs/cl\_energy\_split.csv}) shows the equilibrium draws ($t=0$, one seed, box $0.6$,
+$0.32$ at $h/a=23$) and the checkpoints of the running stages (debug job 61116254).
+\begin{enumerate}
+\item In the draws $f_{res}=f_{ref}$ to within about 10\% from $h/a=3$ to 23: $2.5\%$ at $h/a=3$, $0.66\%$ at 6,
+  $0.17\%$ at 12, $0.04\%$ at 23.  Beyond $h/a\approx6$ more than 99\% of the energy the scheme
+  conserves sits in modes the hydrodynamics does not resolve.
+\item $E_{cg}-E_0$ is flat at $(1.7$--$2.3)\times10^{-4}E_0$ up to $h/a=12$, as it should be.  At $h/a=16$
+  and 23 both excesses fall below equipartition by the same factor ($\approx0.5$, $\approx0.1$), so $f_{res}$
+  is unchanged: the bound $|\bm m_a|<e_a$ of a particle with a few units of entropy cuts the
+  fluctuations at every scale (cf.\ the exact one-particle $T_*/T$).
+\item In the runs ($h/a=6$ at $t\approx57$, 8 at $t\approx12$, 12 at $t\approx1$) the particle excess is
+  2--17\% above the draw (17\% at $h/a=12$), and the coarse-grained one is $(2.1$--$2.9)\times10^{-4}E_0$,
+  on average 15\% above equipartition; $f_{res}$ is $6$--$36\%$ above $f_{ref}$ ($h/a=6$: $0.0071$--$0.0087$
+  against $0.0065$).  The resolved modes run somewhat hotter than the particle scale: the heating
+  of the scheme reaches $k\lesssim1/h$ at least in proportion.  The $\Delta t/2$ runs are the same within
+  the scatter.  (One snapshot per run; the draws are one seed, scatter $\approx\pm10\%$.)
+\item The SPH quadrature of the same energy, $\sum_aV_aT^{00}(\bar S_a,\bar{\bm M}_a)$ (the old
+  \texttt{:smoothed} Hamiltonian), agrees with the grid integral in the draws for $h/a\ge3$ but gives
+  1.5--2 times the resolved excess in the runs, where the arrangement is disordered: it is not a
+  measure of the resolved energy.
+\end{enumerate}
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/cl_energy_split.png}
+\caption{Left: thermal energy above the uniform state, of the particles ($\sum_ae_a$, blue) and of the
+coarse-grained fields ($\int T^{00}(\bar S,\bar{\bm M})$, orange); open symbols equilibrium draws, filled
+the running stages; dotted and dashed the equipartition estimates.  Right: the fraction in the
+resolved modes, with $f_{ref}=\sum_{\bm k\ne0}|\tilde W|^2/N$.}
+\label{fig:split}
+\end{figure}
+
 (The long stages are filled in as they finish.)
 
 \end{document}

@@ -117,6 +117,10 @@ start.  Output `$SCRATCH/sph/cl/`.  Each stage one regular node, 3 h, `node.sh` 
   `~/stochastic-sph-run2`.  Stages 4, 5 after stage 3 is seen to be sane; stage 6 not run (the
   equilibrium draw fails at s_a = 2.1).
 - Δt criterion: residual acceptance ≈ 0.75 (f = 1, 1/2, 1/4, 1/16 at h/a = 8, 12, 16, 23).
+- Energy split Σe_a vs coarse-grained ∫T⁰⁰(S̄,M̄) (examples/cl_energy_split.jl, debug job 61116254,
+  draws h/a 2–23 + checkpoints of stages 1–3; table $SCRATCH/sph/cl_energy, docs/figs/cl_energy_split.*):
+  resolved fraction = Σ_{k≠0}|W̃|²/N ∝ (a/h)², 0.66% at h/a 6, 0.04% at 23; runs 6–36% above it.
+  Rerun on later checkpoints/stages 4–5 by passing their .chk files (same Particle struct).
 
 ### Default scheme changed — 2026-11-10, `main` at `91d9e66`
 
