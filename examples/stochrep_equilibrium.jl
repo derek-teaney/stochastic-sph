@@ -52,6 +52,7 @@ const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
 const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
+const VOTE   = :star                                                 # stochastic step: one consensus vote per star
 const DTFAC  = parse(Float64, get(ENV, "SR_DTFAC", "1"))             # Δt / default (time-step tests)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
@@ -80,7 +81,14 @@ function runinfo(base, params, eos, st, n, complete)
     write_runinfo(base, vcat(run_settings(params, eos; driver = "stochrep_equilibrium.jl", tag = TAG, seed = st.seed,
         S0 = S0, s_a = S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
         nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, start = string(START), jitter = JITTER, lambda = LAMBDA,
-        vote = "star", novisc = NOVISC, noham = NOHAM),
+        novisc = NOVISC, noham = NOHAM,
+        # the scheme, as this driver runs it (the stochrep_step! defaults it relies on spelled out)
+        stoch = (vote = string(VOTE), lambda = LAMBDA, residual = true, gradient_map = params.hamiltonian !== :energy,
+                 grid_shift = true, sweeps = "stress then residual, order alternating each step",
+                 back_map = params.hamiltonian === :energy ? "plain, s = S(e, m; V)" : "gradient-corrected"),
+        ideal = (integrator = NOHAM ? "none (positions frozen)" : "leapfrog DKD (position Verlet)",
+                 splitting = "S(dt/2) [L(dt) S(dt)]... L(dt) S(dt/2)"),
+        dt_rule = "dtfac * 0.5 * compute_dt(mode = :viscous, CFL = 0.2): min(acoustic 0.2 h/c_s, viscous bound)"),
         Pair{String,Any}["steps_done" => n, "complete" => complete, "wall_s" => st.wall],
         Pair{String,Any}["outcome" => out, "monitor" => haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), "guards" => guards()]))
 end
@@ -112,7 +120,7 @@ function one_realization(seed)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
         x0 = [q.x for q in ps]
-        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=:star)
+        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=VOTE)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
               prec = ParticleRecorder(ps, params),
@@ -133,7 +141,7 @@ function one_realization(seed)
     for n in st.n+1:nsteps
         NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
         if !NOVISC
-            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=:star, flip=isodd(n), cache)
+            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=VOTE, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
             win .+= (a.stress, a.resid, a.gstress, a.gresid)
             observe_step!(mon, a)

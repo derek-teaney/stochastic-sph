@@ -30,6 +30,14 @@ or learn something about running the code here.
 
 ## Lessons
 
+- **What was run**: every `stochrep_equilibrium.jl` run writes `<run>.json` (all settings,
+  defaults spelled out: Hamiltonian, volume, dissipation, kernel, EOS, the stochastic-step
+  options — vote, λ, residual, gradient map, grid shift, back map — the integrator and
+  splitting, the Δt rule, the SPH_*/SR_* environment, commit, host, Slurm job; and the
+  outcomes) and the same as one CSV row; `julia nersc/collect_runs.jl $SCRATCH/sph/<campaign>`
+  makes `runs.csv` for a spreadsheet.  The task log (`slurm/<job>_<task>.out`) has a monitor
+  line every 5% of the run (acceptances, |v| ≥ 1 rejections, speeds) and a summary block.
+
 - **Plotting scripts in batch jobs**: matplotlib needs no display with the Agg backend.
   The test scripts include `examples/plotsetup.jl` (Agg inside Slurm or without DISPLAY,
   figures to `SR_FIGDIR`) and run with the full environment (`--project=$HOME/stochastic-sph`,
