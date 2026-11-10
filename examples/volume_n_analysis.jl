@@ -1,10 +1,10 @@
-# volume_n_analysis.jl — campaign `volume_n` (SPH_VOLUME=number) against the kernel volume
+# volume_n_analysis.jl — campaign `volume_n` (SPH_VOLUME=number) against the entropy volume V_a = s_a/S_a
 # (campaigns energy2 and frozen), all SPH_HAMILTONIAN=energy, h/a = 2.  docs/volume_n.tex.
-#   volume_n_H.png        ΔH/H and KE/eq against t, L = 0.6 (kernel dt1; number dt1, dt/2, cold)
+#   volume_n_H.png        ΔH/H and KE/eq against t, L = 0.6 (entropy dt1; number dt1, dt/2, cold)
 #   volume_n_spread.png   rms(s_a/s̄ − 1) and rms(V_a/V̄ − 1) against t
-#   volume_n_stability.png  KE/eq and ΔH/H at t = 200 against δv, kernel and number
-#   volume_n_CT.png       C_T(k,τ)/C_T(k,0) at L = 1.2, S0 = 1e6 and 1e7, kernel and number
-#   volume_n_D2.png       pair separation D²(a,t)/a² at L = 1.2, kernel and number
+#   volume_n_stability.png  KE/eq and ΔH/H at t = 200 against δv, entropy and number
+#   volume_n_CT.png       C_T(k,τ)/C_T(k,0) at L = 1.2, S0 = 1e6 and 1e7, entropy and number
+#   volume_n_D2.png       pair separation D²(a,t)/a² at L = 1.2, entropy and number
 # Run:  julia --project examples/volume_n_analysis.jl
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
 for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
@@ -21,7 +21,7 @@ load(d) = filter(r -> get(r.meta, :complete, true), [read_equilibrium(f) for f i
 series(d, name) = [h5open(f, "r") do h; haskey(h, name) ? read(h[name]) : Float64[]; end for f in files(d)]
 
 # ── fig 1: H and KE at L = 0.6 ──────────────────────────────────────────────
-SETS1 = [("kernel, Δt", joinpath(E2, "dt1"), "C3", "-"), ("number, Δt", joinpath(VN, "n_dt1"), "C0", "-"),
+SETS1 = [("entropy, Δt", joinpath(E2, "dt1"), "C3", "-"), ("number, Δt", joinpath(VN, "n_dt1"), "C0", "-"),
          ("number, Δt/2", joinpath(VN, "n_dt0.5"), "C2", "-"), ("number, cold start", joinpath(VN, "n_cold"), "C1", "-")]
 fig, axs = subplots(1, 3, figsize = (19, 5))
 for (lab, d, c, ls) in SETS1
@@ -76,7 +76,7 @@ function scan(dir, run)
     (; δv, ke, dh)
 end
 fig, axs = subplots(1, 2, figsize = (14, 5))
-for (lab, dir, runs, c, mk) in (("kernel volume", E2, ("ref", "s3e5", "s1e5"), "C3", "s"),
+for (lab, dir, runs, c, mk) in (("entropy volume", E2, ("ref", "s3e5", "s1e5"), "C3", "s"),
                                 ("number volume", VN, ("n_ref", "n_s3e5", "n_s1e5"), "C0", "o"))
     sc = [scan(dir, r) for r in runs];  sc = filter(s -> !isempty(s.ke), sc);  isempty(sc) && continue
     x = [s.δv for s in sc]
@@ -94,8 +94,8 @@ axs[2].set_yscale("symlog", linthresh = 1e-4)
 tight_layout();  savefig(joinpath(FIGD, "volume_n_stability.png"), dpi = 100)
 
 # ── fig 4, 5: C_T and pair separation at L = 1.2 ─────────────────────────────
-SETS4 = [("kernel, S0 = 1e6", joinpath(FR, "e_s1e6"), "C3", "-"), ("number, S0 = 1e6", joinpath(VN, "n_e6"), "C0", "-"),
-         ("kernel, S0 = 1e7", joinpath(FR, "e_s1e7"), "C1", "--"), ("number, S0 = 1e7", joinpath(VN, "n_e7"), "C2", "--")]
+SETS4 = [("entropy, S0 = 1e6", joinpath(FR, "e_s1e6"), "C3", "-"), ("number, S0 = 1e6", joinpath(VN, "n_e6"), "C0", "-"),
+         ("entropy, S0 = 1e7", joinpath(FR, "e_s1e7"), "C1", "--"), ("number, S0 = 1e7", joinpath(VN, "n_e7"), "C2", "--")]
 res = []
 for (lab, d, c, ls) in SETS4
     rs = load(d);  isempty(rs) && continue

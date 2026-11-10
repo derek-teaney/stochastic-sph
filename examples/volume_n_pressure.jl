@@ -1,4 +1,4 @@
-# volume_n_pressure.jl — the particle pressures through the coupled step, kernel volume
+# volume_n_pressure.jl — the particle pressures through the coupled step, entropy volume
 # against number volume (docs/volume_n.tex), SPH_HAMILTONIAN=energy, L = 0.6, h/a = 2,
 # S0 = 1e6, η/s = 0.2, equilibrium start.  Each step is: ideal (leapfrog Δt) then stochastic
 # (Δt).  At every step, three snapshots of the rest-frame pressures p_a:
@@ -60,7 +60,7 @@ end
 
 avg(rs, k) = sum(r[k] for r in rs) / length(rs)
 fig, axs = subplots(1, 3, figsize = (19, 5))
-for (vol, c) in ((:kernel, "C3"), (:number, "C0"))
+for (vol, c) in ((:entropy, "C3"), (:number, "C0"))
     rs = [run(vol, s) for s in 1:NSEED];  t = rs[1][:t]
     late = length(t) ÷ 2:length(t)
     m(k) = sum(avg(rs, k)[late]) / length(late)

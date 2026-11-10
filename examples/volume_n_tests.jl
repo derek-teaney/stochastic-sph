@@ -1,11 +1,11 @@
 # volume_n_tests.jl — tests of the number-density volume V_a = 1/n_a (SPH_VOLUME=number,
-# docs/volume_n.tex) against the kernel volume V_a = s_a/S_a, both with SPH_HAMILTONIAN=energy.
+# docs/volume_n.tex) against the entropy volume V_a = s_a/S_a, both with SPH_HAMILTONIAN=energy.
 #
 #   test 1  Hamilton's equations: ṁ_a = −∂H/∂x_a and Teff_a = ∂H/∂s_a against central
 #           differences of H = Σ_a e_a, on a jittered lattice with unequal s_a and moving
 #           particles.
 #   test 2  the stochastic step at fixed positions: ΔH per half step (L = 0.6, h/a = 2,
-#           S0 = 1e6, η/s = 0.2, equilibrium start), for :kernel with the estimate
+#           S0 = 1e6, η/s = 0.2, equilibrium start), for :entropy with the estimate
 #           ΔH ≈ −½ c_s² Σ_a T_a s_a (ε_a² − ε̄_a²), ε_a = Δs_a/s_a, ε̄ its kernel average.
 #   test 3  the ideal step alone after test 2 has made the s_a unequal: ΔH/H after t = 1 at
 #           Δt and Δt/2 (a second-order integrator: ratio ≈ 4).
@@ -30,7 +30,7 @@ Hof(ps, params, cl, eos) = (smooth_to_particles!(ps, params, cl); update_thermod
 
 # ── test 1 ───────────────────────────────────────────────────────────────────
 println("== test 1: force and Teff against central differences of H")
-for vol in (:kernel, :number)
+for vol in (:entropy, :number)
     params, ps, cl, eos = make(vol; jitter = 0.15)
     rng = Xoshiro(7)
     for p in ps                                   # unequal weights, moving particles (|v| ~ 0.1)
@@ -93,7 +93,7 @@ function onestep(vol::Symbol, seed::Int)
 end
 
 println("== test 2: the stochastic step at fixed positions, $NSTEP half steps;  test 3: ideal step alone")
-for vol in (:kernel, :number), seed in 1:NSEED
+for vol in (:entropy, :number), seed in 1:NSEED
     r = onestep(vol, seed)
     c = sum(r.dH .* r.est) / sqrt(sum(abs2, r.dH) * sum(abs2, r.est) + 1e-300)
     @printf("%-7s seed %d  N=%d dt/2=%.3g | ΔH/H per half step: mean %+.2e  rms %.2e | estimate: mean %+.2e  corr %.2f | s spread %.2e | ideal ΔH/H(t=1): Δt %+.2e  Δt/2 %+.2e\n",

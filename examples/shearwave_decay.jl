@@ -36,7 +36,7 @@ const S0   = 2.0
 
 function run_shear(ham::Symbol, η_by_s::Float64)
     ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)
-    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "kernel"
+    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "entropy"
     eos = ConformalEOS(1/3, 1.0, η_by_s, 0.0)
     params, ps, cl, eos = setup_ic(H_, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L)
     k = 2π * NW / params.L[1]

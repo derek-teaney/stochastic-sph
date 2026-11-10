@@ -40,7 +40,7 @@ const S0   = 2.0
 
 function run_ideal(kern::Symbol, ha::Float64, ham::Symbol, AMP::Float64)
     ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)     # energy_n: SPH_VOLUME=number
-    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "kernel";  ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
+    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "entropy";  ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
     eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
     params, ps, cl, eos = setup_ic(H_, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
                                    Lx = L, Ly = LY)

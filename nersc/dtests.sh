@@ -1,7 +1,7 @@
 #!/bin/bash
 # dtests.sh — the deterministic test suite (examples/test*.jl, shearwave_decay.jl,
 # shearwave_scan.jl) in three configurations, side by side on one node, one thread each:
-#   s = SPH_HAMILTONIAN=smoothed,  k = energy with the kernel volume,  n = energy with
+#   s = SPH_HAMILTONIAN=smoothed,  e = energy with the entropy volume,  n = energy with
 #   SPH_VOLUME=number (volume_n.tex).  Figures (Agg) and logs in $OUT/<cfg>/.
 #   R=$HOME/stochastic-sph-run; cd $SCRATCH/sph
 #   sbatch -A m3722 -q debug -C cpu -N 1 -t 00:30:00 --export=ALL,SR_REPO=$R $R/nersc/dtests.sh [out]
@@ -19,8 +19,8 @@ run() {   # cfg name script [env...]
     local cfg=$1 name=$2 script=$3;  shift 3
     mkdir -p "$OUT/$cfg"
     case $cfg in
-        s) local he="SPH_HAMILTONIAN=smoothed SPH_VOLUME=kernel";;
-        k) local he="SPH_HAMILTONIAN=energy SPH_VOLUME=kernel";;
+        s) local he="SPH_HAMILTONIAN=smoothed SPH_VOLUME=entropy";;
+        e) local he="SPH_HAMILTONIAN=energy SPH_VOLUME=entropy";;
         n) local he="SPH_HAMILTONIAN=energy SPH_VOLUME=number";;
         *) local he="";;
     esac
@@ -29,7 +29,7 @@ run() {   # cfg name script [env...]
           julia -t 1 --startup-file=no --project="$PROJ" "examples/$script" > "$OUT/$cfg/$name.log" 2>&1
       echo "$cfg $name exit $? $(( $(date +%s) - t0 )) s" >> "$OUT/status.txt" ) &
 }
-for cfg in s k n; do
+for cfg in s e n; do
     for t in testgaussian testgaussian_1d testsound testsound_viscous testsound_viscous_1d testdiffuse testshearwave; do
         run $cfg $t $t.jl
     done

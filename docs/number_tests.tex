@@ -1,0 +1,148 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The deterministic tests with the number volume}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The number volume $V_a=1/n_a$ (\texttt{SPH\_VOLUME=number}, \texttt{volume\_n.tex}) changes the
+energy-representation Hamiltonian wherever the entropy weights $s_a$ are unequal.  This note
+runs the deterministic test suite in three configurations, \texttt{smoothed},
+\texttt{:energy} with the entropy volume $V_a=s_a/S_a$ (the default), and \texttt{:energy}
+with the number volume, and checks that nothing is broken.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{What was run}
+\label{sec:run}
+
+The suite of \texttt{energystep.tex} (``The deterministic test suite'') and the shear-wave
+tests, each against an analytic solution:
+\begin{itemize}
+\item \texttt{testgaussian}, \texttt{testgaussian\_1d}: a Gaussian bump of energy density
+  in 2D and a stripe in 1D, small viscosity, to $t=2.2$.  The entropy weights are unequal from
+  the start, so this is where the two volumes differ.
+\item \texttt{testsound}: an ideal sound wave, one period.
+\item \texttt{testsound\_viscous}, \texttt{testsound\_viscous\_1d}: a damped sound wave
+  against $\cos(c_skt-\phi)\,e^{-\Gamma_sk^2t/2}$, one period.
+\item \texttt{testdiffuse}: shear diffusion against $e^{-\nu k^2t}$.
+\item \texttt{testshearwave}: the initial smoothing of the entropy and momentum densities.
+\item \texttt{shearwave\_decay}: the shear wave with $\eta/s=0.02$, $0.002$ and $0$;
+  \texttt{shearwave\_scan}: the ideal shear wave (transverse stiffness) for C2 and C6 at
+  $h/a=2$, $3$.
+\end{itemize}
+
+\paragraph{How.}  One debug-queue node (job 61106930, 17 minutes), all runs side by side,
+one thread each (\texttt{nersc/dtests.sh}).  The scripts plot as they go; in a batch job
+\texttt{examples/plotsetup.jl} switches matplotlib to the Agg backend, which only writes
+files, so they no longer crash on a compute node.  Figures are combined with
+\texttt{examples/number\_tests\_montage.jl} on the login node.  All 24 runs exited cleanly.
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+Residuals are rms against the analytic solution; $\Delta H/H$ and $\Delta S/S$ at the end.
+The \texttt{smoothed} and entropy-volume columns reproduce the table of \texttt{energystep.tex}
+digit for digit.
+\begin{center}
+\begin{tabular}{llccc}
+\hline
+test & & \texttt{smoothed} & entropy volume & number volume \\ \hline
+Gaussian 2D, $t=2.2$ & $\Delta S/S$ & $0.0362$ & $0.0363$ & $0.0363$ \\
+ & $\Delta H/H$ & $1.9\times10^{-5}$ & $2.4\times10^{-5}$ & $4.2\times10^{-5}$ \\
+Gaussian 1D, $t=2.2$ & $\Delta S/S$ & $0.0512$ & $0.0513$ & $0.0514$ \\
+ & $\Delta H/H$ & $1.4\times10^{-4}$ & $1.8\times10^{-4}$ & $1.7\times10^{-4}$ \\
+viscous sound 2D & residual & $1.9\times10^{-4}$ & $3.4\times10^{-5}$ & $3.4\times10^{-5}$ \\
+ & $\Delta H/H$ & $1.1\times10^{-8}$ & $4.0\times10^{-8}$ & $4.0\times10^{-8}$ \\
+viscous sound 1D & residual & $2.2\times10^{-5}$ & $1.5\times10^{-5}$ & $1.5\times10^{-5}$ \\
+ & $\Delta H/H$ & $7\times10^{-10}$ & $2.5\times10^{-9}$ & $2.5\times10^{-9}$ \\
+ideal sound, one period & residual & $5.6\times10^{-3}$ & $1.8\times10^{-3}$ & $1.6\times10^{-3}$ \\
+shear diffusion & residual & $1.55\times10^{-5}$ & $1.24\times10^{-5}$ & $1.24\times10^{-5}$ \\
+shear wave, $\eta/s=0.02$ & $A(t_{\rm end})$ & $0.0809$ & $0.0797$ & $0.0797$ \\
+ & $\Delta H/H$ & $7.7\times10^{-9}$ & $3.6\times10^{-8}$ & $3.6\times10^{-8}$ \\
+ideal shear wave, C2, $h/a=2$ & $c_t$ & --- & $0.0340$ & $0.0340$ \\
+ideal shear wave, C6, $h/a=2$ & $c_t$ & --- & $0.0170$ & $0.0170$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{enumerate}
+\item \emph{Uniform weights} (the sound waves, shear diffusion, the shear waves): the two
+  volumes agree to the printed digits, as they must, since $V_a=1/n_a=s_a/S_a$ when all
+  $s_a$ are equal; the viscous step makes the weights unequal only at the level $10^{-5}$.
+  The ideal sound wave differs slightly ($1.6$ against $1.8\times10^{-3}$): its entropy
+  weights carry the wave from the start.
+\item \emph{Unequal weights} (the Gaussians): the entropy produced is the same to $0.1\%$, and
+  the energy profiles are the same (\Fig{fig:gauss}).  The 2D energy drift is twice that of
+  the entropy volume ($4.2$ against $2.4\times10^{-5}$), still small.  With the number volume the
+  particle's energy density is its own, $s_an_a$ rather than the smoothed $S_a$, so the
+  colour map of the particle energy densities reaches slightly higher values
+  ($0.35$ against $0.33$); the smoothed slice is the same.
+\item The transverse stiffness of the ideal lattice is unchanged ($c_t=0.0340$, C2, $h/a=2$):
+  at uniform weights the number volume is the same function of the positions.
+\end{enumerate}
+Nothing is broken: the number volume passes every test as well as the entropy volume.
+
+%=============================================================================
+\section{Figures}
+\label{sec:figs}
+
+Each figure has the three configurations side by side: \texttt{smoothed} (left), \texttt{:energy}
+with the entropy volume (middle) and with the number volume (right).
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/number_tests/testgaussian_final.png}
+\includegraphics[width=\textwidth]{figs/number_tests/testgaussian_1d_final.png}
+\caption{Gaussian 2D (top) and 1D (bottom) at $t=2.2$: particle energy densities and the
+smoothed slice.}
+\label{fig:gauss}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/number_tests/testsound_final.png}
+\includegraphics[width=\textwidth]{figs/number_tests/testsound_viscous_final.png}
+\includegraphics[width=\textwidth]{figs/number_tests/testsound_viscous_decay.png}
+\includegraphics[width=\textwidth]{figs/number_tests/testsound_viscous_1d_final.png}
+\caption{Sound waves: ideal after one period; viscous 2D after one period and its amplitude
+decay; viscous 1D.  Dashed: analytic.}
+\label{fig:sound}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/number_tests/testdiffuse_final.png}
+\includegraphics[width=\textwidth]{figs/number_tests/testshearwave_compare.png}
+\caption{Shear diffusion at the end; the initial smoothing of the entropy density of the 2D
+Gaussian.}
+\label{fig:diffuse}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/number_tests/shearwave_decay.png}
+\includegraphics[width=\textwidth]{figs/number_tests/shearwave_decay_eta0.002.png}
+\includegraphics[width=0.8\textwidth]{figs/number_tests/shearwave_scan.png}
+\caption{Shear waves (\texttt{energy\_n} is the number volume).  Top: $\eta/s=0.02$ and $0$;
+middle: $\eta/s=0.002$ and $0$; bottom: the ideal shear wave for C2 and C6 at $h/a=2$, $3$
+(entropy volume dashed, number volume dotted, on top of each other).}
+\label{fig:shear}
+\end{figure}
+
+\end{document}

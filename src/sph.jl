@@ -28,7 +28,7 @@ mutable struct SimParams{K<:AbstractKernel}
     dissipation :: Symbol          # :changerep (default), :bond or :two_level — see dissipative_step!
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
-    volume      :: Symbol          # :kernel (default) or :number, with :energy — see below
+    volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
 end
 
 # dissipation: the viscous step.  :changerep (default) is the bond form in the particle
@@ -42,7 +42,7 @@ end
 #   particle's own momentum density m_a/V_a, V_a = s_a/S_a (energystep.tex): ẋ_a = v_a,
 #   a pure pressure force, and a viscous step on the particle variables without a change
 #   of representation.  Default from SPH_HAMILTONIAN.
-# volume (hamiltonian = :energy only): the particle volume.  :kernel (default) is
+# volume (hamiltonian = :energy only): the particle volume.  :entropy (default) is
 #   V_a = s_a/S_a, S_a = Σ_b s_b W_ab; :number is V_a = 1/n_a, n_a = Σ_b W_ab, independent
 #   of the weights s, so the back map of the stochastic step at fixed positions conserves
 #   H exactly (volume_n.tex).  Stored as S_smooth = s_a n_a, so V_a = s_a/S_smooth either
@@ -53,7 +53,7 @@ end
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
                    dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "changerep")), bond_h=nothing,
                    hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", "smoothed")),
-                   volume=Symbol(get(ENV, "SPH_VOLUME", "kernel")))
+                   volume=Symbol(get(ENV, "SPH_VOLUME", "entropy")))
     a = h / ha_ratio
     if sim_dim == 1
         Nx      = round(Int, Lx_t / a)
@@ -91,7 +91,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     hamiltonian === :energy && dissipation === :two_level &&
         error("hamiltonian = :energy needs the bond viscous step (dissipation = :changerep or :bond)")
     hamiltonian === :energy && @printf("SimParams: hamiltonian = energy (energystep.tex)\n")
-    volume in (:kernel, :number) || error("volume must be :kernel or :number, got $volume")
+    volume in (:entropy, :number) || error("volume must be :entropy or :number, got $volume")
     volume === :number && hamiltonian !== :energy &&
         error("volume = :number needs hamiltonian = :energy (volume_n.tex)")
     volume === :number && @printf("SimParams: volume = number, V_a = 1/n_a (volume_n.tex)\n")

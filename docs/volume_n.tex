@@ -52,7 +52,7 @@ s_a'=S_a(e_a,\bm m_a';V_a).
 The step uses $(e,\bm m)$ because energy conservation is then exact move by move, and the
 acceptance is a ratio of entropies.
 
-With the kernel volume
+With the volume from the smoothed entropy density (the \emph{entropy volume}, \texttt{SPH\_VOLUME=entropy}, the default)
 \st
 V_a=\frac{s_a}{S_a},\qquad S_a=\sum_bs_bW_{ab},
 \stp
@@ -95,7 +95,7 @@ and the Hamiltonian keeps its form,
 \st
 H=\sum_aV_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big).
 \stp
-With $s_a=1$ for all particles this is the kernel volume; the two differ once the
+With $s_a=1$ for all particles this is the entropy volume; the two differ once the
 viscous step has made the weights unequal.
 
 \paragraph{The back map is exact.}  $V_a$ does not depend on any $s$, so holding $e_a$
@@ -106,7 +106,7 @@ weight at fixed positions and momenta is
 \st
 T^{\rm eff}_a=\frac{\partial H}{\partial s_a}=T_a ,
 \stp
-without the smoothed-minus-local $p/S$ of the kernel volume (\texttt{energystep.tex}, eq.\
+without the smoothed-minus-local $p/S$ of the entropy volume (\texttt{energystep.tex}, eq.\
 Teff).
 
 \paragraph{Hamilton's equations.}  $\dot{\bm x}_a=\bm v_a$ as before.  With
@@ -123,7 +123,7 @@ conserved as before.
 \section{Code changes}
 \label{sec:code}
 
-Option \texttt{SPH\_VOLUME=number} (field \texttt{params.volume}, default \texttt{:kernel}),
+Option \texttt{SPH\_VOLUME=number} (field \texttt{params.volume}, default \texttt{:entropy}),
 only with \texttt{SPH\_HAMILTONIAN=energy}.  The code stores $S_a$ in
 \texttt{S\_smooth} and uses $V_a=s_a/S_a$ everywhere (thermodynamics, particle energy,
 stochastic step, bond weights), so one definition carries the change:
@@ -148,21 +148,21 @@ $\eta/s=0.2$, $S_0=10^6$ ($\delta v=0.043$), 672 particles.
 by $\pm10\%$ and velocities $\approx0.1$: the force agrees with $-\partial H/\partial\bm x_a$
 from central differences to $8\times10^{-5}$ (the difference step), for both volumes;
 $T^{\rm eff}$ agrees with $\partial H/\partial s_a$ to $10^{-6}$.  With the number volume
-$T^{\rm eff}=T$ exactly; with the kernel volume they differ by up to $1\%$.
+$T^{\rm eff}=T$ exactly; with the entropy volume they differ by up to $1\%$.
 
 \paragraph{2. The stochastic step at fixed positions}, 400 half steps $\Delta t/2=0.0043$
 from the equilibrium start, 4 seeds:
 \begin{center}
 \begin{tabular}{lcc}
 \hline
- & kernel volume & number volume \\ \hline
+ & entropy volume & number volume \\ \hline
 $\Delta H/H$ per half step, mean & $-1.83\times10^{-7}$ & $-4.5\times10^{-14}$ \\
 estimate \Eq{estimate}, mean & $-0.98\times10^{-7}$ & --- \\
 correlation of $\Delta H$ with the estimate & $0.96$--$0.97$ & --- \\
 \hline
 \end{tabular}
 \end{center}
-The kernel volume loses energy every step, every seed; \Eq{estimate} follows it step by
+The entropy volume loses energy every step, every seed; \Eq{estimate} follows it step by
 step (correlation $0.97$) and gives half its size, as expected of an estimate that keeps
 only the leading terms.  The number volume conserves $H$ to roundoff.
 
@@ -170,7 +170,7 @@ only the leading terms.  The number volume conserves $H$ to roundoff.
 to $t=1$: $|\Delta H/H|\lesssim5\times10^{-7}$ at $\Delta t$ and at $\Delta t/2$, for
 both volumes.  This does not fall with $\Delta t$, so it is a floor of the update (it
 grows with the number of steps), not the volume; it is 100 times below the loss of the
-kernel volume.
+entropy volume.
 
 %=============================================================================
 \section{Thermodynamics: the entropy per particle as a passive charge}
@@ -201,7 +201,7 @@ neighbours has a higher pressure at the same $n$, pushes them away, and settles 
 n_a=\frac{S}{\sigma_a}.
 \stp
 So the fluctuations of $\sigma$ appear as fluctuations of the particle density at
-constant pressure: the arrangement is disordered by them.  With the kernel volume the same
+constant pressure: the arrangement is disordered by them.  With the entropy volume the same
 adjustment is made by the weights, $V_a\propto s_a$, without moving anything, and the
 lattice can stay a lattice.
 
@@ -257,7 +257,7 @@ energy of the disordered arrangement it requires stops it (\texttt{campaigns.tex
 positions: a random arrangement lies far above the lattice).  The campaign measures this:
 $\mathrm{rms}(s_a/\bar s-1)$ and $\mathrm{rms}(V_a/\bar V-1)$ against $t$.
 
-\paragraph{Where the energy of the old back map goes.}  With the kernel volume the
+\paragraph{Where the energy of the old back map goes.}  With the entropy volume the
 volumes are redistributed instantly by the weights, and the work $-\Delta p\,\Delta V$
 of the redistribution is lost.  With the number volume the redistribution happens by
 motion: the pressure differences after a stochastic step are forces in the next ideal
@@ -291,7 +291,7 @@ fixed volume has
 \begin{center}
 \begin{tabular}{lcc}
 \hline
- & kernel volume & number volume \\ \hline
+ & entropy volume & number volume \\ \hline
 spread of the particle pressures, $\mathrm{rms}(p_a/\bar p-1)$ & $3.0\%$ & $9.2\%$ \\
 spread of the smoothed pressures $\tilde p_a$ & $2.7\%$ & $2.8\%$ \\
 change of $p_a$ in a stochastic step (rms, $/\bar p$) & $1.4\times10^{-3}$ & $2.4\times10^{-3}$ \\
@@ -304,7 +304,7 @@ spread of the weights, $t=0\to20$ & $7.3\to7.6\%$ & $7.3\to7.2\%$ \\
 \begin{enumerate}
 \item With the number volume each particle has the pressure fluctuation of a fluid cell
   of its own volume ($9.2\%$ against the estimate $10\%$, which leaves out the motion).
-  With the kernel volume the particle's entropy density is the smoothed one, and its
+  With the entropy volume the particle's entropy density is the smoothed one, and its
   pressure fluctuates three times less: it is not a cell of volume $V_a$.
 \item The smoothed pressures fluctuate the same with both volumes.  On the scale of the
   kernel the extra noise of the number volume averages out: the long wavelengths see the
@@ -312,12 +312,12 @@ spread of the weights, $t=0\to20$ & $7.3\to7.6\%$ & $7.3\to7.2\%$ \\
 \item The ideal step changes the pressures more than the stochastic step does, with both
   volumes, and by the same amount.  The extra particle-scale pressure noise does not make
   the ideal step more violent.
-\item Over $t=20$ the spread of the weights grows slowly with the kernel volume and not
+\item Over $t=20$ the spread of the weights grows slowly with the entropy volume and not
   with the number volume; the campaign follows it to $t=200$.
 \end{enumerate}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/volume_n_pressure.png}
-\caption{Kernel volume (red) and number volume (blue), mean of 2 runs.  Left: spread of the
+\caption{Entropy volume (red) and number volume (blue), mean of 2 runs.  Left: spread of the
 particle pressures (solid) and of the kernel-smoothed pressures (dashed), after each ideal
 step; dotted, the fixed-volume estimate $4/\sqrt{3s}$.  Middle: rms change of the particle
 pressures in the stochastic step (solid) and in the ideal step (dotted).  Right: spread of
@@ -332,7 +332,7 @@ the weights $s_a$.}
 \texttt{nersc/campaign\_volume\_n.txt}, all with \texttt{SPH\_HAMILTONIAN=energy},
 \texttt{SPH\_VOLUME=number}, $h/a=2$, $\eta/s=0.2$; packed on one node
 (\texttt{nersc/node.sh}, 2 cores per run, 100 runs).  Each set has a counterpart with
-the kernel volume from campaigns \texttt{energy2} and \texttt{frozen}.
+the entropy volume from campaigns \texttt{energy2} and \texttt{frozen}.
 \begin{center}
 \begin{tabular}{lllll}
 \hline
@@ -353,25 +353,25 @@ entropy per particle stays near its thermal spread or walks away.
 \label{sec:results}
 
 All 100 runs finished (one node, 21 minutes).  Script
-\texttt{examples/volume\_n\_analysis.jl}; the kernel-volume references are campaigns
+\texttt{examples/volume\_n\_analysis.jl}; the entropy-volume references are campaigns
 \texttt{energy2} and \texttt{frozen}.
 
 \paragraph{1. Energy: the steady loss is gone; what is left is a time-step error},
 \Fig{fig:vnH}.  At $L=0.6$, $\delta v=0.043$:
 \st
 -\frac1H\frac{dH}{dt}=\begin{cases}
-3.45\times10^{-5} & \text{kernel volume, any }\Delta t,\\
+3.45\times10^{-5} & \text{entropy volume, any }\Delta t,\\
 -3.07\times10^{-6} & \text{number volume, }\Delta t,\\
 -1.54\times10^{-6} & \text{number volume, }\Delta t/2 .
 \end{cases}
 \stp
-With the number volume $H$ rises slowly, eleven times slower than the kernel volume
+With the number volume $H$ rises slowly, eleven times slower than the entropy volume
 loses it, and the rate halves with $\Delta t$: a first-order error of the splitting,
-which vanishes as $\Delta t\to0$.  The kernel loss did not depend on $\Delta t$.  The cold
+which vanishes as $\Delta t\to0$.  The loss with the entropy volume did not depend on $\Delta t$.  The cold
 start reaches KE/eq $=1$ by $t\approx1$ and then drifts like the equilibrium start.
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/volume_n_H.png}
-\caption{$L=0.6$, $h/a=2$, $\delta v=0.043$.  Left: $\Delta H/H$ against $t$, kernel volume
+\caption{$L=0.6$, $h/a=2$, $\delta v=0.043$.  Left: $\Delta H/H$ against $t$, entropy volume
 (red) and number volume at $\Delta t$, $\Delta t/2$ and from a cold start (mean of 8, 8, 4
 runs).  Middle: the number volume enlarged.  Right: KE/eq.}
 \label{fig:vnH}
@@ -383,7 +383,7 @@ runs).  Middle: the number volume enlarged.  Right: KE/eq.}
 \begin{tabular}{lcccc}
 \hline
 $\delta v$ & \multicolumn{2}{c}{KE/eq} & \multicolumn{2}{c}{$\Delta H/H$} \\
- & kernel & number & kernel & number \\ \hline
+ & entropy & number & entropy & number \\ \hline
 $0.043$ & $0.986$ & $0.985$ & $-0.8\%$ & $+0.06\%$ \\
 $0.078$ & $0.812$ & $1.008$ & $-15\%$ & $+0.57\%$ \\
 $0.136$ & $0.606$ & $1.020$ & $-31\%$ & $+3.8\%$ \\
@@ -391,13 +391,13 @@ $0.136$ & $0.606$ & $1.020$ & $-31\%$ & $+3.8\%$ \\
 \end{tabular}
 \end{center}
 No run blows up.  With the number volume the kinetic energy stays at its equilibrium
-value at all three temperatures, and $H$ changes by $3.8\%$ at most, where the kernel
+value at all three temperatures, and $H$ changes by $3.8\%$ at most, where the entropy
 volume lost $31\%$.  The remaining heating grows as about $\delta v^{3.6}$; by item 1 it
 should fall with $\Delta t$.
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/volume_n_stability.png}
 \caption{Stability scan.  Left: KE/eq at $t=200$ against $\delta v$ (mean $\pm$ s.e.).
-Right: $\Delta H/H$ at $t=200$ (symmetric log scale): the kernel volume loses energy, the
+Right: $\Delta H/H$ at $t=200$ (symmetric log scale): the entropy volume loses energy, the
 number volume gains a little.}
 \label{fig:vnstab}
 \end{figure}
@@ -429,7 +429,7 @@ $4.03\times10^{-5}$ against $4.08\times10^{-5}$ at $10^7$.  As \Sect{sec:thermo}
 extra mode lives in the arrangement and does not show in $C_T$.
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/volume_n_CT.png}
-\caption{$C_T(k,\tau)/C_T(k,0)$ at $L=1.2$ in three shells: kernel (red, orange) and number
+\caption{$C_T(k,\tau)/C_T(k,0)$ at $L=1.2$ in three shells: entropy volume (red, orange) and number
 volume (blue, green) at $S_0=10^6$ (solid) and $10^7$ (dashed); dotted, $e^{-\nu k^2\tau}$ for
 each $S_0$.}
 \label{fig:vnCT}
@@ -447,15 +447,15 @@ of each other.}
 
 \begin{enumerate}
 \item The steady loss of energy with \texttt{:energy} came from the back map of the
-  stochastic step: the kernel volume moves when the weights change.  The estimate
+  stochastic step: the entropy volume moves when the weights change.  The estimate
   \Eq{estimate} follows it step by step.
 \item With the number volume $V_a=1/n_a$ the back map is exact.  The loss is gone; what
   remains is a small gain that is first order in $\Delta t$.  The temperature is held up to
-  $\delta v=0.136$, where the kernel volume lost $40\%$ of its kinetic energy.
+  $\delta v=0.136$, where the entropy volume lost $40\%$ of its kinetic energy.
 \item The price is a particle-scale pressure noise at the level of a fluid cell of volume
   $V_a$, and a disorder of the volumes of half the spread of the entropy per particle.
   Neither shows on the scale of the kernel: the smoothed pressures, $C_T$ and the pair
-  separation are the same as with the kernel volume.
+  separation are the same as with the entropy volume.
 \item The entropy per particle behaves as a passive charge.  On the times run it stays near
   its fixed-volume spread and creeps slowly; it does not run away.
 \end{enumerate}

@@ -30,6 +30,11 @@ or learn something about running the code here.
 
 ## Lessons
 
+- **Plotting scripts in batch jobs**: matplotlib needs no display with the Agg backend.
+  The test scripts include `examples/plotsetup.jl` (Agg inside Slurm or without DISPLAY,
+  figures to `SR_FIGDIR`) and run with the full environment (`--project=$HOME/stochastic-sph`,
+  which has PyPlot), one thread each; `nersc/dtests.sh` runs the whole suite on one debug node.
+
 - **Packing a whole node: `nersc/node.sh` (2026-11-10).**  Runs the tasks of a campaign file
   inside one allocation as job steps, `srun --exact -n1 -c 2T --cpu-bind=cores`, NSLOT =
   128/T at a time, refilling as tasks finish (`wait -n`); each task is `array.sh` as in an array
@@ -92,6 +97,21 @@ or learn something about running the code here.
 - Cost model: wall ≈ c × N × steps, steps = t_end / 8.66e-3 at h/a = 2.
 
 ## Campaigns
+
+### `volume_n` and the deterministic suite — 2026-11-10, `main` at `0d3e3e9` / `e87d5d5`
+
+New option `SPH_VOLUME=number` (V_a = 1/n_a) with `SPH_HAMILTONIAN=energy`; the old volume
+V_a = s_a/S_a is now called `entropy` (the default; renamed from `kernel` after these runs).
+- Campaign `nersc/campaign_volume_n.txt` (100 runs) packed on the interactive node
+  61106091 (`node.sh` with SLURM_JOB_ID set from the login node, THREADS=2), 21 min.  Run
+  checkout `~/stochastic-sph-run` at `0d3e3e9`.  Output `$SCRATCH/sph/volume_n/`.
+- **Outcome** (docs/volume_n.pdf, `examples/volume_n_analysis.jl`): the back-map loss is
+  gone (ΔH/H per unit time −3.45e−5 → +3.1e−6, halving with Δt); KE/eq 0.985, 1.008, 1.020
+  at δv = 0.043, 0.078, 0.136 (entropy volume: 0.986, 0.812, 0.606); C_T and D_rel unchanged;
+  the spread of s_a stays near √(3/s_a), the volumes spread by 3% at δv = 0.043.
+- Deterministic suite: debug job **61106930** (`nersc/dtests.sh`, checkout
+  `~/stochastic-sph-dt` at `e87d5d5`), 24 runs, 17 min, all pass; docs/number_tests.pdf.
+  Output `$SCRATCH/sph/number_tests/{s,k,n,sw}` (k = entropy volume, then called kernel).
 
 ### `frozen` — 2026-11-10, `nersc/campaign_frozen.txt`, `main` at `1ffc82f`, docs/frozen.tex
 
