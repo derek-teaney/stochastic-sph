@@ -428,7 +428,12 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
                         rng::AbstractRNG = Random.default_rng(),
                         rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                         frozen = nothing, vote::Symbol = :star, shift::Bool = true,
-                        gradient::Bool = frozen === nothing, cache = nothing)
+                        gradient::Bool = frozen === nothing && params.hamiltonian !== :energy,
+                        cache = nothing)
+    # hamiltonian = :energy: H = Σ e_a exactly, so there is no gradient energy to carry
+    # (energystep.tex, "The stochastic step with :energy"); the plain back map is used.
+    gradient && params.hamiltonian === :energy &&
+        error("stochrep_step!: gradient = true is not consistent with hamiltonian = :energy")
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
     fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos; cache) : frozen

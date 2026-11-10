@@ -1,0 +1,9 @@
+# Energy-representation Hamiltonian (2026-11-09, PROPOSED, not submitted).  Branch
+# hamiltonian-energy-step; docs/energystep.tex.  SPH_HAMILTONIAN=energy: H = Σ_a e_a with the
+# particle's own momentum density (ẋ_a = v_a, pure pressure force); the stochastic step uses
+# the plain back map (no gradient correction).  Same settings as the rigidity set ha2 and
+# nv_ha2 (campaign_rigidity.txt), so the two compare one to one.
+# Submit with -c 8: each task runs 4 seeds (args nreal = 4, SR_SEEDSTRIDE=4), one thread each.
+ha2_energy     4  SR_SEEDSTRIDE=4 SPH_HAMILTONIAN=energy                                -- examples/stochrep_equilibrium.jl 1.2 2.0 200 4 2 L1.2_ha2_energy
+# ideal SPH only (no viscous step), thermal start, L = 0.6, t = 50
+nv_ha2_energy  1  SR_SEEDSTRIDE=4 SR_NOVISC=1 SR_START=thermal SPH_HAMILTONIAN=energy  -- examples/stochrep_equilibrium.jl 0.6 2.0 50 4 2 nv_ha2_energy
