@@ -315,7 +315,7 @@ is half of that):
 $h/a$ & $s_a$ & $t$ & KE/eq & exact & $\Delta H/H$ & acc.\ residual & $|v|\ge1$ (resid.) & $2\gamma/\nu k^2$ \\ \hline
 8 & 34 & 100 & 0.943 & 0.893 & $+2.7\times10^{-3}$ & 0.729 & $2.1\times10^{-4}$ & 1.47 \\
 8, $\Delta t/2$ & 34 & 50 & 0.949 & 0.893 & $+5.6\times10^{-4}$ & 0.805 & $4.7\times10^{-4}$ & --- \\
-12 & 15 & 8 & 0.870 & 0.779 & $+7.2\times10^{-4}$ & 0.752 & $2.6\times10^{-2}$ & (2.2) \\
+12 & 15 & 8 & 0.870 & 0.779 & $+7.2\times10^{-4}$ & 0.752 & $2.6\times10^{-2}$ & --- \\
 12, $\Delta t/2$ & 15 & 4 & 0.876 & 0.779 & $+4.0\times10^{-4}$ & 0.823 & $1.6\times10^{-2}$ & --- \\
 16 & 8.5 & 2.2 & 0.752 & 0.654 & $+1.6\times10^{-3}$ & 0.736 & $9.5\times10^{-2}$ & --- \\
 16, $\Delta t/2$ & 8.5 & 1.2 & 0.760 & 0.654 & $+9.3\times10^{-4}$ & 0.810 & $6.3\times10^{-2}$ & --- \\
@@ -332,12 +332,59 @@ $h/a$ & $s_a$ & $t$ & KE/eq & exact & $\Delta H/H$ & acc.\ residual & $|v|\ge1$ 
   change it, so it is not a step error; the energy drift is (it falls by $2$--$5$ with $\Delta t/2$).  A
   candidate: the one-particle calculation holds the volume fixed, while in the n-scheme the volumes
   fluctuate (by $3\%$ at $s_a=60$, more below), which widens the momentum distribution.  Open.
-\item \emph{The transverse damping keeps rising}: $1.47$ at $h/a=8$; the short run at $12$ gives about
-  $2.2$ (only $t=8$, so a rough number).  It stays below $1+D_{\rm self}/\nu$ ($2.5$, $4.2$), but grows with
+\item \emph{The transverse damping keeps rising}: $1.47$ at $h/a=8$; at $12$ see the final table.  It stays below $1+D_{\rm self}/\nu$ ($2.5$, $4.2$), but grows with
   it.  The self-diffusion keeps its $(h/a)^2$ growth: $3.3\times10^{-3}$, $7.0\times10^{-3}$, $1.1\times10^{-2}$,
   $1.5\times10^{-2}$ at $h/a=8$, $12$, $16$, $23$.
 \end{enumerate}
 
-(Stages 3--5 are completed in the next update.)
+\paragraph{All stages} (stage 3 complete to $t=15$, stage 4 to $t=4$; stage 5 stopped at $t=0.5$ of $1$ to stay
+within the budget, about 19 node-hours in all; per-run records in \texttt{\$SCRATCH/sph/cl/runs.csv},
+a copy in \texttt{nersc/runs/cl\_runs.csv}):
+\begin{center}
+\begin{tabular}{rrrrcccccc}
+\hline
+$h/a$ & $s_a$ & $\Delta t/\Delta t_0$ & $t$ & KE/eq & exact & $\Delta H/H$ & acc.\ resid. & $|v|\ge1$ (resid.) & $2\gamma/\nu k^2$ \\ \hline
+2 & 541 & 1 & 100 & 0.997 & 0.993 & $+2.9\times10^{-4}$ & 0.771 & 0 & 1.14 \\
+3 & 241 & 1 & 100 & 0.994 & 0.984 & $+6.4\times10^{-4}$ & 0.757 & 0 & 1.31 \\
+4 & 135 & 1 & 100 & 0.987 & 0.972 & $+1.0\times10^{-3}$ & 0.751 & 0 & 1.16 \\
+6 & 60 & 1 & 100 & 0.969 & 0.938 & $+1.8\times10^{-3}$ & 0.741 & $2\times10^{-7}$ & 1.50 \\
+8 & 34 & 1 & 100 & 0.943 & 0.893 & $+2.7\times10^{-3}$ & 0.729 & $2.1\times10^{-4}$ & 1.47 \\
+12 & 15 & 1/2 & 15 & 0.869 & 0.779 & $+9.9\times10^{-4}$ & 0.752 & $2.6\times10^{-2}$ & 1.77 \\
+16 & 8.5 & 1/4 & 4 & 0.752 & 0.654 & $+1.1\times10^{-3}$ & 0.734 & $9.5\times10^{-2}$ & --- \\
+23 & 4.1 & 1/16 & 0.5 & 0.512 & 0.463 & $+2.3\times10^{-3}$ & 0.662 & $0.25$ & --- \\
+\hline
+\end{tabular}
+\end{center}
+The damping is fitted at $kh\approx0.52$ only where the run is long enough ($t\ge8$).
+
+%=============================================================================
+\section{Conclusions}
+\label{sec:concl}
+
+\begin{enumerate}
+\item \emph{It does not break} down to $s_a=4$ (four units of entropy per particle, $\delta v=0.5$), provided
+  the time step is lowered to keep the residual acceptance near $0.75$ ($\Delta t/16$ at $s_a=4$).  The
+  equilibrium start itself fails at $s_a=2$.
+\item \emph{The superluminal rejections are physics, not a bug.}  They come from particles whose
+  equilibrium distribution really reaches the light cone ($P(|v|>0.9)$ matches the exact one-particle
+  value at every $s_a$).  They do not bias the equilibrium, but they cost acceptance and need small
+  steps: they fall only as about $\sqrt{\Delta t}$.
+\item \emph{Thermodynamics holds} at the scale of the kernel: the equal-time correlators are those of
+  the fluid at every $h/a$ that ran long enough.  The kinetic energy is above the exact value for a
+  particle of fixed volume, by up to $15\%$ at $s_a=8.5$, independent of $\Delta t$; the fluctuating
+  volumes of the n-scheme are a candidate.
+\item \emph{There is no continuum limit at fixed $h$ in the transport.}  The particles become
+  independent Brownian walkers, $D_{\rm self}\propto(h/a)^2$ (from $0.08\nu$ at $h/a=2$ to $8\nu$ at $23$), and the
+  transverse damping grows with them, from $1.1$ to $1.8$ times the input viscosity by $h/a=12$.  The
+  walk carries momentum; it acts as an extra kinetic viscosity, smaller than $wD_{\rm self}$ but
+  growing with it.  At $h/a\approx2$--$4$ the scheme is closest to the input transport.
+\item \emph{Cost}: a step costs about $(h/a)^4$, and the time step must fall as well; $s_a\lesssim10$
+  is out of reach for transport measurements (hours per unit time on a node).
+\end{enumerate}
+
+\paragraph{Open.}  (a) Why the kinetic energy exceeds the one-particle value (volume fluctuations?).
+(b) The damping against $D_{\rm self}$: a measurement of the momentum carried by the walk, e.g.\ the
+transverse correlator at $kh<0.5$ in a larger box at $h/a=6$--$8$.  (c) Whether a proposal that respects
+$|v|<1$ (non-Gaussian) restores the acceptance at large $\delta v$ without small steps.
 
 \end{document}

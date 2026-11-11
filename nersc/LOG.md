@@ -118,6 +118,14 @@ start.  Output `$SCRATCH/sph/cl/`.  Each stage one regular node, 3 h, `node.sh` 
   equilibrium draw fails at s_a = 2.1).
 - Stages 4 (45-48) **61116238** and 5 (49-52) **61116239**, -t 4:00:00, THREADS=32, checkout `~/stochastic-sph-run2`.
 - Δt criterion: residual acceptance ≈ 0.75 (f = 1, 1/2, 1/4, 1/16 at h/a = 8, 12, 16, 23).
+- Resumes: stage 3 61124065 (timeout) + 61128803; stage 4 61127404.  Stage 5 stopped at t = 0.5
+  of 1 (4 h gave ~870 of 1848 steps at ~16 s/step).  Total ≈ 19 node-hours.
+- **Outcome** (docs/continuum_limit.pdf; `nersc/runs/cl_runs.csv`): stable down to s_a = 4 with the
+  Δt criterion; equilibrium start fails at s_a = 2.1; |v| ≥ 1 rejections are the real equilibrium
+  tail; equal-time correlators fluid-like; KE above the fixed-volume one-particle value (up to 15%);
+  D_self ∝ (h/a)² and the transverse damping rises (1.1 → 1.8 by h/a = 12): no continuum limit of the
+  transport at fixed h.  Cost per step ∝ (h/a)^4 or faster (4.5 s at h/a = 12, 9 s at 16, 16 s at 23
+  on 32 threads).
 
 ### Default scheme changed — 2026-11-10, `main` at `91d9e66`
 
