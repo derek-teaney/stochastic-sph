@@ -49,12 +49,12 @@ short = Dict(ha => loadset(joinpath(SHORT)) for ha in ())     # filled below
 println("sets: ", sort([(k[1], k[2], v.n, v.complete, round(v.t[end], digits = 1)) for (k, v) in sets]))
 
 # ── summary table ────────────────────────────────────────────────────────────
-@printf("%5s %3s %6s %6s %4s %6s %7s %10s %7s %7s %9s %9s %6s\n", "h/a", "dt", "s_a", "δv", "n", "t", "KE/eq", "ΔH/H", "acc_s", "acc_r", "|v|≥1 s", "|v|≥1 r", "vmax")
+@printf("%5s %5s %6s %6s %4s %6s %7s %10s %7s %7s %9s %9s %6s\n", "h/a", "check", "s_a", "δv", "n", "t", "KE/eq", "ΔH/H", "acc_s", "acc_r", "|v|≥1 s", "|v|≥1 r", "vmax")
 for ha in HAS, dt in (false, true)
     haskey(sets, (ha, dt)) || continue
     r = sets[(ha, dt)];  nk = r.nk;  h2 = nk ÷ 2 + 1
     KE = mean_([mean_(x.KE[h2:nk]) for x in r.rs]);  dH = mean_([x.H[nk] for x in r.rs])
-    @printf("%5d %3s %6.1f %6.3f %4d %6.1f %7.3f %+10.2e %7.3f %7.3f %9.2e %9.2e %6.3f\n", ha, dt ? "1/2" : "1", sa(ha),
+    @printf("%5d %5s %6.1f %6.3f %4d %6.1f %7.3f %+10.2e %7.3f %7.3f %9.2e %9.2e %6.3f\n", ha, dt ? "Δt/2" : "", sa(ha),
             1 / sqrt(sa(ha)), r.n, r.t[end], KE, dH, mean_(avgser(r.ex["acc_s"], nk)), mean_(avgser(r.ex["acc_r"], nk)),
             mean_(avgser(r.ex["grej_s"], nk)), mean_(avgser(r.ex["grej_r"], nk)), maximum(avgser(r.ex["vmax"], nk)))
 end
@@ -139,12 +139,15 @@ for (i, j) in enumerate((1, 3, 6)), k in long
     axs[i].set_title(@sprintf("C_T(k,τ)/C_T(k,0),  kh = %.2f", c.ks[j] * c.h));  axs[i].set_xlabel("τ");  axs[i].axhline(0, color = "k", lw = 0.5)
 end
 axs[1].legend(fontsize = 7)
+damp = Dict{Int,Float64}()                                   # 2γ/νk² in the smallest shells (kh ≈ 0.52)
 for k in long
-    c = cs[k].T;  nj = min(6, size(c.C, 1))
-    d = [2 * fit_oscillator(c.τ, c.C[j, :] ./ c.C[j, 1])[2] / (c.ν * c.ks[j]^2) for j in 1:nj]
-    axs[4].plot(c.ks[1:nj] .* c.h, d, "o-", color = colour(k[1]), ms = 4, label = @sprintf("h/a=%d", k[1]))
+    c = cs[k].T;  js = [j for j in 1:size(c.C, 1) if c.ks[j] * c.h < 0.8]   # beyond, the fit range runs out
+    d = [2 * fit_oscillator(c.τ, c.C[j, :] ./ c.C[j, 1])[2] / (c.ν * c.ks[j]^2) for j in js]
+    o = sortperm(c.ks[js])
+    axs[4].plot(c.ks[js][o] .* c.h, d[o], "o-", color = colour(k[1]), ms = 4, label = @sprintf("h/a=%d", k[1]))
+    j1 = [j for j in js if c.ks[j] * c.h < 0.6];  damp[k[1]] = mean_(d[[findfirst(==(j), js) for j in j1]])
 end
-axs[4].axhline(1, color = "k", lw = 0.5);  axs[4].set_xlabel("kh");  axs[4].set_ylabel("2γ/νk²  (1 = input viscosity)");  axs[4].set_title("transverse damping")
+axs[4].axhline(1, color = "k", lw = 0.5);  axs[4].legend(fontsize = 7);  axs[4].set_xlabel("kh");  axs[4].set_ylabel("2γ/νk²  (1 = input viscosity)");  axs[4].set_title("transverse damping")
 tight_layout();  savefig(joinpath(FIGD, "cl_CT.png"), dpi = 100);  close()
 
 fig, axs = subplots(1, 3, figsize = (17, 4.8))
@@ -195,4 +198,16 @@ if !isempty(Dself)
     for x in xs;  @printf("D_self h/a=%2d: %.2e  hydro %.2e  ratio %.2f\n", x, Dself[x]..., Dself[x][1] / Dself[x][2]);  end
 end
 tight_layout();  savefig(joinpath(FIGD, "cl_pairs.png"), dpi = 100);  close()
+# ── damping against the particle walk ────────────────────────────────────────
+ν0 = sets[(2, false)].m.etas / sets[(2, false)].m.Trel
+xs = sort([x for x in keys(damp) if haskey(Dself, x)])
+if !isempty(xs)
+    figure(figsize = (7.5, 5))
+    plot([sa(x) for x in xs], [damp[x] for x in xs], "o-", label = "measured 2γ/νk², kh ≈ 0.52")
+    plot([sa(x) for x in xs], [1 + Dself[x][1] / ν0 for x in xs], "s--", label = "1 + D_self/ν  (momentum carried by the particle walk)")
+    xscale("log");  gca().invert_xaxis();  axhline(1, color = "k", lw = 0.5)
+    xlabel("s_a");  ylabel("transverse damping / input");  legend(fontsize = 8)
+    tight_layout();  savefig(joinpath(FIGD, "cl_walk.png"), dpi = 100);  close()
+    for x in xs;  @printf("h/a=%2d  2γ/νk² = %.2f   1 + D_self/ν = %.2f\n", x, damp[x], 1 + Dself[x][1] / ν0);  end
+end
 println("figures written to $FIGD")

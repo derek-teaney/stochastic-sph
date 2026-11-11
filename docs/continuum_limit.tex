@@ -230,6 +230,82 @@ $h/a$ & $f$ & acc.\ stress & acc.\ residual & $|v|\ge1$: stress & $|v|\ge1$: res
   so the long stages settle it.
 \end{enumerate}
 
-(The long stages are filled in as they finish.)
+\paragraph{Stage 1: $s_a=541$ to $60$} ($h/a=2$, $3$, $4$, $6$; job 61110829, 32 runs, all complete
+in 1.4 hours; \texttt{examples/cl\_analysis.jl}).  Stages 2--4 are included where they have run
+so far (partial: $h/a=8$ to $t=24$, $12$ to $t=2$, $16$ to $t=0.4$).
+\begin{center}
+\begin{tabular}{rrrccccccc}
+\hline
+$h/a$ & $s_a$ & $t$ & KE/eq & exact & $\Delta H/H$ & acc.\ residual & $|v|\ge1$ (resid.) & max $|v|$ \\ \hline
+2 & 541 & 100 & 0.997 & 0.993 & $+2.9\times10^{-4}$ & 0.771 & 0 & 0.19 \\
+3 & 241 & 100 & 0.994 & 0.984 & $+6.4\times10^{-4}$ & 0.757 & 0 & 0.30 \\
+4 & 135 & 100 & 0.987 & 0.972 & $+1.0\times10^{-3}$ & 0.751 & 0 & 0.43 \\
+6 & 60 & 100 & 0.969 & 0.938 & $+1.8\times10^{-3}$ & 0.741 & $2\times10^{-7}$ & 0.71 \\
+6, $\Delta t/2$ & 60 & 60 & 0.972 & 0.938 & $+6.3\times10^{-4}$ & 0.815 & $2\times10^{-7}$ & 0.80 \\
+8 & 34 & 24 & 0.942 & 0.893 & $+7.7\times10^{-4}$ & 0.728 & $3.0\times10^{-4}$ & 0.92 \\
+\hline
+\end{tabular}
+\end{center}
+\begin{enumerate}
+\item \emph{Stable.}  No run breaks; the step behaves the same at every $h/a$ (residual acceptance
+  $0.77\to0.74$, stress $0.97\to0.99$); no particle reaches $|v|=1$ until $s_a\lesssim60$
+  (\Fig{fig:clstep}).
+\item \emph{The kinetic energy sits slightly above the exact equilibrium}, by $0.4\%$ at $s_a=541$ and
+  $3\%$ at $60$, and $H$ grows linearly, faster with $\delta v$: the first-order heating of the
+  n-scheme (\texttt{volume\_n.tex}).  At $h/a=6$ halving $\Delta t$ cuts the energy drift by three
+  (\Fig{fig:clenergy}).
+\item \emph{The equal-time correlators are those of the fluid} at every $h/a$:
+  $C_T(k,0)$, $C_L(k,0)\approx1$ within the noise ($0.85$--$1.1$), with no trend in $h/a$ (\Fig{fig:clstatic}).
+\item \emph{The particles become a gas of walkers.}  The self-diffusion grows as $(h/a)^2$:
+  $1.7\times10^{-4}$, $8\times10^{-4}$, $1.9\times10^{-3}$, $3.3\times10^{-3}$ at $h/a=2$, $4$, $6$, $8$, against a
+  hydrodynamic estimate of about $10^{-4}$ that hardly changes.  $D_{\rm self}/\delta v^2\approx0.09$
+  at every $h/a$: each particle keeps its velocity for a fixed time and then forgets it
+  (\Fig{fig:clpairs}).  At $h/a=6$ $D_{\rm self}$ is already as large as the kinematic viscosity
+  $\nu=2.2\times10^{-3}$.
+\item \emph{The transverse damping rises with $h/a$}: $2\gamma/\nu k^2=1.14$, $1.31$, $1.16$, $1.50$ at
+  $h/a=2$, $3$, $4$, $6$ ($kh\approx0.52$; \Fig{fig:clCT}).  A particle carries its own momentum while it
+  walks, which adds a kinetic viscosity of order $wD_{\rm self}$; that would give
+  $2\gamma/\nu k^2\approx1+D_{\rm self}/\nu=1.08$, $1.20$, $1.37$, $1.85$ (\Fig{fig:clwalk}).  The measured rise is
+  there but smaller; a hypothesis to test with stages 2--4.  If it holds, the walk makes the
+  viscosity grow without bound as $h/a\to\infty$ at fixed $h$.
+\end{enumerate}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/cl_energy.png}
+\caption{KE/eq and $\Delta H/H$ against $t$, mean of the runs; one colour per $h/a$, dashed: the
+$\Delta t/2$ check.  Partial stages are the short curves.}
+\label{fig:clenergy}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/cl_step.png}
+\caption{The stochastic step: acceptance of the residual (solid) and stress (dotted) proposals,
+the fraction rejected for $|v|\ge1$, the largest particle speed, against $t$; bottom right, their
+means against $s_a$.}
+\label{fig:clstep}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/cl_static.png}
+\caption{Equal-time $C_T(k,0)$ and $C_L(k,0)$ per $NVwT$ against $kh$.}
+\label{fig:clstatic}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/cl_CT.png}
+\caption{$C_T(k,\tau)/C_T(k,0)$ in three shells (dotted: $e^{-\nu k^2\tau}$) and the fitted damping
+against $kh$ (shells with $kh<0.8$).}
+\label{fig:clCT}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/cl_pairs.png}
+\caption{Separation of nearest neighbours $D^2(a,t)/a^2$; mean square displacement in units of $h^2$;
+the self-diffusion against $s_a$ with the hydrodynamic estimate.}
+\label{fig:clpairs}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=0.6\textwidth]{figs/cl_walk.png}
+\caption{Transverse damping at $kh\approx0.52$ against $s_a$, and $1+D_{\rm self}/\nu$.}
+\label{fig:clwalk}
+\end{figure}
+
+(Stages 2--5 are added as they finish.)
 
 \end{document}
