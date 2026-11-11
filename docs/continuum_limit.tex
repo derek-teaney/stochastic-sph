@@ -306,6 +306,38 @@ the self-diffusion against $s_a$ with the hydrodynamic estimate.}
 \label{fig:clwalk}
 \end{figure}
 
-(Stages 2--5 are added as they finish.)
+\paragraph{Stage 2: $s_a=34$} ($h/a=8$, job 61113602, 8 runs, complete), with the later stages so far
+($h/a=12$ to $t=8$, $16$ to $t=2.2$, $23$ to $t=0.3$; each at its own $\Delta t$, see the scan; ``$\Delta t/2$''
+is half of that):
+\begin{center}
+\begin{tabular}{rrrcccccc}
+\hline
+$h/a$ & $s_a$ & $t$ & KE/eq & exact & $\Delta H/H$ & acc.\ residual & $|v|\ge1$ (resid.) & $2\gamma/\nu k^2$ \\ \hline
+8 & 34 & 100 & 0.943 & 0.893 & $+2.7\times10^{-3}$ & 0.729 & $2.1\times10^{-4}$ & 1.47 \\
+8, $\Delta t/2$ & 34 & 50 & 0.949 & 0.893 & $+5.6\times10^{-4}$ & 0.805 & $4.7\times10^{-4}$ & --- \\
+12 & 15 & 8 & 0.870 & 0.779 & $+7.2\times10^{-4}$ & 0.752 & $2.6\times10^{-2}$ & (2.2) \\
+12, $\Delta t/2$ & 15 & 4 & 0.876 & 0.779 & $+4.0\times10^{-4}$ & 0.823 & $1.6\times10^{-2}$ & --- \\
+16 & 8.5 & 2.2 & 0.752 & 0.654 & $+1.6\times10^{-3}$ & 0.736 & $9.5\times10^{-2}$ & --- \\
+16, $\Delta t/2$ & 8.5 & 1.2 & 0.760 & 0.654 & $+9.3\times10^{-4}$ & 0.810 & $6.3\times10^{-2}$ & --- \\
+23 & 4.1 & 0.3 & 0.508 & 0.463 & $+2.4\times10^{-3}$ & 0.671 & $0.24$ & --- \\
+\hline
+\end{tabular}
+\end{center}
+\begin{enumerate}
+\item \emph{Nothing breaks down to $s_a=4$}: with the time step chosen by the criterion the residual
+  acceptance stays at $0.67$--$0.75$, although a quarter of the residual proposals at $s_a=4$ are
+  rejected for $|v|\ge1$.
+\item \emph{The kinetic energy stays above the exact one-particle value, more so as $s_a$ falls}:
+  by $0.4$, $1.5$, $3.3$, $5.6$, $12$, $15\%$ at $s_a=541$, $135$, $60$, $34$, $15$, $8.5$.  Halving $\Delta t$ does not
+  change it, so it is not a step error; the energy drift is (it falls by $2$--$5$ with $\Delta t/2$).  A
+  candidate: the one-particle calculation holds the volume fixed, while in the n-scheme the volumes
+  fluctuate (by $3\%$ at $s_a=60$, more below), which widens the momentum distribution.  Open.
+\item \emph{The transverse damping keeps rising}: $1.47$ at $h/a=8$; the short run at $12$ gives about
+  $2.2$ (only $t=8$, so a rough number).  It stays below $1+D_{\rm self}/\nu$ ($2.5$, $4.2$), but grows with
+  it.  The self-diffusion keeps its $(h/a)^2$ growth: $3.3\times10^{-3}$, $7.0\times10^{-3}$, $1.1\times10^{-2}$,
+  $1.5\times10^{-2}$ at $h/a=8$, $12$, $16$, $23$.
+\end{enumerate}
+
+(Stages 3--5 are completed in the next update.)
 
 \end{document}
