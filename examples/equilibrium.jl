@@ -21,47 +21,49 @@ const TEND  = parse(Float64, ARGS[3])
 const NREAL = parse(Int, ARGS[4])
 const RECN  = length(ARGS) > 4 ? parse(Int, ARGS[5]) : 2          # record every RECN steps
 const TAG   = length(ARGS) > 5 ? ARGS[6] : "L$(LBOX)_ha$(HA)"
-const ETAS  = parse(Float64, get(ENV, "SR_ETAS", "0.2"))
-const S0    = parse(Float64, get(ENV, "SR_S0", "1e6"))
-const KHMAX = parse(Float64, get(ENV, "SR_KHMAX", "1.5"))
-const START = Symbol(get(ENV, "SR_START", "eq"))
-const OUT   = get(ENV, "SR_OUTDIR", joinpath(@__DIR__, "..", "data"));  mkpath(OUT)
+const ETAS  = setting("SR_ETAS", 0.2)
+const S0    = setting("SR_S0", 1e6)
+const KHMAX = setting("SR_KHMAX", 1.5)
+const START = setting("SR_START", :eq)
+const OUT   = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data")));  mkpath(OUT)
 const COMMIT = try
     c = readchomp(`git -C $(@__DIR__) rev-parse --short HEAD`)
     success(`git -C $(@__DIR__) diff --quiet HEAD`) ? c : c * "+dirty"
 catch
     "unknown"
 end
-const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0·STRIDE+1 … +NREAL
-const STRIDE = parse(Int, get(ENV, "SR_SEEDSTRIDE", "1"))             # = NREAL when an array task runs NREAL seeds
-const SEEDOFF = parse(Int, get(ENV, "SR_SEEDOFFSET", "0"))           # added to every seed (new realizations of a set)
+const SEED0 = setting("SR_SEED0", 0)                  # seeds SEED0·STRIDE+1 … +NREAL
+const STRIDE = setting("SR_SEEDSTRIDE", 1)             # = NREAL when an array task runs NREAL seeds
+const SEEDOFF = setting("SR_SEEDOFFSET", 0)           # added to every seed (new realizations of a set)
 # Controls for the rigidity tests: SR_NOVISC=1 skips the stochastic step (ideal SPH only),
 # SR_NOHAM=1 skips the leapfrog (positions frozen, stochastic step only).  SPH_KERNEL=wc4
 # selects the Wendland C4 kernel (src/sph.jl).  Displacements from the initial sites are
 # recorded (UL, UT) in every run.
-const NOVISC = get(ENV, "SR_NOVISC", "0") == "1"
-const NOHAM  = get(ENV, "SR_NOHAM", "0") == "1"
-const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
+const NOVISC = setting("SR_NOVISC", false)
+const NOHAM  = setting("SR_NOHAM", false)
+const KERNEL = setting("SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
-const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
+const JITTER = setting("SR_JITTER", 0.0)
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
 # boost the energy Fourier modes E_k are recorded too (SR_RECORD_E=1 forces them at rest).
-const BOOST  = parse(Float64, get(ENV, "SR_BOOST", "0"))
+const BOOST  = setting("SR_BOOST", 0.0)
 const GAMMA  = 1 / sqrt(1 - BOOST^2)
-const RECORD_E = BOOST != 0 || get(ENV, "SR_RECORD_E", "0") == "1"
-const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
+const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
+const LAMBDA = setting("SR_LAMBDA", 1.0)            # residual move: 1 (detailed balance) or Inf
 const VOTE   = :star                                                 # stochastic step: one consensus vote per star
-const DTFAC  = parse(Float64, get(ENV, "SR_DTFAC", "1"))             # Δt / default (time-step tests)
+# the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
+stoch_opts(params) = StochOptions(params; λ = LAMBDA, vote = VOTE)
+const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
 # start, the run resumes from it (bit-identically), so a task that hit its time limit is
 # simply resubmitted.  SR_STOP_AFTER (tests only) stops after that step, after a checkpoint.
-const CHKMIN    = parse(Float64, get(ENV, "SR_CHECKPOINT_MIN", "20"))
-const STOPAFTER = parse(Int, get(ENV, "SR_STOP_AFTER", "0"))
+const CHKMIN    = setting("SR_CHECKPOINT_MIN", 20.0)
+const STOPAFTER = setting("SR_STOP_AFTER", 0)
 
 function run_meta(params, st, n, wall, complete)
     (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, dt = st.dt, nsteps = st.nsteps,
@@ -128,7 +130,7 @@ function one_realization(seed)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
         x0 = [q.x for q in ps]
-        NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=VOTE)
+        NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos, stoch_opts(params); rng, rngs)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); energies = RECORD_E, x0, L = params.L),
               prec = ParticleRecorder(ps, params),
@@ -142,6 +144,7 @@ function one_realization(seed)
                             start))
     end
     (; params, ps, cl, rngs, rng, dotm, rec, prec, Ht, KE, acc, nsteps, dt, H0, V, w, T) = st
+    opts = stoch_opts(params)
     haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
     haskey(st, :acc_s) || (st = merge(st, (acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[])))
     sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej_s, st.grej_r, st.vmax
@@ -154,7 +157,7 @@ function one_realization(seed)
     for n in st.n+1:nsteps
         NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
         if !NOVISC
-            a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=VOTE, flip=isodd(n), cache)
+            a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos, opts; rng, rngs, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
             win .+= (a.stress, a.resid, a.gstress, a.gresid)
             observe_step!(mon, a)

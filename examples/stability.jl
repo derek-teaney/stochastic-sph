@@ -26,14 +26,14 @@ const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))   
 const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star (single vote) or :bonds
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const SPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split
-const ENERGYH = get(ENV, "SPH_HAMILTONIAN", "smoothed") == "energy"   # H = Σ e_a (energystep.tex)
+const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
-const ETAS  = parse(Float64, get(ENV, "SR_ETAS", "0.2"))                # η/s
-const S0    = parse(Float64, get(ENV, "SR_S0", "1e6"))                  # entropy density (sets s_a)
-const HFIX  = get(ENV, "SR_HFIX", "0") == "1"                           # restore H after each stochastic step
-const OUTD  = get(ENV, "SR_OUTDIR", joinpath(@__DIR__, "..", "docs", "figs"));  mkpath(OUTD)
-const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                     # seeds SEED0+1 … SEED0+NREAL
-const START = Symbol(get(ENV, "SR_START", "eq"))                       # eq (hot) | cold | thermal (initial_state!)
+const ETAS  = setting("SR_ETAS", 0.2)                # η/s
+const S0    = setting("SR_S0", 1e6)                  # entropy density (sets s_a)
+const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
+const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
+const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL
+const START = setting("SR_START", :eq)                       # eq (hot) | cold | thermal (initial_state!)
 const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") * (GRAD ? "_grad" : "") *
               (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (S0 == 1e6 ? "" : "_S$(S0)") * (HFIX ? "_hfix" : "") *
               (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
@@ -86,6 +86,7 @@ function run(kind, seed=1)
              if norm(minimum_image(ps[j].x - ps[i].x, params.L)) < 1.2 * params.a]
     dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()      # reused arrays of the stochastic step
     λ, resid = kind === :full ? (1.0, true) : kind === :det ? (Inf, true) : (1.0, false)
+    opts = StochOptions(params; λ, residual = resid, vote = VOTE, gradient = GRAD)
     E0 = sum(particle_energy(q, eos) for q in ps);  H0 = Hof(ps, params, cl, eos)
     ts = Float64[];  Hs = Float64[];  Es = Float64[];  KE = Float64[];  dis = Float64[];  loc = Float64[];  acc = Float64[]
     snaps = Dict{Int,Any}();  snapat = unique(round.(Int, exp.(range(0, log(nsteps), length=12))))
@@ -99,7 +100,7 @@ function run(kind, seed=1)
             H1 = Hof(ps, params, cl, eos);  E1 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a1 = stochastic_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=isodd(n), vote=VOTE, gradient=GRAD, cache)
+        a1 = stochastic_step!(ps, params, cl, dt / 2, eos, opts; rng, rngs, flip=isodd(n), cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H2 = Hof(ps, params, cl, eos);  E2 = Eof(ps)
@@ -109,7 +110,7 @@ function run(kind, seed=1)
             H3 = Hof(ps, params, cl, eos);  E3 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a2 = stochastic_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=!isodd(n), vote=VOTE, gradient=GRAD, cache)
+        a2 = stochastic_step!(ps, params, cl, dt / 2, eos, opts; rng, rngs, flip=!isodd(n), cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H4 = Hof(ps, params, cl, eos);  E4 = Eof(ps)

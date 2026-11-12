@@ -422,18 +422,47 @@ end
 # `frozen = stochastic_frozen(...)` to keep V_a, e_a and the stars fixed across steps
 # (a frozen lattice); otherwise they are recomputed from the current state.  Pass the same
 # `cache = StochCache()` to every step of a simulation to reuse its arrays (faster, same results).
-function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                        dt::Float64, eos::AbstractEOS;
-                        λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
-                        rng::AbstractRNG = Random.default_rng(),
-                        rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
-                        frozen = nothing, vote::Symbol = :star, shift::Bool = true,
-                        gradient::Bool = frozen === nothing && params.hamiltonian !== :energy,
-                        cache = nothing)
-    # hamiltonian = :energy: H = Σ e_a exactly, so there is no gradient energy to carry
-    # (energystep.tex, "The stochastic step with :energy"); the plain back map is used.
+# The settings of the stochastic step, with their defaults in one place:
+#   λ         residual move: 1 (detailed balance) or Inf (deterministic)
+#   residual  do the residual move (else the stress move only)
+#   vote      :star (one consensus vote per star) or :bonds
+#   shift     random shift of the checkerboard grid for each sweep
+#   gradient  gradient-corrected back map; default on, except with hamiltonian = :energy
+#             (H = Σ e_a exactly, no gradient energy to carry; energystep.tex) and on a
+#             frozen lattice
+# The default of `gradient` is resolved here, so the struct holds the value used.
+struct StochOptions
+    λ        :: Float64
+    residual :: Bool
+    vote     :: Symbol
+    shift    :: Bool
+    gradient :: Bool
+end
+function StochOptions(params::SimParams; λ = 1.0, residual::Bool = true, vote::Symbol = :star,
+                      shift::Bool = true, frozen::Bool = false,
+                      gradient::Bool = !frozen && params.hamiltonian !== :energy)
     gradient && params.hamiltonian === :energy &&
         error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
+    return StochOptions(Float64(λ), residual, vote, shift, gradient)
+end
+
+# The step with the settings as keywords (tests, examples): builds the StochOptions.
+function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                          dt::Float64, eos::AbstractEOS;
+                          λ::Float64 = 1.0, residual::Bool = true, vote::Symbol = :star,
+                          shift::Bool = true, frozen = nothing,
+                          gradient::Bool = frozen === nothing && params.hamiltonian !== :energy,
+                          kw...)
+    opts = StochOptions(params; λ, residual, vote, shift, frozen = frozen !== nothing, gradient)
+    return stochastic_step!(particles, params, cl, dt, eos, opts; frozen, kw...)
+end
+
+function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+                          dt::Float64, eos::AbstractEOS, opts::StochOptions;
+                          flip::Bool = false, rng::AbstractRNG = Random.default_rng(),
+                          rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
+                          frozen = nothing, cache = nothing)
+    (; λ, residual, vote, shift, gradient) = opts
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
     fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen

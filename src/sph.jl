@@ -55,10 +55,15 @@ end
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
+# The Hamiltonian when none is given: SPH_HAMILTONIAN, else :energy (:smoothed with the
+# two-level form, which needs it).  Drivers that need the scheme before SimParams use this too.
+default_hamiltonian(dissipation = setting("SPH_DISSIPATION", :particle)) =
+    setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
+
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
-                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "particle")), bond_h=nothing,
-                   hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", dissipation === :two_level ? "smoothed" : "energy")),
-                   volume=Symbol(get(ENV, "SPH_VOLUME", hamiltonian === :energy ? "number" : "entropy")))
+                   dissipation=setting("SPH_DISSIPATION", :particle), bond_h=nothing,
+                   hamiltonian=default_hamiltonian(dissipation),
+                   volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy))
     dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
@@ -75,7 +80,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
         Lx = Nx * a;  Ly = Ny * dy
         N  = Nx * Ny
         vol = a^2 * sqrt(3) / 2
-        kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[get(ENV, "SPH_KERNEL", "wc2")]
+        kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[setting("SPH_KERNEL", "wc2")]
     else
         Nx = round(Int, Lx_t / a)
         Ny = round(Int, Ly_t / a)

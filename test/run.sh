@@ -8,9 +8,9 @@
 #            "visual".
 #   regress  no change to the numerics against the commit <ref> (default main), built in a git
 #            worktree: test/regress/step.jl bit-identical for the n-scheme and the smoothed
-#            Hamiltonian (at 1 and 4 threads), a short fixed-seed run of the equilibrium driver
-#            at rest and boosted with bit-identical data, and every unit test with the same
-#            output (timing masked).
+#            Hamiltonian (at 1 and 4 threads), short fixed-seed runs of the equilibrium driver
+#            (at rest and boosted) and of the stability driver (smoothed and energy) with
+#            bit-identical data, and every unit test with the same output (timing masked).
 #   load     every examples/*.jl and test/*.jl still loads (its using/include lines run).
 #   all      unit, load, regress.
 #
@@ -93,6 +93,17 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         ok=fail
         julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_$c.log" 2>&1 && ok=pass
         record "equilibrium driver, $c" regress $ok $(( $(date +%s) - t0 ))
+    done
+    sdrv() { [ -f "$1/examples/stability.jl" ] && echo "$1/examples/stability.jl" || echo "$1/examples/stochrep_hamiltonian.jl"; }
+    for H in smoothed energy; do
+        t0=$(date +%s)
+        for side in ref here; do
+            d=$R; [ $side = ref ] && d=$W
+            ( cd "$d" && SPH_HAMILTONIAN=$H SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$d" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
+        done; wait
+        ok=fail;  f=$(ls "$OUT/stab_ref/$H" 2>/dev/null | head -1)
+        [ -n "$f" ] && julia --project="$PROJ" test/regress/jlscmp.jl "$OUT/stab_ref/$H/$f" "$OUT/stab_here/$H/$f" > "$OUT/stab_cmp_$H.log" 2>&1 && ok=pass
+        record "stability driver, $H" regress $ok $(( $(date +%s) - t0 ))
     done
     t0=$(date +%s)
     [ -f "$OUT/unit/unit.txt" ] || run_unit "$R" "$OUT/unit"
