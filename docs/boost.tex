@@ -203,8 +203,21 @@ $v$ & $E$ & $M_x$ & $M_y$ & $E$ & $M_x$ & $M_y$ \\ \hline
 \end{tabular}
 \end{center}
 The fluctuations are those of the moving fluid, to within the errors, although $\chi_{xx}$ is 19 times
-its rest value at $v=0.8$.  Along the flow the values sit below 1 at every $v>0$ ($2\sigma$ at $v=0.8$);
-in the larger box (below) the same $kh=0.26$ gives $0.97$ at $v=0.8$, so this is probably statistics.
+its rest value at $v=0.8$, with one exception.  Along the flow ($\bm k\parallel\bm v$) the energy and the
+momentum along the flow, which carry the sound, sit below 1 at every $v>0$ and every $k$
+(\Fig{fig:bstatic}).  At $kh=0.52$, where the errors are smaller:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+$v$ & $E$ & $M_x$ & $M_y$ \\ \hline
+0 & $0.99(3)$ & $0.98(3)$ & $1.04(3)$ \\
+0.3 & $0.91(3)$ & $0.87(3)$ & $1.01(3)$ \\
+0.6 & $0.86(4)$ & $0.83(5)$ & $0.98(2)$ \\
+0.8 & $0.84(4)$ & $0.83(4)$ & $0.97(3)$ \\
+\hline
+\end{tabular}
+\end{center}
+This 10--17\% deficit is 3--4$\sigma$ and real; across the flow the same kh gives $0.95$--$0.99$.  Its origin is open.
 
 \paragraph{2. The shear mode along the flow is advected}, \Fig{fig:bshear}.  $C_{yy}(k\hat x,\tau)$
 oscillates at the advection frequency $vk$ inside the decaying envelope.  The fit is made to the
@@ -297,34 +310,35 @@ systematic in $\eta$.
 
 \paragraph{So far.}  A fluid moving at up to $v=0.8$ is simulated in equilibrium, and its correlators
 along and across the flow are those of boosted fluctuating hydrodynamics: susceptibilities, advection,
-the relativistic addition of the sound speed, and the time dilation of the damping.  The one
-discrepancy is an excess damping of the shear mode along the flow, 40--50\% at $v=0.8$ (10--20\% at
+the relativistic addition of the sound speed, and the time dilation of the damping.  Two
+discrepancies.  (i) An excess damping of the shear mode along the flow, 40--50\% at $v=0.8$ (10--20\% at
 smaller $v$).  It is not from the time step and does not depend on $\eta$ (paragraph 6): a numerical
 damping of the moving fluid, about $\eta/s\approx0.015$ in the lab, magnified by $\gamma^3$ against the
-time-dilated physical rate.
+time-dilated physical rate.  (ii) The equal-time fluctuations of $E$ and $M_x$ with $\bm k\parallel\bm v$ are
+10--17\% below $\chi$ for $v\ge0.3$ (paragraph 1); origin open.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_static.png}
 \caption{Equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$ for $A=E$, $M_x$, $M_y$; filled: $\bm k\parallel\bm v$,
-open: $\bm k\perp\bm v$; colour: $v$ (purple: $v=0.8$ at $\Delta t/2$, 16 runs).}
+open: $\bm k\perp\bm v$; one row per $v$ (last row: $v=0.8$ at $\Delta t/2$).}
 \label{fig:bstatic}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_shear.png}
 \caption{$\bm k\parallel\bm v$, $kh=0.26$: real and imaginary parts of $C_{yy}(\bm k,\tau)/C_{yy}(\bm k,0)$, the advected shear
-mode; dotted: hydrodynamics (no fit).}
+mode, one row per $v$; dashed: hydrodynamics (no fit).}
 \label{fig:bshear}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_par.png}
-\caption{$\bm k\parallel\bm v$, $kh=0.26$: $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ (normalized), the Doppler-shifted sound modes;
-dotted: hydrodynamics.}
+\caption{$\bm k\parallel\bm v$, $kh=0.26$: $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ (normalized), the Doppler-shifted sound modes,
+one row per $v$; dashed: hydrodynamics.}
 \label{fig:bpar}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_perp.png}
 \caption{$\bm k\perp\bm v$, $kh=0.26$: $\mathrm{Re}\,C_{yy}$ (sound across the flow) and $\mathrm{Re}\,C_{xx}$ (shear of the momentum
-along the flow, mixed with sound); dotted: hydrodynamics.}
+along the flow, mixed with sound), one row per $v$; dashed: hydrodynamics.}
 \label{fig:bperp}
 \end{figure}
 \begin{figure}[t]

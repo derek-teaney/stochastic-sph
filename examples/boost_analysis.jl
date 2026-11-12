@@ -155,28 +155,30 @@ isempty(runs) && (println("no complete runs yet");  exit())
 names = ("E", "M_x", "M_y")
 
 # ── equal time ───────────────────────────────────────────────────────────────────────────
-fig, axs = subplots(1, 3, figsize = (17, 4.8))
+fig, axg = subplots(length(runs), 3, figsize = (15, 2.9 * length(runs)), squeeze = false)
 println("equal time, C_AA(k,0)/χ_AA (smallest k):")
-for run in runs
+for (row, run) in enumerate(runs)
     r = res[run];  χ = chi(r.Trel, r.v)
-    for (a, ax) in enumerate(axs)
+    for a in 1:3
+        ax = axg[row, a]
         for (dir, mk) in ((:par, "o"), (:perp, "s"))
             js = sort([j for (d, j) in keys(r.C) if d === dir])
             kh = [norm(r.C[(dir, j)].k) * r.h for j in js];  y = [real(r.C[(dir, j)].C[a, a, 1]) / χ[a, a] for j in js]
             ax.plot(kh, y, mk * "-", color = r.col, mfc = dir === :perp ? "none" : r.col,
-                    label = @sprintf("v=%.1f, k %s v", r.v, dir === :par ? "∥" : "⊥"))
+                    label = dir === :par ? "k ∥ v" : "k ⊥ v")
         end
+        ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.7, 1.3)
+        row == length(runs) && ax.set_xlabel("kh")
+        ax.set_title("$(r.lab):  C_$(names[a])$(names[a])(k,0) / χ", fontsize = 10)
+        a == 1 && ax.legend(fontsize = 8)
     end
-    eq(dir, a) = jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, 1)].Cs)
-    @printf("  %-15s k∥: %s   k⊥: %s\n", r.lab,
-            join([@sprintf("%s %.3f±%.3f", names[a], eq(:par, a)...) for a in 1:3], "  "),
-            join([@sprintf("%s %.3f±%.3f", names[a], eq(:perp, a)...) for a in 1:3], "  "))
+    for j in 1:2
+        eq(dir, a) = jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, j)].Cs)
+        @printf("  %-15s kh=%.2f  k∥: %s   k⊥: %s\n", r.lab, norm(r.C[(:par, j)].k) * r.h,
+                join([@sprintf("%s %.3f±%.3f", names[a], eq(:par, a)...) for a in 1:3], "  "),
+                join([@sprintf("%s %.3f±%.3f", names[a], eq(:perp, a)...) for a in 1:3], "  "))
+    end
 end
-for (a, ax) in enumerate(axs)
-    ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.7, 1.3);  ax.set_xlabel("kh")
-    ax.set_title("C_$(names[a])$(names[a])(k,0) / χ  (filled: k ∥ v, open: k ⊥ v)")
-end
-axs[1].legend(fontsize = 6, ncol = 2)
 tight_layout();  savefig(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
 
 # ── dynamics: one figure per (direction, component) family ───────────────────────────────
@@ -184,8 +186,8 @@ function panel!(ax, r, dir, a, b; part = real, j = 1, tmax = 60.0)
     c = r.C[(dir, j)];  it = findall(<=(tmax), c.τ);  τ = c.τ[it]
     pred, χ, _ = predict(r.Trel, r.v, r.ν, c.k, τ)
     y = part.(c.C[a, b, it]) ./ real(c.C[a, b, 1]);  yp = [part(p[a, b]) for p in pred] ./ χ[a, b]
-    ax.plot(τ, y, color = r.col, lw = 1.3, label = r.lab)
-    ax.plot(τ, yp, color = r.col, lw = 0.9, ls = ":")
+    ax.plot(τ, y, color = r.col, lw = 1.3, label = "measured")
+    ax.plot(τ, yp, color = "k", lw = 0.9, ls = "--", label = "hydrodynamics")
 end
 for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (advected shear)", 80.0),
                                         (:par, 3, 3, imag, "Im C_yy, k ∥ v", 80.0)]),
@@ -193,12 +195,14 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
                                         (:par, 1, 1, real, "Re C_EE, k ∥ v", 15.0)]),
                        ("boost_perp",  [(:perp, 3, 3, real, "Re C_yy, k ⊥ v (sound across the flow)", 15.0),
                                         (:perp, 2, 2, real, "Re C_xx, k ⊥ v (shear + sound)", 80.0)]))
-    fig, axs = subplots(1, 2, figsize = (15, 5))
-    for (ax, (dir, a, b, part, title, tmax)) in zip(axs, specs)
-        for run in fitruns;  panel!(ax, res[run], dir, a, b; part, tmax);  end
-        k = res[runs[1]].C[(dir, 1)].k
-        ax.set_title(title * @sprintf(",  kh = %.2f;  dotted: hydrodynamics", norm(k) * res[runs[1]].h), fontsize = 10)
-        ax.axhline(0, color = "k", lw = 0.5);  ax.set_xlabel("τ");  ax.legend(fontsize = 8)
+    fig, axg = subplots(length(fitruns), 2, figsize = (15, 3.0 * length(fitruns)), squeeze = false)
+    for (row, run) in enumerate(fitruns), (col, (dir, a, b, part, title, tmax)) in enumerate(specs)
+        ax = axg[row, col];  panel!(ax, res[run], dir, a, b; part, tmax)
+        k = res[run].C[(dir, 1)].k
+        ax.set_title(res[run].lab * ":  " * title * @sprintf(",  kh = %.2f", norm(k) * res[run].h), fontsize = 10)
+        ax.axhline(0, color = "k", lw = 0.5);  ax.set_ylim(-1.1, 1.1)
+        row == length(fitruns) && ax.set_xlabel("τ")
+        row == 1 && col == 1 && ax.legend(fontsize = 8, loc = "lower left")
     end
     tight_layout();  savefig(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
 end
