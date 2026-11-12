@@ -226,18 +226,18 @@ residual moves in 2D, and \Eq{sigmaab} 47\%, the same as at rest.
 linear in the momentum changes, with $\partial S_c/\partial\bm m_c=-\beta_c$:
 \st
 \Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\pf_{ab}
-=-V_a\,\xi_a{:}G_a,\qquad
-G_a(\beta)=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T ,
+=-V_a\,\xi_a{:}(\nabla\beta)_a,\qquad
+(\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T ,
 \stp
-where $G_a$ is the fitted gradient of $\beta$ at $a$
+where $(\nabla\beta)_a$ is the fitted gradient of $\beta$ at $a$
 (\texttt{bond\_dissipation.tex}, mean-field form) and $\Delta\beta_{ab}=\beta_b-\beta_a$.  The proposal sees $\beta$ only
-through $G_a$.
+through $(\nabla\beta)_a$.
 
 \paragraph{Mean of the accepted stress.}  Each factor of \Eq{Pfact} is linear in
 the proposal to leading order,
 \st
 \Delta S_{ab}\simeq g_{ab}{:}\xi_a ,\qquad
-\sum_{b\neq a}g_{ab}=\frac{\partial\Delta\mathbb S}{\partial\xi_a}=-V_aG_a ,
+\sum_{b\neq a}g_{ab}=\frac{\partial\Delta\mathbb S}{\partial\xi_a}=-V_a(\nabla\beta)_a ,
 \stp
 and is of order $\sqrt{\Delta t}$.  To the same order the acceptance probability
 is
@@ -260,21 +260,21 @@ since $x_b\min(0,x_b)$ is $x_b^2$ for half of the Gaussian and zero otherwise.
 Summing over the bonds,
 \st
 \avg{\xi_aP(\xi_a)}=\frac12\,C{:}\frac{\partial\Delta\mathbb S}{\partial\xi_a}
-=-\Delta t\,(T_{\rm rel})_a\,\kappa_a{:}G_a=\Delta t\,\Pi_a(G_a) ,
+=-\Delta t\,(T_{\rm rel})_a\,\kappa_a{:}(\nabla\beta)_a=\Delta t\,\Pi_a(\nabla\beta) ,
 \stp
 the viscous stress of the fitted gradient.  A single test on the whole star,
 $\min(1,e^{\Delta\mathbb S})$, gives the same mean: the factorization changes
 the rejection rate, not the drift.  The mean traction is therefore
 \st
-\avg{\pf_{ab}}=\Delta t\,\Pi_a(G_a)\,\bm A_{ab} .
+\avg{\pf_{ab}}=\Delta t\,\Pi_a(\nabla\beta)\,\bm A_{ab} .
 \label{tmean}
 \stp
 Compare the deterministic traction of the bond form,
 \st
 \pf_{ab}^{\rm det}=-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\mathcal D_{ab}\beta
-=\Pi_a(G_a)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta,
+=\Pi_a(\nabla\beta)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta,
 \stp
-where $\delta_{ab}\beta=\Delta\beta_{ab}-G_a(\beta)\,\bm r_{ab}$ is the residual of the fit
+where $\delta_{ab}\beta=\Delta\beta_{ab}-(\nabla\beta)_a\,\bm r_{ab}$ is the residual of the fit
 (\texttt{bond\_dissipation.tex}, resolved plus residual).
 \begin{itemize}
 \item For a linear field the residual vanishes and \Eq{tmean} is the
@@ -335,7 +335,7 @@ star is
 \Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\vec p_{ab}
 =-\sum_{b\neq a}\mathfrak p_{ab}\cdot\delta_{ab}\beta ,
 \stp
-because the subtracted stress removes $\sum_{c\neq a}\mathfrak p_{ac}\cdot G_a\bm r_{ac}$
+because the subtracted stress removes $\sum_{c\neq a}\mathfrak p_{ac}\cdot (\nabla\beta)_a\bm r_{ac}$
 from the pair term.  The argument of \Sect{sec:stress} gives
 \st
 \avg{\mathfrak p_{ab}}=-\Delta t\cdot (2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta .
@@ -353,7 +353,7 @@ The mean residual traction is
 Added to the mean stress traction \Eq{tmean},
 \st
 \avg{\pf_{ab}}+\avg{\vec p_{ab}}
-=\Delta t\Big[\Pi_a(G_a)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta\Big]
+=\Delta t\Big[\Pi_a(\nabla\beta)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta\Big]
 =\Delta t\,\pf^{\rm det}_{ab} ,
 \stp
 the deterministic traction of the bond form, on every bond.
@@ -680,8 +680,8 @@ temperature $(T_{\rm rel})_a=\gamma_aT_a$:
   \stp
 \item the fit, now
   \st
-  G_a(\beta)=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,\ell_a^{-1},\qquad
-  G_{a,ik}=\sum_{b\neq a}\frac{1}{V_a}\,(\Delta\beta_{ab})_i\,A_{ab\,k} .
+  (\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,\ell_a^{-1},\qquad
+  (\nabla_k\beta_i)_a=\sum_{b\neq a}\frac{1}{V_a}\,(\Delta\beta_{ab})_i\,A_{ab\,k} .
   \label{Gmoving}
   \stp
 \end{itemize}
@@ -700,10 +700,10 @@ the choice affects only the coefficients, at order $h^2$.
 
 \paragraph{The stress move.}  The resolved part of the dissipative function is
 \st
-K_{{\rm res},a}=\frac12V_a\,(T_{\rm rel}\kappa^{ijmn})_a\,G_{a,ij}G_{a,mn}
+K_{{\rm res},a}=\frac12V_a\,(T_{\rm rel}\kappa^{ijmn})_a\,(\nabla_j\beta_i)_a(\nabla_n\beta_m)_a
 =V_a\Big[(T_{\rm rel}\eta)_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12(T_{\rm rel}\zeta)_a\theta_a^2\Big],
 \stp
-with $\mathring S=S-\theta P$, $S$ the symmetric part of $G$ and
+with $\mathring S=S-\theta P$, $S$ the symmetric part of $\nabla\beta$ and
 $\theta=\ell^{ij}S_{ij}/\avg{P\ell}$.  Draw the stress with
 \st
 \avg{\xi_a^{ij}\xi_a^{mn}}=\frac{2\Delta t\,(T_{\rm rel})_a}{V_a}\,\kappa_a^{ijmn}(\bm v_a),
@@ -718,12 +718,12 @@ By \Eq{Amoving} the virial is again the stress,
 \stp
 which is symmetric: no torque.  The linear entropy change is, by \Eq{Gmoving},
 \st
-\Delta\mathbb S=-\sum_{b\neq a}(\Delta\beta_{ab})_i\,\mathsf p^i_{ab}=-V_a\,\xi_a^{ik}G_{a,ik},
+\Delta\mathbb S=-\sum_{b\neq a}(\Delta\beta_{ab})_i\,\mathsf p^i_{ab}=-V_a\,\xi_a^{ik}(\nabla_k\beta_i)_a,
 \stp
 exactly as at rest, and the argument of \Sect{sec:stress} gives
 \st
-\avg{\xi_a^{ij}}=-\Delta t\,(T_{\rm rel})_a\,\kappa_a^{ijmn}G_{a,mn}=\Delta t\,\Pi_a^{ij}(G_a),\qquad
-\avg{\mathsf p^i_{ab}}=\Delta t\,\Pi_a^{ik}(G_a)\,A_{ab\,k} ,
+\avg{\xi_a^{ij}}=-\Delta t\,(T_{\rm rel})_a\,\kappa_a^{ijmn}(\nabla_n\beta_m)_a=\Delta t\,\Pi_a^{ij}(\nabla\beta),\qquad
+\avg{\mathsf p^i_{ab}}=\Delta t\,\Pi_a^{ik}(\nabla\beta)\,A_{ab\,k} ,
 \stp
 the traction of the resolved part of the moving bond form.
 
@@ -746,7 +746,7 @@ draw of \Sect{sec:stress}.  (With unresolved dimensions, $\zeta\to\zeta_{\rm eff
 \paragraph{The residual move.}  The residual part is
 \st
 K_{{\rm resid},a}=(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,\delta_{ab}(\beta)\cdot\ell_a\cdot\delta_{ab}(\beta),
-\qquad \delta_{ab}\beta=\Delta\beta_{ab}-G_a(\beta)\,\bm r_{ab} .
+\qquad \delta_{ab}\beta=\Delta\beta_{ab}-(\nabla\beta)_a\,\bm r_{ab} .
 \stp
 Draw on each bond
 \st

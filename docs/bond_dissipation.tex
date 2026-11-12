@@ -642,20 +642,19 @@ particle is symmetric:
 \stp
 
 \paragraph{The dilation force.}  Only the dilation, which is not variational,
-carries a mean-field force.  Writing $G_a=(\nabla\beta)_a$ for short, the chain
-rule through $\theta_a=\tr G_a$ gives
+carries a mean-field force.  The chain rule through $\theta_a=\tr(\nabla\beta)_a$ gives
 \st
-\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\beta_a},\qquad
-E_a=\frac{\partial K}{\partial G_a}=V_a\Big((T_{\rm rel})_a\zeta_a\,\theta_a+\frac{\tr\Pi_a}{d}\Big)\one .
+\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial (\nabla\beta)_b}{\partial\beta_a},\qquad
+E_a=\frac{\partial K}{\partial (\nabla\beta)_a}=V_a\Big((T_{\rm rel})_a\zeta_a\,\theta_a+\frac{\tr\Pi_a}{d}\Big)\one .
 \label{fMF}
 \stp
 The first term of $E_a$ is from the bulk term of $K$.  The second is from
 the dilation subtracted in every bond, and involves the stress \Eq{virial2d}.  From \Eq{Ga}, the derivative of the fit is
 \st
-\frac{\partial G_{b,ij}}{\partial\beta_{a,k}}=\delta_i{}^k\,w_{ba}\,r_{ba\,j}\quad(b\neq a),\qquad
-\frac{\partial G_{a,ij}}{\partial\beta_{a,k}}=-\delta_i{}^k\sum_{b\neq a}w_{ab}\,r_{ab\,j},
+\frac{\partial (\nabla_j\beta_i)_b}{\partial\beta_{a,k}}=\delta_i{}^k\,w_{ba}\,r_{ba\,j}\quad(b\neq a),\qquad
+\frac{\partial (\nabla_j\beta_i)_a}{\partial\beta_{a,k}}=-\delta_i{}^k\sum_{b\neq a}w_{ab}\,r_{ab\,j},
 \stp
-where $G_{ij}=\nabla_j\beta_i$ has two lower indices, and the index of the bond
+where $\nabla_j\beta_i$ has two lower indices, and the index of the bond
 vector is lowered with the metric, $r_{ab\,j}=\delta_{jl}\,r^l_{ab}$ at rest.
 Thus each neighbour of $a$ (for instance particle $b$) exerts a force
 \st
@@ -698,7 +697,7 @@ Adding the two, the whole viscous force is
 with
 \st
 \Pi^{\rm visc}_a=-(2T_{\rm rel}\eta)_a\,\mathring S_a-(T_{\rm rel}\zeta)_a\,\theta_a\one
-=-(T_{\rm rel})_a\,\kappa_a{:}G_a ,
+=-(T_{\rm rel})_a\,\kappa_a{:}(\nabla\beta)_a ,
 \stp
 the viscous stress of the fitted gradient, shear and bulk.  The two forms are
 the same force:
@@ -946,14 +945,13 @@ mean-field force, and the stationarity condition says that the
 faces carry no net torque: $\Pi_a$ of \Eq{virialv} is symmetric.
 
 \paragraph{The dilation force.}  Only the dilation, which is not variational,
-carries a mean-field force.  Writing $G_a=(\nabla\beta)_a$,
-the chain rule goes through
+carries a mean-field force.  The chain rule goes through
 \st
-\frac{\partial\theta_a}{\partial G_{a,ij}}=\frac{\ell^{ij}_a}{\avg{P\ell}_a},
+\frac{\partial\theta_a}{\partial (\nabla_j\beta_i)_a}=\frac{\ell^{ij}_a}{\avg{P\ell}_a},
 \stp
 and gives
 \st
-E_a=\frac{\partial K}{\partial G_a}=e_a\,\ell_a,\qquad
+E_a=\frac{\partial K}{\partial (\nabla\beta)_a}=e_a\,\ell_a,\qquad
 e_a=\frac{V_a}{\avg{P\ell}_a}\Big((T_{\rm rel})_a\zeta_a\,\theta_a+P_{a,ij}\,\Pi_a^{ij}\Big).
 \label{Eav}
 \stp
@@ -961,12 +959,12 @@ The first term is from the bulk term of $K$; the second is from the
 dilation subtracted in every bond.  At rest this reduces to the $E_a$ of
 \Eq{fMF}.  With the corrected weights the fit carries a factor $\ell_b^{-1}$,
 \st
-G_b=\sum_{c\neq b}w_{bc}\,\Delta\beta_{bc}\,\bm r_{bc}^T\,\ell_b^{-1},
+(\nabla\beta)_b=\sum_{c\neq b}w_{bc}\,\Delta\beta_{bc}\,\bm r_{bc}^T\,\ell_b^{-1},
 \stp
 which cancels the $\ell_b$ in $E_b$.  Thus each
 neighbour of $a$ (for instance particle $b$) exerts a central force,
 \st
-\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\beta_a}
+\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial (\nabla\beta)_b}{\partial\beta_a}
 =\sum_{b\neq a}\bm f^{\rm MF}_{ab},\qquad
 \bm f^{\rm MF}_{ab}=\big(w_{ab}\,e_a+w_{ba}\,e_b\big)\,\bm r_{ab}=-\bm f^{\rm MF}_{ba} .
 \label{fMFv}
@@ -990,7 +988,7 @@ $A^i_{ab}=\ell_a^{ik}A_{ab\,k}$.  Together
 \stp
 with $e_a$ of \Eq{Eav}.  Inserting $\mathring S=S-\theta P$ and
 $\theta=\ell^{ij}S_{ij}/\avg{P\ell}$ one checks that
-$\Pi^{{\rm visc},ij}_a=-(T_{\rm rel})_a\,\kappa_a^{ijmn}G_{a,mn}$, the full
+$\Pi^{{\rm visc},ij}_a=-(T_{\rm rel})_a\,\kappa_a^{ijmn}(\nabla_n\beta_m)_a$, the full
 viscous stress of the fitted gradient with the tensors $\kappa_\eta$ and $\kappa_\zeta$
 of the continuum target.  The stochastic step reproduces this form
 (\texttt{stochrep.tex}).
@@ -1028,7 +1026,7 @@ equal and opposite pairs.
   \State \textbf{correction}: solve the $4\times4$ system \EqPM{Lambdadef} for $\Lambda_a$ and $n_a$
   \If{a corrected weight is negative} \State fall back to $\Lambda_a=0$ \EndIf
   \State \textbf{weights}: $w_{ab}$ of \Eq{wv}
-  \State \textbf{fit}: bond moment $M_a$ and $G_a=(\nabla\beta)_a$ by \Eq{Gmin}
+  \State \textbf{fit}: bond moment $M_a$ and $(\nabla\beta)_a$ by \Eq{Gmin}
   \State \textbf{mean field}: $\Omega_a$ and $\theta_a$ by \Eq{thetaav}
   \For{each $b$ in the star} \Comment{bond force}
     \State $\mathcal D_{ab}\beta$ by \Eq{Dabv}, traction $\pf_{ab}$ by \Eq{tabv}
