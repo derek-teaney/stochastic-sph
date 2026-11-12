@@ -19,11 +19,16 @@ const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "boost"
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
 # sets: (label, directories pooled, v, colour); BOOST_GROUP = L12 (default) or L24; figures get the suffix
 const GROUP = get(ENV, "BOOST_GROUP", "L12")
+# ETA: the follow-up at η/s = 0.1, 0.4 and without the stochastic step (Γ/hydro there is against η/s = 0.2)
 const SETS = GROUP == "L24" ?
     [("v=0", ["b24_v0"], 0.0, "C0"), ("v=0.6", ["b24_v0.6"], 0.6, "C1"), ("v=0.8", ["b24_v0.8"], 0.8, "C3")] :
+             GROUP == "ETA" ?
+    [("v=0 η/s=0.1", ["b_e01_v0E"], 0.0, "C0"), ("v=0.8 η/s=0.1", ["b_e01_v0.8"], 0.8, "C3"),
+     ("v=0 η/s=0.4", ["b_e04_v0E"], 0.0, "C2"), ("v=0.8 η/s=0.4", ["b_e04_v0.8"], 0.8, "C1"),
+     ("v=0 ideal", ["b_nv_v0E"], 0.0, "C4"), ("v=0.8 ideal", ["b_nv_v0.8"], 0.8, "C5")] :
     [("v=0", ["b_v0"], 0.0, "C0"), ("v=0.3", ["b_v0.3"], 0.3, "C2"), ("v=0.6", ["b_v0.6"], 0.6, "C1"),
      ("v=0.8", ["b_v0.8", "b_v0.8_long"], 0.8, "C3"), ("v=0.8, Δt/2", ["b_v0.8_dt2"], 0.8, "C4")]
-const SUFFIX = GROUP == "L24" ? "_L24" : ""
+const SUFFIX = GROUP == "L12" ? "" : "_" * GROUP
 const T0BURN = 5.0;  const DTS = 0.05;  const TAUMAX = 100.0
 const CS2 = 1 / 3
 mean_(v) = sum(v) / length(v)
@@ -141,7 +146,7 @@ for (run, dirs, v, col) in SETS
     nk = minimum(length(r.KE) for r in rs)
     res[run] = (; v, col, C, lab = run, Trel, ν, h = m.h, n = length(rs), t = rs[1].rec.t[end],
                 KE = mean_([mean_(r.KE[nk÷2:nk]) for r in rs]), dH = mean_([r.H[nk] for r in rs]))
-    @printf("%-12s v=%.1f  %2d runs  t=%.0f  T_rel=%.3f  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n", run, v, length(rs),
+    @printf("%-15s v=%.1f  %2d runs  t=%.0f  T_rel=%.3f  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n", run, v, length(rs),
             res[run].t, Trel, res[run].KE, res[run].dH)
 end
 runs = [s[1] for s in SETS if haskey(res, s[1])]
@@ -163,7 +168,7 @@ for run in runs
         end
     end
     eq(dir, a) = jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, 1)].Cs)
-    @printf("  %-12s k∥: %s   k⊥: %s\n", r.lab,
+    @printf("  %-15s k∥: %s   k⊥: %s\n", r.lab,
             join([@sprintf("%s %.3f±%.3f", names[a], eq(:par, a)...) for a in 1:3], "  "),
             join([@sprintf("%s %.3f±%.3f", names[a], eq(:perp, a)...) for a in 1:3], "  "))
 end
@@ -219,7 +224,7 @@ for run in runs
         Ω, dΩ = jack(fΩ, c.Cs);  Γ, dΓ = jack(fΓ, c.Cs)
         Γth = dir === :par ? r.ν * k^2 / γ^3 : r.ν * k^2 / γ;  Ωth = dir === :par ? r.v * k : 0.0
         j == 1 && push!(out, (; dir, Ω, Γ, dΩ, dΓ, Ωth, Γth, k))
-        @printf("  %-12s kh=%.2f %-4s  Ω/k = %+.3f±%.3f (hydro %+.3f)   Γ/hydro = %.2f±%.2f   window τ ≤ %.1f\n", r.lab, k * r.h, dir,
+        @printf("  %-15s kh=%.2f %-4s  Ω/k = %+.3f±%.3f (hydro %+.3f)   Γ/hydro = %.2f±%.2f   window τ ≤ %.1f\n", r.lab, k * r.h, dir,
                 Ω / k, dΩ / k, Ωth / k, Γ / Γth, dΓ / Γth, τ[end])
     end
     fit[run] = out

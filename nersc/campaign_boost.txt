@@ -24,3 +24,7 @@ b_e04_v0     16  SR_BOOST=0   SR_ETAS=0.4 SR_KHMAX=1.0 SR_SEEDOFFSET=400        
 b_e04_v0.8   16  SR_BOOST=0.8 SR_ETAS=0.4 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=400   -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_e04_v0.8
 b_nv_v0      16  SR_BOOST=0   SR_NOVISC=1 SR_KHMAX=1.0 SR_SEEDOFFSET=500                -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_nv_v0
 b_nv_v0.8    16  SR_BOOST=0.8 SR_NOVISC=1 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=500   -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_nv_v0.8
+# The v = 0 follow-up sets above were run without SR_RECORD_E (no E series): rerun with it (tasks 221-268).
+b_e01_v0E    16  SR_BOOST=0   SR_ETAS=0.1 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=300  -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_e01_v0E
+b_e04_v0E    16  SR_BOOST=0   SR_ETAS=0.4 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=400  -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_e04_v0E
+b_nv_v0E     16  SR_BOOST=0   SR_NOVISC=1 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=500  -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_nv_v0E
