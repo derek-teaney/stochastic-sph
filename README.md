@@ -26,7 +26,7 @@ The physics and the algorithms are described in [`docs/`](docs):
 - `docs/changerep.pdf` — the viscous step in a particle representation: each
   particle's own energy and thermodynamic force, the gradient-corrected conversion
   map, and its energy bookkeeping and convergence.
-- `docs/stochrep.pdf` — the stochastic viscous step in the particle
+- `docs/stochastic.pdf` — the stochastic viscous step in the particle
   representation: a random stress per particle distributed through its faces,
   random residual tractions per bond, a consensus vote of the bonds, a
   checkerboard sweep; frozen-lattice equilibration tests at rest and moving.
@@ -39,14 +39,20 @@ These are working notes and will change.
 ## Layout
 
 ```
-src/        library code (include in order: sph, celllist, setup, stochastic)
+src/        library code; scripts include src/load.jl, which loads it in order
   sph.jl          SimParams, Particle, equation of state + Newton solve, kernels, κ tensor
-  celllist.jl     cell list, smoothing, leapfrog, dissipative forces (two-level and bond), generic_step!
-  changerep.jl    viscous step in the particle representation (included by celllist.jl)
-  stochrep.jl     stochastic step in the particle representation (include after rng.jl)
-  setup.jl        lattices (square / hex / 1D), initial conditions, plotting helpers
-  stochastic.jl   noise draw, particle_sweep!, apply_sweep!
+  celllist.jl     cell list and neighbour list
+  ideal.jl        the ideal (Hamiltonian) step: smoothing, velocities, force, compute_dt, leapfrog
+  pointwise.jl    the particle representation: pointwise state, particle energies, back maps
+  viscous.jl      the deterministic viscous step: bond dissipation, viscous_step!, generic_step!
+  setup.jl        lattices (square / hex / 1D), initial conditions
   rng.jl          per-particle random streams
+  stochastic.jl   the stochastic step (stochastic_step!)
+  measure.jl      equilibrium start, Fourier modes, correlators, checkpoints, HDF5 output
+  monitor.jl      running statistics printed to the log
+  runinfo.jl      the run record (<run>.json, <run>.csv)
+  legacy/         superseded: the two-level strain form and the old particle sweep
+                  (include src/legacy/load.jl after src/load.jl)
 test/       checks with pass/fail assertions (some also make plots)
 examples/   physics validation runs (sound waves, shear waves, Gaussian pulse,
             stochastic uniform background); write PNGs next to the script
@@ -63,13 +69,13 @@ Requires Julia 1.12 and a Python with matplotlib for PyPlot.
 ```sh
 julia --project -e 'using Pkg; Pkg.instantiate()'
 julia --project test/testeos.jl
-julia --project test/teststochastic.jl
+julia --project test/teststochastic_guard.jl
 julia --project examples/testsound.jl
 ```
 
 ### Initial state of the stochastic runs
 
-`examples/stochrep_equilibrium.jl` and `examples/stochrep_hamiltonian.jl` take
+`examples/equilibrium.jl` and `examples/stability.jl` take
 `SR_START`:
 
 - `cold` — the uniform state at rest; the run thermalizes from it.
@@ -83,7 +89,7 @@ julia --project examples/testsound.jl
 
 Three viscous steps are available, selected by `params.dissipation`:
 
-- `:changerep` (default) — the bond form evaluated in the particle
+- `:particle` (default; formerly `:changerep`, still accepted) — the bond form evaluated in the particle
   representation, with the gradient-corrected conversion map
   (`docs/changerep.pdf`). Each particle's own momentum sets its thermodynamic
   force, so short wavelengths are damped without the $R^2$ suppression of the
@@ -92,23 +98,22 @@ Three viscous steps are available, selected by `params.dissipation`:
 - `:bond` — the one-level bond form on the smoothed $\beta$
   (`docs/bond_dissipation.pdf`). It has no null mode.
 - `:two_level` — the SPH gradient of $\beta$ at each particle, squared
-  (`docs/sph2.pdf`).
+  (`docs/sph2.pdf`). Superseded by the bond form; in `src/legacy/`.
 
 Any script can be run with another form from the environment:
 
 ```sh
-SPH_DISSIPATION=two_level julia --project examples/testsound_viscous.jl
+SPH_DISSIPATION=bond julia --project examples/testsound_viscous.jl
 ```
 
-With its stronger damping of short wavelengths, `:changerep` needs smaller time
+With its stronger damping of short wavelengths, `:particle` needs smaller time
 steps: `compute_dt(...; mode=:viscous)` bounds its fastest rate and shortens
 $\Delta t$ so that every mode decays monotonically in each viscous half step of
 `generic_step!` (0.67 of the previous viscous $\Delta t$ in 1D, 0.41 in 2D).
 
-The noise is implemented only for the two-level form: `particle_sweep!` stops
-with an error unless `params.dissipation = :two_level`.
-The stochastic scripts (`test/teststochastic.jl`, `examples/teststochastic_run.jl`,
-…) therefore select `:two_level` themselves.
+The noise is the stochastic step `stochastic_step!` (`src/stochastic.jl`,
+`docs/stochastic.pdf`). The old particle sweep with the two-level form
+(`particle_sweep!`, `src/legacy/`) never worked and is kept only as a record.
 
 Scripts use plain `include`. To edit and re-run inside one REPL session, use
 [Revise](https://github.com/timholy/Revise.jl) from your global environment and
@@ -133,17 +138,10 @@ Verified:
 
 In progress:
 
-- Checks of the Metropolis sweep (`test/teststochastic.jl`, Step 3):
-  conservation laws, visit-order independence, mean drift equal to the
-  deterministic viscous force.
-- Uniform-background equilibration against the fluctuation–dissipation
-  prediction (`examples/teststochastic_run.jl`).
-- Ensemble shear-wave and 2D sound-wave decay with noise.
-- Stochastic step in the particle representation (`src/stochrep.jl`,
-  `docs/stochrep.pdf`): equilibrates a frozen lattice to the exact $e^{S}$, at
-  rest and moving, in 1D and 2D (`examples/stochrep_thermalize.jl`,
-  `stochrep_smallk.jl`, `stochrep_moving.jl`). Not yet coupled to the
-  Hamiltonian step.
+- The stochastic step coupled to the Hamiltonian step (`src/stochastic.jl`,
+  `docs/stochastic.pdf`, `docs/fullruns.pdf`, `docs/continuum_limit.pdf`,
+  `docs/boost.pdf`); the runs at NERSC are logged in `nersc/LOG.md`.
+- The plan for names, defaults, run records and tests: `docs/codeplan.pdf`.
 
 ## License
 

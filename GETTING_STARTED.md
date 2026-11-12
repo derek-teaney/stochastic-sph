@@ -10,7 +10,7 @@ to experiment.
   stochastic background). These are the scripts to run and play with.
 - `test/`: checks that pass or fail.
 - `docs/`: the notes behind the code (`sph2.pdf`, `firstrun.pdf`,
-  `bond_dissipation.pdf`, `particle_metrics.pdf`, `changerep.pdf`, `stochrep.pdf`).
+  `bond_dissipation.pdf`, `particle_metrics.pdf`, `changerep.pdf`, `stochastic.pdf`).
 
 ## Setup (once)
 
