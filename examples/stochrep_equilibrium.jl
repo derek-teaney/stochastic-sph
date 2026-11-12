@@ -51,6 +51,13 @@ const KERNEL = get(ENV, "SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = parse(Float64, get(ENV, "SR_JITTER", "0"))
+# SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
+# is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
+# enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
+# boost the energy Fourier modes E_k are recorded too (SR_RECORD_E=1 forces them at rest).
+const BOOST  = parse(Float64, get(ENV, "SR_BOOST", "0"))
+const GAMMA  = 1 / sqrt(1 - BOOST^2)
+const RECORD_E = BOOST != 0 || get(ENV, "SR_RECORD_E", "0") == "1"
 const LAMBDA = parse(Float64, get(ENV, "SR_LAMBDA", "1"))            # residual move: 1 (detailed balance) or Inf
 const VOTE   = :star                                                 # stochastic step: one consensus vote per star
 const DTFAC  = parse(Float64, get(ENV, "SR_DTFAC", "1"))             # Δt / default (time-step tests)
@@ -68,6 +75,7 @@ function run_meta(params, st, n, wall, complete)
      etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
+     boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
@@ -79,7 +87,7 @@ function runinfo(base, params, eos, st, n, complete)
     nk = length(st.KE);  h2 = nk ÷ 2 + 1
     out = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
     write_runinfo(base, vcat(run_settings(params, eos; driver = "stochrep_equilibrium.jl", tag = TAG, seed = st.seed,
-        S0 = S0, s_a = S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
+        S0 = S0, boost = BOOST, gamma = GAMMA, s_a = GAMMA * S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
         nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, jitter = JITTER, lambda = LAMBDA,
         novisc = NOVISC, noham = NOHAM,
         start = haskey(st, :start) ? st.start : (type = string(START),),
@@ -102,7 +110,12 @@ function one_realization(seed)
         restore_guards!(st.guards)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
-        params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+        # rest-frame state at S0: its enthalpy w0 sets the momentum density of the boosted state
+        _, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+                                L=LBOX, lattice=:hex, seed=1000seed + 4)
+        w0 = ps0[1].e + ps0[1].p;  Trel0 = ps0[1].T * ps0[1].γ
+        Mx0 = w0 * GAMMA^2 * BOOST
+        params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
         if JITTER > 0                            # uniform smoothed entropy: s_a ← s_a S0 / S_a, iterated
             for _ in 1:30
@@ -123,13 +136,14 @@ function one_realization(seed)
         x0 = [q.x for q in ps]
         NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=VOTE)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
-              dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); x0, L = params.L),
+              dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); energies = RECORD_E, x0, L = params.L),
               prec = ParticleRecorder(ps, params),
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
-              start = merge((lattice = "hex", jitter = JITTER, S0 = S0, M0 = [0.0, 0.0], s_a = S0 * params.vol,
-                             T_rel_uniform = Trel, w_uniform = w,
+              start = merge((lattice = "hex", jitter = JITTER, S0_rest = S0, boost = BOOST, gamma = GAMMA,
+                             S_lab = GAMMA * S0, M0 = [Mx0, 0.0], s_a = GAMMA * S0 * params.vol,
+                             T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
                              rng_seeds = "lattice $(1000seed + 4), start $(1000seed + 3), physics $(1000seed + 1), sweeps $(1000seed + 2)"),
                             start))
     end
@@ -156,7 +170,8 @@ function one_realization(seed)
             u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
-            push!(KE, sum(dot(q.m, q.m) for q in ps) / (2 * (N - 1) * V * w * T))
+            mbar = sum(q.m for q in ps) / N                                # fluctuations about the mean flow
+            push!(KE, sum(dot(q.m - mbar, q.m - mbar) for q in ps) / (2 * (N - 1) * V * w * T))
             push!(sspr, relspread(q.s for q in ps))                         # rms s_a/s̄ − 1
             push!(Vspr, relspread(q.s / q.S_smooth for q in ps))            # rms V_a/V̄ − 1
             # the stochastic step since the last record: acceptance of the stress (star) and the

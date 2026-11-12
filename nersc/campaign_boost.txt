@@ -1,0 +1,10 @@
+# Campaign `boost` (2026-11-11): a uniform fluid moving with v along x, equilibrium start at the
+# moving β^μ, rest-frame entropy density S0 = 1e6 (lab S = γ S0), n-scheme, L = 1.2, h/a = 2,
+# η/s = 0.2; docs/boost.tex.  Energies E_k recorded (SR_RECORD_E at v = 0).  Δt lowered with v
+# by c_s/v_signal, v_signal = (v + c_s)/(1 + v c_s); a Δt/2 check at v = 0.8.
+# Packed: nersc/node.sh, THREADS=4.
+b_v0      16  SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0
+b_v0.3    16  SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0.3
+b_v0.6    16  SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0.6
+b_v0.8    16  SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0.8
+b_v0.8_dt  4  SR_BOOST=0.8 SR_DTFAC=0.3  SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 150 1 8 b_v0.8_dt

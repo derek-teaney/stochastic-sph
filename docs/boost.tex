@@ -1,0 +1,167 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{A moving fluid: equilibrium correlators at nonzero velocity}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+All runs so far were of a fluid at rest.  Here the fluid moves with a uniform velocity $v$
+along $x$, $v=0$, $0.3$, $0.6$, $0.8$, at the same rest-frame entropy density.  The scheme is
+started in equilibrium at the moving $\beta^\mu$, and the correlators of the energy and
+momentum densities are measured for wave vectors along and across the flow, against
+linearized hydrodynamics of the boosted fluid.  This note gives the plan, the changes to the
+code, the predictions, and the results as they arrive.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The state}
+\label{sec:state}
+
+A fluid with rest-frame entropy density $s_0$ and temperature $T_0$ (here $s_0=S_0=10^6$, so
+$T_{\rm rel}=90.9$ as in all earlier runs) moving with velocity $\bm v=v\hat x$ has, in the lab,
+\st
+u^\mu=\gamma(1,v,0),\qquad
+\beta^\mu=\frac{u^\mu}{T_0},\qquad \gamma=\frac{1}{\sqrt{1-v^2}} .
+\stp
+The densities the code carries (density frame) are the lab entropy density and the lab
+energy and momentum densities,
+\st
+S=\gamma s_0,\qquad
+\varepsilon\equiv T^{00}=w_0\gamma^2-p_0,\qquad
+M_x\equiv T^{0x}=w_0\gamma^2v,
+\label{densities}
+\stp
+with $w_0=e_0+p_0$ the rest-frame enthalpy.  For the conformal equation of state of the code,
+$e=T^4$, $p=e/3$.  Each particle carries the entropy $s_a=\gamma s_0V$ ($V$ the lab volume per
+particle): a boost raises the entropy per particle, so it does not push towards the wall of
+\texttt{continuum\_limit.tex}.
+
+\paragraph{The start.}  The uniform state \Eq{densities} is set on the hexagonal lattice, and
+\texttt{equilibrium\_init!} draws the particle energies and momenta at the global $\beta^\mu$ whose
+averages are these totals (\texttt{eqstart.tex}); it already handles $\bm\beta\ne0$.  A test at
+$v=0.6$ and $0.8$ (box $0.6$) finds $\beta^\mu$ back with $v=0.601$, $0.800$ and the rest-frame
+temperature to $10^{-4}$.
+
+%=============================================================================
+\section{What is measured}
+\label{sec:measure}
+
+The runs record the Fourier modes of the particle energies and momenta,
+\st
+E_{\bm k}=\sum_ae_a\,e^{-i\bm k\cdot\bm x_a},\qquad
+\bm M_{\bm k}=\sum_a\bm m_a\,e^{-i\bm k\cdot\bm x_a},
+\stp
+for all box wave vectors with $kh\le1$.  Two directions are used:
+\begin{itemize}
+\item $\bm k\parallel\bm v$ ($\bm k=k\hat x$): the longitudinal momentum $M_x$ and the energy $E$
+  carry the two sound modes, now Doppler shifted; the transverse momentum $M_y$ carries the
+  shear mode, now advected.
+\item $\bm k\perp\bm v$ ($\bm k=k\hat y$): $M_y$ is longitudinal (sound across the flow); $M_x$,
+  the momentum along the flow, is transverse to $\bm k$ but mixes with $E$, because a change of
+  the energy density at fixed velocity changes $M_x=w\gamma^2v$.
+\end{itemize}
+The correlators are complex, since the flow breaks $\bm k\to-\bm k$:
+\st
+C_{AB}(\bm k,\tau)=\frac{1}{NV}\avg{A_{\bm k}(t+\tau)\,B_{\bm k}^*(t)},\qquad A,B\in\{E,M_x,M_y\}.
+\stp
+
+\paragraph{Equal time.}  In equilibrium at $\beta^\mu$ the densities $U=(\varepsilon,M_x,M_y)$
+fluctuate with the susceptibilities
+\st
+\chi_{ij}=\frac{\partial\avg{U_i}}{\partial\theta_j},\qquad
+\theta=(-\beta^0,\beta^x,\beta^y),
+\label{chi}
+\stp
+the second derivatives of $\log Z$ for the weight $e^{-\beta^0E+\bm\beta\cdot\bm M}$.  The particle
+sums are white, so $C_{AB}(\bm k,0)=\chi_{AB}$ at every $k$.  The momentum susceptibilities grow
+with $\gamma$: the fluctuations of a moving fluid are larger than $w_0T_0$.
+
+\paragraph{Dynamics.}  For small $k$ linearized hydrodynamics gives
+\st
+\partial_t\delta U+i\,K(\bm k)\,\delta U=0,\qquad K(\bm k)=k_j\frac{\partial F_j}{\partial U},
+\stp
+with $F_j=(M_j,\,T^{jx},\,T^{jy})$ the ideal fluxes, $T^{ij}=w\gamma^2v^iv^j+p\,\delta^{ij}$,
+differentiated numerically through the equation of state.  Then
+\st
+C(\bm k,\tau)=\sum_nP_n\,\chi\;e^{-i\omega_n\tau},
+\stp
+with $\omega_n$ and $P_n$ the eigenvalues and projectors of $K$.  The damping is added mode by
+mode by boosting the rest-frame mode: a mode with rest-frame dispersion
+$\omega'=\Omega(\bm k')-i\Gamma'(\bm k')$, with $\Gamma'=\nu k'^2$ (shear) or $\tfrac12\Gamma_sk'^2$ (sound,
+$\Gamma_s=\tfrac43\nu$), $\nu=(\eta/s)/T_0$, has in the lab
+\st
+\omega=\omega_0-\frac{i\Gamma'}{\gamma\,(1+v\,\partial\Omega/\partial k'_x)},
+\qquad \omega'=\gamma(\omega-vk_x),\quad k'_x=\gamma(k_x-v\omega),\quad k'_y=k_y .
+\label{damp}
+\stp
+The simple cases:
+\begin{center}
+\begin{tabular}{lll}
+\hline
+mode & lab frequency & lab damping \\ \hline
+shear, $\bm k\parallel\bm v$ & $vk$ (advected) & $\nu k^2/\gamma^3$ \\
+shear, $\bm k\perp\bm v$ & $0$ & $\nu k^2/\gamma$ \\
+sound, $\bm k\parallel\bm v$ & $k\,(v\pm c_s)/(1\pm vc_s)$ & from \Eq{damp} \\
+sound, $\bm k\perp\bm v$ & $\pm k\,c_s\sqrt{(1-v^2)/(1-c_s^2v^2)}$ & from \Eq{damp} \\
+\hline
+\end{tabular}
+\end{center}
+These are the tests: the frequencies (advection, the relativistic addition of velocities, the
+slower sound across the flow) and the dampings (time dilation, $\gamma^{-1}$ and $\gamma^{-3}$).
+
+%=============================================================================
+\section{Changes to the code}
+\label{sec:code}
+
+\begin{itemize}
+\item \texttt{examples/stochrep\_equilibrium.jl}: \texttt{SR\_BOOST=v} sets the boosted uniform state
+  \Eq{densities} (the rest-frame enthalpy $w_0$ from a rest-frame setup at $S_0$) before the
+  equilibrium start; with a boost the energy modes $E_{\bm k}$ are recorded (\texttt{SR\_RECORD\_E=1}
+  forces them at rest); the kinetic energy is measured about the mean flow; the run record
+  (\texttt{.json}) has the boost, $\gamma$, the rest-frame and lab densities.
+\item The physics code (ideal step, stochastic step, back map) is unchanged: the stochastic
+  step already uses the comoving forms of its coefficients (\texttt{stochrep.tex}, ``A moving
+  fluid'').
+\item \texttt{examples/boost\_analysis.jl}: direction-resolved complex correlators, the
+  susceptibilities \Eq{chi}, and the hydrodynamic predictions.
+\end{itemize}
+
+\paragraph{Time step.}  The time step of the code is set by $c_s$; signals now move at up to
+$v_{\rm sig}=(v+c_s)/(1+vc_s)$ ($0.75$, $0.87$, $0.94$ at $v=0.3$, $0.6$, $0.8$).  The time step is
+scaled by $c_s/v_{\rm sig}$: factors $0.8$, $0.66$, $0.6$; one set at $v=0.8$ runs at half of that.
+
+%=============================================================================
+\section{Runs}
+\label{sec:runs}
+
+Campaign \texttt{boost} (\texttt{nersc/campaign\_boost.txt}): $L=1.2$ ($kh\ge0.26$), $h/a=2$, $\eta/s=0.2$,
+n-scheme, $t=300$, 16 runs at each $v=0$, $0.3$, $0.6$, $0.8$, and 4 at $v=0.8$ with $\Delta t/2$; two
+nodes, packed.  The long shear times ($\gamma^3/\nu k^2\approx75$ at $v=0.8$, $kh=0.26$) set $t=300$.  If the
+first set works, a larger box ($L=2.4$) follows for smaller $kh$.
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+(Filled in as the runs finish.)
+
+\end{document}
