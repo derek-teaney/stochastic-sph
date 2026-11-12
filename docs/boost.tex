@@ -263,16 +263,45 @@ not measured well: $\Gamma/{\rm hydro}=1.1\pm0.7$ along and $1.35\pm0.35$ across
 the two boxes agree.  Equal-time values at $kh=0.13$ are within $1$--$2\sigma$ of 1 (errors 10--30\% with 8
 runs; \Fig{fig:bstatic24}).
 
+\paragraph{6. Where the excess comes from} (tasks 125--268, jobs 61160802, 61161590).  At $L=1.2$, $v=0$ and
+$0.8$, 16 runs each with $\eta/s=0.1$ and $0.4$, and with the stochastic step switched off
+(\texttt{SR\_NOVISC=1}: ideal SPH from the equilibrium draw).  If the excess is proportional to $\eta$, it
+comes from the viscous step; if it does not depend on $\eta$, it is a numerical damping of the ideal step.
+The excess rate at $kh=0.52$, in units of the hydrodynamic rate at the reference $\eta/s=0.2$,
+\begin{equation}
+\frac{\Delta\Gamma}{\nu_0k^2/\gamma^n}=\frac{\Gamma-\nu k^2/\gamma^n}{\nu_0k^2/\gamma^n},\qquad \nu_0=\frac{0.2}{T_{\rm rel}},
+\qquad n=3\ (\bm k\parallel\bm v),\ n=1\ (\bm k\perp\bm v),
+\end{equation}
+(for the ideal runs the whole rate $\Gamma$):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & \multicolumn{2}{c}{$v=0$} & \multicolumn{2}{c}{$v=0.8$} \\
+$\eta/s$ & $\bm k\parallel\bm v$ & $\bm k\perp\bm v$ & $\bm k\parallel\bm v$ & $\bm k\perp\bm v$ \\ \hline
+0.1 & $0.08(5)$ & $0.08(4)$ & $0.33(11)$ & $0.06(4)$ \\
+0.2 & $0.00(4)$ & $0.00(4)$ & $0.36(7)$ & $0.14(4)$ \\
+0.4 & $-0.12(8)$ & $0.08(10)$ & $0.34(26)$ & $-0.02(10)$ \\
+ideal only, $\Gamma$ & $0.19(2)$ & $0.18(3)$ & $0.37(7)$ & $0.28(4)$ \\
+\hline
+\end{tabular}
+\end{center}
+Along the flow at $v=0.8$ the excess does not depend on $\eta$: a fourfold change of the viscosity leaves
+it at $0.35\,\nu_0k^2/\gamma^3$, which is also the rate of the ideal step alone.  It is a numerical damping
+of the moving fluid, not a wrong viscosity.  In absolute terms it is small, an extra lab-frame
+viscosity of about $0.35/\gamma^3\approx0.08$ of $\nu_0$, i.e.\ $\eta/s\approx0.015$; it is large relative to the physical
+rate only because time dilation slows that rate by $\gamma^3=4.6$.  At rest there is no excess with the
+viscous step on, although the ideal step alone damps at $0.18\,\nu_0k^2$; that run is not in equilibrium
+(its fluctuation energy falls to $0.80$ of the equilibrium value, the energy going into the particle
+arrangement), so its rate is not simply additive.  Across the flow the excess is small and not
+systematic in $\eta$.
+
 \paragraph{So far.}  A fluid moving at up to $v=0.8$ is simulated in equilibrium, and its correlators
 along and across the flow are those of boosted fluctuating hydrodynamics: susceptibilities, advection,
-the relativistic addition of the sound speed, and the time dilation of the damping.  Open: an excess
-damping of the shear modes with flow, 10--20\% at $v\le0.6$, 40--50\% along the flow at $v=0.8$, not from
-the time step.
-
-\paragraph{Follow-up} (tasks 125--220).  At $L=1.2$, $v=0$ and $0.8$, 16 runs each with $\eta/s=0.1$ and $0.4$,
-and with the stochastic step switched off (\texttt{SR\_NOVISC=1}, ideal SPH from the equilibrium draw).  If
-the excess is proportional to $\eta$, it comes from the viscous step; if it survives without viscosity, it
-is a numerical damping of the ideal step for moving particles.
+the relativistic addition of the sound speed, and the time dilation of the damping.  The one
+discrepancy is an excess damping of the shear mode along the flow, 40--50\% at $v=0.8$ (10--20\% at
+smaller $v$).  It is not from the time step and does not depend on $\eta$ (paragraph 6): a numerical
+damping of the moving fluid, about $\eta/s\approx0.015$ in the lab, magnified by $\gamma^3$ against the
+time-dilated physical rate.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_static.png}

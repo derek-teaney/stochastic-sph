@@ -121,7 +121,11 @@ moving β^μ, E_k recorded.  Output `$SCRATCH/sph/boost/`.  Analysis `examples/b
   the flow at v = 0.8, at kh = 0.26 and 0.52), not removed by Δt/2.  Fit the shear-mode projection
   (left eigenvector of K), not C_xx, across the flow.
 - Follow-up tasks 125-220 (η/s = 0.1, 0.4 and SR_NOVISC=1 at v = 0, 0.8): is the excess from the
-  viscous or the ideal step?
+  viscous or the ideal step?  Job **61160802** (17 min, 3 nodes); the v = 0 sets lacked SR_RECORD_E,
+  rerun as tasks 221-268, job **61161590** (12 min, 2 nodes).  Lesson: v = 0 sets need SR_RECORD_E=1.
+- Outcome: along the flow at v = 0.8 the excess is η-independent, ≈ 0.35 νk²/γ³ (η/s = 0.1, 0.2, 0.4)
+  and equals the ideal-step-only rate: a numerical damping of the moving fluid (~η/s 0.015 in the lab).
+  No excess at rest with viscosity on.  Total boost campaign ≈ 12 node-hours.
 
 ### `cl` — continuum limit, 2026-11-10, `nersc/campaign_cl.txt`, docs/continuum_limit.tex
 
