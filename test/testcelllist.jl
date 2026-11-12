@@ -1,3 +1,4 @@
+# test: visual — makes plots for inspection, no pass/fail criterion (test/run.sh)
 using PyPlot
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 

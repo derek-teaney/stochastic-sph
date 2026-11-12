@@ -1,9 +1,9 @@
-# testregress_step.jl — fixed-seed regression for performance work: the full coupled
+# step.jl — fixed-seed regression (test/run.sh regress): the full coupled
 # step (thermal start, leapfrog + stochastic step, gradient-corrected map) for λ = 1 and
 # λ = ∞, on a small box.  Saves or compares the final particle states.
 #
-#   julia -t <n> --project test/testregress_step.jl save    <file.jls>
-#   julia -t <n> --project test/testregress_step.jl compare <file.jls> [tol]
+#   julia -t <n> --project test/regress/step.jl save    <file.jls>
+#   julia -t <n> --project test/regress/step.jl compare <file.jls> [tol]
 #
 # `compare` passes if every x, m, s agrees with the saved state to the relative
 # tolerance tol (default 0: bit-identical).  Results must not depend on the number of
@@ -12,7 +12,7 @@ using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 # The reference path is the smoothed Hamiltonian with the gradient-corrected map (the default
 # until 2026-11-10); set SPH_HAMILTONIAN=energy to check the n-scheme instead.
 ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "smoothed")
-const ROOT = joinpath(@__DIR__, "..")
+const ROOT = joinpath(@__DIR__, "..", "..")
 include(joinpath(ROOT, "src", "load.jl"))
 
 function run_case(λ; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") == "1" ? nothing : StochCache())

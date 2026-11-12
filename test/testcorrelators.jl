@@ -51,3 +51,4 @@ for ct in (0.022, 0.0)
     end
 end
 println(ok ? "testcorrelators.jl: analysis recovers the input." : "testcorrelators.jl: FAILED")
+ok || exit(1)

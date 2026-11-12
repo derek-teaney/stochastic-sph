@@ -37,6 +37,8 @@ end
 
 # ── Reusable helpers ───────────────────────────────────────────────────────────
 
+NFAIL = 0   # failed comparisons; the script exits 1 if any
+
 function check_pairs(brute::Vector{Tuple{Int,Int,Float64}},
                      celllist::Vector{Tuple{Int,Int,Float64}})
     sort!(brute,     by = p -> (p[1], p[2]))
@@ -51,6 +53,7 @@ function check_pairs(brute::Vector{Tuple{Int,Int,Float64}},
         println("✓ PASS: $(length(brute)) pairs match")
     else
         println("✗ FAIL: $(length(missing_pairs)) missing, $(length(spurious_pairs)) spurious")
+        global NFAIL += 1
         isempty(missing_pairs)  || println("  Missing:  $missing_pairs")
         isempty(spurious_pairs) || println("  Spurious: $spurious_pairs")
     end
@@ -221,4 +224,4 @@ check_pairs(brute4, celllist4)
 plot_neighbor_pairs(particles4, brute4, cl4;
                     title_str = "Test 4: 20 random particles (3×6 grid, Lx=6 Ly=12)",
                     filename  = joinpath(@__DIR__, "testneighbor4.png"))
-
+NFAIL == 0 || exit(1)

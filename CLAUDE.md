@@ -18,7 +18,9 @@ the `.tex`).  Owner: D. Teaney.
 - `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.
-- `test/` — checks; run the relevant ones after any change to `src/`.
+- `test/` — the test suite, run by `test/run.sh [unit|load|regress|all]` (`docs/codeplan.tex`).
+  After any change to `src/`: `test/run.sh all` — unit tests pass, every script loads, and the
+  regression against `main` is bit-identical unless a change to the numerics is intended.
 - `nersc/` — run-only environment, Slurm job array, campaign files, `nersc/README.md`.
 - **`nersc/LOG.md` — where things stand at NERSC: setup, lessons, campaigns and their job
   IDs.  Read it first; add to it when you submit or learn something.**
