@@ -41,6 +41,7 @@ catch
 end
 const SEED0 = parse(Int, get(ENV, "SR_SEED0", "0"))                  # seeds SEED0·STRIDE+1 … +NREAL
 const STRIDE = parse(Int, get(ENV, "SR_SEEDSTRIDE", "1"))             # = NREAL when an array task runs NREAL seeds
+const SEEDOFF = parse(Int, get(ENV, "SR_SEEDOFFSET", "0"))           # added to every seed (new realizations of a set)
 # Controls for the rigidity tests: SR_NOVISC=1 skips the stochastic step (ideal SPH only),
 # SR_NOHAM=1 skips the leapfrog (positions frozen, stochastic step only).  SPH_KERNEL=wc4
 # selects the Wendland C4 kernel (src/sph.jl).  Displacements from the initial sites are
@@ -203,7 +204,7 @@ function one_realization(seed)
             Ht[end], guards())
 end
 
-Threads.@threads for s in SEED0 * STRIDE .+ (1:NREAL)
+Threads.@threads for s in SEEDOFF + SEED0 * STRIDE .+ (1:NREAL)
     one_realization(s)
 end
 println("done")

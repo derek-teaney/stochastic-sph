@@ -12,3 +12,6 @@ b_v0.8_dt  4  SR_BOOST=0.8 SR_DTFAC=0.3  SR_KHMAX=1.0              -- examples/s
 b24_v0     8  SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0
 b24_v0.6   8  SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0.6
 b24_v0.8   8  SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0.8
+# more statistics at v = 0.8 (tasks 93-124): new seeds (offset 100), longer runs; and a full Δt/2 set
+b_v0.8_long  16  SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=100  -- examples/stochrep_equilibrium.jl 1.2 2 600 1 4 b_v0.8_long
+b_v0.8_dt2   16  SR_BOOST=0.8 SR_DTFAC=0.3 SR_KHMAX=1.0 SR_SEEDOFFSET=200  -- examples/stochrep_equilibrium.jl 1.2 2 300 1 8 b_v0.8_dt2
