@@ -173,6 +173,8 @@ Campaign \texttt{boost} (\texttt{nersc/campaign\_boost.txt}): $L=1.2$ ($kh\ge0.2
 n-scheme, $t=300$, 16 runs at each $v=0$, $0.3$, $0.6$, $0.8$, and 4 at $v=0.8$ with $\Delta t/2$; two
 nodes, packed (jobs 61156299, 61156300).  A larger box, $L=2.4$ ($kh\ge0.13$), 8 runs at $v=0$, $0.6$, $0.8$,
 runs on a third node (61156353).  The long shear times ($\gamma^3/\nu k^2\approx75$ at $v=0.8$, $kh=0.26$) set $t=300$. 
+More statistics at $v=0.8$ (job 61158254): 16 further runs to $t=600$, pooled with the first 16, and 16
+runs at $\Delta t/2$ (replacing the first 4).
 
 %=============================================================================
 \section{Results}
@@ -183,7 +185,8 @@ runs on a third node (61156353).  The long shear times ($\gamma^3/\nu k^2\approx
 proposal reaches $|v|=1$ at these entropies).  The rest-frame temperature is held: $T_{\rm rel}=90.88$,
 $90.88$, $90.87$, $90.86$ at $v=0$, $0.3$, $0.6$, $0.8$, and $\Delta H/H\le2\times10^{-3}$ by $t=300$.  The kinetic energy
 of the fluctuations about the mean flow, in the units $2VwT$, is $1.00$, $1.46$, $4.49$, $19.3$, against the
-predicted $1$, $1.45$, $4.2$, $17.6$ (\Sect{sec:measure}).  Errors below are jackknife over the 16 runs.
+predicted $1$, $1.45$, $4.2$, $17.6$ (\Sect{sec:measure}).  Errors below are jackknife over the runs (16;
+32 at $v=0.8$).
 
 \paragraph{1. Equal time}, \Fig{fig:bstatic}.  $C_{AA}(\bm k,0)/\chi_{AA}$ at the smallest $k$ ($kh=0.26$):
 \begin{center}
@@ -194,31 +197,54 @@ $v$ & $E$ & $M_x$ & $M_y$ & $E$ & $M_x$ & $M_y$ \\ \hline
 0 & $1.02(5)$ & $1.02(5)$ & $1.07(6)$ & $0.94(3)$ & $1.15(7)$ & $0.94(3)$ \\
 0.3 & $0.93(5)$ & $0.90(6)$ & $1.00(5)$ & $1.11(5)$ & $1.04(4)$ & $1.13(6)$ \\
 0.6 & $0.93(11)$ & $0.92(12)$ & $0.99(6)$ & $0.98(3)$ & $1.00(4)$ & $0.96(5)$ \\
-0.8 & $0.90(12)$ & $0.89(12)$ & $0.96(11)$ & $0.99(6)$ & $1.01(6)$ & $0.94(6)$ \\
+0.8 & $0.86(7)$ & $0.85(7)$ & $0.97(7)$ & $0.97(3)$ & $0.98(3)$ & $0.93(3)$ \\
+0.8, $\Delta t/2$ & $0.80(11)$ & $0.80(11)$ & $1.05(10)$ & $0.89(4)$ & $0.88(4)$ & $0.96(5)$ \\
 \hline
 \end{tabular}
 \end{center}
 The fluctuations are those of the moving fluid, to within the errors, although $\chi_{xx}$ is 19 times
-its rest value at $v=0.8$.  (Along the flow the values sit a little below 1 at every $v>0$, $1$--$2\sigma$;
-the larger box will tell.)
+its rest value at $v=0.8$.  Along the flow the values sit below 1 at every $v>0$ ($2\sigma$ at $v=0.8$);
+in the larger box (below) the same $kh=0.26$ gives $0.97$ at $v=0.8$, so this is probably statistics.
 
 \paragraph{2. The shear mode along the flow is advected}, \Fig{fig:bshear}.  $C_{yy}(k\hat x,\tau)$
-oscillates at the advection frequency $vk$ inside the decaying envelope.  Fitting
-$C\propto e^{-i\Omega\tau-\Gamma\tau}$ (\Fig{fig:bfit}):
+oscillates at the advection frequency $vk$ inside the decaying envelope.  The fit is made to the
+shear-mode amplitude $\ell\cdot U$, with $\ell$ the left eigenvector of $K$ for the shear mode,
+\begin{equation}
+C_{\rm shear}(\bm k,\tau)=\ell\, C(\bm k,\tau)\,\ell^{T}\propto e^{-i\Omega\tau-\Gamma\tau},
+\end{equation}
+over the range where $|C_{\rm shear}/C_{\rm shear}(0)|>0.25$ (\Fig{fig:bfit}).  For $\bm k\parallel\bm v$ this is $C_{yy}$;
+for $\bm k\perp\bm v$ it removes the sound that $C_{xx}$ carries when $v\neq0$ (\Fig{fig:bperp}).
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
 $v$ & $\Omega/k$ & $\Gamma/(\nu k^2/\gamma^3)$, $\bm k\parallel\bm v$ & $\Gamma/(\nu k^2/\gamma)$, $\bm k\perp\bm v$ \\ \hline
 0 & $0.002(1)$ & $0.84(12)$ & $1.04(12)$ \\
-0.3 & $0.302(1)$ & $1.03(10)$ & $1.07(8)$ \\
-0.6 & $0.598(1)$ & $0.99(12)$ & $0.90(8)$ \\
-0.8 & $0.801(1)$ & $1.65(30)$ & $0.92(11)$ \\
+0.3 & $0.302(1)$ & $1.03(10)$ & $1.11(9)$ \\
+0.6 & $0.598(1)$ & $0.99(12)$ & $1.02(15)$ \\
+0.8 & $0.800(1)$ & $1.52(20)$ & $1.03(9)$ \\
+0.8, $\Delta t/2$ & $0.800(1)$ & $1.43(25)$ & $0.97(12)$ \\
+\hline
+\end{tabular}
+\end{center}
+At the next wave vector, $kh=0.52$, the errors are three times smaller:
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+$v$ & $\Gamma/(\nu k^2/\gamma^3)$, $\bm k\parallel\bm v$ & $\Gamma/(\nu k^2/\gamma)$, $\bm k\perp\bm v$ \\ \hline
+0 & $1.00(4)$ & $1.00(4)$ \\
+0.3 & $1.11(4)$ & $1.16(6)$ \\
+0.6 & $1.10(7)$ & $1.21(6)$ \\
+0.8 & $1.36(7)$ & $1.14(4)$ \\
+0.8, $\Delta t/2$ & $1.61(10)$ & $1.19(7)$ \\
 \hline
 \end{tabular}
 \end{center}
 The advection speed is $v$ to $10^{-3}$.  The damping follows time dilation: $\gamma^{-3}$ along the flow
-(a factor $4.6$ at $v=0.8$) and $\gamma^{-1}$ across it, within the errors, except along the flow at $v=0.8$
-($1.65\pm0.30$, $2\sigma$ high; there the decay time is $77$, a quarter of the run).
+(a factor $4.6$ at $v=0.8$) and $\gamma^{-1}$ across it, up to an excess that appears with the flow.  At rest
+the damping is hydrodynamic to 4\%.  With flow it is 10--20\% high, and along the flow at $v=0.8$
+40--50\% high at both $kh=0.26$ and $0.52$.  The excess is about the same fraction at both $k$, so it acts
+like an extra viscosity, and halving $\Delta t$ does not remove it: it is not a time-step error.  Whether
+it comes from the viscous step or from the ideal step is the follow-up below.
 
 \paragraph{3. Sound along the flow}, \Fig{fig:bpar}.  $C_{xx}$ and $C_{EE}$ for $\bm k\parallel\bm v$ follow the
 two Doppler-shifted sound modes, $(v\pm c_s)/(1\pm vc_s)=0.414$ and $0.942$ at $v=0.8$, with no adjustable
@@ -227,17 +253,31 @@ parameter: the curves lie on the predictions for twenty periods.
 \paragraph{4. Across the flow}, \Fig{fig:bperp}.  $C_{yy}$ for $\bm k\perp\bm v$ is sound across the flow, slower
 by $\sqrt{(1-v^2)/(1-c_s^2v^2)}$ ($0.68$ at $v=0.8$): the period grows as predicted.  $C_{xx}$ for $\bm k\perp\bm v$
 is the shear mode of the momentum along the flow, mixed with sound through $\delta M_x=\delta w\,\gamma^2v$; the
-mixture (the sound wiggles on the decaying shear) is reproduced.
+mixture (the sound wiggles on the decaying shear) is reproduced.  (Fitting $C_{xx}$ itself picks up the
+sound and gives nonsense at $v=0.8$; hence the projection above.)
+
+\paragraph{5. The larger box}, $L=2.4$, 8 runs per $v$, $kh\ge0.13$ (\Fig{fig:bshear24}).  The advected shear
+mode at $kh=0.13$ follows hydrodynamics for 25 periods ($\tau\le80$) at $v=0.6$ and $0.8$, and $\Omega/k=v$ to
+$10^{-3}$.  The decay times there ($\gamma^3/\nu k^2\approx300$ at $v=0.8$) equal the run length, so the damping is
+not measured well: $\Gamma/{\rm hydro}=1.1\pm0.7$ along and $1.35\pm0.35$ across the flow at $v=0.8$.  At $kh=0.26$
+the two boxes agree.  Equal-time values at $kh=0.13$ are within $1$--$2\sigma$ of 1 (errors 10--30\% with 8
+runs; \Fig{fig:bstatic24}).
 
 \paragraph{So far.}  A fluid moving at up to $v=0.8$ is simulated in equilibrium, and its correlators
 along and across the flow are those of boosted fluctuating hydrodynamics: susceptibilities, advection,
-the relativistic addition of the sound speed, and the time dilation of the damping.  Open: the shear
-damping along the flow at $v=0.8$; the larger box ($L=2.4$, $kh\ge0.13$) is running.
+the relativistic addition of the sound speed, and the time dilation of the damping.  Open: an excess
+damping of the shear modes with flow, 10--20\% at $v\le0.6$, 40--50\% along the flow at $v=0.8$, not from
+the time step.
+
+\paragraph{Follow-up} (tasks 125--220).  At $L=1.2$, $v=0$ and $0.8$, 16 runs each with $\eta/s=0.1$ and $0.4$,
+and with the stochastic step switched off (\texttt{SR\_NOVISC=1}, ideal SPH from the equilibrium draw).  If
+the excess is proportional to $\eta$, it comes from the viscous step; if it survives without viscosity, it
+is a numerical damping of the ideal step for moving particles.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_static.png}
 \caption{Equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$ for $A=E$, $M_x$, $M_y$; filled: $\bm k\parallel\bm v$,
-open: $\bm k\perp\bm v$; colour: $v$ (purple: $v=0.8$ at $\Delta t/2$, 4 runs).}
+open: $\bm k\perp\bm v$; colour: $v$ (purple: $v=0.8$ at $\Delta t/2$, 16 runs).}
 \label{fig:bstatic}
 \end{figure}
 \begin{figure}[t]
@@ -261,10 +301,18 @@ along the flow, mixed with sound); dotted: hydrodynamics.}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_fit.png}
 \caption{Fits of the shear modes at $kh=0.26$: advection speed $\Omega/k$ against $v$, and the damping
-against $\nu k^2/\gamma^3$ ($\bm k\parallel\bm v$) and $\nu k^2/\gamma$ ($\bm k\perp\bm v$); jackknife errors.}
+against $\nu k^2/\gamma^3$ ($\bm k\parallel\bm v$) and $\nu k^2/\gamma$ ($\bm k\perp\bm v$), from the shear-mode projection; jackknife errors.}
 \label{fig:bfit}
 \end{figure}
-
-(The $L=2.4$ results are added when job 61156353 finishes.)
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/boost_static_L24.png}
+\caption{As \Fig{fig:bstatic}, for $L=2.4$ (8 runs per $v$).}
+\label{fig:bstatic24}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/boost_shear_L24.png}
+\caption{As \Fig{fig:bshear}, for $L=2.4$ at $kh=0.13$.}
+\label{fig:bshear24}
+\end{figure}
 
 \end{document}

@@ -17,8 +17,13 @@ for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
 end
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "boost")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
-const SETS = [("b_v0", 0.0, "C0"), ("b_v0.3", 0.3, "C2"), ("b_v0.6", 0.6, "C1"), ("b_v0.8", 0.8, "C3"),
-              ("b_v0.8_dt", 0.8, "C4")]
+# sets: (label, directories pooled, v, colour); BOOST_GROUP = L12 (default) or L24; figures get the suffix
+const GROUP = get(ENV, "BOOST_GROUP", "L12")
+const SETS = GROUP == "L24" ?
+    [("v=0", ["b24_v0"], 0.0, "C0"), ("v=0.6", ["b24_v0.6"], 0.6, "C1"), ("v=0.8", ["b24_v0.8"], 0.8, "C3")] :
+    [("v=0", ["b_v0"], 0.0, "C0"), ("v=0.3", ["b_v0.3"], 0.3, "C2"), ("v=0.6", ["b_v0.6"], 0.6, "C1"),
+     ("v=0.8", ["b_v0.8", "b_v0.8_long"], 0.8, "C3"), ("v=0.8, Δt/2", ["b_v0.8_dt2"], 0.8, "C4")]
+const SUFFIX = GROUP == "L24" ? "_L24" : ""
 const T0BURN = 5.0;  const DTS = 0.05;  const TAUMAX = 100.0
 const CS2 = 1 / 3
 mean_(v) = sum(v) / length(v)
@@ -73,6 +78,13 @@ function predict(Trel, v, ν, k, τs)
     end
     [R * Diagonal(exp.(-im .* ωs .* τ)) * Rinv * χ for τ in τs], χ, ωs
 end
+# left eigenvector ℓ of K for the shear mode: ℓ·U is the shear amplitude (no sound in it)
+function shear_left(Trel, v, k)
+    γ = 1 / sqrt(1 - v^2);  U = Uof(SVector(-γ / Trel, γ * v / Trel, 0.0))
+    F = eigen(Kmat(U, k));  Rinv = inv(F.vectors)
+    i = argmin([abs(γ * (real(ω) - v * k[1])) for ω in F.values])
+    real.(Rinv[i, :])
+end
 
 # ── measured correlators ─────────────────────────────────────────────────────────────────
 function files(d)
@@ -112,8 +124,8 @@ function jack(f, Cs)
 end
 
 res = Dict{String,Any}()
-for (run, v, col) in SETS
-    fs = files(joinpath(DIR, run));  isempty(fs) && continue
+for (run, dirs, v, col) in SETS
+    fs = vcat([files(joinpath(DIR, d)) for d in dirs]...);  isempty(fs) && continue
     rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000, rs)
     isempty(rs) && continue
     m = rs[1].meta;  ks = rs[1].rec.ks;  NV = m.N * m.V
@@ -127,13 +139,13 @@ for (run, v, col) in SETS
     end
     Trel = m.Trel;  ν = m.etas / Trel
     nk = minimum(length(r.KE) for r in rs)
-    res[run] = (; v, col, C, lab = run == "b_v0.8_dt" ? "v=0.8, Δt/2" : @sprintf("v=%.1f", v), Trel, ν, h = m.h, n = length(rs), t = rs[1].rec.t[end],
+    res[run] = (; v, col, C, lab = run, Trel, ν, h = m.h, n = length(rs), t = rs[1].rec.t[end],
                 KE = mean_([mean_(r.KE[nk÷2:nk]) for r in rs]), dH = mean_([r.H[nk] for r in rs]))
-    @printf("%-8s v=%.1f  %2d runs  t=%.0f  T_rel=%.3f  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n", run, v, length(rs),
+    @printf("%-12s v=%.1f  %2d runs  t=%.0f  T_rel=%.3f  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n", run, v, length(rs),
             res[run].t, Trel, res[run].KE, res[run].dH)
 end
 runs = [s[1] for s in SETS if haskey(res, s[1])]
-fitruns = filter(r -> r != "b_v0.8_dt", runs)        # the Δt/2 set is short: shown in the tables only
+fitruns = filter(r -> !occursin("Δt", r), runs)      # the Δt/2 set: in the tables only
 isempty(runs) && (println("no complete runs yet");  exit())
 names = ("E", "M_x", "M_y")
 
@@ -160,7 +172,7 @@ for (a, ax) in enumerate(axs)
     ax.set_title("C_$(names[a])$(names[a])(k,0) / χ  (filled: k ∥ v, open: k ⊥ v)")
 end
 axs[1].legend(fontsize = 6, ncol = 2)
-tight_layout();  savefig(joinpath(FIGD, "boost_static.png"), dpi = 100);  close()
+tight_layout();  savefig(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
 
 # ── dynamics: one figure per (direction, component) family ───────────────────────────────
 function panel!(ax, r, dir, a, b; part = real, j = 1, tmax = 60.0)
@@ -183,26 +195,31 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
         ax.set_title(title * @sprintf(",  kh = %.2f;  dotted: hydrodynamics", norm(k) * res[runs[1]].h), fontsize = 10)
         ax.axhline(0, color = "k", lw = 0.5);  ax.set_xlabel("τ");  ax.legend(fontsize = 8)
     end
-    tight_layout();  savefig(joinpath(FIGD, fname * ".png"), dpi = 100);  close()
+    tight_layout();  savefig(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
 end
 
 # ── fits of the shear modes: C ≈ A e^{−iΩτ − Γτ} on the early part ────────────────────────
-println("shear modes (smallest k): fitted Ω/k and Γ against hydrodynamics")
+println("shear modes (two smallest k): fitted Ω/k and Γ against hydrodynamics")
 fit = Dict{String,Any}()
 for run in runs
     r = res[run];  out = []
-    for (dir, a) in ((:par, 3), (:perp, 2))
-        c = r.C[(dir, 1)];  k = norm(c.k);  γ = 1 / sqrt(1 - r.v^2)
+    for j in 1:2, (dir, a) in ((:par, 3), (:perp, 2))
+        haskey(r.C, (dir, j)) || continue
+        c = r.C[(dir, j)];  k = norm(c.k);  γ = 1 / sqrt(1 - r.v^2)
         sl(x, z) = (xm = mean_(x); sum((x .- xm) .* (z .- mean_(z))) / sum(abs2, x .- xm))
-        # fit window from the full mean (|C/C0| > 0.25), then the same window for every jackknife sample
-        y0 = c.C[a, a, :] ./ c.C[a, a, 1];  iend = findfirst(i -> abs(y0[i]) < 0.25, eachindex(y0))
+        # project on the shear mode, ℓ C(τ) ℓᵀ with ℓ the left eigenvector of K (across the flow
+        # C_xx alone also carries sound when v ≠ 0); fit window from the full mean (|C/C0| > 0.25),
+        # then the same window for every jackknife sample
+        ℓ = shear_left(r.Trel, r.v, c.k)
+        proj(C) = [dot(ℓ, C[:, :, i] * ℓ) for i in axes(C, 3)]
+        y0 = proj(c.C) ./ proj(c.C)[1];  iend = findfirst(i -> abs(y0[i]) < 0.25, eachindex(y0))
         it = 2:(iend === nothing ? length(y0) : iend - 1);  τ = c.τ[it]
-        fΩ(C) = (y = C[a, a, it] ./ C[a, a, 1];  -sl(τ, unwrap(angle.(y))))
-        fΓ(C) = (y = C[a, a, it] ./ C[a, a, 1];  -sl(τ, log.(abs.(y))))
+        fΩ(C) = (P = proj(C);  y = P[it] ./ P[1];  -sl(τ, unwrap(angle.(y))))
+        fΓ(C) = (P = proj(C);  y = P[it] ./ P[1];  -sl(τ, log.(abs.(y))))
         Ω, dΩ = jack(fΩ, c.Cs);  Γ, dΓ = jack(fΓ, c.Cs)
         Γth = dir === :par ? r.ν * k^2 / γ^3 : r.ν * k^2 / γ;  Ωth = dir === :par ? r.v * k : 0.0
-        push!(out, (; dir, Ω, Γ, dΩ, dΓ, Ωth, Γth, k))
-        @printf("  %-12s %-4s  Ω/k = %+.3f±%.3f (hydro %+.3f)   Γ/hydro = %.2f±%.2f   window τ ≤ %.1f\n", r.lab, dir,
+        j == 1 && push!(out, (; dir, Ω, Γ, dΩ, dΓ, Ωth, Γth, k))
+        @printf("  %-12s kh=%.2f %-4s  Ω/k = %+.3f±%.3f (hydro %+.3f)   Γ/hydro = %.2f±%.2f   window τ ≤ %.1f\n", r.lab, k * r.h, dir,
                 Ω / k, dΩ / k, Ωth / k, Γ / Γth, dΓ / Γth, τ[end])
     end
     fit[run] = out
@@ -214,5 +231,5 @@ axs[1].set_xlabel("v");  axs[1].set_ylabel("advection speed Ω/k of the shear mo
 axs[2].errorbar(vs, [fit[r][1].Γ / fit[r][1].Γth for r in fitruns], yerr = [fit[r][1].dΓ / fit[r][1].Γth for r in fitruns], fmt = "o", ms = 8, label = "k ∥ v, against νk²/γ³")
 axs[2].errorbar(vs .+ 0.01, [fit[r][2].Γ / fit[r][2].Γth for r in fitruns], yerr = [fit[r][2].dΓ / fit[r][2].Γth for r in fitruns], fmt = "s", ms = 8, mfc = "none", label = "k ⊥ v, against νk²/γ")
 axs[2].axhline(1, color = "k", lw = 0.5);  axs[2].set_xlabel("v");  axs[2].set_ylabel("Γ / hydrodynamics");  axs[2].legend(fontsize = 8)
-tight_layout();  savefig(joinpath(FIGD, "boost_fit.png"), dpi = 100);  close()
+tight_layout();  savefig(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
 println("figures written to $FIGD")

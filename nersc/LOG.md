@@ -114,6 +114,14 @@ moving β^μ, E_k recorded.  Output `$SCRATCH/sph/boost/`.  Analysis `examples/b
   1-34) and **61156300** (35-68), checkout `~/stochastic-sph-run`, THREADS=4, -t 3 h.
 - L = 2.4, v = 0, 0.6, 0.8 × 8, t = 300: job **61156353** (tasks 69-92), checkout
   `~/stochastic-sph-run2`, -t 8 h.
+- v = 0.8 statistics: job **61158254** (tasks 93-124: 16 runs to t = 600, 16 at Δt/2), checkout
+  `~/stochastic-sph-run`.  All runs of 61156299/300/353 and 61158254 completed, none broke.
+- Outcome so far (docs/boost.pdf): susceptibilities, advection, Doppler-shifted sound, time-dilated
+  damping all as predicted; but an excess shear damping with flow (10-20% at v ≤ 0.6, 40-50% along
+  the flow at v = 0.8, at kh = 0.26 and 0.52), not removed by Δt/2.  Fit the shear-mode projection
+  (left eigenvector of K), not C_xx, across the flow.
+- Follow-up tasks 125-220 (η/s = 0.1, 0.4 and SR_NOVISC=1 at v = 0, 0.8): is the excess from the
+  viscous or the ideal step?
 
 ### `cl` — continuum limit, 2026-11-10, `nersc/campaign_cl.txt`, docs/continuum_limit.tex
 
