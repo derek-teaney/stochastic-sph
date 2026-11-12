@@ -8,3 +8,7 @@ b_v0.3    16  SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0              -- examples/s
 b_v0.6    16  SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0.6
 b_v0.8    16  SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 300 1 4 b_v0.8
 b_v0.8_dt  4  SR_BOOST=0.8 SR_DTFAC=0.3  SR_KHMAX=1.0              -- examples/stochrep_equilibrium.jl 1.2 2 150 1 8 b_v0.8_dt
+# larger box (tasks 69-92): L = 2.4, kh ≥ 0.13, 8 runs at v = 0, 0.6, 0.8; THREADS=4, one node
+b24_v0     8  SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0
+b24_v0.6   8  SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0.6
+b24_v0.8   8  SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=0.6              -- examples/stochrep_equilibrium.jl 2.4 2 300 1 4 b24_v0.8
