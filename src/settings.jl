@@ -15,13 +15,17 @@ parse_setting(::Type{Bool}, s)    = lowercase(strip(s)) in ("1", "true", "yes")
 parse_setting(::Type{Symbol}, s)  = Symbol(s)
 parse_setting(::Type{<:AbstractString}, s) = String(s)
 
+const SETTINGS_LOCK = ReentrantLock()     # setting may be called from threads (SimParams in a run)
+
 function setting(name::AbstractString, default)
     set = haskey(ENV, name)
     value = set ? parse_setting(typeof(default), ENV[name]) : default
-    haskey(SETTINGS, name) || push!(SETTING_ORDER, name)
-    SETTINGS[name] = (value = value, default = default, set = set)
+    lock(SETTINGS_LOCK) do
+        haskey(SETTINGS, name) || push!(SETTING_ORDER, name)
+        SETTINGS[name] = (value = value, default = default, set = set)
+    end
     return value
 end
 
 # every setting read so far, in the order first read: name => (value, default, set)
-settings_read() = [n => SETTINGS[n] for n in SETTING_ORDER]
+settings_read() = lock(() -> [n => SETTINGS[n] for n in SETTING_ORDER], SETTINGS_LOCK)

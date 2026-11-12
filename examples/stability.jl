@@ -38,6 +38,8 @@ const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)"
               (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (S0 == 1e6 ? "" : "_S$(S0)") * (HFIX ? "_hfix" : "") *
               (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
 
+const RECORD = Ref{Any}(NamedTuple());  const RECORD_LOCK = ReentrantLock()   # for the run record
+
 Hof(ps, params, cl, eos) = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos);
                             sum(p.s * p.H_over_S for p in ps))
 
@@ -87,6 +89,9 @@ function run(kind, seed=1)
     dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()      # reused arrays of the stochastic step
     λ, resid = kind === :full ? (1.0, true) : kind === :det ? (Inf, true) : (1.0, false)
     opts = StochOptions(params; λ, residual = resid, vote = VOTE, gradient = GRAD)
+    lock(RECORD_LOCK) do
+        r = RECORD[];  RECORD[] = (params = params, eos = eos, opts = merge(get(r, :opts, Dict{Symbol,Any}()), Dict(kind => opts)))
+    end
     E0 = sum(particle_energy(q, eos) for q in ps);  H0 = Hof(ps, params, cl, eos)
     ts = Float64[];  Hs = Float64[];  Es = Float64[];  KE = Float64[];  dis = Float64[];  loc = Float64[];  acc = Float64[]
     snaps = Dict{Int,Any}();  snapat = unique(round.(Int, exp.(range(0, log(nsteps), length=12))))
@@ -141,12 +146,27 @@ end
 
 jobs = [(k, s) for s in SEED0 .+ (1:NREAL) for k in KINDS]
 out = Vector{Any}(undef, length(jobs))
+# the run record <base>.toml next to the output (src/runinfo.jl), at the start and at the end
+const BASE = joinpath(OUTD, "stochrep_hamiltonian_ha$(HA)_t$(isinteger(TEND) ? Int(TEND) : TEND)$(SUF)$(SEED0 == 0 ? "" : "_s$(SEED0)")")
+function record(complete, wall)
+    r = RECORD[]
+    write_record(BASE; run = (driver = "stability.jl", args = ARGS, seeds = collect(SEED0 .+ (1:NREAL))),
+        params = get(r, :params, nothing), eos = get(r, :eos, nothing),
+        opts = length(KINDS) == 1 ? get(get(r, :opts, Dict()), KINDS[1], nothing) : nothing,
+        driver = (h_over_a = HA, t_end = TEND, nreal = NREAL, kinds = collect(KINDS), vote = VOTE, dt_factor = 0.5 * DTF,
+                  dt_mode = "viscous", record_split = SPLIT, gradient = GRAD, S0 = S0,
+                  stochastic_by_kind = Dict(string(k) => o for (k, o) in get(r, :opts, Dict()))),
+        start = (type = string(START),), outcome = (complete = complete, wall_s = wall))
+end
+record(false, 0.0)
+tstart = time()
 Threads.@threads for i in eachindex(jobs)
     out[i] = run(jobs[i]...)
 end
+record(true, time() - tstart)
 # seed 1 → the detailed figure; all seeds → the realizations figure
 res = Dict(k => out[i] for (i, (k, s)) in enumerate(jobs) if s == SEED0 + 1)
-serialize(joinpath(OUTD, "stochrep_hamiltonian_ha$(HA)_t$(isinteger(TEND) ? Int(TEND) : TEND)$(SUF)$(SEED0 == 0 ? "" : "_s$(SEED0)").jls"), res)
+serialize(BASE * ".jls", res)
 NREAL > 1 && serialize(joinpath(OUTD, "stochrep_hamiltonian_real_ha$(HA)_t$(isinteger(TEND) ? Int(TEND) : TEND)$(SUF)$(SEED0 == 0 ? "" : "_s$(SEED0)").jls"),
                        Dict(jobs[i] => out[i] for i in eachindex(jobs)))
 println("done")

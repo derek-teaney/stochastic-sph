@@ -77,25 +77,21 @@ end
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
-# Everything this run is (defaults included) and, once there, how it went: <base>.json and
-# <base>.csv (src/runinfo.jl); written at the start, at each checkpoint and at the end.
+# The run record <base>.toml (src/runinfo.jl): every setting as used, written at the start,
+# at each checkpoint and at the end (when [outcome] changes).
 function runinfo(base, params, eos, st, n, complete)
     nk = length(st.KE);  h2 = nk ÷ 2 + 1
-    out = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
-    write_runinfo(base, vcat(run_settings(params, eos; driver = "equilibrium.jl", tag = TAG, seed = st.seed,
-        S0 = S0, boost = BOOST, gamma = GAMMA, s_a = GAMMA * S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
-        nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, jitter = JITTER, lambda = LAMBDA,
-        novisc = NOVISC, noham = NOHAM,
+    res = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
+    write_record(base;
+        run = (driver = "equilibrium.jl", tag = TAG, seed = st.seed, args = ARGS),
+        params, eos, opts = NOVISC ? nothing : stoch_opts(params),
+        driver = (L = LBOX, h_over_a = HA, t_end = TEND, nreal = NREAL, rec_every = RECN, khmax = KHMAX,
+                  S0 = S0, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * S0 * params.vol,
+                  dv = 1 / sqrt(S0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
+                  nsteps = st.nsteps),
         start = haskey(st, :start) ? st.start : (type = string(START),),
-        # the scheme, as this driver runs it (the stochastic_step! defaults it relies on spelled out)
-        stoch = (vote = string(VOTE), lambda = LAMBDA, residual = true, gradient_map = params.hamiltonian !== :energy,
-                 grid_shift = true, sweeps = "stress then residual, order alternating each step",
-                 back_map = params.hamiltonian === :energy ? "plain, s = S(e, m; V)" : "gradient-corrected"),
-        ideal = (integrator = NOHAM ? "none (positions frozen)" : "leapfrog DKD (position Verlet)",
-                 splitting = "S(dt/2) [L(dt) S(dt)]... L(dt) S(dt/2)"),
-        dt_rule = "dtfac * 0.5 * compute_dt(mode = :viscous, CFL = 0.2): min(acoustic 0.2 h/c_s, viscous bound)"),
-        Pair{String,Any}["steps_done" => n, "complete" => complete, "wall_s" => st.wall],
-        Pair{String,Any}["outcome" => out, "monitor" => haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), "guards" => guards()]))
+        outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), res,
+                        (monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), guards = guards())))
 end
 
 function one_realization(seed)

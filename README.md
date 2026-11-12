@@ -50,7 +50,8 @@ src/        library code; scripts include src/load.jl, which loads it in order
   stochastic.jl   the stochastic step (stochastic_step!)
   measure.jl      equilibrium start, Fourier modes, correlators, checkpoints, HDF5 output
   monitor.jl      running statistics printed to the log
-  runinfo.jl      the run record (<run>.json, <run>.csv)
+  settings.jl     setting(name, default): every environment knob, noted for the run record
+  runinfo.jl      the run record <run>.toml (every setting as used, provenance, outcome)
   legacy/         superseded: the two-level strain form and the old particle sweep
                   (include src/legacy/load.jl after src/load.jl)
 test/       checks with pass/fail assertions (some also make plots)
