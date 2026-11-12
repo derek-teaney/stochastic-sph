@@ -60,7 +60,7 @@ function response(k)
     p1 = particles[1];  acc = 0.0
     for pb in particles
         r = minimum_image(pb.x - p1.x, L);  rr = norm(r)
-        rr < 2h && (acc += wendland_c2(rr, h, params.kernel) * cos(dot(k, r)))
+        rr < 2h && (acc += kernel_W(rr, h, params.kernel) * cos(dot(k, r)))
     end
     return params.vol * acc
 end

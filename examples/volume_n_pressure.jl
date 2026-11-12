@@ -23,7 +23,7 @@ function state!(ps, params, cl, eos)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     p = [q.p for q in ps];  V = [q.s / q.S_smooth for q in ps]
     nl = neighbor_list!(cl, ps, params.h)
-    pt = [sum(V[b] * p[b] * wendland_c2(norm(minimum_image(ps[a].x - ps[b].x, params.L)), params.h, params.kernel)
+    pt = [sum(V[b] * p[b] * kernel_W(norm(minimum_image(ps[a].x - ps[b].x, params.L)), params.h, params.kernel)
               for b in neighbors(nl, a)) for a in eachindex(ps)]
     (; p, pt, s = [q.s for q in ps])
 end

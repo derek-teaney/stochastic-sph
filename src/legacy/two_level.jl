@@ -53,7 +53,7 @@ function compute_strain(particles::Vector{Particle}, params::SimParams,
                 r_vec = minimum_image(particles[a].x - particles[b].x, L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2h && continue
-                grad  = wendland_c2_grad(r_vec, r_mag, h, kernel)
+                grad  = kernel_gradW(r_vec, r_mag, h, kernel)
                 Δβ    = bv[b] - β_a
                 # outer product: (grad * Δβ')[j,i] = D_j * Δβ_i  →  ε_{ji}
                 ε_acc += particles[b].s * (grad * Δβ')
@@ -97,7 +97,7 @@ function two_level_dissipative_force!(dotm::Vector{SVector{2,Float64}},
                 r_vec = minimum_image(particles[a].x - particles[b].x, L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2h && continue
-                grad  = wendland_c2_grad(r_vec, r_mag, h, kernel)
+                grad  = kernel_gradW(r_vec, r_mag, h, kernel)
                 sb    = particles[b].s
                 # f^i(a←b) = s_a s_b D_j [(T_rel κ/S²)_a ε_a + (T_rel κ/S²)_b ε_b]^{ij}
                 f_ab  = (sa * sb) .* ((A[a] + A[b]) * grad)

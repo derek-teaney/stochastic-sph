@@ -103,7 +103,7 @@ end
 function kernel_star!(out, a, particles, params, cl; nl = nothing)
     pa = particles[a];  empty!(out)
     add!(b) = (r = minimum_image(particles[b].x - pa.x, params.L);
-               W = wendland_c2(norm(r), params.h, params.kernel);
+               W = kernel_W(norm(r), params.h, params.kernel);
                W > 0 && push!(out, (b, r, particles[b].s * W / pa.S_smooth)))
     if nl !== nothing
         for b in neighbors(nl, a);  add!(b);  end

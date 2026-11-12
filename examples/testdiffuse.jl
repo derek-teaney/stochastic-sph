@@ -30,7 +30,7 @@ function run_diffusion_test_ic(params, particles, cl, eos, k, M_amp)
                 rvec = minimum_image(xygrid - particles[b].x, L)
                 r = norm(rvec)
                 r >= 2h && continue
-                dMydt_grid[i] += dotm[b][2] * wendland_c2(r, h, params.kernel)
+                dMydt_grid[i] += dotm[b][2] * kernel_W(r, h, params.kernel)
             end
         end
     end

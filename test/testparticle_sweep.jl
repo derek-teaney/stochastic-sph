@@ -329,7 +329,7 @@ function drift_sweep!(D, particles, params, cl, eos, dt, rngs)
                 rv = minimum_image(pa.x - particles[b].x, L)
                 r  = sqrt(rv[1]^2 + rv[2]^2)
                 r >= 2h && continue
-                grad = wendland_c2_grad(rv, r, h, kern)
+                grad = kernel_gradW(rv, r, h, kern)
                 f = (w * coeff * particles[b].s) .* (ξa * grad)
                 D[a] += f;  D[b] -= f
             end

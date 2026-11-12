@@ -18,7 +18,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 const KER = WendlandC2_1D()
-W(r, h)  = wendland_c2(abs(r), h, KER)
+W(r, h)  = kernel_W(abs(r), h, KER)
 Wp(r, h) = (q = abs(r) / h; q >= 2 ? 0.0 : sign(r) * (-5 * 3 / (4h)) * q * (1 - q / 2)^3 / h)
 ψ(r, h)  = r == 0 ? 0.0 : -Wp(r, h) / r
 lat(h, a) = [m * a for m in -ceil(Int, 2h / a):ceil(Int, 2h / a)]

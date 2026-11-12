@@ -28,7 +28,7 @@ w  = particles[1].e + particles[1].p
 
 # smoothing response R(k) along x (as in smoothing_response.jl)
 p1 = particles[1]
-R(k) = V * sum(wendland_c2(norm(minimum_image(pb.x - p1.x, L)), h, params.kernel) *
+R(k) = V * sum(kernel_W(norm(minimum_image(pb.x - p1.x, L)), h, params.kernel) *
                cos(k * minimum_image(pb.x - p1.x, L)[1])
                for pb in particles if norm(minimum_image(pb.x - p1.x, L)) < 2h)
 

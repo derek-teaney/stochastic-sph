@@ -203,27 +203,27 @@ Particle(x::SVector{2,Float64}, s::Float64, m::SVector{2,Float64}) =
              zero(SVector{2,Float64}), 0.0,   # dotx, Teff
              0.0, zero(SVector{2,Float64}))   # Δs, Δm
 
-function wendland_c2(r::Float64, h::Float64, ::WendlandC2_2D)::Float64
+function kernel_W(r::Float64, h::Float64, ::WendlandC2_2D)::Float64
     q = r / h
     q >= 2.0 && return 0.0
     return (7.0 / (4π * h^2)) * (1.0 - q/2.0)^4 * (1.0 + 2.0*q)
 end
 
-function wendland_c2(r::Float64, h::Float64, ::WendlandC2_1D)::Float64
+function kernel_W(r::Float64, h::Float64, ::WendlandC2_1D)::Float64
     q = r / h
     q >= 2.0 && return 0.0
     return (3.0 / (4h)) * (1.0 - q/2.0)^4 * (1.0 + 2.0*q)
 end
 
-wendland_c2(r::Float64, h::Float64) = wendland_c2(r, h, WendlandC2_2D())
+kernel_W(r::Float64, h::Float64) = kernel_W(r, h, WendlandC2_2D())
 
 # Wendland C4 in 2D, support 2h:  W = 9/(4π h²) (1 − q/2)⁶ (1 + 3q + 35q²/12),  q = r/h
-function wendland_c2(r::Float64, h::Float64, ::WendlandC4_2D)::Float64
+function kernel_W(r::Float64, h::Float64, ::WendlandC4_2D)::Float64
     q = r / h
     q >= 2.0 && return 0.0
     return (9.0 / (4π * h^2)) * (1.0 - q/2.0)^6 * (1.0 + 3.0*q + 35.0*q^2/12.0)
 end
-function wendland_c2_grad(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC4_2D)
+function kernel_gradW(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC4_2D)
     q = r / h
     (q >= 2.0 || r < 1e-10) && return SVector(0.0, 0.0)
     C    = 9.0 / (4π * h^2)
@@ -231,7 +231,7 @@ function wendland_c2_grad(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::W
     return dWdr / r .* r_vec
 end
 
-function wendland_c2_grad(r_vec::SVector{2,Float64},
+function kernel_gradW(r_vec::SVector{2,Float64},
                           r::Float64,
                           h::Float64, ::WendlandC2_2D)
     q = r / h
@@ -241,7 +241,7 @@ function wendland_c2_grad(r_vec::SVector{2,Float64},
     return dWdr / r .* r_vec
 end
 
-function wendland_c2_grad(r_vec::SVector{2,Float64},
+function kernel_gradW(r_vec::SVector{2,Float64},
                           r::Float64,
                           h::Float64, ::WendlandC2_1D)
     q = r / h
@@ -251,15 +251,15 @@ function wendland_c2_grad(r_vec::SVector{2,Float64},
     return dWdr / r .* r_vec
 end
 
-wendland_c2_grad(rv, r, h) = wendland_c2_grad(rv, r, h, WendlandC2_2D())
+kernel_gradW(rv, r, h) = kernel_gradW(rv, r, h, WendlandC2_2D())
 
 # Wendland C6 in 2D, support 2h:  W = 78/(28π h²) (1 − q/2)⁸ (1 + 4q + 25q²/4 + 4q³),  q = r/h
-function wendland_c2(r::Float64, h::Float64, ::WendlandC6_2D)::Float64
+function kernel_W(r::Float64, h::Float64, ::WendlandC6_2D)::Float64
     q = r / h
     q >= 2.0 && return 0.0
     return (78.0 / (28π * h^2)) * (1.0 - q/2.0)^8 * (1.0 + 4.0*q + 6.25*q^2 + 4.0*q^3)
 end
-function wendland_c2_grad(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC6_2D)
+function kernel_gradW(r_vec::SVector{2,Float64}, r::Float64, h::Float64, ::WendlandC6_2D)
     q = r / h
     (q >= 2.0 || r < 1e-10) && return SVector(0.0, 0.0)
     s = q / 2;  C = 78.0 / (28π * h^2)

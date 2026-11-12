@@ -5,13 +5,13 @@ h = 1.0
 r = LinRange(0.0, 2.5h, 500)
 rv = collect(r)
 
-w = [wendland_c2(ri, h) for ri in r]
+w = [kernel_W(ri, h) for ri in r]
 
 # gradient along three directions
-gx_xaxis = [wendland_c2_grad(SVector(ri, 0.0),         ri, h)[1] for ri in rv]
-gy_yaxis = [wendland_c2_grad(SVector(0.0, ri),         ri, h)[2] for ri in rv]
-gx_diag  = [wendland_c2_grad(SVector(ri/√2, ri/√2),   ri, h)[1] for ri in rv]
-gy_diag  = [wendland_c2_grad(SVector(ri/√2, ri/√2),   ri, h)[2] for ri in rv]
+gx_xaxis = [kernel_gradW(SVector(ri, 0.0),         ri, h)[1] for ri in rv]
+gy_yaxis = [kernel_gradW(SVector(0.0, ri),         ri, h)[2] for ri in rv]
+gx_diag  = [kernel_gradW(SVector(ri/√2, ri/√2),   ri, h)[1] for ri in rv]
+gy_diag  = [kernel_gradW(SVector(ri/√2, ri/√2),   ri, h)[2] for ri in rv]
 
 fig, (ax1, ax2) = subplots(1, 2, figsize=(11, 4))
 

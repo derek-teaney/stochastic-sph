@@ -17,7 +17,7 @@ function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
             for b in neighbors(nl, a)
                 r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
-                w = wendland_c2(r_mag, params.h, params.kernel)
+                w = kernel_W(r_mag, params.h, params.kernel)
                 S_acc += particles[b].s * w
                 M_acc += particles[b].m * w
             end
@@ -41,7 +41,7 @@ function smooth_entropy_energy!(particles::Vector{Particle}, params::SimParams,
         for b in neighbors(nl, a)
             r_mic = minimum_image(particles[a].x - particles[b].x, params.L)
             r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
-            S_acc += (number ? 1.0 : particles[b].s) * wendland_c2(r_mag, params.h, params.kernel)
+            S_acc += (number ? 1.0 : particles[b].s) * kernel_W(r_mag, params.h, params.kernel)
         end
         number && (S_acc *= particles[a].s)
         particles[a].S_smooth = S_acc
@@ -62,7 +62,7 @@ function update_velocities!(particles::Vector{Particle},
             for b in neighbors(nl, a)
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
-                w = wendland_c2(r_mag, params.h, params.kernel)
+                w = kernel_W(r_mag, params.h, params.kernel)
                 dotx_acc += particles[b].s * particles[b].v_over_S * w
                 FS_acc   += particles[b].s * particles[b].F_over_S * w
             end
@@ -92,7 +92,7 @@ function update_velocities_energy!(particles::Vector{Particle},
             r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
             r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
             pb = particles[b]
-            pS2_acc += pb.s * (pb.p / pb.S_smooth^2) * wendland_c2(r_mag, params.h, params.kernel)
+            pS2_acc += pb.s * (pb.p / pb.S_smooth^2) * kernel_W(r_mag, params.h, params.kernel)
         end
         pa = particles[a]
         pa.dotx = pa.v_over_S * pa.S_smooth
@@ -119,7 +119,7 @@ function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                 r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
                 r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
                 r_mag >= 2params.h && continue
-                grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
+                grad = kernel_gradW(r_vec, r_mag, params.h, params.kernel)
                 sb, mb = particles[b].s, particles[b].m
                 vSb, FSb = particles[b].v_over_S, particles[b].F_over_S
                 bracket = -(dot(vSa, mb)*sa + dot(vSb, ma)*sb) +
@@ -152,7 +152,7 @@ function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
             r_vec = minimum_image(particles[a].x - particles[b].x, params.L)
             r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
             r_mag >= 2params.h && continue
-            grad = wendland_c2_grad(r_vec, r_mag, params.h, params.kernel)
+            grad = kernel_gradW(r_vec, r_mag, params.h, params.kernel)
             pb   = particles[b]
             acc -= number ? (pSa + pb.p * (pb.s / pb.S_smooth)^2) * grad :
                             sa * pb.s * (pSa + pb.p / pb.S_smooth^2) * grad
@@ -277,7 +277,7 @@ function smooth_to_grid(particles::Vector{Particle}, params::SimParams,
             for b in particles_in_cell(cl, jx, jy)
                 r_mic = minimum_image(xg_vec - particles[b].x, L)
                 r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
-                acc  += field(particles[b]) * wendland_c2(r_mag, h, params.kernel)
+                acc  += field(particles[b]) * kernel_W(r_mag, h, params.kernel)
             end
         end
         S[ix, iy] = acc

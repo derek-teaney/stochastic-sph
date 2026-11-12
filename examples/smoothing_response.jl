@@ -32,7 +32,7 @@ p1 = particles[1]
 offsets = SVector{2,Float64}[];  weights = Float64[]
 for pb in particles
     r = minimum_image(pb.x - p1.x, L)
-    norm(r) < 2h && (push!(offsets, r); push!(weights, wendland_c2(norm(r), h, params.kernel)))
+    norm(r) < 2h && (push!(offsets, r); push!(weights, kernel_W(norm(r), h, params.kernel)))
 end
 R(k) = V * sum(w * cos(dot(k, r)) for (w, r) in zip(weights, offsets))
 
@@ -40,7 +40,7 @@ R(k) = V * sum(w * cos(dot(k, r)) for (w, r) in zip(weights, offsets))
 # J0(x) = (1/π) ∫_0^π cos(x sin θ) dθ   (simple quadrature, no extra packages)
 J0(x) = (θ = range(0, π, length=201); sum(cos.(x .* sin.(θ))) / length(θ))
 rr = range(0, 2h, length=400);  dr = step(rr)
-Wt(k) = 2π * sum(r * wendland_c2(r, h, params.kernel) * J0(k * r) for r in rr) * dr
+Wt(k) = 2π * sum(r * kernel_W(r, h, params.kernel) * J0(k * r) for r in rr) * dr
 
 @printf("lattice: a = %.2f, h = %.1f (h/a = %.2f), %d neighbours within 2h\n",
         a, h, h / a, length(offsets))

@@ -12,7 +12,7 @@ using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const KER = WendlandC2_1D()
-W(r, h)  = wendland_c2(abs(r), h, KER)
+W(r, h)  = kernel_W(abs(r), h, KER)
 lat(h, a) = [m * a for m in -ceil(Int, 2h / a):ceil(Int, 2h / a)]
 Rk(k, h, a) = sum(a * W(r, h) * cos(k * r) for r in lat(h, a))
 

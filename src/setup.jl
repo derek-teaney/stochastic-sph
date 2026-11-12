@@ -114,7 +114,7 @@ function plot_slice(particles, params, cl;
                 rvec = minimum_image(SVector(xp, yp) - pa.x, params.L)
                 r    = norm(rvec)
                 r >= 2h && continue
-                w      = wendland_c2(r, h, params.kernel)
+                w      = kernel_W(r, h, params.kernel)
                 num   += field(pa) * pa.s * w
                 denom += pa.s * w
             end

@@ -236,7 +236,7 @@ function particle_sweep!(particles::Vector{Particle}, params::SimParams,
                 rv = minimum_image(pa.x - pb.x, L)
                 r  = sqrt(rv[1]^2 + rv[2]^2)
                 r >= 2h && continue
-                grad = wendland_c2_grad(rv, r, h, kern)      # D_j(x_a, x_b)
+                grad = kernel_gradW(rv, r, h, kern)      # D_j(x_a, x_b)
                 f    = (coeff * pb.s) .* (ξa * grad)         # SVector{2}
                 pa.Δm += f;   pa.Δs -= dot(b_vec[a], f)
                 pb.Δm -= f;   pb.Δs += dot(b_vec[b], f)
