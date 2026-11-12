@@ -1,10 +1,6 @@
 # Shared helpers for shear-wave test scripts.
 # Include after sph.jl and celllist.jl.
 
-function make_cl(params::SimParams)
-    CellList2D(params.L, params.h, params.N)
-end
-
 # Regular NxN grid of particles with uniform s, zero M.
 # s_density is the entropy density; per-particle entropy = s_density * params.vol.
 # jitter ∈ [0,1]: each particle is displaced uniformly in [−jitter·a/2, jitter·a/2]² before
@@ -82,12 +78,6 @@ function set_ic!(particles, params::SimParams; S_func=nothing, M_func=nothing)
     end
 end
 
-# Set a sinusoidal y-momentum density: M_y(x) = M_amp * sin(k * x[1]).
-function set_shear_wave!(particles, params::SimParams, k, M_amp)
-    set_ic!(particles, params;
-            M_func = (x, y) -> SVector(0.0, M_amp * sin(k * x)))
-end
-
 # Full thermodynamic update: smooth → EOS → velocities.
 function thermalize!(particles, params, cl, eos)
     smooth_to_particles!(particles, params, cl)
@@ -112,11 +102,6 @@ function plot_line(particles, params;
     standalone && tight_layout()
     return ax
 end
-
-# Dispatch: 1D → plot_line, 2D → plot_particles.
-plot_results(particles, params; kw...) =
-    params.kernel isa WendlandC2_1D ? plot_line(particles, params; kw...) :
-                                      plot_particles(particles, params; kw...)
 
 # 2D scatter of particle positions, colored by field(p) (default: p.s).
 # Three particles chosen with a local RNG get a circle of radius 2h.

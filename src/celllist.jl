@@ -394,42 +394,6 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
     rebuild_cell_list!(cl, particles)
 end
 
-function kdk_step!(particles::Vector{Particle}, params::SimParams,
-                    cl::CellList2D, dt::Float64, eos::AbstractEOS,
-                    dotm::Vector{SVector{2,Float64}})
-    # Velocity Verlet (KDK) — 2nd-order symplectic:
-    #
-    #   m^{n+1/2} = m^n      + (dt/2) F(x^n,       m^n      )
-    #   x^{n+1}   = x^n      +  dt    v(x^n,        m^{n+1/2})
-    #   m^{n+1}   = m^{n+1/2}+ (dt/2) F(x^{n+1},   m^{n+1/2})
-
-    # Step 1: half kick  m^n → m^{n+1/2}  at x^n
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    hamiltonian_force!(dotm, particles, params, cl)
-    for a in eachindex(particles)
-        particles[a].m += (dt/2) * dotm[a]
-    end
-
-    # Step 2: full drift  x^n → x^{n+1}  using v(x^n, m^{n+1/2})
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    update_velocities!(particles, params, cl)
-    for a in eachindex(particles)
-        particles[a].x += dt * particles[a].dotx
-    end
-    wrap_positions!(particles, params.L)
-    rebuild_cell_list!(cl, particles)
-
-    # Step 3: half kick  m^{n+1/2} → m^{n+1}  at x^{n+1}
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    hamiltonian_force!(dotm, particles, params, cl)
-    for a in eachindex(particles)
-        particles[a].m += (dt/2) * dotm[a]
-    end
-end
-
 # ── Dissipative (GENERIC) functions ───────────────────────────────────────────
 
 # Two-level dissipative force (see sph2.tex).
