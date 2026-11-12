@@ -106,6 +106,15 @@ or learn something about running the code here.
 
 ## Campaigns
 
+### `boost` — moving fluid, 2026-11-11, `nersc/campaign_boost.txt`, docs/boost.tex
+
+`SR_BOOST=v` (fac262c): uniform flow along x at rest-frame S0 = 1e6, equilibrium start at the
+moving β^μ, E_k recorded.  Output `$SCRATCH/sph/boost/`.  Analysis `examples/boost_analysis.jl`.
+- L = 1.2, v = 0, 0.3, 0.6, 0.8 × 16 (+4 at v = 0.8, Δt/2), t = 300: jobs **61156299** (tasks
+  1-34) and **61156300** (35-68), checkout `~/stochastic-sph-run`, THREADS=4, -t 3 h.
+- L = 2.4, v = 0, 0.6, 0.8 × 8, t = 300: job **61156353** (tasks 69-92), checkout
+  `~/stochastic-sph-run2`, -t 8 h.
+
 ### `cl` — continuum limit, 2026-11-10, `nersc/campaign_cl.txt`, docs/continuum_limit.tex
 
 n-scheme, h = 0.05, S0 = 1e6, η/s = 0.2; s_a = 2165/(h/a)² lowered stage by stage, equilibrium

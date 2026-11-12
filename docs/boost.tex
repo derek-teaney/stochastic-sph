@@ -125,6 +125,22 @@ sound, $\bm k\perp\bm v$ & $\pm k\,c_s\sqrt{(1-v^2)/(1-c_s^2v^2)}$ & from \Eq{da
 \hline
 \end{tabular}
 \end{center}
+The analysis code reproduces these limits (check before the runs): at $v=0$, $\chi_{xx}=wT$ and
+$\chi_{EE}=T^2de/dT$ to $10^{-6}$; the ideal modes along the flow are $0.4138$, $0.8$, $0.9422$ (in units of
+$k$) at $v=0.8$, across it $\pm0.3906$, as in the table; the susceptibilities grow as
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+$v$ & 0 & 0.3 & 0.6 & 0.8 \\ \hline
+$\chi_{EE}/\chi_{EE}(0)$ & 1 & 1.26 & 2.66 & 7.59 \\
+$\chi_{xx}/\chi_{xx}(0)$ & 1 & 1.67 & 5.47 & 19.4 \\
+$\chi_{yy}/\chi_{yy}(0)$ & 1 & 1.05 & 1.25 & 1.67 \\
+\hline
+\end{tabular}
+\end{center}
+so the kinetic energy of the fluctuations about the mean flow, in the units $2VwT$ of the code, is
+$\tfrac12(\chi_{xx}+\chi_{yy})\gamma/\chi_{xx}(0)$: $4.2$ at $v=0.6$, $17.6$ at $0.8$ (the smoke runs gave $4.0$, $17.3$).
+
 These are the tests: the frequencies (advection, the relativistic addition of velocities, the
 slower sound across the flow) and the dampings (time dilation, $\gamma^{-1}$ and $\gamma^{-3}$).
 
@@ -155,8 +171,8 @@ scaled by $c_s/v_{\rm sig}$: factors $0.8$, $0.66$, $0.6$; one set at $v=0.8$ ru
 
 Campaign \texttt{boost} (\texttt{nersc/campaign\_boost.txt}): $L=1.2$ ($kh\ge0.26$), $h/a=2$, $\eta/s=0.2$,
 n-scheme, $t=300$, 16 runs at each $v=0$, $0.3$, $0.6$, $0.8$, and 4 at $v=0.8$ with $\Delta t/2$; two
-nodes, packed.  The long shear times ($\gamma^3/\nu k^2\approx75$ at $v=0.8$, $kh=0.26$) set $t=300$.  If the
-first set works, a larger box ($L=2.4$) follows for smaller $kh$.
+nodes, packed (jobs 61156299, 61156300).  A larger box, $L=2.4$ ($kh\ge0.13$), 8 runs at $v=0$, $0.6$, $0.8$,
+runs on a third node (61156353).  The long shear times ($\gamma^3/\nu k^2\approx75$ at $v=0.8$, $kh=0.26$) set $t=300$. 
 
 %=============================================================================
 \section{Results}
