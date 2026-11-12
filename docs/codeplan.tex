@@ -1,0 +1,206 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\sloppy
+
+\title{The code: names, defaults, run records and tests}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+A plan to put the code in order before the next campaigns: one name for the stochastic step,
+the superseded code set aside, every default defined once, a run record generated from the
+settings actually used, and a test suite in one place with pass/fail criteria.  None of it
+changes the numerics; every step is checked bit for bit against the code before it.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The rule: no change to the numerics}
+\label{sec:rule}
+
+Each step below is one commit on the branch \file{cleanup}, and after each:
+\begin{itemize}
+\item \file{test/testregress\_step.jl} (the full coupled step, thermal start, $\lambda=1$ and
+  $\lambda=\infty$, twelve steps) gives $x$, $m$, $s$, the acceptances and the guard counts
+  bit-identical to \file{main}, for the n-scheme (the default) and for the smoothed
+  Hamiltonian, at 1 and 4 threads;
+\item every unit test gives the same output as on \file{main}, timing aside;
+\item a step that touches a driver also compares a short fixed-seed run of that driver bit for
+  bit (its \file{.h5}).
+\end{itemize}
+Two steps are done (A1, A2): four functions nothing called were removed, and the PyPlot
+functions moved from \file{src/setup.jl} to \file{examples/plotsetup.jl}.
+
+%=============================================================================
+\section{Names and layout}
+\label{sec:names}
+
+\paragraph{The stochastic step.}  ``stochrep'' (stochastic step in the particle
+representation) becomes ``stochastic'':
+\begin{center}
+\begin{tabular}{ll}
+\hline
+now & after \\ \hline
+\file{src/stochrep.jl}, \file{stochrep\_step!} & \file{src/stochastic.jl}, \file{stochastic\_step!} \\
+\file{examples/stochrep\_equilibrium.jl} & \file{examples/equilibrium.jl} \\
+\file{examples/stochrep\_hamiltonian.jl} & \file{examples/stability.jl} \\
+other \file{examples/stochrep\_*.jl} & \file{examples/stochastic\_*.jl} \\
+\file{docs/stochrep.tex} & \file{docs/stochastic.tex} \\
+\hline
+\end{tabular}
+\end{center}
+References in the notes, \file{CLAUDE.md}, \file{nersc/README.md} and \file{nersc/LOG.md}
+(the current sections) are updated.  The campaign files of finished campaigns are records of
+what was run and keep the old names; new campaigns use the new ones.  The rename is merged
+only when no campaign is running at NERSC, since a running job array reads the driver by
+name.
+
+\paragraph{The files of the library.}  Two files are named after history rather than
+content: \file{changerep.jl} (``change of representation'') holds the maps between the
+particle variables $(s_a,\bm m_a)$ and the pointwise thermodynamics, plus the deterministic
+viscous step built on them; \file{celllist.jl} (784 lines) holds the cell list but also the
+smoothing, the ideal step, the time step and the bond dissipation.  They are split by content:
+\begin{center}
+\begin{tabular}{lp{0.62\textwidth}}
+\hline
+file & contents \\ \hline
+\file{sph.jl} & kernels, \file{SimParams}, equation of state, \file{Particle} (as now) \\
+\file{celllist.jl} & cell list and neighbour list only \\
+\file{ideal.jl} & smoothing, velocities, Hamiltonian force, leapfrog, \file{compute\_dt} \\
+\file{pointwise.jl} & particle $\leftrightarrow$ pointwise maps: \file{pointwise\_state},
+  \file{particle\_energy}, \file{eos\_from\_energy}, \file{rest\_energy},
+  \file{inverse\_susceptibility}, the star fit \\
+\file{viscous.jl} & the deterministic viscous step: bond weights, bond dissipation,
+  \file{dissipative\_step!} and its variants \\
+\file{stochastic.jl} & the stochastic step (now \file{stochrep.jl}) \\
+the others & \file{setup.jl}, \file{rng.jl}, \file{measure.jl}, \file{monitor.jl}, \file{runinfo.jl}, as now \\
+\hline
+\end{tabular}
+\end{center}
+The deterministic step variants lose ``changerep'' from their names:
+\file{dissipative\_step\_changerep!}, \file{\_exact!}, \file{\_grad!} become
+\file{viscous\_step\_first!}, \file{viscous\_step\_exact!}, \file{viscous\_step\_grad!} (first-order,
+exact and gradient-corrected back maps), and \file{dissipative\_step!} becomes
+\file{viscous\_step!}.  The value \file{SPH\_DISSIPATION=changerep} stays accepted (old
+campaign files use it) as an alias of the new name, \file{particle}.  \file{docs/changerep.tex}
+keeps its name: it is the record of that study.
+
+\paragraph{Superseded code} moves to \file{src/legacy/}: the old particle sweep with the
+noise tensor (the present \file{src/stochastic.jl}, whose name the new step takes) and the
+two-level (strain) dissipation (\file{two\_level\_dissipative\_force!}, \file{compute\_strain},
+\file{kappa\_dot\_strain}, \file{SPH\_DISSIPATION=two\_level}).  The bond dissipation and
+\file{changerep.jl} stay: the deterministic step of the n-scheme uses the first, and the
+stochastic step and the equilibrium start use the second.  The five examples
+and the test that use it include it from there and still run, so the figures of the older
+notes can be made again; the main library no longer loads it.
+
+\paragraph{One load file.}  \file{src/load.jl} includes the library in order.  About seventy
+scripts now repeat their own list of \file{include}s, and the lists differ.  Each becomes
+\file{include} of \file{src/load.jl}.
+
+\paragraph{The kernel.}  \file{wendland\_c2} and \file{wendland\_c2\_grad} also evaluate the
+C4 and C6 kernels; they become \file{kernel\_W} and \file{kernel\_gradW} (19 files, names only).
+
+%=============================================================================
+\section{Defaults, defined once}
+\label{sec:defaults}
+
+Today a default can live in four places: a field of \file{SimParams}, a keyword default of
+\file{stochrep\_step!}, a \file{get(ENV, ...)} in a driver, and the hand-written run record.
+They drift apart.  After:
+\begin{itemize}
+\item \textbf{Structs hold the settings, with their defaults:} \file{SimParams} (scheme,
+  kernel, $h$, $a$, box), the equation of state, and a new \file{StochOptions} for the
+  stochastic step ($\lambda$, residual move, vote, grid shift, gradient map).  A default that
+  depends on another setting (the gradient map is on except for the n-scheme) is resolved
+  when the struct is built, so the struct holds the value used.
+  \file{stochastic\_step!} takes a \file{StochOptions}; the keywords stay as a thin wrapper
+  while the drivers and tests change over.
+\item \textbf{One reader for the environment:} \file{setting("SR\_ETAS", 0.2)} returns the value
+  and notes it, with its default, for the record.  Drivers stop reading \file{ENV} directly;
+  the four \file{SPH\_*} knobs are read the same way inside \file{SimParams}.
+\item \textbf{Driver settings} (box, $s_0$, $t_{\rm end}$, seeds, record interval, boost, \dots) are
+  read once, at the top of the driver, through \file{setting}, into one named tuple.
+\end{itemize}
+
+%=============================================================================
+\section{The run record}
+\label{sec:record}
+
+Every driver that writes data writes \file{<run>.toml} next to it, generated from the
+structs and the settings read, never typed in:
+\begin{center}
+\begin{tabular}{lp{0.5\textwidth}}
+\hline
+section & contents \\ \hline
+\file{[sim]}, \file{[eos]}, \file{[stochastic]} & every field of the struct \\
+\file{[driver]} & every \file{setting} read, with the value used and its default \\
+\file{[start]} & how the initial state was made, the seeds \\
+\file{[provenance]} & commit (with \file{+dirty} and a hash of the diff), Julia, threads, host, Slurm job and task, date \\
+\file{[outcome]} & steps done, complete, wall time, KE/eq, $\Delta H/H$, monitor totals, guards \\
+\hline
+\end{tabular}
+\end{center}
+It is written at the start, rewritten at each checkpoint and at the end (\file{[outcome]}
+changes, the rest does not).  TOML is in the Julia standard library (read and write) and
+Python reads it with \file{tomllib}.  The one-row \file{.csv} stays for
+\file{nersc/collect\_runs.jl}.  A unit test checks that the record holds every field of every
+settings struct and every \file{SR\_}/\file{SPH\_} name read.  The log (\file{slurm/*.out})
+keeps the monitor line every 5\% of the run and the summary.
+
+%=============================================================================
+\section{The test suite}
+\label{sec:tests}
+
+Three kinds of test, all under \file{test/}, run by one script, \file{test/run.sh}, locally or
+on one NERSC debug node (\file{nersc/unittests.sh} and \file{nersc/dtests.sh} become wrappers
+of it):
+\begin{itemize}
+\item \textbf{Unit} (\file{test/*.jl}, as now; seconds each): the kernel, cell list, EOS,
+  $\kappa$, change of representation, guards, checkpoint, equilibrium start, correlators.
+\item \textbf{Regression} (\file{test/regress/}): \file{testregress\_step.jl} plus a short
+  fixed-seed run of each production driver.  The reference is not stored: \file{run.sh
+  regress <ref>} builds it from a commit (default \file{main}) in a git worktree and compares
+  bit for bit.  This is the check of \Sect{sec:rule}.
+\item \textbf{Physics} (\file{test/physics/}; minutes): the checks now in \file{examples/test*.jl}
+  and \file{shearwave\_decay.jl} --- sound, viscous sound in 1D and 2D, Gaussian diffusion in 1D
+  and 2D, the shear wave --- each with a pass/fail criterion (a measured rate or speed against
+  the analytic one, within a stated tolerance set from the present results), run for the
+  three schemes.  Figures stay optional (\file{SR\_FIGDIR}).
+\end{itemize}
+Each test writes one line to \file{results.toml} in the output directory (name, scheme, pass,
+the measured numbers, time); \file{run.sh} prints the table and exits nonzero on a failure.
+
+%=============================================================================
+\section{Order of the steps}
+\label{sec:order}
+
+\begin{enumerate}
+\item \file{src/load.jl}, and the scripts use it.
+\item The library split by content (\file{ideal.jl}, \file{pointwise.jl}, \file{viscous.jl}), and the new names of the deterministic step.
+\item \file{src/legacy/}: the superseded code and its users.
+\item The rename to ``stochastic'' (code, drivers, notes).
+\item The kernel names.
+\item \file{test/run.sh} and the regression from a worktree (needed before the steps that
+  touch drivers).
+\item \file{StochOptions} and \file{setting}; the drivers read their settings once.
+\item The TOML record and its test.
+\item The physics tests with their criteria, moved from \file{examples/}.
+\end{enumerate}
+Steps 1--6 move or rename code only.  Steps 7--9 change how settings reach the code, not the numbers:
+the regression check stays bit-identical through all of them.
+
+\end{document}
