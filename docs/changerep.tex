@@ -7,7 +7,6 @@
 
 \def\st{\begin{equation}}
 \def\stp{\end{equation}}
-\def\bbeta{{\sf b}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
 \def\Fig#1{Fig.~\ref{#1}}
@@ -26,8 +25,8 @@ Stony Brook, New York 11794, USA}
 
 \begin{abstract}
 The Hamiltonian step works with smoothed fields, and the thermodynamic force it
-provides, $\bbeta_a$, is the fluid velocity smoothed twice.  Any viscous step
-built on $\bbeta_a$ damps short wavelengths at most as fast as the smoothing
+provides, $\beta_a$, is the fluid velocity smoothed twice.  Any viscous step
+built on $\beta_a$ damps short wavelengths at most as fast as the smoothing
 lets through, a factor $R(k)^2$.  Here the viscous step is done instead in a
 particle representation.  Each particle is given its own energy $e_a$, which is
 held fixed during the viscous step.  Momentum is transferred between particles
@@ -62,7 +61,7 @@ H=\sum_aH_a,\qquad H_a=s_a\,\mathcal E(S_a,\bm M_a),
 where $\mathcal E(S,\bm M)$ is the energy per unit entropy of a fluid with
 entropy density $S$ and momentum density $\bm M$.  Its thermodynamic force is
 \st
-\bbeta_a=\frac{\partial H/\partial\bm m_a}{\partial H/\partial s_a}
+\beta_a=\frac{\partial H/\partial\bm m_a}{\partial H/\partial s_a}
 =\frac{\dot{\bm x}_a}{\partial H/\partial s_a} .
 \stp
 It contains two smoothings: one to form $\bm M$, and one in
@@ -252,7 +251,7 @@ smoothed representation did not count, becomes heat, which it does.
 \item \texttt{dissipative\_step\_changerep!}: the same with the entropy updated
   to first order, $\Delta s_a=-\beta_a\cdot\Delta\bm m_a$.
 \end{itemize}
-The bond force accepts any field in place of $\bbeta$, so no change to the core
+The bond force accepts any field in place of $\beta$, so no change to the core
 code is needed.
 
 %=============================================================================
@@ -265,7 +264,7 @@ $\dot{\bm x}$, each multiply it by the smoothing response
 \st
 R(k)=\sum_ra\,W(r)\cos kr ,
 \stp
-so $\bbeta\propto R^2\bm m$, while $\beta\propto\bm m$.  The bond force multiplies
+so $\beta\propto R^2\bm m$, while $\beta\propto\bm m$.  The bond force multiplies
 by $k^2B(k)$, with the bond response
 \st
 B(k)=\frac{\sum_r\psi(r)\,2(1-\cos kr)}{k^2\sum_r\psi(r)\,r^2},
@@ -274,7 +273,7 @@ which tends to one at long wavelengths and is bounded below at short ones.
 Relative to the physical rate $\Gamma_{\rm phys}=\kappa k^2/w$, the damping
 rates are therefore
 \st
-\frac{\Gamma}{\Gamma_{\rm phys}}=R^2B\quad(\text{smoothed }\bbeta),\qquad
+\frac{\Gamma}{\Gamma_{\rm phys}}=R^2B\quad(\text{smoothed }\beta),\qquad
 \frac{\Gamma}{\Gamma_{\rm phys}}=B\quad(\text{pointwise }\beta).
 \stp
 
@@ -295,16 +294,16 @@ $\Gamma=-\sum_a\bm F_a\cdot\bm m_a/\sum_a|\bm m_a|^2$ (\Fig{fig:damping}).
 \begin{itemize}
 \item \emph{1D.}  With the pointwise $\beta$ from the full EOS solve, the rate
   equals $B$ to $3\times10^{-11}$, over the whole zone.  With the smoothed
-  $\bbeta$ it equals $R^2B$, to the $2\times10^{-4}$ of the discrete kernel
+  $\beta$ it equals $R^2B$, to the $2\times10^{-4}$ of the discrete kernel
   normalization.  At the zigzag the pointwise rate is $0.046\,\Gamma_{\rm phys}$,
-  against $1.5\times10^{-7}$ with $\bbeta$ and zero for the two-level form.
+  against $1.5\times10^{-7}$ with $\beta$ and zero for the two-level form.
 \item \emph{2D.}  The same holds for the mean-field bond form on the hexagonal
   lattice:
 \end{itemize}
 \begin{center}
 \begin{tabular}{c c | c c c}
 \hline\hline
-$ka$ & & two-level, $\bbeta$ & bond, $\bbeta$ & bond, $\beta$\\
+$ka$ & & two-level, $\beta$ & bond, $\beta$ & bond, $\beta$\\
 \hline
 0.25 & T & 0.79 & 0.94 & 1.05\\
      & L & 0.79 & 0.90 & 1.01\\
@@ -419,7 +418,7 @@ kinetic energy removed.
 
 \texttt{examples/changerep\_hydro.jl} alternates viscous and Hamiltonian steps,
 $D(\Delta t/2)\,H(\Delta t)\,D(\Delta t/2)$, on the 1D lattice ($h/a=4$), with the
-viscous step $D$ done with the bond form on the smoothed $\bbeta$, as in
+viscous step $D$ done with the bond form on the smoothed $\beta$, as in
 \texttt{generic\_step!}, or in the particle representation with the exact or the
 gradient-corrected map of Appendix~\ref{sec:grad} (\Fig{fig:hydro}).  All runs here use the corrected
 equation of state of Appendix~\ref{app:eos}.  Each half step uses $\Delta t/2$, so at the default viscous
@@ -441,7 +440,7 @@ periods:
 \begin{center}
 \begin{tabular}{l c c c}
 \hline\hline
- & smoothed $\bbeta$ & particle, exact & particle, gradient-corrected\\
+ & smoothed $\beta$ & particle, exact & particle, gradient-corrected\\
 \hline
 amplitude (analytic $0.03713$) & $0.03775$ & $0.03719$ & $0.03719$\\
 $\Delta S/S$ & $1.27\times10^{-5}$ & $1.27\times10^{-5}$ & $1.27\times10^{-5}$\\
@@ -450,14 +449,14 @@ $\Delta H/H$ & $1.3\times10^{-8}$ & $7.6\times10^{-8}$ & $2.5\times10^{-10}$\\
 \end{tabular}
 \end{center}
 Both particle versions follow the analytic decay more closely than the smoothed
-$\bbeta$.  The exact map adds energy to $H$, the gradient part of the excess
+$\beta$.  The exact map adds energy to $H$, the gradient part of the excess
 released as the wave decays; the corrected map does not.
 
 \paragraph{Random momentum field.}  Each particle starts with a random momentum
 (velocity $\sim10^{-3}$) on a uniform fluid, so most of the kinetic energy is in
 unresolved modes.
 \begin{itemize}
-\item With the smoothed $\bbeta$, the unresolved modes are not damped: for
+\item With the smoothed $\beta$, the unresolved modes are not damped: for
   $ka\gtrsim1$ the spectrum stays at its initial value, and after $8h^2/\Gamma_s$
   $72\%$ of the kinetic energy is left.
 \item In the particle representation every mode is damped.  After
@@ -476,13 +475,13 @@ The energy bookkeeping is as in \Sect{sec:energycheck}:
 \hline\hline
 viscous step & $T\,\Delta S$ & $\Delta H$ & kinetic energy removed\\
 \hline
-smoothed $\bbeta$ & $1.14\times10^{-7}$ & $3.4\times10^{-9}$ & $3.2\times10^{-7}$\\
+smoothed $\beta$ & $1.14\times10^{-7}$ & $3.4\times10^{-9}$ & $3.2\times10^{-7}$\\
 particle, exact & $1.12\times10^{-6}$ & $1.01\times10^{-6}$ & $1.12\times10^{-6}$\\
 particle, gradient-corrected & $1.06\times10^{-6}$ & $0.95\times10^{-6}$ & $1.12\times10^{-6}$\\
 \hline\hline
 \end{tabular}
 \end{center}
-With the smoothed $\bbeta$ the scheme conserves $H$: the heat produced is kinetic
+With the smoothed $\beta$ the scheme conserves $H$: the heat produced is kinetic
 energy that $H$ already counted.  (The kinetic energy removed exceeds $T\Delta S$
 there, because in the resolved modes, which oscillate, the Hamiltonian step also
 turns kinetic energy into the energy of entropy fluctuations.)  In
@@ -496,20 +495,20 @@ residual, not in a smooth gradient, and it is still turned into heat.
 \label{sec:twod}
 
 The same comparison in 2D, with the standard tests run unchanged and only the
-viscous step replaced: the bond form on the smoothed $\bbeta$, as in
+viscous step replaced: the bond form on the smoothed $\beta$, as in
 \texttt{generic\_step!}, or the step in the particle representation, with the exact
 map or with the gradient-corrected map of Appendix~\ref{sec:grad}.  All runs use
 the corrected equation of state of Appendix~\ref{app:eos}.
 
 \paragraph{Viscous sound wave.}  \texttt{examples/changerep\_sound.jl} runs
 \texttt{testsound\_viscous.jl} ($h=0.03$, $h/a=2$, $\eta/s=0.02$, one period;
-\Fig{fig:sound2d}).  With the smoothed $\bbeta$ the wave is under-damped
+\Fig{fig:sound2d}).  With the smoothed $\beta$ the wave is under-damped
 throughout; in the particle representation the amplitude follows the analytic
 decay closely:
 \begin{center}
 \begin{tabular}{l c c c}
 \hline\hline
- & smoothed $\bbeta$ & particle, exact & particle, gradient-corrected\\
+ & smoothed $\beta$ & particle, exact & particle, gradient-corrected\\
 \hline
 amplitude (analytic $0.2337$) & $0.2470$ & $0.2363$ & $0.2363$\\
 $\Delta S/S$ & $1.172\times10^{-5}$ & $1.209\times10^{-5}$ & $1.172\times10^{-5}$\\
@@ -527,7 +526,7 @@ from the smoothed sound speed rather than the viscous step.
 \includegraphics[width=\textwidth]{figs/changerep_sound2d_decay.png}\\[4pt]
 \includegraphics[width=\textwidth]{figs/changerep_sound2d_final.png}
 \caption{2D viscous sound wave (\texttt{testsound\_viscous.jl}), with the viscous
-step on the smoothed $\bbeta$ (left), in the particle representation with the
+step on the smoothed $\beta$ (left), in the particle representation with the
 exact map (centre), and with the gradient-corrected map (right).  Top: amplitude
 against $e^{-\Gamma_sk^2t/2}$.  Bottom: $M^x$ along $x$ after one period.}
 \label{fig:sound2d}
@@ -535,7 +534,7 @@ against $e^{-\Gamma_sk^2t/2}$.  Bottom: $M^x$ along $x$ after one period.}
 
 \paragraph{Gaussian.}  \texttt{examples/changerep\_gaussian\_lines.jl} evolves the
 Gaussian of \texttt{testgaussian.jl} ($h=0.015$, $\eta/s=0.002$) with the smoothed
-$\bbeta$ and with the gradient-corrected particle representation, and records
+$\beta$ and with the gradient-corrected particle representation, and records
 the energy density along the two axes through the centre at several times
 (\Fig{fig:gaussian}).  The two schemes give the same flow at every time.  The
 differences are at most $0.004$, against a peak of $1.1$, and have no systematic
@@ -547,7 +546,7 @@ discussed next, spread over the fluid as heat.)
 \centering
 \includegraphics[width=\textwidth]{figs/changerep_gaussian_lines.png}
 \caption{2D Gaussian: energy density along $x$ (left) and $y$ (right) through
-the centre, at $t=0$ to $2.2$.  Top: smoothed $\bbeta$ (solid) and particle
+the centre, at $t=0$ to $2.2$.  Top: smoothed $\beta$ (solid) and particle
 representation with the gradient-corrected map (dashed).  Bottom: their
 difference.}
 \label{fig:gaussian}
@@ -560,7 +559,7 @@ constant $H(t)$ and the same growing $S(t)$.
 \texttt{examples/changerep\_energy\_drift.jl} records $H(t)$ and $S(t)$ after every
 full step for the Gaussian at $h=0.03$ up to $t=4$ (\Fig{fig:drift}):
 \begin{itemize}
-\item The two-level form and the bond form on the smoothed $\bbeta$ give the same
+\item The two-level form and the bond form on the smoothed $\beta$ give the same
   $H(t)$, constant to $3\times10^{-4}$.
 \item With the exact map, $H$ grows steadily, to $2.7\times10^{-3}$ at $t=4$, and
   the entropy grows faster.
@@ -615,7 +614,7 @@ correction and conservation.
 
 \begin{itemize}
 \item \emph{Speed.}  The gradient-corrected step is several times slower than the
-  bond step on the smoothed $\bbeta$: each half step rebuilds every particle's
+  bond step on the smoothed $\beta$: each half step rebuilds every particle's
   kernel star and fits $G_a$ twice, with a pseudo-inverse.  Closed-form $2\times2$
   fits, reused neighbour lists and a single pass over the stars should bring it
   close to the cost of the bond step.
@@ -767,7 +766,7 @@ the particle representation.  The late-time energy gain, $\Delta H/H$ for $t>2.5
 \begin{center}
 \begin{tabular}{c | c c c c}
 \hline\hline
-$h$ & two-level & bond, smoothed $\bbeta$ & particle, exact & particle, gradient-corrected\\
+$h$ & two-level & bond, smoothed $\beta$ & particle, exact & particle, gradient-corrected\\
 \hline
 0.045  & $5.9\times10^{-4}$ & $5.7\times10^{-4}$ & $4.9\times10^{-3}$ & $1.0\times10^{-3}$\\
 0.03   & $2.3\times10^{-4}$ & $2.4\times10^{-4}$ & $2.3\times10^{-3}$ & $2.9\times10^{-4}$\\
@@ -778,7 +777,7 @@ $h$ & two-level & bond, smoothed $\bbeta$ & particle, exact & particle, gradient
 \end{center}
 With the gradient correction, the energy gain is that of the smoothed schemes,
 or smaller at fine resolution, and the entropy produced agrees with the bond form
-on the smoothed $\bbeta$: $4.220\%$ against $4.220\%$ at $h=0.015$.  The slope of the
+on the smoothed $\beta$: $4.220\%$ against $4.220\%$ at $h=0.015$.  The slope of the
 excess energy against the entropy produced (\Fig{fig:convh}) is
 $1.1\times10^{-2}$, $1.7\times10^{-3}$, $-0.5\times10^{-3}$ and $-1.3\times10^{-3}$,
 against $0.109$, $0.056$, $0.032$ and $0.014$ for the exact map.  The correction is
@@ -789,7 +788,7 @@ smooth excess only to quadratic order---but it removes most of the secular gain.
 \centering
 \includegraphics[width=\textwidth]{figs/changerep_convergence.png}
 \caption{2D Gaussian, $H(t)$ (top) and $S(t)$ (bottom) at $h=0.045$ to $0.015$ for
-the two-level form, the bond form on the smoothed $\bbeta$, and the particle
+the two-level form, the bond form on the smoothed $\beta$, and the particle
 representation with the exact and the gradient-corrected map.  Each panel has
 its own vertical scale.  Dotted: two-level at $h=0.015$.}
 \label{fig:conv}

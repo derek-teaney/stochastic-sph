@@ -10,7 +10,6 @@
 \def\Sect#1{Sect.~\ref{#1}}
 \def\Fig#1{Fig.~\ref{#1}}
 \newcommand{\avg}[1]{\langle #1\rangle}
-\newcommand{\bbeta}{\bm\beta}
 \let\oldparagraph\paragraph
 \renewcommand{\paragraph}{\par\bigskip\oldparagraph}
 
@@ -197,15 +196,15 @@ T^{\rm eff}_a\equiv\frac{\partial H}{\partial s_a}
 using $\mathcal E-\bm v\cdot\bm m/s=T-p/S$; the last two terms are the smoothed minus
 the local $p/S$.  With
 \st
-\bbeta_a=\frac{\bm v_a}{T^{\rm eff}_a},\qquad
-\Delta\bm m_a=-\Delta t\,\frac{\partial K}{\partial\bbeta_a},\qquad
-\Delta s_a=-\bbeta_a\cdot\Delta\bm m_a ,
+\beta_a=\frac{\bm v_a}{T^{\rm eff}_a},\qquad
+\Delta\bm m_a=-\Delta t\,\frac{\partial K}{\partial\beta_a},\qquad
+\Delta s_a=-\beta_a\cdot\Delta\bm m_a ,
 \label{viscstep}
 \stp
 $\Delta H=\sum_a(T^{\rm eff}_a\Delta s_a+\bm v_a\cdot\Delta\bm m_a)=0$ to first order
 in $\Delta t$, and $\sum_a\Delta s_a=2K\Delta t\ge0$, as in \texttt{sph2.tex}.  $K$ is
 the bond dissipative function of \texttt{changerep.tex}, which already takes a
-pointwise $\bbeta_a$.
+pointwise $\beta_a$.
 
 Compared with \texttt{changerep.tex}: the forward map $s_a\to e_a$ is no longer a
 map, since $e_a$ is already the energy in $H$; the gradient correction $g_a$
@@ -243,9 +242,9 @@ step is left alone.
   by the bond metric).
 \item \texttt{hamiltonian\_force!}: the pair bracket becomes
   $-s_as_b(p_a/S_a^2+p_b/S_b^2)$, \Eq{mdot}.
-\item Viscous step: \texttt{dissipative\_step\_changerep!} with $\bbeta_a$ of
+\item Viscous step: \texttt{dissipative\_step\_changerep!} with $\beta_a$ of
   \Eq{viscstep} read from the particle (no \texttt{pointwise\_state} copy), and
-  $\Delta s_a=-\bbeta_a\cdot\Delta\bm m_a$.  \texttt{dissipative\_step!} calls it, not
+  $\Delta s_a=-\beta_a\cdot\Delta\bm m_a$.  \texttt{dissipative\_step!} calls it, not
   the gradient-corrected step, when \texttt{params.hamiltonian == :energy}.
 \item Diagnostics: the total energy is $\sum_ae_a=\sum_as_a\,$\texttt{H\_over\_S}$_a$,
   the same number as $H$.

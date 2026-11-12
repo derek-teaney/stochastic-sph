@@ -9,7 +9,6 @@
 
 \def\st{\begin{equation}}
 \def\stp{\end{equation}}
-\def\bbeta{{\sf b}}
 \def\Teff{{\sf T}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
@@ -133,7 +132,7 @@ carry a weight $\psi_{ab}$ that is a function of the bond length, by default
 $\psi=-W'/r$ with its own range $h_\psi$.  The typical particle spacing is $a$.
 The fields $\phi$ are arbitrary.  In the application of Ref.~\cite{OneLevel},
 where this machinery is used to build a one-level (bond) dissipative function,
-the field is $\bbeta=\bm v/T$.
+the field is $\beta=\bm v/T$.
 
 \section{The metric}
 \label{sec:metric}
@@ -287,7 +286,7 @@ We now state the two operations.  The first rebuilds a gradient from bond
 differences.  It uses the bond moment only through its inverse, and needs no
 metric.
 
-Let $\phi$ be any field carried by the particles: a component of $\bbeta$, a
+Let $\phi$ be any field carried by the particles: a component of $\beta$, a
 temperature, a chemical potential, and so on.  Its bond differences are
 \st
 \Delta\phi_{ab}=\phi_b-\phi_a .
@@ -305,8 +304,8 @@ Setting the derivative with respect to $g_i$ to zero gives
 Here $M_a^{ij}$ carries upper indices, so its inverse $(M_a^{-1})_{ij}$ carries lower ones.
 Here $\nabla_i\phi$ always denotes this fit, a property of the particle; we write
 $(\nabla_i\phi)_a$ when the particle must be explicit, and $\partial_i\phi$ for
-the true derivative.  For the components of $\bbeta$, $\phi=\beta_k$, the fit
-is the matrix $(\nabla\bbeta)_a$ with components $\nabla_i\beta_k$ of \EqOL{Gmin}.  The fit involves no metric: the
+the true derivative.  For the components of $\beta$, $\phi=\beta_k$, the fit
+is the matrix $(\nabla\beta)_a$ with components $\nabla_i\beta_k$ of \EqOL{Gmin}.  The fit involves no metric: the
 metric enters only through the weights.
 
 Now suppose that $\phi$ is linear in the labels near $a$, so that
@@ -389,7 +388,7 @@ M_a^{ij}=n_a\,h^{ij} ,
 \label{Mtarget}
 \stp
 that is $M_a=n_a\one$ at rest and $M_a=n_a\ell_a$ for a moving fluid.  For a
-vector field such as $\bbeta$, each pair of components $\beta^k,\beta^l$ enters
+vector field such as $\beta$, each pair of components $\beta^k,\beta^l$ enters
 \Eq{quadform}, and the component indices are contracted separately, again with
 $h_{kl}$ or $h^{kl}$ as their position requires.
 
@@ -512,7 +511,7 @@ anisotropy.  It is removed by the correction $\Lambda_a$ below.
 
 So the fit never needs \Eq{Mtarget}, while the quadratic form does.  The
 mean-field form of \SectOL{sec:mf2d} uses both operations.  Operation 1 gives
-$\Omega_a$ and $\theta_a$.  The covariant bond differences $\mathcal D_{ab}\bbeta$ of \EqOL{Dab} then
+$\Omega_a$ and $\theta_a$.  The covariant bond differences $\mathcal D_{ab}\beta$ of \EqOL{Dab} then
 enter the quadratic form of Operation 2.  If \Eq{Mtarget} fails, directions that
 happen to be over-represented among the neighbours are over-weighted in
 $K$ of \EqOL{KMF}.
