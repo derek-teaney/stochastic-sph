@@ -1,5 +1,5 @@
 # testchangerep.jl — the viscous step in the particle representation (docs/changerep.tex),
-# params.dissipation = :changerep.
+# params.dissipation = :particle.
 #
 #   1  conversion map: S_a(E_a(s_a, m_a), m_a) = s_a for a moving fluid
 #   2  1D lattice: the rate with the particle β is the bond response B(k); one step
@@ -50,7 +50,7 @@ let
     eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.02, 4.0, eos, (x, y) -> 2.0, (x, y) -> SVector(0.0, 0.0);
                                    Lx=1.0, sim_dim=1)
-    params.dissipation = :changerep
+    params.dissipation = :particle
     a, N, L, h = params.a, params.N, params.L[1], params.h
     w = ps[1].e + ps[1].p;  κ = 4/3 * 0.1 * srel(eos, ps[1].e)
     s0 = [p.s for p in ps];  f = zeros(SVector{2,Float64}, N)
@@ -65,10 +65,10 @@ let
         Γ = -sum(f[i][1] * ps[i].m[1] for i in 1:N) / sum(p.m[1]^2 for p in ps)
         erate = max(erate, abs(Γ / (κ / w * k^2) - Bk(k, h, a)))
         set!();  A0 = proj()
-        dissipative_step_changerep_exact!(ps, params, cl, dt, eos)
+        viscous_step_exact!(ps, params, cl, dt, eos)
         eg = max(eg, abs(proj() / A0 - (1 - κ / w * k^2 * Bk(k, h, a) * dt)))
         set!()
-        K, dS = dissipative_step_changerep!(ps, params, cl, dt, eos)
+        K, dS = viscous_step_first!(ps, params, cl, dt, eos)
         eS = max(eS, abs(dS - 2K * dt) / (2K * dt))
     end
     @printf("  max |Γ/Γ_phys − B| = %.1e   max |g − (1 − ΓBΔt)| = %.1e   max |ΣΔs/(2KΔt) − 1| = %.1e\n",
@@ -83,7 +83,7 @@ let
     eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
                                    L=1.0, lattice=:hex)
-    params.dissipation = :changerep
+    params.dissipation = :particle
     s0 = [p.s for p in ps]
     set!() = for (i, p) in enumerate(ps); p.s = s0[i]; p.m = SVector(0.0, 1e-3 * sin(2π * p.x[1]) * p.s); end
     set!()
@@ -92,7 +92,7 @@ let
     g = sum(gradient_energy(ps[a].s, inverse_susceptibility(ps[a], eos),
                             star_fit(kernel_star(a, ps, params, cl), μ)...) for a in eachindex(ps))
     ratio = Dict{Symbol,Float64}()
-    for (kind, step!) in ((:exact, dissipative_step_changerep_exact!), (:grad, dissipative_step_changerep_grad!))
+    for (kind, step!) in ((:exact, viscous_step_exact!), (:grad, viscous_step_grad!))
         set!();  H0 = Hof(ps, params, cl, eos)
         K, dS = step!(ps, params, cl, 1e-4, eos)
         ratio[kind] = (Hof(ps, params, cl, eos) - H0) / (dS * ps[1].T)
@@ -110,7 +110,7 @@ let
     eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
                                    L=1.0, lattice=:hex)
-    @assert params.dissipation === :changerep "default dissipation is not :changerep"
+    @assert params.dissipation === :particle "default dissipation is not :particle"
     rng = Xoshiro(1)
     for p in ps; p.m = 1e-3 * p.s * SVector(randn(rng), randn(rng)); end
     P0 = sum(p.m for p in ps);  S0 = sum(p.s for p in ps)
@@ -118,7 +118,7 @@ let
     # particle β the shortest modes are damped strongly, and the full Δt makes the explicit
     # step unstable in 2D (ΓΔt > 2).
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
-    for _ in 1:10; dissipative_step!(ps, params, cl, dt, eos); end
+    for _ in 1:10; viscous_step!(ps, params, cl, dt, eos); end
     dP = norm(sum(p.m for p in ps) - P0) / sum(norm(p.m) for p in ps)
     dS = sum(p.s for p in ps) - S0
     @printf("  relative momentum change %.1e   ΔS = %.3e\n", dP, dS)
@@ -142,7 +142,7 @@ let
         k = 2π * n / L
         for (i, p) in enumerate(ps); p.s = s0[i]; p.m = SVector(1e-6 * w * a * cos(k * (p.x[1] - a / 2)), 0.0); end
         proj() = sum(p.m[1] * cos(k * (p.x[1] - a / 2)) for p in ps)
-        A0 = proj();  dissipative_step!(ps, params, cl, dt / 2, eos);  push!(gs, proj() / A0)
+        A0 = proj();  viscous_step!(ps, params, cl, dt / 2, eos);  push!(gs, proj() / A0)
     end
     @printf("  1D: per-step factors in [%.3f, %.3f]\n", minimum(gs), maximum(gs))
     @assert all(0 .<= gs .<= 1) "a mode is not damped monotonically"
@@ -158,7 +158,7 @@ let
     ok = true;  rmax = 0.0
     for _ in 1:8
         k0 = KE();  S0 = sum(p.s for p in ps)
-        dissipative_step!(ps, params, cl, dt / 2, eos)
+        viscous_step!(ps, params, cl, dt / 2, eos)
         rmax = max(rmax, KE() / k0)
         ok &= KE() < k0 && sum(p.s for p in ps) > S0
     end

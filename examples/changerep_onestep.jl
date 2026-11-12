@@ -33,11 +33,11 @@ dt0 = compute_dt(ps0, params, eos; mode=:viscous, CFL=0.2)
 function apply!(kind, ps, τ)
     if kind === :two_level || kind === :smoothed
         params.dissipation = kind === :two_level ? :two_level : :bond
-        dissipative_step!(ps, params, cl, τ, eos)
+        viscous_step!(ps, params, cl, τ, eos)
     elseif kind === :first
-        params.dissipation = :bond;  dissipative_step_changerep!(ps, params, cl, τ, eos)
+        params.dissipation = :bond;  viscous_step_first!(ps, params, cl, τ, eos)
     else
-        params.dissipation = :bond;  dissipative_step_changerep_exact!(ps, params, cl, τ, eos)
+        params.dissipation = :bond;  viscous_step_exact!(ps, params, cl, τ, eos)
     end
 end
 

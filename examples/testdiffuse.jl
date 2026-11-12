@@ -89,7 +89,7 @@ function plot_diffusion_ic(params, particles, cl, eos, k, M_amp)
 end
 
 # ── Time evolution ─────────────────────────────────────────────────────────────
-# Evolve the shear wave using dissipative_step! alone and record the amplitude.
+# Evolve the shear wave using viscous_step! alone and record the amplitude.
 # dt is chosen from the diffusive CFL: dt = 0.1 * h² * T_rel / (η/s).
 # Runs for n_decay decay times τ_k = T_rel / ((η/s) k²).
 function run_diffusion_evolve!(particles, params, cl, eos, k; n_decay=3)
@@ -117,7 +117,7 @@ function run_diffusion_evolve!(particles, params, cl, eos, k; n_decay=3)
             "step", "t·γ_k", "amp/amp₀", "ΔH/H₀", "ΔS/S₀", "Px", "Py")
 
     for n in 1:n_steps
-        dissipative_step!(particles, params, cl, dt, eos)
+        viscous_step!(particles, params, cl, dt, eos)
         t_vals[n+1]   = n * dt
         amp_vals[n+1] = maximum(abs(pa.M_smooth[2]) for pa in particles)
         if n % 20 == 0 || n == n_steps

@@ -1,6 +1,6 @@
 # changerep_gaussian_lines.jl — the 2D Gaussian of testgaussian.jl, evolved with the viscous
 # step on the smoothed b (generic_step!) and in the particle representation
-# (dissipative_step_changerep_exact!, docs/changerep.tex).  Slices of the energy density
+# (viscous_step_exact!, docs/changerep.tex).  Slices of the energy density
 # through the centre, along x and y, at several times; both schemes on the same axes.
 #
 # Run:  julia --project examples/changerep_gaussian_lines.jl  → docs/figs/changerep_gaussian_lines.png
@@ -13,9 +13,9 @@ let src = read(joinpath(@__DIR__, "testgaussian.jl"), String)
 end
 
 function particle_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_grad!(ps, params, cl, dt / 2, eos)
+    viscous_step_grad!(ps, params, cl, dt / 2, eos)
     leapfrog_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_grad!(ps, params, cl, dt / 2, eos)
+    viscous_step_grad!(ps, params, cl, dt / 2, eos)
 end
 
 h, ha  = 0.015, 2.0

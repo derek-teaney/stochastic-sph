@@ -1,5 +1,5 @@
 # changerep_energy.jl — energy bookkeeping of the exact viscous step in the particle
-# representation (dissipative_step_changerep_exact!, docs/changerep.tex).
+# representation (viscous_step_exact!, docs/changerep.tex).
 #
 # A momentum wave of wavenumber k on a frozen 1D lattice at rest is damped to (nearly)
 # zero by repeated steps.  Each step holds the particle energies e_a fixed, so Σe_a is
@@ -45,7 +45,7 @@ for (n, A_rel) in ((5, 1e-2), (20, 1e-2), (40, 1e-2), (70, 1e-2), (100, 1e-2), (
     A0  = amp(ps)
     nst = 0;  ΣS = 0.0;  Σe = e0;  first_def = NaN
     while amp(ps) > 1e-4 * A0 && nst < 200_000
-        K, dS, Σe = dissipative_step_changerep_exact!(ps, params, cl, dt, eos)
+        K, dS, Σe = viscous_step_exact!(ps, params, cl, dt, eos)
         nst == 0 && (first_def = (2K * dt - dS) / (2K * dt))
         ΣS += dS;  nst += 1
     end

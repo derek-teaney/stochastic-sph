@@ -1,6 +1,6 @@
 # changerep_hydro.jl — full deterministic hydro, D(Δt/2) H(Δt) D(Δt/2), with the viscous
 # step D done either with the bond form on the smoothed b (generic_step!) or in the
-# particle representation with the exact back map (dissipative_step_changerep_exact!).
+# particle representation with the exact back map (viscous_step_exact!).
 # docs/changerep.tex.
 #
 #   Part 1  1D viscous sound wave (testsound_viscous_1d.jl setup): amplitude, H, S.
@@ -20,7 +20,7 @@ function step!(scheme, ps, params, cl, dt, eos, dotm)
     if scheme === :smoothed
         generic_step!(ps, params, cl, dt, eos, dotm)
     else
-        D! = scheme === :grad ? dissipative_step_changerep_grad! : dissipative_step_changerep_exact!
+        D! = scheme === :grad ? viscous_step_grad! : viscous_step_exact!
         D!(ps, params, cl, dt / 2, eos)
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
         D!(ps, params, cl, dt / 2, eos)

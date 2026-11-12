@@ -25,7 +25,7 @@
 # sequential, each seeing the current momenta.  The random numbers of the move of
 # particle a come from rngs[a]; the sweep orders from the master rng.
 #
-# Include after celllist.jl (uses changerep.jl) and rng.jl.
+# Loaded by load.jl (uses pointwise.jl and rng.jl).
 
 # ℓ^{1/2} for ℓ = 𝟙 − v vᵀ (|v| < 1)
 function sqrt_comoving(v::SVector{2,Float64})

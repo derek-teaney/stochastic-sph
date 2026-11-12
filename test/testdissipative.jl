@@ -41,7 +41,7 @@ let
     @assert max_force < 1e-14 "zero-viscosity force = $max_force"
 
     s_before = sum(pa.s for pa in particles)
-    dissipative_step!(particles, params, cl, 0.01, eos)
+    viscous_step!(particles, params, cl, 0.01, eos)
     s_after = sum(pa.s for pa in particles)
     Δs = s_after - s_before
     @assert abs(Δs) < 1e-14 "entropy changed by $Δs with zero viscosity"

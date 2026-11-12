@@ -11,7 +11,9 @@ the `.tex`).  Owner: D. Teaney.
 - `docs/stochrep.tex` — the stochastic step (stress move, residual move, consensus vote,
   checkerboard sweep, moving fluid).  `docs/changerep.tex`, `docs/bond_dissipation.tex`
   — the deterministic step it builds on.
-- `src/` — library (`sph.jl`, `celllist.jl`, `changerep.jl`, `stochrep.jl`, `measure.jl`, …).
+- `src/` — library, loaded by `src/load.jl`: `sph.jl` (kernels, params, EOS), `celllist.jl`, `ideal.jl`
+  (Hamiltonian step), `pointwise.jl` (particle representation), `viscous.jl` (deterministic
+  viscous step), `stochrep.jl`, `measure.jl`, …
 - `examples/stochrep_hamiltonian.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/stochrep_equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.

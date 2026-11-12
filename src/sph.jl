@@ -25,13 +25,14 @@ mutable struct SimParams{K<:AbstractKernel}
     d       :: Int                 # physical dimension (2 or 3); drives cs²=1/d and kappa
     lattice :: Symbol              # :square or :hex
     kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL) or WendlandC2_1D()
-    dissipation :: Symbol          # :changerep (default), :bond or :two_level — see dissipative_step!
+    dissipation :: Symbol          # :particle (default), :bond or :two_level — see viscous_step!
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
 end
 
-# dissipation: the viscous step.  :changerep (default) is the bond form in the particle
+# dissipation: the viscous step.  :particle (default; formerly :changerep, still accepted)
+#   is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
 #   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form.
 #   Default from the environment variable SPH_DISSIPATION (else :bond), so any
@@ -55,9 +56,10 @@ end
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
-                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "changerep")), bond_h=nothing,
+                   dissipation=Symbol(get(ENV, "SPH_DISSIPATION", "particle")), bond_h=nothing,
                    hamiltonian=Symbol(get(ENV, "SPH_HAMILTONIAN", dissipation === :two_level ? "smoothed" : "energy")),
                    volume=Symbol(get(ENV, "SPH_VOLUME", hamiltonian === :energy ? "number" : "entropy")))
+    dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
         Nx      = round(Int, Lx_t / a)
@@ -88,12 +90,12 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
             Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
-    dissipation in (:changerep, :bond, :two_level) ||
-        error("dissipation must be :changerep, :bond or :two_level, got $dissipation")
+    dissipation in (:particle, :bond, :two_level) ||
+        error("dissipation must be :particle, :bond or :two_level, got $dissipation")
     hamiltonian in (:smoothed, :energy) ||
         error("hamiltonian must be :smoothed or :energy, got $hamiltonian")
     hamiltonian === :energy && dissipation === :two_level &&
-        error("hamiltonian = :energy needs the bond viscous step (dissipation = :changerep or :bond)")
+        error("hamiltonian = :energy needs the bond viscous step (dissipation = :particle or :bond)")
     hamiltonian === :energy && @printf("SimParams: hamiltonian = energy (energystep.tex)\n")
     volume in (:entropy, :number) || error("volume must be :entropy or :number, got $volume")
     volume === :number && hamiltonian !== :energy &&

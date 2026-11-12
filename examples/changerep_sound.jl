@@ -11,14 +11,14 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 ENV["SPH_DISSIPATION"] = "bond"
 
 function particle_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_exact!(ps, params, cl, dt / 2, eos)
+    viscous_step_exact!(ps, params, cl, dt / 2, eos)
     leapfrog_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_exact!(ps, params, cl, dt / 2, eos)
+    viscous_step_exact!(ps, params, cl, dt / 2, eos)
 end
 function grad_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_grad!(ps, params, cl, dt / 2, eos)
+    viscous_step_grad!(ps, params, cl, dt / 2, eos)
     leapfrog_step!(ps, params, cl, dt, eos, dotm)
-    dissipative_step_changerep_grad!(ps, params, cl, dt / 2, eos)
+    viscous_step_grad!(ps, params, cl, dt / 2, eos)
 end
 
 src = read(joinpath(@__DIR__, "testsound_viscous.jl"), String)

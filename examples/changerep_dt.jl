@@ -14,7 +14,7 @@ end
 
 function full_step!(kind, ps, params, cl, dt, eos, dotm)
     kind === :smoothed && return generic_step!(ps, params, cl, dt, eos, dotm)
-    D! = kind === :first ? dissipative_step_changerep! : dissipative_step_changerep_exact!
+    D! = kind === :first ? viscous_step_first! : viscous_step_exact!
     D!(ps, params, cl, dt / 2, eos)
     leapfrog_step!(ps, params, cl, dt, eos, dotm)
     D!(ps, params, cl, dt / 2, eos)

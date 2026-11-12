@@ -5,7 +5,7 @@
 #   Γ(k) = −Σ F_a·m_a / Σ m_a·m_a ,   m_a = A ê cos(k x_a)
 #
 # Expected (docs/changerep.tex):  smoothed b → Γ/Γ_phys = R²B ;  pointwise β → B.
-# Panel 2 checks the full time step (dissipative_step_changerep!): one step multiplies
+# Panel 2 checks the full time step (viscous_step_first!): one step multiplies
 # the mode by g = 1 − Γ Δt, with Γ = Γ_phys B.
 #
 # Run:  julia --project examples/changerep_damping.jl  → docs/figs/changerep_damping.png
@@ -69,7 +69,7 @@ for fdt in (1.0, 0.5), k in k_ev
     for (i, p) in enumerate(ps1); p.s = s0[i]; p.m = SVector(A1 * cos(k * (p.x[1] - a1 / 2)), 0.0); end
     proj() = sum(p.m[1] * cos(k * (p.x[1] - a1 / 2)) for p in ps1)
     amp0 = proj()
-    K, ΣΔs = dissipative_step_changerep!(ps1, params1, cl1, fdt * dt1, eos1)
+    K, ΣΔs = viscous_step_first!(ps1, params1, cl1, fdt * dt1, eos1)
     push!(g_ev[fdt], proj() / amp0)
     global dS_err = max(dS_err, abs(ΣΔs - 2K * fdt * dt1) / (2K * fdt * dt1))
 end
@@ -134,7 +134,7 @@ end
 ax.axhline(0, color="k", lw=0.6);  ax.axhline(-1, color="k", ls="--", lw=0.6)
 ax.set_xlim(0, π); ax.set_ylim(-1.1, 1.05)
 ax.set_xlabel("k a"); ax.set_ylabel("per-step factor g")
-ax.set_title("1D: one step of dissipative_step_changerep!  (line: 1 − Γ_phys B Δt)")
+ax.set_title("1D: one step of viscous_step_first!  (line: 1 − Γ_phys B Δt)")
 ax.legend(fontsize=8, loc="lower left")
 
 for (j, (pol, ttl)) in enumerate(((:T, "transverse"), (:L, "longitudinal")))
