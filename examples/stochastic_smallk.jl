@@ -1,15 +1,15 @@
-# stochrep_smallk.jl — the long-wavelength end of the equilibrium spectrum, 1D frozen lattice
-# (docs/stochrep.tex).  Does the stochastic step, with a cold or deterministic residual,
+# stochastic_smallk.jl — the long-wavelength end of the equilibrium spectrum, 1D frozen lattice
+# (docs/stochastic.tex).  Does the stochastic step, with a cold or deterministic residual,
 # give the right equilibrium at small k?  Prediction:
 #     ⟨|m_k|²⟩/(N V w T) = T_eff(k)/T = 1 − (1 − 1/λ)(1 − R(k)),   1 − R(k) = O((kh)²).
 # The run starts from a thermal draw of the momenta (variance V w T, zero total momentum),
 # so the small-k modes need not warm up from zero; it is long enough that every mode shown
 # has relaxed many times (Γ_k t_run ≥ 10), so a wrong stationary value would show.
 #
-# Run:  julia -t auto --project examples/stochrep_smallk.jl  → docs/figs/stochrep_smallk.png
+# Run:  julia -t auto --project examples/stochastic_smallk.jl  → docs/figs/stochrep_smallk.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 
 const LAMS = (1.0, Inf)
 const NENS = 64
@@ -17,7 +17,7 @@ const NENS = 64
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 params, ps0, cl, eos = setup_ic(0.05, 4.0, eos, (x, y) -> 4e4, (x, y) -> SVector(0.0, 0.0);
                                 Lx=2.0, sim_dim=1)
-N = params.N;  fz = stochrep_frozen(ps0, params, cl, eos)
+N = params.N;  fz = stochastic_frozen(ps0, params, cl, eos)
 st = fz.stars[1];  p = ps0[1];  w = p.e + p.p;  V = fz.V[1];  T = p.T;  a = params.a
 eq = N * V * w * T
 dt = 0.25 * 0.5 * compute_dt(ps0, params, eos; mode=:viscous)
@@ -39,7 +39,7 @@ for λ in LAMS
         for (i, q) in enumerate(ps); q.m = SVector(sqrt(V * w * T) * g[i], 0.0); end
         acc = zeros(nk);  nav = 0
         for n in 1:nsteps
-            stochrep_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
+            stochastic_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
             if n > burn && n % 5 == 0
                 for (j, k) in enumerate(ks)
                     acc[j] += abs2(sum(q.m[1] * cis(-k * q.x[1]) for q in ps))
@@ -52,7 +52,7 @@ for λ in LAMS
     res[λ] = A
     @printf("  λ=%-4s %.0f s\n", string(λ), time() - t0)
 end
-serialize(joinpath(@__DIR__, "..", "docs", "figs", "stochrep_smallk.jls"),
+serialize(joinpath(@__DIR__, "..", "docs", "figs", "stochastic_smallk.jls"),
           Dict(:ks => ks, :R => R, :Γ => Γ, :res => res, :a => a, :h => params.h, :dt => dt, :nsteps => nsteps))
 
 x = ks .* a ./ π

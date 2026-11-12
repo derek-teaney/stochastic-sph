@@ -149,13 +149,13 @@ slower sound across the flow) and the dampings (time dilation, $\gamma^{-1}$ and
 \label{sec:code}
 
 \begin{itemize}
-\item \texttt{examples/stochrep\_equilibrium.jl}: \texttt{SR\_BOOST=v} sets the boosted uniform state
+\item \texttt{examples/equilibrium.jl}: \texttt{SR\_BOOST=v} sets the boosted uniform state
   \Eq{densities} (the rest-frame enthalpy $w_0$ from a rest-frame setup at $S_0$) before the
   equilibrium start; with a boost the energy modes $E_{\bm k}$ are recorded (\texttt{SR\_RECORD\_E=1}
   forces them at rest); the kinetic energy is measured about the mean flow; the run record
   (\texttt{.json}) has the boost, $\gamma$, the rest-frame and lab densities.
 \item The physics code (ideal step, stochastic step, back map) is unchanged: the stochastic
-  step already uses the comoving forms of its coefficients (\texttt{stochrep.tex}, ``A moving
+  step already uses the comoving forms of its coefficients (\texttt{stochastic.tex}, ``A moving
   fluid'').
 \item \texttt{examples/boost\_analysis.jl}: direction-resolved complex correlators, the
   susceptibilities \Eq{chi}, and the hydrodynamic predictions.

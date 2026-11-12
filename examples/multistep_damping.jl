@@ -4,7 +4,7 @@
 # Γ_eff ≈ acc_star Γ_res(k) + acc_resid Γ_resid(k), with Γ from Kmode on a code star.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))          # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))          # Kmode
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3;  const NST = 24;  const NSEED = 12
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 println(" h/a  kh   Γ_res  Γ_resid (1/time) | vote    acc_s  acc_r  Γ_eff measured   predicted   Γ_eff/Γ")
@@ -17,7 +17,7 @@ for ha in (2.0, 3.0, 4.0)
         for seed in 1:NSEED
             ps = deepcopy(ps0)
             initial_state!(ps, params, cl, eos, :eq; rng = Xoshiro(100seed))
-            fz = stochrep_frozen(ps, params, cl, eos);  st = fz.stars[1];  w = ps[1].e + ps[1].p
+            fz = stochastic_frozen(ps, params, cl, eos);  st = fz.stars[1];  w = ps[1].e + ps[1].p
             M0 = 0.7 * sqrt(st.V * w * st.T)                   # 0.7 × thermal momentum per particle
             for i in 1:N; ps[i].m += M0 * c[i] * ê; end
             K, Kr = Kmode(st, k, ê, false);  Γ = 2K / (st.V * w * st.T);  Γres = 2Kr / (st.V * w * st.T);  Γdif = Γ - Γres
@@ -25,7 +25,7 @@ for ha in (2.0, 3.0, 4.0)
             rngs = make_phys_rng(N, 7seed);  rng = Xoshiro(8seed)
             Ps[1] += proj()
             for n in 1:NST
-                acc = stochrep_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
+                acc = stochastic_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
                 push!(as, acc.stress);  push!(ar, acc.resid);  Ps[n+1] += proj()
             end
         end

@@ -118,7 +118,7 @@ time of the box, $1/(\nu k_{\rm min}^2)$ with $\nu=\eta/w$ and $k_{\rm min}=2\pi
 present parameters $\nu=2.2\times10^{-3}$; this is about $4$ time units for $L=0.6$
 but about $300$ for $L=5$.  Waiting for thermalization from rest is therefore
 not an option for large boxes.  Instead, start from an equilibrium draw:
-momenta drawn from the single-particle covariance (\texttt{stochrep.tex}, the
+momenta drawn from the single-particle covariance (\texttt{stochastic.tex}, the
 moving fluid), with the total momentum fixed, and a short burn-in for the
 particle positions and the lattice modes.
 
@@ -267,16 +267,16 @@ number of threads; this is the check that each step preserves.
 
 On the branch \texttt{nextstage}:
 \begin{itemize}
-\item \emph{Superluminal guard}: done (\texttt{test/teststochrep\_guard.jl}).  A
+\item \emph{Superluminal guard}: done (\texttt{test/teststochastic\_guard.jl}).  A
   failed or superluminal inversion rejects the move; an unphysical intermediate
   state of the bond split falls back to the even split; the gradient back map
   falls back to the plain map; the deterministic residual subdivides its step.
   Counters are reported.
 \item \emph{Merged stochastic half steps}: done in the new driver
-  (\texttt{examples/stochrep\_equilibrium.jl}); about half the cost per step.
+  (\texttt{examples/equilibrium.jl}); about half the cost per step.
   The residual acceptance drops from $0.88$ to $0.77$ (single vote).
 \item \emph{Equilibrium initial state, recorder, correlators}: first version
-  (\texttt{src/measure.jl}, \texttt{examples/stochrep\_correlators.jl}).
+  (\texttt{src/measure.jl}, \texttt{examples/stochastic\_correlators.jl}).
 \item \emph{Static solves} in the comoving weights and the gradient fit: done,
   no measurable speed-up; a singular moment matrix (very fast flow, $\gamma\gtrsim2$,
   when too few bonds remain inside the support along the flow) now falls back

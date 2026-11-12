@@ -1,6 +1,6 @@
-# stochrep_thermalize_plot.jl — plots for stochrep_thermalize.jl (reads the saved data).
+# stochastic_thermalize_plot.jl — plots for stochastic_thermalize.jl (reads the saved data).
 #
-# Run:  julia --project examples/stochrep_thermalize_plot.jl [1|2]
+# Run:  julia --project examples/stochastic_thermalize_plot.jl [1|2]
 #   → docs/figs/stochrep_thermalize_1d.png (or _2d.png)
 using PyPlot, Printf, Serialization, StaticArrays, LinearAlgebra
 const DIM  = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1

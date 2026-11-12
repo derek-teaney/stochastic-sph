@@ -1,5 +1,5 @@
-# stochrep_hamiltonian_plot.jl — plots for stochrep_hamiltonian.jl.
-# Run:  julia --project examples/stochrep_hamiltonian_plot.jl [h/a]  → docs/figs/stochrep_hamiltonian_ha<h/a>.png
+# stability_plot.jl — plots for stability.jl.
+# Run:  julia --project examples/stability_plot.jl [h/a]  → docs/figs/stochrep_hamiltonian_ha<h/a>.png
 using PyPlot, Printf, Serialization, StaticArrays
 const HA = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 2.0
 const TE = length(ARGS) > 1 ? parse(Int, ARGS[2]) : 15

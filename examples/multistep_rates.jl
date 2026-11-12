@@ -10,7 +10,7 @@
 #   using M = sT, ε'/T = 1/(4S), ε''/T = −1/(6S²) (conformal).  At small k this gives
 #   ω_L → c_s k and ω_T² → (1/(4Σ₀)) Σ_b x_b² ∂_y²W k², which vanishes in the continuum.
 #
-#   Viscous step (bond form, docs/stochrep.tex): Γ(k) = 2K(k)/(VwT), split into the star
+#   Viscous step (bond form, docs/stochastic.tex): Γ(k) = 2K(k)/(VwT), split into the star
 #   (resolved, K_res) and residual (K − K_res) parts; in units of ν = η/w these are geometric.
 #
 # Run:  julia --project examples/multistep_rates.jl  [--check]
@@ -68,7 +68,7 @@ end
 if "--check" in ARGS
     # Check against the code: lattice sums vs smooth_to_particles!, ω² vs hamiltonian_force!,
     # Γ vs Kmode on a code star.  h/a = 2, box 0.6, h = 0.05.
-    include(joinpath(@__DIR__, "..", "src", "load.jl"));  include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))
+    include(joinpath(@__DIR__, "..", "src", "load.jl"));  include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))
     h = 0.05;  eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     for ha in (2.0, 3.0)
         params, ps, cl, _ = setup_ic(h, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)
@@ -88,7 +88,7 @@ if "--check" in ARGS
         end
         for (i, p) in enumerate(ps); p.x = x0[i]; end
         rebuild_cell_list!(cl, ps)
-        st = stochrep_frozen(ps, params, cl, eos).stars[1];  w = ps[1].e + ps[1].p;  ν = st.κs / w
+        st = stochastic_frozen(ps, params, cl, eos).stars[1];  w = ps[1].e + ps[1].p;  ν = st.κs / w
         for kh in (0.3, 1.5, 4.0), ê in (SVector(1.0, 0), SVector(0, 1.0))
             K = Kmode(st, SVector(kh / h, 0.0), ê, false)
             Γc = 2 .* K ./ (st.V * w * st.T) ./ ν .* h^2;  Γa = Γrates(Lt, SVector(kh, 0.0), ê)

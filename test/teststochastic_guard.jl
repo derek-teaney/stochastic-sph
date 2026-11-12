@@ -1,10 +1,10 @@
-# teststochrep_guard.jl — the superluminal guard of the stochastic step (src/stochrep.jl).
+# teststochastic_guard.jl — the superluminal guard of the stochastic step (src/stochastic.jl).
 #   1  particle_entropy is −Inf for states no fluid can have, finite otherwise
 #   2  a stochastic move that would make a particle superluminal is rejected; with
 #      huge proposals the guard fires, momentum is conserved and every particle stays
 #      physical
 #   3  in normal runs the guard never fires and the results are unchanged
-# Run:  julia --project test/teststochrep_guard.jl
+# Run:  julia --project test/teststochastic_guard.jl
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
@@ -29,7 +29,7 @@ let eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     P0 = sum(p.m for p in ps);  reset_guards!()
     dt = 50 * compute_dt(ps, params, eos; mode=:viscous)
     for n in 1:5
-        stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:bonds)
+        stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:bonds)
     end
     g = guards()
     vmax = maximum(norm(eos_from_energy(particle_energy(p, eos) / (p.s / p.S_smooth),
@@ -47,11 +47,11 @@ let eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     N = params.N;  rngs = make_phys_rng(N, 5);  rng = Xoshiro(6);  reset_guards!()
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous);  dotm = zeros(SVector{2,Float64}, N)
     for n in 1:20
-        stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+        stochastic_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
     end
     @printf("  guard events: %s\n", guards())
     @assert all(==(0), values(guards()))
     println("  ✓")
 end
-println("All teststochrep_guard.jl tests passed.")
+println("All teststochastic_guard.jl tests passed.")

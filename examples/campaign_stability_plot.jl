@@ -1,5 +1,5 @@
 # campaign_stability_plot.jl — the stability scan of the NERSC campaigns `first` and
-# `first_det` (nersc/LOG.md): stochrep_hamiltonian.jl runs to t = 200, many seeds per set.
+# `first_det` (nersc/LOG.md): stability.jl runs to t = 200, many seeds per set.
 # Kinetic energy, particle energies, smoothed energy and local disorder versus time,
 # each set as a band (min to max over seeds) around its median; a table of the values
 # at the end, the fraction of seeds whose lattice melted (local disorder > 1 a) and when.

@@ -1,7 +1,7 @@
 # monitor.jl — running statistics of a stochastic run, printed to the log (stdout).
 #
 # A StepMonitor is fed after every stochastic step (observe_step!, with the NamedTuple that
-# stochrep_step! returns) and, at the record points, with the particles (observe_particles!).
+# stochastic_step! returns) and, at the record points, with the particles (observe_particles!).
 # report(mon, t) prints one line for the window since the last report and the totals;
 # monitor_summary(mon) returns the totals as a NamedTuple (for the run metadata); print_summary
 # writes a block at the end of the run.  It is plain data, so it goes into checkpoints.

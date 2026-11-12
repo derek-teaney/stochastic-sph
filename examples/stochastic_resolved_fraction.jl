@@ -1,11 +1,11 @@
-# stochrep_resolved_fraction.jl — the fraction R(k) = K_res(k)/K(k) of the bond dissipation
-# that the fitted gradient sees, versus kh, for several h/a (docs/stochrep.tex).  With the
+# stochastic_resolved_fraction.jl — the fraction R(k) = K_res(k)/K(k) of the bond dissipation
+# that the fitted gradient sees, versus kh, for several h/a (docs/stochastic.tex).  With the
 # stress move alone, a mode relaxes at R(k)Γ(k) instead of Γ(k).
 #
-# Run:  julia --project examples/stochrep_resolved_fraction.jl  → docs/figs/stochrep_resolved_fraction.png
+# Run:  julia --project examples/stochastic_resolved_fraction.jl  → docs/figs/stochrep_resolved_fraction.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 # compute first, plot afterwards (PyCall objects must not be finalized inside threaded code)
@@ -15,7 +15,7 @@ for (j, (dim, has)) in enumerate(((1, (2.0, 2.5, 4.0)), (2, (2.0, 2.5, 3.0))))
         params, ps, cl, _ = dim == 1 ?
             setup_ic(0.05, ha, eos, (x, y) -> 1e4, (x, y) -> SVector(0.0, 0.0); Lx=2.0, sim_dim=1) :
             setup_ic(0.05, ha, eos, (x, y) -> 1e4, (x, y) -> SVector(0.0, 0.0); L=1.0, lattice=:hex)
-        st = stochrep_frozen(ps, params, cl, eos).stars[1]
+        st = stochastic_frozen(ps, params, cl, eos).stars[1]
         h = params.h;  a = params.a
         kh = collect(range(0.02, π * h / a, length=200))      # up to the zone edge k = π/a
         for pol in (:L, :T)

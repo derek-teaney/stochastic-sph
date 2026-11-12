@@ -37,7 +37,7 @@ compares the two volumes.
 \section{Where the energy goes}
 \label{sec:loss}
 
-The stochastic step (\texttt{stochrep.tex}) works at fixed positions in the variables
+The stochastic step (\texttt{stochastic.tex}) works at fixed positions in the variables
 $(e_a,\bm m_a)$ at the volumes $V_a$ of the start of the step.  Each move shifts momentum
 between bonded particles at fixed $e_a$; the moves are accepted on the change of
 \st
@@ -133,7 +133,7 @@ stochastic step, bond weights), so one definition carries the change:
 \item \texttt{hamiltonian\_force\_energy!}: \Eq{mdot}.
 \end{itemize}
 The default paths are bit-identical (\texttt{test/testregress\_step.jl} against the
-previous commit).  \texttt{examples/stochrep\_equilibrium.jl} records the volume in the
+previous commit).  \texttt{examples/equilibrium.jl} records the volume in the
 run metadata and, at every record, the spreads $\mathrm{rms}(s_a/\bar s-1)$ and
 $\mathrm{rms}(V_a/\bar V-1)$.
 

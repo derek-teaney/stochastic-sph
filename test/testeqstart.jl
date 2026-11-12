@@ -164,7 +164,7 @@ for start in (:thermal_init, :equilibrium_init)
     for n in 0:nsteps
         if n > 0
             leapfrog_step!(ps, params, cl, dt, eos, dotm)
-            stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote = :star, flip = isodd(n))
+            stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote = :star, flip = isodd(n))
         end
         if n in (0, 10, 30, 100, nsteps)
             smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)

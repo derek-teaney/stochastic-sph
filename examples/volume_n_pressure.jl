@@ -37,12 +37,12 @@ function run(vol::Symbol, seed::Int)
     dt = 0.5 * compute_dt(ps, params, eos; mode = :viscous);  nst = ceil(Int, TEND / dt)
     dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()
     out = Dict(k => Float64[] for k in (:t, :pA, :pB, :dps, :dpi, :ptA, :dpts, :dpti, :corr, :sspr))
-    stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, cache)
+    stochastic_step!(ps, params, cl, dt / 2, eos; rng, rngs, cache)
     B = state!(ps, params, cl, eos)
     for n in 1:nst
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
         A = state!(ps, params, cl, eos)
-        stochrep_step!(ps, params, cl, dt, eos; rng, rngs, flip = isodd(n), cache)
+        stochastic_step!(ps, params, cl, dt, eos; rng, rngs, flip = isodd(n), cache)
         Bn = state!(ps, params, cl, eos)
         pm = sum(A.p) / N
         dps = (Bn.p .- A.p) ./ pm;  dpi = (A.p .- B.p) ./ pm;  ds = Bn.s .- A.s

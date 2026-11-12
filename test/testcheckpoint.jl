@@ -1,4 +1,4 @@
-# testcheckpoint.jl — restart of examples/stochrep_equilibrium.jl from a checkpoint.
+# testcheckpoint.jl — restart of examples/equilibrium.jl from a checkpoint.
 # Runs the driver three times (subprocesses): once straight through, once stopped after
 # step 41 (SR_STOP_AFTER), and once more to resume.  The resumed output must be
 # bit-identical to the uninterrupted one; the partial output must be marked incomplete.
@@ -7,7 +7,7 @@
 using HDF5, Printf
 check(ok, msg) = (println(ok ? "  ✓ " : "  ✗ FAIL: ", msg); ok || error(msg))
 
-drv  = joinpath(@__DIR__, "..", "examples", "stochrep_equilibrium.jl")
+drv  = joinpath(@__DIR__, "..", "examples", "equilibrium.jl")
 jl   = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) -t 2`
 args = ["0.6", "2.0", "1.0", "1", "2", "ck"]                     # L h/a t_end nreal rec_every tag
 root = mktempdir(get(ENV, "SR_TMP", tempdir()));  A = joinpath(root, "A");  B = joinpath(root, "B")

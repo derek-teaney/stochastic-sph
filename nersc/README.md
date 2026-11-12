@@ -46,7 +46,7 @@ Each realization is one Julia process with a few threads; Slurm job arrays in th
 
    ```bash
    SR_OUTDIR=$SCRATCH/sph/smoke julia -t 2 --project=nersc \
-       examples/stochrep_equilibrium.jl 0.6 2.0 0.2 1 2 smoke
+       examples/equilibrium.jl 0.6 2.0 0.2 1 2 smoke
    ```
 
 ## Running a campaign

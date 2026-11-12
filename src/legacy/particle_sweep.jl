@@ -142,7 +142,7 @@ end
 #     ⟨ξ_a^{ij} ξ_a^{lm}⟩ = 2 T_rel,a κ^{ijlm}(v_a) = 2 · kappa_tensor(pa, eos)
 #
 # (generate_noise is unit-normalized, no T_rel; verified by the MC audit in
-# teststochastic.jl Step 2.)  This is the continuum covariance (δ-functions
+# testparticle_sweep.jl Step 2.)  This is the continuum covariance (δ-functions
 # stripped); a discrete step needs a further 1/√(Δt V_a) — the caller supplies
 # that.  Requires pa's smoothed/EOS fields current
 # (smooth_to_particles! → update_thermodynamics!).

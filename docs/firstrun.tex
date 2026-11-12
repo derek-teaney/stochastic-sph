@@ -405,7 +405,7 @@ sound-wave runs are \emph{validations}, not calibrations.
 \section{First results on a frozen lattice}
 \label{sec:results}
 
-The unit checks of \texttt{teststochastic.jl} all pass: momentum is conserved
+The unit checks of \texttt{testparticle\_sweep.jl} all pass: momentum is conserved
 to round-off, the sweep is visit-order independent, and the mean drift of the
 sweep reproduces \texttt{dissipative\_force!} (slope $0.994\pm0.007$).  The
 uniform-background run \texttt{examples/teststochastic\_run.jl}, however,
@@ -945,7 +945,7 @@ unit-normalized stress $\hat\xi$ with
 $\llangle\hat\xi^{ij}\hat\xi^{lm}\rrangle=\kappa^{ijlm}(v)$ (\emph{no}
 $T_{\rm rel}$); \texttt{draw\_xi} rescales by $\sqrt{2T_{\rm rel}}$ to the
 continuum FDT normalization $2\,\texttt{kappa\_tensor}$ (verified by MC
-audit, \texttt{teststochastic.jl} Step~2, at all $v$).  The per-particle draw of
+audit, \texttt{testparticle\_sweep.jl} Step~2, at all $v$).  The per-particle draw of
 \eqref{eq:persite_cov} is then $\texttt{draw\_xi}/\sqrt{\Delta t\,V_a}$.
 
 \paragraph{The full loop.}
@@ -995,7 +995,7 @@ written as a neighbour of others' moves), so no caller-side reset is needed;
 \texttt{apply\_sweep!} folds $(\Delta m,\Delta s)$ into $(m,s)$ afterwards.
 The accept test needs only $\xi_a$ and $\varepsilon_a$ [\eqref{eq:dSa}] --- no
 neighbour loop --- so rejected proposals cost $O(1)$.
-\emph{Checks} (extend \texttt{teststochastic.jl}):
+\emph{Checks} (extend \texttt{testparticle\_sweep.jl}):
 (i) $\eta/s=0\Rightarrow$ all $\Delta m,\Delta s=0$;
 (ii) $|\sum_a\Delta m_a|/\sum_a|\Delta m_a|<10^{-12}$;
 (iii) GENERIC degeneracy

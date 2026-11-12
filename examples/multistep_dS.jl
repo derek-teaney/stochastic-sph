@@ -9,7 +9,7 @@ println(" h/a  bonds | move    rms ΔS_a    rms ΔS_b    rms ΣΔS_b   rms total
 for ha in (2.0, 3.0, 4.0, 6.0)
     params, ps, cl, _ = setup_ic(h, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 6.2h, lattice = :hex)
     initial_state!(ps, params, cl, eos, :eq; rng = Xoshiro(3))
-    fz = stochrep_frozen(ps, params, cl, eos);  V, e, stars = fz.V, fz.e, fz.stars
+    fz = stochastic_frozen(ps, params, cl, eos);  V, e, stars = fz.V, fz.e, fz.stars
     m = [p.m for p in ps];  Sc = [particle_entropy(e[i], m[i], V[i], eos) for i in eachindex(ps)]
     for kind in (:star, :resid)
         A = Float64[];  B = Float64[];  ΣB = Float64[];  T = Float64[]

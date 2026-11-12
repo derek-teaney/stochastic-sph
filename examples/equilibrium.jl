@@ -1,4 +1,4 @@
-# stochrep_equilibrium.jl — equilibrium runs of the full stochastic scheme for measuring
+# equilibrium.jl — equilibrium runs of the full stochastic scheme for measuring
 # correlators (docs/plan.tex).  A uniform 2D fluid at rest, started in equilibrium
 # (SR_START, default eq: initial_state! in src/measure.jl), evolved with the Hamiltonian step and the stochastic step
 # in the particle representation, recording the Fourier modes M_k, S_k (and E_k).
@@ -6,7 +6,7 @@
 # Time stepping (Strang, merged): S(Δt/2) [L(Δt) S(Δt)]… L(Δt) S(Δt/2), i.e. one stochastic
 # step of length Δt between consecutive leapfrogs (half the cost of S(Δt/2) L S(Δt/2) per step).
 #
-# Run:  julia -t auto --project examples/stochrep_equilibrium.jl L h/a t_end nreal [rec_every] [tag]
+# Run:  julia -t auto --project examples/equilibrium.jl L h/a t_end nreal [rec_every] [tag]
 #   → data/equilibrium_<tag>_r<seed>.h5  (one HDF5 file per realization; see
 #     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
 # Restart: a run that stops early resumes from equilibrium_<tag>_r<seed>.chk (SR_CHECKPOINT_MIN).
@@ -80,12 +80,12 @@ relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m 
 function runinfo(base, params, eos, st, n, complete)
     nk = length(st.KE);  h2 = nk ÷ 2 + 1
     out = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
-    write_runinfo(base, vcat(run_settings(params, eos; driver = "stochrep_equilibrium.jl", tag = TAG, seed = st.seed,
+    write_runinfo(base, vcat(run_settings(params, eos; driver = "equilibrium.jl", tag = TAG, seed = st.seed,
         S0 = S0, boost = BOOST, gamma = GAMMA, s_a = GAMMA * S0 * params.vol, dv = 1 / sqrt(S0 * params.vol), t_end = TEND, dt = st.dt, dtfac = DTFAC,
         nsteps = st.nsteps, rec_every = RECN, khmax = KHMAX, jitter = JITTER, lambda = LAMBDA,
         novisc = NOVISC, noham = NOHAM,
         start = haskey(st, :start) ? st.start : (type = string(START),),
-        # the scheme, as this driver runs it (the stochrep_step! defaults it relies on spelled out)
+        # the scheme, as this driver runs it (the stochastic_step! defaults it relies on spelled out)
         stoch = (vote = string(VOTE), lambda = LAMBDA, residual = true, gradient_map = params.hamiltonian !== :energy,
                  grid_shift = true, sweeps = "stress then residual, order alternating each step",
                  back_map = params.hamiltonian === :energy ? "plain, s = S(e, m; V)" : "gradient-corrected"),
@@ -128,7 +128,7 @@ function one_realization(seed)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
         x0 = [q.x for q in ps]
-        NOVISC || stochrep_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=VOTE)
+        NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos; λ = LAMBDA, rng, rngs, vote=VOTE)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); energies = RECORD_E, x0, L = params.L),
               prec = ParticleRecorder(ps, params),
@@ -154,7 +154,7 @@ function one_realization(seed)
     for n in st.n+1:nsteps
         NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
         if !NOVISC
-            a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=VOTE, flip=isodd(n), cache)
+            a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ = LAMBDA, rng, rngs, vote=VOTE, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
             win .+= (a.stress, a.resid, a.gstress, a.gresid)
             observe_step!(mon, a)

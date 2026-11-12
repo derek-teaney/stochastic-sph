@@ -1,6 +1,6 @@
-# stochrep_thermalize.jl — a frozen lattice with constant particle energies e_a and zero
+# stochastic_thermalize.jl — a frozen lattice with constant particle energies e_a and zero
 # momenta, thermalized by the stochastic viscous step in the particle representation
-# (docs/stochrep.tex).  Only the momenta move; positions, V_a and e_a are fixed.
+# (docs/stochastic.tex).  Only the momenta move; positions, V_a and e_a are fixed.
 #
 # Measured: the momentum spectrum ⟨|m_k|²⟩ / (N V w T) (1 per component in equilibrium
 # for λ = 1), its approach to equilibrium mode by mode, compared with
@@ -8,11 +8,11 @@
 # where Γ_k is the damping rate of the bond form and T_eff/T = (K_res + K_resid/λ)/K.
 # λ = 1 (detailed balance), λ = 4 (cold residual), λ = Inf (deterministic residual).
 #
-# Run:  julia -t auto --project examples/stochrep_thermalize.jl [1|2]
+# Run:  julia -t auto --project examples/stochastic_thermalize.jl [1|2]
 #   → docs/figs/stochrep_thermalize_1d.png (and _2d.png)
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 
 const DIM   = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1
 const LAMS  = (1.0, 4.0, Inf)
@@ -45,7 +45,7 @@ end
 function run(dim)
     params, ps0, cl, eos = setup(dim)
     oneD = dim == 1
-    N = params.N;  fz = stochrep_frozen(ps0, params, cl, eos)
+    N = params.N;  fz = stochastic_frozen(ps0, params, cl, eos)
     st = fz.stars[1];  p = ps0[1];  w = p.e + p.p;  V = fz.V[1];  T = p.T
     eq = N * V * w * T
     dt = DTF * 0.5 * compute_dt(ps0, params, eos; mode=:viscous)
@@ -88,7 +88,7 @@ function run(dim)
             ps = deepcopy(ps0);  rngs = make_phys_rng(N, 1000r + 1);  rng = Xoshiro(r)
             Ssnap = Dict{Int,Any}();  avg = nothing;  nav = 0;  acc = zeros(2);  KE = Float64[]
             for n in 1:nsteps
-                a = stochrep_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n), vote=VOTE)
+                a = stochastic_step!(ps, params, cl, dt, eos; λ, frozen=fz, rng, rngs, flip=isodd(n), vote=VOTE)
                 acc .+= (a.stress, isnan(a.resid) ? 1.0 : a.resid)
                 spec = nothing
                 if n in snaps || (n > late && n % 5 == 0)

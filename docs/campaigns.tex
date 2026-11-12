@@ -45,7 +45,7 @@ and the equilibrium start reproduce the old results.
 ($c_s^2=1/3$, $\eta/s=0.2$) in a periodic box on a hexagonal lattice with $h=0.05$ and
 $h/a=2$.  A time step is the leapfrog of the ideal SPH Hamiltonian $H$ between
 stochastic viscous steps (stress and residual moves, checkerboard sweeps,
-\texttt{stochrep.tex}), with the gradient-corrected change of representation and the
+\texttt{stochastic.tex}), with the gradient-corrected change of representation and the
 star vote.  The parameter $\lambda$ of the residual move is $\lambda=1$ (detailed
 balance: every mode, including the lattice modes, fluctuates) or $\lambda=\infty$ (the
 residual is deterministic: the lattice modes are damped without noise and stay cold).
@@ -93,13 +93,13 @@ checkpoint every 20 minutes and runs about twice as fast per core (\Sect{sec:cod
 
 \paragraph{The two drivers.}
 \begin{itemize}
-\item \texttt{stochrep\_hamiltonian.jl} (stability scan) starts from rest with all momenta
+\item \texttt{stability.jl} (stability scan) starts from rest with all momenta
 zero, and records over time the kinetic energy $\sum_a|\bm m_a|^2$ divided by its
 equilibrium value $2(N-1)V_awT$; the smoothed energy $H$ (conserved by the leapfrog);
 the sum of the particle energies $\sum_ae_a$ (held fixed in a stochastic step); and the
 \emph{local disorder}, the rms change of the distances between original nearest
 neighbours in units of $a$.  A disorder above $1$ means the lattice has melted.
-\item \texttt{stochrep\_equilibrium.jl} (ensembles) records the Fourier modes of the
+\item \texttt{equilibrium.jl} (ensembles) records the Fourier modes of the
 momentum density, $\bm M_{\bm k}(t)$, split into the longitudinal and transverse parts
 $M_L$, $M_T$, for all $kh\le1.5$, every 2 (L = 1.2) or 4 (L = 2.4) steps.  From them
 \st

@@ -72,7 +72,7 @@ function onestep(vol::Symbol, seed::Int)
         Hb = Hof(ps, params, cl, eos)
         sb = [p.s for p in ps];  Ts = [p.T * p.s for p in ps]
         kst = [kernel_star(a, ps, params, cl) for a in 1:N]              # weights s_b W_ab / S_a
-        stochrep_step!(ps, params, cl, dt / 2, eos; rng, rngs, flip = isodd(n), cache)
+        stochastic_step!(ps, params, cl, dt / 2, eos; rng, rngs, flip = isodd(n), cache)
         Ha = Hof(ps, params, cl, eos)
         ε = [(ps[a].s - sb[a]) / sb[a] for a in 1:N]
         εbar = [sum(w * ε[b] for (b, _, w) in kst[a]) for a in 1:N]

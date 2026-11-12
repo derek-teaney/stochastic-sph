@@ -1,4 +1,4 @@
-# stochrep.jl — stochastic viscous step in the particle representation (docs/stochrep.tex).
+# stochastic.jl — stochastic viscous step in the particle representation (docs/stochastic.tex).
 #
 # During the step the positions, the particle volumes V_a = s_a/S_a and the particle
 # energies e_a are fixed; only the momenta move.  The total particle entropy
@@ -20,7 +20,7 @@
 #
 # The coefficients (T_rel, η, ζ, w_ab, c_ab, ℓ, P) are frozen at the start of the step, at
 # the particle velocities of that moment; in 2D they take the comoving forms of
-# docs/stochrep.tex ("A moving fluid"), in 1D the rest-frame forms.  Moves in cells of the same color
+# docs/stochastic.tex ("A moving fluid"), in 1D the rest-frame forms.  Moves in cells of the same color
 # touch disjoint sets of particles and run in parallel; within a cell the moves are
 # sequential, each seeing the current momenta.  The random numbers of the move of
 # particle a come from rngs[a]; the sweep orders from the master rng.
@@ -52,7 +52,7 @@ struct Star
 end
 
 # Storage kept between steps so that the per-particle arrays are reused (pass the same
-# StochCache to every stochrep_step! of one simulation; one cache per simulation).
+# StochCache to every stochastic_step! of one simulation; one cache per simulation).
 mutable struct StochCache
     stars :: Vector{Star}
     kst   :: Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}
@@ -83,7 +83,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
                 rm < 2h && push!(nb, (b, r, rm))
             end
         end
-        # 2D: comoving forms at the particle's velocity (docs/stochrep.tex, "A moving
+        # 2D: comoving forms at the particle's velocity (docs/stochastic.tex, "A moving
         # fluid"); 1D: rest frame.
         va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
         ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
@@ -235,7 +235,7 @@ restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_EVENSPLIT[] = g.even
 
 # Ask the bonds: accept with Π_b min(1, exp(λ ΔS_ab)), all or nothing.  The bond
 # factor is ΔS_ab = ΔS_b + σ_ab + R/n_a, with σ_ab the share of ΔS_a due to the
-# traction t_ab = δ[k] (vote = :bonds, docs/stochrep.tex):
+# traction t_ab = δ[k] (vote = :bonds, docs/stochastic.tex):
 #     σ_ab = ½[S_a(m_a − t_ab) − S_a(m_a)] − ½[S_a(m_a′ + t_ab) − S_a(m_a′)],
 # m_a′ = m_a + δm_a, and R = ΔS_a − Σ_b σ_ab.  Each σ_ab flips sign exactly under the
 # reverse move, and σ_ab ≈ β_a·t_ab, so ΔS_ab ≈ −Δβ_ab·t_ab is the bond's own entropy
@@ -401,7 +401,7 @@ end
 
 # ── The step ─────────────────────────────────────────────────────────────────
 # Frozen data of a step: particle volumes, particle energies, stars.
-function stochrep_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+function stochastic_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                          eos::AbstractEOS; cache = nothing)
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
@@ -419,10 +419,10 @@ end
 # One stochastic viscous step at fixed positions: a stress sweep and a residual sweep,
 # in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
 # given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
-# `frozen = stochrep_frozen(...)` to keep V_a, e_a and the stars fixed across steps
+# `frozen = stochastic_frozen(...)` to keep V_a, e_a and the stars fixed across steps
 # (a frozen lattice); otherwise they are recomputed from the current state.  Pass the same
 # `cache = StochCache()` to every step of a simulation to reuse its arrays (faster, same results).
-function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
+function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                         dt::Float64, eos::AbstractEOS;
                         λ::Float64 = 1.0, residual::Bool = true, flip::Bool = false,
                         rng::AbstractRNG = Random.default_rng(),
@@ -433,10 +433,10 @@ function stochrep_step!(particles::Vector{Particle}, params::SimParams, cl::Cell
     # hamiltonian = :energy: H = Σ e_a exactly, so there is no gradient energy to carry
     # (energystep.tex, "The stochastic step with :energy"); the plain back map is used.
     gradient && params.hamiltonian === :energy &&
-        error("stochrep_step!: gradient = true is not consistent with hamiltonian = :energy")
+        error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
-    fz = frozen === nothing ? stochrep_frozen(particles, params, cl, eos; cache) : frozen
+    fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen
     V, e, stars = fz.V, fz.e, fz.stars
     N  = length(particles)
     m  = [pa.m for pa in particles]

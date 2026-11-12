@@ -1,5 +1,5 @@
-# stochrep_moving.jl — stochastic equilibration of a uniformly moving 2D frozen lattice
-# (docs/stochrep.tex, "A moving fluid").  No Hamiltonian step: positions, V_a and e_a are
+# stochastic_moving.jl — stochastic equilibration of a uniformly moving 2D frozen lattice
+# (docs/stochastic.tex, "A moving fluid").  No Hamiltonian step: positions, V_a and e_a are
 # fixed; the stochastic viscous step (λ = 1) acts on the momenta, starting from the
 # uniform momentum m_0 of the moving fluid.
 #
@@ -8,7 +8,7 @@
 # Particles are independent, so ⟨|ê·δm_k|²⟩ = N ê·C·ê for every k ≠ 0.  C is computed
 # exactly as the second moment of e^{S_a(e_a, m_0 + δm)} by numerical integration.
 #
-# Run:  julia -t auto --project examples/stochrep_moving.jl  → docs/figs/stochrep_moving.png
+# Run:  julia -t auto --project examples/stochastic_moving.jl  → docs/figs/stochrep_moving.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
@@ -77,7 +77,7 @@ function one_run(r, ps0, params, cl, eos, fz, dt, kvs, m0, C, N)
     late = zeros(length(kvs), 2);  nav = 0;  hist = zeros(NSTEPS, 2);  acc = zeros(2)
     P0 = sum(q.m for q in ps)
     for n in 1:NSTEPS
-        a = stochrep_step!(ps, params, cl, dt, eos; frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
+        a = stochastic_step!(ps, params, cl, dt, eos; frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
         acc .+= (a.stress, a.resid) ./ NSTEPS
         dm = [q.m - m0 for q in ps]
         hist[n, 1] = sum(x[1]^2 for x in dm) / ((N - 1) * C[1, 1])
@@ -97,7 +97,7 @@ end
 res = Dict{Float64,Any}()
 for vt in VTARGET
     params, ps0, cl, eos = setup_moving(vt)
-    N = params.N;  fz = stochrep_frozen(ps0, params, cl, eos)
+    N = params.N;  fz = stochastic_frozen(ps0, params, cl, eos)
     p = ps0[1];  V = fz.V[1];  e = fz.e[1];  m0 = p.m;  v = p.v_over_S * p.S_smooth
     w = p.e + p.p;  σ = sqrt(V * w * p.T)
     C = exact_cov(e, m0, V, eos, σ);  Cth = theory_cov(p, V, eos)
@@ -124,7 +124,7 @@ for vt in VTARGET
     res[vt] = (v = norm(v), C = C, Cth = Cth, σ2 = σ^2, ks = norm.(kvs), kvs = kvs, late = late, hist = hist,
                acc = acc, dt = dt, a = params.a)
 end
-serialize(joinpath(@__DIR__, "..", "docs", "figs", "stochrep_moving.jls"), res)
+serialize(joinpath(@__DIR__, "..", "docs", "figs", "stochastic_moving.jls"), res)
 
 # ── Plot ──
 fig, axs = subplots(1, 3, figsize=(20, 5.5))

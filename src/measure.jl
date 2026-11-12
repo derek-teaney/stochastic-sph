@@ -1,5 +1,5 @@
 # measure.jl — equilibrium initial states, recording of Fourier modes, and correlators
-# (docs/plan.tex, "Measurements in thermalized ensembles").  Include after stochrep.jl;
+# (docs/plan.tex, "Measurements in thermalized ensembles").  Include after stochastic.jl;
 # needs FFTW, BinningAnalysis and HDF5.
 using FFTW, BinningAnalysis, HDF5, Serialization
 
@@ -20,7 +20,7 @@ end
 # The positions and the mean flow are unchanged.  Returns the mean covariance.
 function thermal_init!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                        eos::AbstractEOS; rng::AbstractRNG = Random.default_rng())
-    fz = stochrep_frozen(particles, params, cl, eos)
+    fz = stochastic_frozen(particles, params, cl, eos)
     N  = length(particles)
     Cs = [momentum_covariance(fz.e[a], particles[a].m, fz.V[a], eos) for a in 1:N]
     δ  = [cholesky(Symmetric(Matrix(Cs[a]))).L * SVector(randn(rng), randn(rng)) for a in 1:N]

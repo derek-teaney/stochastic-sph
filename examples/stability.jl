@@ -1,5 +1,5 @@
-# stochrep_hamiltonian.jl — a uniform fluid at rest with the Hamiltonian step ON and the
-# stochastic viscous step in the particle representation (docs/stochrep.tex), from zero
+# stability.jl — a uniform fluid at rest with the Hamiltonian step ON and the
+# stochastic viscous step in the particle representation (docs/stochastic.tex), from zero
 # momenta.  Three variants of the viscous step:
 #     :full    stress + residual moves, λ = 1
 #     :det     stress move + deterministic residual (λ = ∞)
@@ -14,7 +14,7 @@
 #   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
 #   SPH_HAMILTONIAN=energy (H = Σ e_a, docs/energystep.tex; plain back map, suffix _energy).
 # Defaults: kinds = full (λ = 1), vote = star, gradient-corrected map, start eq.
-# Run:  julia -t auto --project examples/stochrep_hamiltonian.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
+# Run:  julia -t auto --project examples/stability.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
 #   → docs/figs/stochrep_hamiltonian.png
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
@@ -99,7 +99,7 @@ function run(kind, seed=1)
             H1 = Hof(ps, params, cl, eos);  E1 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a1 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=isodd(n), vote=VOTE, gradient=GRAD, cache)
+        a1 = stochastic_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=isodd(n), vote=VOTE, gradient=GRAD, cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H2 = Hof(ps, params, cl, eos);  E2 = Eof(ps)
@@ -109,7 +109,7 @@ function run(kind, seed=1)
             H3 = Hof(ps, params, cl, eos);  E3 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
-        a2 = stochrep_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=!isodd(n), vote=VOTE, gradient=GRAD, cache)
+        a2 = stochastic_step!(ps, params, cl, dt / 2, eos; λ, residual=resid, rng, rngs, flip=!isodd(n), vote=VOTE, gradient=GRAD, cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
         if SPLIT
             H4 = Hof(ps, params, cl, eos);  E4 = Eof(ps)

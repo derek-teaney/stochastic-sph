@@ -1,17 +1,17 @@
-# stochrep_stressonly.jl — is the residual move needed?  Frozen lattice at rest, constant
+# stochastic_stressonly.jl — is the residual move needed?  Frozen lattice at rest, constant
 # e_a, m_a = 0 at t = 0; the stochastic step with the stress move only, compared with the
-# stress + residual moves (λ = 1).  docs/stochrep.tex.
+# stress + residual moves (λ = 1).  docs/stochastic.tex.
 #
 # Both keep e^{𝕊} stationary (every move satisfies detailed balance).  With the stress
 # move alone a mode receives noise and damping only through the fitted gradient, so it
 # relaxes at the resolved rate Γ_res(k) = 2K_res(k)/(VwT) instead of Γ(k) = 2K(k)/(VwT):
 #     ⟨|m_k|²⟩/eq = 1 − exp(−2Γ t),   Γ = Γ_res (stress only) or Γ (both moves).
 #
-# Run:  julia -t auto --project examples/stochrep_stressonly.jl [1|2]
+# Run:  julia -t auto --project examples/stochastic_stressonly.jl [1|2]
 #   → docs/figs/stochrep_stressonly_1d.png (or _2d.png)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 
 const DIM = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1
 
@@ -40,7 +40,7 @@ function one_run(r, ps0, params, cl, eos, fz, dt, kvs, oneD, residual, snaps, ns
     ps = deepcopy(ps0);  rngs = make_phys_rng(N_of(ps0), 5000r + 7);  rng = Xoshiro(r)
     S = Dict{Int,Matrix{Float64}}();  KE = zeros(nsteps)
     for n in 1:nsteps
-        stochrep_step!(ps, params, cl, dt, eos; λ=1.0, residual, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
+        stochastic_step!(ps, params, cl, dt, eos; λ=1.0, residual, frozen=fz, rng, rngs, flip=isodd(n), vote=:bonds)
         n in snaps && (S[n] = spec(ps, kvs, oneD))
         KE[n] = sum(dot(q.m, q.m) for q in ps)
     end
@@ -50,7 +50,7 @@ N_of(ps) = length(ps)
 
 params, ps0, cl, eos = setup(DIM)
 oneD = DIM == 1
-N = params.N;  fz = stochrep_frozen(ps0, params, cl, eos);  st = fz.stars[1]
+N = params.N;  fz = stochastic_frozen(ps0, params, cl, eos);  st = fz.stars[1]
 p = ps0[1];  V = fz.V[1];  w = p.e + p.p;  T = p.T;  eq = N * V * w * T
 dt = 0.25 * 0.5 * compute_dt(ps0, params, eos; mode=:viscous)
 if oneD

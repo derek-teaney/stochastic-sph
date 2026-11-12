@@ -470,12 +470,12 @@ ones.  The random color order makes the sweep reversible on average.
   mean drift is still the deterministic step.
 \end{itemize}
 
-\paragraph{Pseudo-code.}  As implemented in \texttt{src/stochrep.jl}
-(\texttt{stochrep\_step!}).  The colors along a direction of $n$ cells are
+\paragraph{Pseudo-code.}  As implemented in \texttt{src/stochastic.jl}
+(\texttt{stochastic\_step!}).  The colors along a direction of $n$ cells are
 $0,1,2,0,1,2,\dots$ for the first $3\lfloor n/3\rfloor$ cells and $3,4$ for the
 one or two leftover cells; the color of a cell is the pair of its two colors.
 \begin{verbatim}
-stochrep_step!(particles, dt; lambda):
+stochastic_step!(particles, dt; lambda):
     # frozen for the step (or for the whole run on a frozen lattice)
     for each particle a:
         V[a], e[a]                          # particle volume and energy
@@ -532,7 +532,7 @@ viscous step acts.  The conformal equation of state with $\eta/s=0.2$, $\zeta=0$
 The entropy per particle is $s_a=500$ (1D) and $346$ (2D), so the thermal
 velocities are small, about $0.05$.  The time step is a quarter of the default
 viscous half step of \texttt{changerep.tex}.  Scripts:
-\texttt{examples/stochrep\_thermalize.jl}, \texttt{examples/stochrep\_smallk.jl}.
+\texttt{examples/stochastic\_thermalize.jl}, \texttt{examples/stochastic\_smallk.jl}.
 
 \paragraph{The equilibrium value.}  For one particle at fixed $e_a$, $e^{S_a(e_a,\bm m)}$
 gives each momentum component the variance $V_awT$ to leading order.  A direct

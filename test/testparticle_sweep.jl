@@ -399,14 +399,14 @@ end
 # ═══════════════════════════════════════════════════════════════════════════
 function run_all()
     println("=" ^ 70)
-    println("teststochastic.jl")
+    println("testparticle_sweep.jl")
     println("=" ^ 70)
     #step0_accumulators()
     # step1_stencil()
     # step2_noise_cov()
     step3()
     # println("\n" * "=" ^ 70)
-    # println("teststochastic.jl — Steps 0–3 passed.")
+    # println("testparticle_sweep.jl — Steps 0–3 passed.")
     # println("=" ^ 70)
 end
 

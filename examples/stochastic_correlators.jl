@@ -1,4 +1,4 @@
-# stochrep_correlators.jl — momentum correlators from stochrep_equilibrium.jl runs.
+# stochastic_correlators.jl — momentum correlators from equilibrium.jl runs.
 #
 #   C_T(k, τ) = ⟨M_T(t+τ, k) M_T*(t, k)⟩ / (N V w T)   →  e^{−ν k² τ},            ν = η/w
 #   C_L(k, τ) = ⟨M_L(t+τ, k) M_L*(t, k)⟩ / (N V w T)   →  cos(c_s k τ) e^{−Γ k² τ/2},  Γ = (4/3)η/w
@@ -6,7 +6,7 @@
 # over realizations (errors: spread over realizations).  Also the fitted transverse
 # decay rate, as an effective ν(k).
 #
-# Run:  julia --project examples/stochrep_correlators.jl tag [t_burn] [maxlag]
+# Run:  julia --project examples/stochastic_correlators.jl tag [t_burn] [maxlag]
 #   reads <dir>/equilibrium_<tag>_r*.h5 (or old .jls) → docs/figs/correlators_<tag>.png,
 #   with <dir> = $SR_DATADIR, default data/ (e.g. SR_DATADIR=$SCRATCH/sph/<campaign>/<run>)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Serialization, Statistics, LsqFit

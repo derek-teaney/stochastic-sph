@@ -1,8 +1,8 @@
-# stochrep_longruns_plot.jl — the long runs (t = 100) of stochrep_hamiltonian.jl compared:
+# stochastic_longruns_plot.jl — the long runs (t = 100) of stability.jl compared:
 # kinetic energy, particle energies, smoothed energy and local disorder versus time, the
 # four realizations of each set shown as a band (min to max) around their mean.
-# (The S = 10⁵ set, which blows up, has its own figure: stochrep_hamiltonian_real_plot.jl.)
-# Run:  julia --project examples/stochrep_longruns_plot.jl → docs/figs/stochrep_longruns.png
+# (The S = 10⁵ set, which blows up, has its own figure: stability_real_plot.jl.)
+# Run:  julia --project examples/stochastic_longruns_plot.jl → docs/figs/stochrep_longruns.png
 using PyPlot, Printf, Serialization, StaticArrays
 f(s) = joinpath(@__DIR__, "..", "docs", "figs", "stochrep_hamiltonian_real_$(s).jls")
 sets = [("reference: λ = 1, single vote, gradient map, Δt", "ha2.0_t100_star_grad", :full, "C0"),

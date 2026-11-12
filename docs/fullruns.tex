@@ -25,7 +25,7 @@ Stony Brook, New York 11794, USA}
 
 \begin{abstract}
 We couple the stochastic viscous step in the particle representation
-(\texttt{stochrep.tex}) to the Hamiltonian (ideal SPH) step and run a uniform
+(\texttt{stochastic.tex}) to the Hamiltonian (ideal SPH) step and run a uniform
 two-dimensional fluid at rest, starting from zero momenta.  This note records
 the setup and, for each test, what we found: the residual move is needed to
 keep the lattice modes under control; with it, the fluid thermalizes and stays
@@ -48,7 +48,7 @@ with the stochastic step in place of the deterministic viscous step:
   length $\Delta t$;
 \item a second stochastic half step.
 \end{enumerate}
-The stochastic step is \texttt{stochrep\_step!} of \texttt{stochrep.tex}: a
+The stochastic step is \texttt{stochastic\_step!} of \texttt{stochastic.tex}: a
 stress sweep and a residual sweep on a checkerboard of cells, at fixed
 positions.  The order of the two sweeps alternates from step to step.  Before
 each step the particle energies $e_a$ and volumes $V_a=s_a/S_a$ are recomputed from
@@ -80,7 +80,7 @@ initial state & uniform, at rest, all momenta zero \\
   modes are damped without noise and stay cold.
 \item \emph{Stress move only.}
 \end{itemize}
-The vote is either per bond (the bond split of \texttt{stochrep.tex}) or a single
+The vote is either per bond (the bond split of \texttt{stochastic.tex}) or a single
 vote of the star.  The change of representation is either the plain exact map,
 which holds $e_a$ fixed, or the gradient-corrected map of \texttt{changerep.tex},
 which holds $e_a-g_a$ fixed and refits the gradient energy $g_a$ afterwards.
@@ -99,7 +99,7 @@ which holds $e_a-g_a$ fixed and refits the gradient energy $g_a$ afterwards.
   lattice spacing $a$.  The first counts collective motion; the second does not.
 \item The acceptance of the moves.
 \end{itemize}
-Scripts: \texttt{examples/stochrep\_hamiltonian.jl} and its plotting scripts.
+Scripts: \texttt{examples/stability.jl} and its plotting scripts.
 
 %=============================================================================
 \section{Is the residual move needed?}
@@ -132,7 +132,7 @@ transverse (dashed).  The curves for different $h/a$ coincide.}
 \end{figure}
 
 \paragraph{Frozen lattice.}  \Fig{fig:stressonly}: the frozen lattice of
-\texttt{stochrep.tex} ($h/a=2.5$, no Hamiltonian step), from zero momenta, with
+\texttt{stochastic.tex} ($h/a=2.5$, no Hamiltonian step), from zero momenta, with
 the stress move only.  Each mode follows $1-e^{-2\Gamma_{\rm res}t}$.  The modes with
 $kh\lesssim1$ thermalize as with both moves; those beyond $ka/\pi\simeq0.5$ have barely
 moved by the end of the run.  The kinetic energy reaches $0.22$ of its

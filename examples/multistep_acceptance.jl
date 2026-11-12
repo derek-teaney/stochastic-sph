@@ -12,11 +12,11 @@ for ha in (2.0, 3.0, 4.0, 6.0)
     params, ps, cl, _ = setup_ic(h, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 6.2h, lattice = :hex)
     N = params.N
     initial_state!(ps, params, cl, eos, :eq; rng = Xoshiro(3))
-    fz = stochrep_frozen(ps, params, cl, eos);  nb = length(fz.stars[1].nb)
+    fz = stochastic_frozen(ps, params, cl, eos);  nb = length(fz.stars[1].nb)
     for vote in (:star, :bonds)
         rngs = make_phys_rng(N, 11);  rng = Xoshiro(12);  as = Float64[];  ar = Float64[]
         for n in 1:NST
-            acc = stochrep_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
+            acc = stochastic_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
             push!(as, acc.stress);  push!(ar, acc.resid)
         end
         @printf("%4.0f %5d %5d %6.1f  |  %-6s  %.3f      %.3f\n", ha, N, nb, ps[1].s, vote, mean(as), mean(ar))

@@ -1,4 +1,4 @@
-# Shared by stochrep_thermalize.jl and stochrep_smallk.jl: predictions from the frozen star.
+# Shared by stochastic_thermalize.jl and stochastic_smallk.jl: predictions from the frozen star.
 # K_a for the mode β_c = ê e^{ik·x_c}: total (bond form) and resolved part.
 function Kmode(st::Star, k::SVector{2,Float64}, ê::SVector{2,Float64}, oneD)
     Δ = [ê * (cis(dot(k, r)) - 1) for r in st.r]

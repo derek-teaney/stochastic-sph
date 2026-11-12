@@ -1,7 +1,7 @@
-# stochrep_hamiltonian_split_plot.jl — where the energy goes: cumulative changes of H and Σe
-# from the stochastic half steps and from the leapfrog (stochrep_hamiltonian.jl ... split),
+# stability_split_plot.jl — where the energy goes: cumulative changes of H and Σe
+# from the stochastic half steps and from the leapfrog (stability.jl ... split),
 # for the star vote at Δt and Δt/2, λ = 1, h/a = 2.
-# Run:  julia --project examples/stochrep_hamiltonian_split_plot.jl → docs/figs/stochrep_hamiltonian_split.png
+# Run:  julia --project examples/stability_split_plot.jl → docs/figs/stochrep_hamiltonian_split.png
 using PyPlot, Printf, Serialization, StaticArrays
 f(s) = joinpath(@__DIR__, "..", "docs", "figs", "stochrep_hamiltonian_real_ha2.0_t30_star$(s).jls")
 # runs to compare: suffixes from the command line (default: Δt and Δt/2 without the gradient correction)

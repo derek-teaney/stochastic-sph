@@ -5,7 +5,7 @@
 #
 # Scheme: put that pattern (tiny amplitude) on the frozen hex lattice, apply the
 # deterministic two-level dissipative_force! (= the mean drift of the stochastic
-# sweep, teststochastic.jl (vi)), and read off
+# sweep, testparticle_sweep.jl (vi)), and read off
 #
 #     Γ_SPH(k) = −Σ_a f_a·m_a / Σ_a m_a·m_a .
 #

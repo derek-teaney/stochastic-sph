@@ -8,15 +8,15 @@ the `.tex`).  Owner: D. Teaney.
 
 - `docs/plan.tex` — the current plan: speed, NERSC, measurements, next steps, status.
 - `docs/fullruns.tex` — what the full Hamiltonian stochastic runs found so far.
-- `docs/stochrep.tex` — the stochastic step (stress move, residual move, consensus vote,
+- `docs/stochastic.tex` — the stochastic step (stress move, residual move, consensus vote,
   checkerboard sweep, moving fluid).  `docs/changerep.tex`, `docs/bond_dissipation.tex`
   — the deterministic step it builds on.
 - `src/` — library, loaded by `src/load.jl`: `sph.jl` (kernels, params, EOS), `celllist.jl`, `ideal.jl`
   (Hamiltonian step), `pointwise.jl` (particle representation), `viscous.jl` (deterministic
-  viscous step), `stochrep.jl`, `measure.jl`, …  Superseded code (two-level strain form, the
+  viscous step), `stochastic.jl`, `measure.jl`, …  Superseded code (two-level strain form, the
   old particle sweep) in `src/legacy/`.
-- `examples/stochrep_hamiltonian.jl` — energy/stability runs (uniform fluid, Hamiltonian
-  step on).  `examples/stochrep_equilibrium.jl` — equilibrium ensembles for correlators.
+- `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
+  step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.
 - `test/` — checks; run the relevant ones after any change to `src/`.
 - `nersc/` — run-only environment, Slurm job array, campaign files, `nersc/README.md`.

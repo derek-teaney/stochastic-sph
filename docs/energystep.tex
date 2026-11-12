@@ -478,7 +478,7 @@ the particle state is evaluated.
 \section{The stochastic step with \texttt{:energy}}
 \label{sec:stoch}
 
-Not yet tested.  The stochastic step (\texttt{stochrep.tex}) works at fixed positions,
+Not yet tested.  The stochastic step (\texttt{stochastic.tex}) works at fixed positions,
 volumes $V_a=s_a/S_a$ and particle energies $e_a$, which are exactly the variables of
 \Eq{H}; on a frozen lattice it is the same step for both Hamiltonians.  Two differences:
 \begin{enumerate}
@@ -497,11 +497,11 @@ volumes $V_a=s_a/S_a$ and particle energies $e_a$, which are exactly the variabl
 \end{enumerate}
 Tests, in order:
 \begin{enumerate}
-\item \texttt{stochrep\_step!} defaults to \texttt{gradient = false} when
+\item \texttt{stochastic\_step!} defaults to \texttt{gradient = false} when
   \texttt{params.hamiltonian == :energy}, and the drivers keep that default.
 \item One step on a thermal state: $\Delta H$ per stochastic step, \texttt{:energy} against
   \texttt{:smoothed} (with its gradient-corrected map).
-\item Coupled runs, \texttt{stochrep\_hamiltonian.jl}: $L=0.6$, $h/a=2$, $\eta/s=0.2$,
+\item Coupled runs, \texttt{stability.jl}: $L=0.6$, $h/a=2$, $\eta/s=0.2$,
   $S_0=10^6$, to $t\approx50$, 2--4 realizations per Hamiltonian: $\Delta H/H(t)$,
   KE/eq, the lattice disorder.  Local.
 \item At NERSC, after 1--3: equilibrium $C_T$, $C_L$ with \texttt{:energy}, as campaign
@@ -532,7 +532,7 @@ transverse oscillation of the equilibrium $C_T$ is the pressure term of \Eq{dH}.
 \section{Stochastic runs at NERSC}
 \label{sec:stochruns}
 
-Tests 3 and 4, run from commit \texttt{934aa86} with \texttt{stochrep\_equilibrium.jl};
+Tests 3 and 4, run from commit \texttt{934aa86} with \texttt{equilibrium.jl};
 everything as in campaign \texttt{rigidity} (C2, $h/a=2$, $\eta/s=0.2$, $S_0=10^6$,
 $\Delta t=8.66\times10^{-3}$), only \texttt{SPH\_HAMILTONIAN} differs.  Record in
 \texttt{nersc/LOG.md}.

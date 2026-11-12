@@ -1,5 +1,5 @@
-# stochrep_hamiltonian_real_plot.jl — all realizations of stochrep_hamiltonian.jl (NREAL > 1).
-# Run:  julia --project examples/stochrep_hamiltonian_real_plot.jl [h/a]
+# stability_real_plot.jl — all realizations of stability.jl (NREAL > 1).
+# Run:  julia --project examples/stability_real_plot.jl [h/a]
 #   → docs/figs/stochrep_hamiltonian_real_ha<h/a>.png
 using PyPlot, Printf, Serialization, StaticArrays
 const HA = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 2.0

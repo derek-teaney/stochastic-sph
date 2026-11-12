@@ -23,10 +23,10 @@ function run_case(λ; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") 
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     reset_guards!()
     acc = Float64[]
-    stochrep_step!(ps, params, cl, dt / 2, eos; λ, rng, rngs, vote=:star, cache)
+    stochastic_step!(ps, params, cl, dt / 2, eos; λ, rng, rngs, vote=:star, cache)
     for n in 1:nsteps
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        a = stochrep_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ, rng, rngs, vote=:star, flip=isodd(n), cache)
+        a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos; λ, rng, rngs, vote=:star, flip=isodd(n), cache)
         push!(acc, a.stress);  isinf(λ) || push!(acc, a.resid)
     end
     return (x = [p.x for p in ps], m = [p.m for p in ps], s = [p.s for p in ps], acc = acc, guards = guards())

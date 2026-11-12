@@ -1,5 +1,5 @@
 # profile_step.jl — where the time and the allocations go in one time step of the
-# equilibrium driver (merged stochastic steps: leapfrog L(Δt), then stochrep_step!(Δt)).
+# equilibrium driver (merged stochastic steps: leapfrog L(Δt), then stochastic_step!(Δt)).
 #
 #   julia -t <n> --project=nersc examples/profile_step.jl L mode [nsteps]
 #     mode = time     wall, GC time and bytes allocated per step for the two parts
@@ -21,7 +21,7 @@ thermal_init!(ps, params, cl, eos; rng = Xoshiro(3))
 dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
 const CACHE = StochCache()
 step!(n) = (leapfrog_step!(ps, params, cl, dt, eos, dotm);
-            stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE))
+            stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE))
 for n in 1:5; step!(n); end                                  # compile and settle
 
 let                                                          # hard scope for the loops
@@ -29,13 +29,13 @@ if MODE == "time"
     tl = tg = 0.0;  bl = bs = 0;  gl = gs = 0.0;  ts = 0.0
     for n in 1:NST
         a = @timed leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        b = @timed stochrep_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE)
+        b = @timed stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE)
         tl += a.time;  bl += a.bytes;  gl += a.gctime
         ts += b.time;  bs += b.bytes;  gs += b.gctime
     end
     @printf("L=%.1f N=%d threads=%d  per step (avg of %d):\n", LBOX, N, Threads.nthreads(), NST)
     @printf("  leapfrog        %8.1f ms  GC %5.1f%%  %8.1f MB\n", 1e3tl/NST, 100gl/tl, bl/NST/1e6)
-    @printf("  stochrep_step!  %8.1f ms  GC %5.1f%%  %8.1f MB\n", 1e3ts/NST, 100gs/ts, bs/NST/1e6)
+    @printf("  stochastic_step!  %8.1f ms  GC %5.1f%%  %8.1f MB\n", 1e3ts/NST, 100gs/ts, bs/NST/1e6)
     @printf("  total           %8.1f ms  = %.1f μs per particle per step\n", 1e3(tl+ts)/NST, 1e6(tl+ts)/NST/N)
 elseif MODE == "profile"
     # sampling profile

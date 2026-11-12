@@ -2,7 +2,7 @@
 # SPH_HAMILTONIAN = energy.  Figures for docs/campaigns.tex:
 #   energy2_dt.png        ΔH/H(t) at L = 0.6 for Δt = 1, 1/2, 1/4 × default and with positions
 #                         frozen (noham); right: loss rate against Δt
-#   energy2_stability.png the stability scan (stochrep_hamiltonian.jl, L = 0.6, t = 200): KE/eq
+#   energy2_stability.png the stability scan (stability.jl, L = 0.6, t = 200): KE/eq
 #                         and −ΔH/H at the end against δv, full (λ = 1) and det (λ = ∞)
 #   energy2_ha.png        C_T(k,τ)/C_T(k,0) at L = 1.2 for h/a = 2, 2.5, 3 in three shells, and the
 #                         fitted c_t against kh
@@ -51,7 +51,7 @@ axs[2].set_xscale("log");  axs[2].set_yscale("log");  axs[2].set_xlabel("Δt / d
 axs[2].set_title("loss rate (slope of each run, mean ± s.e.)");  axs[2].legend(fontsize = 8)
 tight_layout();  savefig(joinpath(FIGD, "energy2_dt.png"), dpi = 100)
 
-# ---------------- 2. stability scan (text output of stochrep_hamiltonian.jl) ----------------
+# ---------------- 2. stability scan (text output of stability.jl) ----------------
 function scan(run)
     out = Dict("full" => (Float64[], Float64[]), "det" => (Float64[], Float64[]));  δv = NaN
     for f in filter(f -> startswith(f, "slurm-") && endswith(f, ".out"), readdir(DIR))

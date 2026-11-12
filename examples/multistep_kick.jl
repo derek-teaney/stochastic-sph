@@ -4,7 +4,7 @@
 # the response.  Prediction: P(t) = (1/N) Σ_k exp(−acc Γ_xx(k) t), Γ_xx from Kmode with ê = x̂.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))          # Kmode
+include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))          # Kmode
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3;  const NST = 16;  const NSEED = 24
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 println(" h/a  vote    acc_r  |  P(t) at steps 2, 4, 8, 16: measured / predicted")
@@ -17,12 +17,12 @@ for ha in (2.0, 4.0, 6.0)
             runs = map((0.0, 1.0)) do kick
                 ps = deepcopy(ps0)
                 initial_state!(ps, params, cl, eos, :eq; rng = Xoshiro(100seed))
-                fz = stochrep_frozen(ps, params, cl, eos);  st = fz.stars[a0];  w = ps[a0].e + ps[a0].p
+                fz = stochastic_frozen(ps, params, cl, eos);  st = fz.stars[a0];  w = ps[a0].e + ps[a0].p
                 st0 = st;  w0 = w
                 Δm = 1.5 * sqrt(st.V * w * st.T);  ps[a0].m += SVector(kick * Δm, 0.0)
                 rngs = make_phys_rng(N, 7seed);  rng = Xoshiro(8seed);  tr = [ps[a0].m[1]]
                 for n in 1:NST
-                    acc = stochrep_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
+                    acc = stochastic_step!(ps, params, cl, DT, eos; rng, rngs, frozen = fz, vote, flip = isodd(n))
                     kick > 0 && (push!(ar, acc.resid); push!(as, acc.stress));  push!(tr, ps[a0].m[1])
                 end
                 (tr, Δm)
