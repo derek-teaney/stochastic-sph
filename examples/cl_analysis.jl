@@ -12,9 +12,7 @@
 #                    with the hydrodynamic estimate
 # Run:  julia --project examples/cl_analysis.jl [dir]       (login node)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const S = joinpath(ENV["SCRATCH"], "sph")
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(S, "cl")
 const SHORT = joinpath(S, "cl_short")

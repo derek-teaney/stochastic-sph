@@ -8,9 +8,7 @@
 #
 # Run:  julia --project test/testcorrelators.jl
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const ν = 0.0022;  const DTR = 0.01732;  const TEND = 400.0;  const NRUN = 8;  const NSUB = 4
 const KS = [5.18, 7.36, 10.36]                     # kh = 0.26, 0.37, 0.52

@@ -3,7 +3,7 @@
 # frozen lattice, single vote vs bond vote, versus h/a at fixed S0 and Δt.  Prediction:
 # Γ_eff ≈ acc_star Γ_res(k) + acc_resid Γ_resid(k), with Γ from Kmode on a code star.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure"); include(joinpath(@__DIR__, "..", "src", "$f.jl")); end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))          # Kmode
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3;  const NST = 24;  const NSEED = 12
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)

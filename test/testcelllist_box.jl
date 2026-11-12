@@ -12,9 +12,7 @@ using StaticArrays
 using Random
 using LinearAlgebra
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # All pairs (a<b) within 2h, by brute force over every pair.
 function pairs_brute(particles, h, L)

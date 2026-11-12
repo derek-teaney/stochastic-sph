@@ -16,9 +16,7 @@ using LinearAlgebra
 using Random
 using Statistics
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # reuse the sound-wave initialization and time loop (everything above "# ── Main")
 let src = read(joinpath(@__DIR__, "testsound_viscous.jl"), String)

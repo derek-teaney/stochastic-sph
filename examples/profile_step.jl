@@ -8,9 +8,7 @@
 # Output on stdout; the full flat profile goes to $SR_OUTDIR/profile_flat_L<L>.txt.
 using StaticArrays, LinearAlgebra, Printf, Random, Profile
 const ROOT = joinpath(@__DIR__, "..")
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(ROOT, "src", "$f.jl"))
-end
+include(joinpath(ROOT, "src", "load.jl"))
 const LBOX  = parse(Float64, ARGS[1])
 const MODE  = ARGS[2]
 const NST   = length(ARGS) > 2 ? parse(Int, ARGS[3]) : 20

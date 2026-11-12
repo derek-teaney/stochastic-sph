@@ -14,9 +14,7 @@
 #
 # Run:  julia --project examples/damping_1d.jl   → docs/figs/damping_1d.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const KER = WendlandC2_1D()
 W(r, h)  = wendland_c2(abs(r), h, KER)

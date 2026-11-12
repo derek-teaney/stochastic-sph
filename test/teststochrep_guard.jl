@@ -6,11 +6,7 @@
 #   3  in normal runs the guard never fires and the results are unchanged
 # Run:  julia --project test/teststochrep_guard.jl
 using StaticArrays, LinearAlgebra, Printf, Random
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 println("Test 1: particle_entropy on unphysical states")
 let eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)

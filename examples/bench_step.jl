@@ -3,9 +3,7 @@
 #   julia -t 1 --project examples/bench_step.jl
 using StaticArrays, LinearAlgebra, Printf, Random
 const ROOT = joinpath(@__DIR__, "..")
-include(joinpath(ROOT, "src", "sph.jl")); include(joinpath(ROOT, "src", "celllist.jl"))
-include(joinpath(ROOT, "src", "setup.jl")); include(joinpath(ROOT, "src", "rng.jl"))
-include(joinpath(ROOT, "src", "stochrep.jl"))
+include(joinpath(ROOT, "src", "sph.jl")); include(joinpath(ROOT, "src", "load.jl"))
 for ha in (2.0, 2.5)
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 params, ps, cl, eos = setup_ic(0.05, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=0.6, lattice=:hex)

@@ -13,9 +13,7 @@ using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 # until 2026-11-10); set SPH_HAMILTONIAN=energy to check the n-scheme instead.
 ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "smoothed")
 const ROOT = joinpath(@__DIR__, "..")
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(ROOT, "src", "$f.jl"))
-end
+include(joinpath(ROOT, "src", "load.jl"))
 
 function run_case(λ; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") == "1" ? nothing : StochCache())
     eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)

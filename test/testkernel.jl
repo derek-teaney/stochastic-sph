@@ -1,5 +1,5 @@
 using PyPlot
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 h = 1.0
 r = LinRange(0.0, 2.5h, 500)

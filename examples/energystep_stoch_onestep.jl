@@ -10,12 +10,7 @@
 #
 # Run:  julia -t 4 --project examples/energystep_stoch_onestep.jl [nstep=20] [nseed=4]
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
-include(joinpath(@__DIR__, "..", "src", "measure.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const NSTEP = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 20
 const NSEED = length(ARGS) > 1 ? parse(Int, ARGS[2]) : 4

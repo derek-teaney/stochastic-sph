@@ -1,7 +1,5 @@
 include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── IC test ───────────────────────────────────────────────────────────────────
 # Compute the instantaneous SPH force density ∂_t M^y(x) and compare to the

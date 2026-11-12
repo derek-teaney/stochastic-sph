@@ -2,7 +2,7 @@
 # at fixed S0 and Δt, frozen lattice, equilibrium start: ΔS_a (the centre), one ΔS_b (a
 # neighbour), Σ_b ΔS_b, and the total.  No accept/reject: proposals only.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure"); include(joinpath(@__DIR__, "..", "src", "$f.jl")); end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0);  rng = Xoshiro(5)
 println(" h/a  bonds | move    rms ΔS_a    rms ΔS_b    rms ΣΔS_b   rms total   √N·rms ΔS_b")

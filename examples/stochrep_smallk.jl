@@ -8,11 +8,7 @@
 #
 # Run:  julia -t auto --project examples/stochrep_smallk.jl  → docs/figs/stochrep_smallk.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
 
 const LAMS = (1.0, Inf)

@@ -10,9 +10,7 @@
 #     d²m de = 2π e² r dr de.
 # Run (login node, seconds):  julia --project examples/cl_exact_m2.jl
 using StaticArrays, LinearAlgebra, Printf
-for f in ("sph", "celllist", "setup", "rng", "stochrep")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const S0 = 1e6;  const H = 0.05
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 # uniform state at S0: temperature, enthalpy density (as the runs use them)

@@ -68,9 +68,7 @@ end
 if "--check" in ARGS
     # Check against the code: lattice sums vs smooth_to_particles!, ω² vs hamiltonian_force!,
     # Γ vs Kmode on a code star.  h/a = 2, box 0.6, h = 0.05.
-    include(joinpath(@__DIR__, "..", "src", "sph.jl"));  include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-    include(joinpath(@__DIR__, "..", "src", "setup.jl"));  include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-    include(joinpath(@__DIR__, "..", "src", "stochrep.jl"));  include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))
+    include(joinpath(@__DIR__, "..", "src", "load.jl"));  include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))
     h = 0.05;  eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
     for ha in (2.0, 3.0)
         params, ps, cl, _ = setup_ic(h, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)

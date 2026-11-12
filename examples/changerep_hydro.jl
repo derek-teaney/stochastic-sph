@@ -9,9 +9,7 @@
 #
 # Run:  julia --project examples/changerep_hydro.jl  → docs/figs/changerep_hydro.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Statistics
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 let src = read(joinpath(@__DIR__, "testsound_viscous_1d.jl"), String)
     body = split(src, "# ── Main")[1]
     body = replace(body, r"^using PyPlot\n"m => "", r"^include\(.*\)\n"m => "")

@@ -3,7 +3,7 @@
 # equilibrium start.  Votes: :star (one vote per star, the default) and :bonds (factorized).
 # Run:  julia -t 8 --project examples/multistep_acceptance.jl
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure"); include(joinpath(@__DIR__, "..", "src", "$f.jl")); end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3;  const NST = 10
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 @printf("S0 = %.0e (S0·πh² = %.0f), Δt = %.2e, box 6h, frozen lattice, λ = 1\n", S0, S0 * π * h^2, DT)

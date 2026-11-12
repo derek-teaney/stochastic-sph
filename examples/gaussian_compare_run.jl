@@ -5,9 +5,7 @@
 #   e.g. julia --project examples/gaussian_compare_run.jl bond 0.02 0.05
 # Output: examples/gaussian_cmp/<scheme>_h<h>_eta<eta>.txt  (slices) and _particles.txt
 using StaticArrays, LinearAlgebra, Printf, DelimitedFiles
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 # reuse initialize_gaussian and run_gaussian! from testgaussian.jl (everything above "# ── Main")
 let src = read(joinpath(@__DIR__, "testgaussian.jl"), String)
     body = split(src, "# ── Main")[1]

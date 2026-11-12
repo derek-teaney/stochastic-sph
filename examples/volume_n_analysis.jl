@@ -7,9 +7,7 @@
 #   volume_n_D2.png       pair separation D²(a,t)/a² at L = 1.2, entropy and number
 # Run:  julia --project examples/volume_n_analysis.jl
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const S = joinpath(ENV["SCRATCH"], "sph")
 const VN = joinpath(S, "volume_n");  const E2 = joinpath(S, "energy2");  const FR = joinpath(S, "frozen")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")

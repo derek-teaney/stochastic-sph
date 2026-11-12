@@ -1,6 +1,5 @@
 using PyPlot
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── Reusable helpers ───────────────────────────────────────────────────────────
 

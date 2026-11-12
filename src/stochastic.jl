@@ -3,7 +3,7 @@ using LinearAlgebra
 using StaticArrays
 using Printf
 
-include("rng.jl")
+# rng.jl: loaded by load.jl
 
 # ── Steps 1+2: lab-frame Landau noise tensor ──────────────────────────────────
 #

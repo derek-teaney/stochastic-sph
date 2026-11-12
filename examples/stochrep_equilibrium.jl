@@ -13,14 +13,7 @@
 # Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX,
 #   SR_START (cold | eq | thermal; default eq; campaign `first` used thermal).
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
-include(joinpath(@__DIR__, "..", "src", "measure.jl"))
-include(joinpath(@__DIR__, "..", "src", "monitor.jl"))
-include(joinpath(@__DIR__, "..", "src", "runinfo.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])

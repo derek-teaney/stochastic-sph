@@ -1,9 +1,7 @@
 using PyPlot
 using Random
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── Shared resolution ─────────────────────────────────────────────────────────
 const h_test  = 0.05

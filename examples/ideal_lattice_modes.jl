@@ -9,9 +9,7 @@
 #
 # Run:  [SPH_KERNEL=wc2|wc4|wc6] julia --project examples/ideal_lattice_modes.jl [h/a ...]
 using StaticArrays, LinearAlgebra, Printf, Random
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const HAS = length(ARGS) > 0 ? parse.(Float64, ARGS) : [2.0]
 const LBOX = 1.2;  const S0 = 1e6;  const EPS = 0.01;  const QHMAX = parse(Float64, get(ENV, "QHMAX", "3.0"))
 # amplitude: ε = EPS·a, or, if STRAIN is set, ε = STRAIN/|q| (fixed strain amplitude q ε; needed at

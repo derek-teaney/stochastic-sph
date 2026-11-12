@@ -12,9 +12,7 @@
 #
 # Run (compute node):  julia -t 2 --project examples/volume_n_pressure.jl [tend=20] [nseed=2]
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 ENV["SPH_HAMILTONIAN"] = "energy"
 const TEND = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 20.0
 const NSEED = length(ARGS) > 1 ? parse(Int, ARGS[2]) : 2

@@ -19,9 +19,7 @@
 #       SW_HAMS (smoothed,energy,energy_n; energy_n = energy with SPH_VOLUME=number, volume_n.tex)
 include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs
 using StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 envf(k, d) = parse(Float64, get(ENV, k, string(d)))
 const H_   = envf("SW_H", 0.05)

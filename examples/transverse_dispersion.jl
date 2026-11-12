@@ -12,9 +12,7 @@
 #   default: first:eqL1.2 second:eqL1.2 first:eqL2.4 second:eqL2.4
 #   → docs/figs/transverse_dispersion.png, docs/figs/transverse_fits.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const ROOT  = get(ENV, "SR_DATADIR", joinpath(get(ENV, "SCRATCH", "."), "sph"))
 const SETS  = length(ARGS) > 0 ? ARGS : ["first:eqL1.2", "second:eqL1.2", "first:eqL2.4", "second:eqL2.4"]
 const TBURN = 2.0;  const MAXLAG = 60.0;  const NSHELL = 8

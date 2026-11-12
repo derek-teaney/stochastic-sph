@@ -9,9 +9,7 @@
 #
 # Run:  julia --project examples/energystep_compare.jl [smoothed_dir energy_dir out.png]
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 S = ENV["SCRATCH"]
 const SETS = [("smoothed", length(ARGS) > 0 ? ARGS[1] : joinpath(S, "sph", "rigidity", "ha2"), "C3"),
               ("energy",   length(ARGS) > 1 ? ARGS[2] : joinpath(S, "sph", "energystep", "ha2_energy"), "C0")]

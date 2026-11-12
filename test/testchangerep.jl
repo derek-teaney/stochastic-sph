@@ -15,9 +15,7 @@ using StaticArrays, LinearAlgebra, Printf, Random
 # The change of representation belongs to the smoothed Hamiltonian (with :energy, Σe = H and
 # there is no excess to account for), so this test runs it whatever the default scheme.
 ENV["SPH_HAMILTONIAN"] = "smoothed"
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 Hof(ps, params, cl, eos) = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos);
                             sum(p.s * p.H_over_S for p in ps))

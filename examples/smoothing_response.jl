@@ -20,9 +20,7 @@ using PyPlot
 using StaticArrays
 using LinearAlgebra
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 eos = ConformalEOS(0.5, T_scale_2d_lq1, 0.0, 0.0)
 params, particles, cl, eos = setup_ic(15.0, 2.55, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);

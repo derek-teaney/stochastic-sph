@@ -18,9 +18,7 @@
 #
 # Run:  julia --project test/testeos_consistency.jl
 using StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
 function solved(S, M::SVector{2,Float64}, e_guess)

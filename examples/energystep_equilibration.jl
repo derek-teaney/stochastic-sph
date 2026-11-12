@@ -4,7 +4,7 @@
 # Run:  julia --project examples/energystep_equilibration.jl $SCRATCH/sph/energystep_debug2 docs/figs/energystep_equilibration.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, HDF5, Serialization
 R = joinpath(@__DIR__, "..")
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure");  include(joinpath(R, "src", "$f.jl"));  end
+include(joinpath(R, "src", "load.jl"))
 D = ARGS[1];  out = ARGS[2]
 load(run) = (d = joinpath(D, run); isdir(d) ? [read_equilibrium(joinpath(d, f)) for f in readdir(d) if endswith(f, ".h5")] : [])
 avg(v) = (n = minimum(length.(v)); sum(x[1:n] for x in v) / length(v))

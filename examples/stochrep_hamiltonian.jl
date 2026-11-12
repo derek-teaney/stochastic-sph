@@ -17,12 +17,7 @@
 # Run:  julia -t auto --project examples/stochrep_hamiltonian.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
 #   → docs/figs/stochrep_hamiltonian.png
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
-include(joinpath(@__DIR__, "..", "src", "measure.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const HA    = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 2.0
 const TEND  = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 4.0

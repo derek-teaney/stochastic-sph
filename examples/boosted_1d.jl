@@ -7,9 +7,7 @@
 #       against the lattice symbol B_v(k) = Σψ(γr)2(1−cos kr) / (k² Σψ(γr) r²).
 # Run:  julia --project examples/boosted_1d.jl
 using StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 ηs, ζs, d, cs2v = 0.1, 0.05, 3, 1/3
 h, ha = 0.02, 4.0

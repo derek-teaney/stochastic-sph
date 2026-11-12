@@ -4,11 +4,7 @@
 #
 # Run:  julia --project examples/stochrep_resolved_fraction.jl  → docs/figs/stochrep_resolved_fraction.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
 
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)

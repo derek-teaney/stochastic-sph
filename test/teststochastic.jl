@@ -3,9 +3,7 @@ using Random
 using LinearAlgebra
 using Statistics
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
 
 # The stochastic sweep implements the noise of the two-level dissipative function

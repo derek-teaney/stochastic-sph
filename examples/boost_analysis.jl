@@ -12,9 +12,7 @@
 #   boost_fit.png      fitted advection speed Ω/k and damping Γ of the shear modes against v
 # Run (login node):  julia --project examples/boost_analysis.jl [dir]
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "boost")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
 # sets: (label, directories pooled, v, colour); BOOST_GROUP = L12 (default) or L24; figures get the suffix

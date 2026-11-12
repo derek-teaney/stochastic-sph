@@ -15,9 +15,7 @@ using PyPlot
 using StaticArrays
 using LinearAlgebra
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 ηs  = 10.0 / sqrt(2.0)
 eos = ConformalEOS(0.5, T_scale_2d_lq1, ηs, 0.0)

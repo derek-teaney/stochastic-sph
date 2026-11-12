@@ -10,11 +10,7 @@
 #
 # Run:  julia -t auto --project examples/stochrep_moving.jl  → docs/figs/stochrep_moving.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const VTARGET = (0.0, 0.5)
 const NENS    = 8

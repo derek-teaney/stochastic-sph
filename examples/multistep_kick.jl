@@ -3,7 +3,7 @@
 # numbers, with and without the kick (1.5× the thermal momentum along x), and the difference is
 # the response.  Prediction: P(t) = (1/N) Σ_k exp(−acc Γ_xx(k) t), Γ_xx from Kmode with ê = x̂.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure"); include(joinpath(@__DIR__, "..", "src", "$f.jl")); end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))          # Kmode
 const h = 0.05;  const S0 = 1e6;  const DT = 8.66e-3;  const NST = 16;  const NSEED = 24
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)

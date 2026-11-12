@@ -8,9 +8,7 @@
 #   reads $SR_DATADIR/<campaign>/<run>/equilibrium_*.h5 (SR_DATADIR default $SCRATCH/sph)
 #   → docs/figs/compare_<run>.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const ROOT  = get(ENV, "SR_DATADIR", joinpath(get(ENV, "SCRATCH", "."), "sph"))
 const RUN   = ARGS[1]
 const CAMPS = length(ARGS) > 1 ? ARGS[2:end] : ["first", "second"]

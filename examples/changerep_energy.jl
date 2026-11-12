@@ -9,9 +9,7 @@
 #
 # Run:  julia --project examples/changerep_energy.jl
 using StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const KER = WendlandC2_1D()
 W(r, h)  = wendland_c2(abs(r), h, KER)

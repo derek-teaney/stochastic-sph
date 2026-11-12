@@ -5,9 +5,7 @@
 #
 # Run:  julia --project examples/changerep_gaussian.jl
 using PyPlot, StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 # The "smoothed" runs use generic_step! with the bond form on the smoothed b; the
 # particle-representation runs call their steps directly.
 ENV["SPH_DISSIPATION"] = "bond"

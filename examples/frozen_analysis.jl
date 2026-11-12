@@ -13,9 +13,7 @@
 #
 # Run:  julia --project examples/frozen_analysis.jl [dir]   (default $SCRATCH/sph/frozen)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "frozen")
 const SETS = [("e_s1e6", "energy, S0 = 1e6", "C0"), ("e_s1e7", "energy, S0 = 1e7", "C2"),
               ("e_s1e8", "energy, S0 = 1e8", "C1"), ("s_s1e6", "smoothed, S0 = 1e6", "C3")]

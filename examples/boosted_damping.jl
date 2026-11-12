@@ -12,9 +12,7 @@ using PyPlot
 using StaticArrays
 using LinearAlgebra
 using Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 ηs  = 1.0
 # Only δm ⊥ v: for k ⊥ v a transverse wave has δm ∥ v, which changes the energy

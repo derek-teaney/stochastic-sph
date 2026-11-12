@@ -10,11 +10,7 @@
 #   reads <dir>/equilibrium_<tag>_r*.h5 (or old .jls) → docs/figs/correlators_<tag>.png,
 #   with <dir> = $SR_DATADIR, default data/ (e.g. SR_DATADIR=$SCRATCH/sph/<campaign>/<run>)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Serialization, Statistics, LsqFit
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
-include(joinpath(@__DIR__, "..", "src", "measure.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const TAG    = ARGS[1]
 const TBURN  = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 2.0

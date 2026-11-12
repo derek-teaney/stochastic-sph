@@ -10,11 +10,7 @@
 # Run:  julia -t auto --project examples/stochrep_stressonly.jl [1|2]
 #   → docs/figs/stochrep_stressonly_1d.png (or _2d.png)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
-include(joinpath(@__DIR__, "..", "src", "rng.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochrep.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochrep_thermalize_common.jl"))     # Kmode
 
 const DIM = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1

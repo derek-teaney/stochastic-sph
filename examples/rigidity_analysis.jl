@@ -12,9 +12,7 @@
 # Run:  julia --project examples/rigidity_analysis.jl [dir]   (default $SCRATCH/sph/rigidity)
 #   → docs/figs/rigidity_*.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Statistics
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "rigidity")
 const RUNS = ["ha2", "ha2.5", "ha3", "ha2_wc4", "ha2.5_wc4", "ha2_wc6", "ha2_det", "ha2_noham"]
 const NSH = 4;  const TBURN = 2.0

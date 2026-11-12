@@ -10,9 +10,7 @@
 #
 # Run:  julia --project examples/changerep_damping.jl  → docs/figs/changerep_damping.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── 1D lattice symbols (as in damping_1d.jl) ──────────────────────────────────
 const KER = WendlandC2_1D()

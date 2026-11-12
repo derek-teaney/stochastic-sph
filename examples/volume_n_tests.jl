@@ -12,9 +12,7 @@
 #
 # Run (on a compute node):  julia -t 4 --project examples/volume_n_tests.jl [nstep=400] [nseed=4]
 using StaticArrays, LinearAlgebra, Printf, Random
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 ENV["SPH_HAMILTONIAN"] = "energy"
 const NSTEP = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 400
 const NSEED = length(ARGS) > 1 ? parse(Int, ARGS[2]) : 4

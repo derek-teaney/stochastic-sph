@@ -14,9 +14,7 @@
 # Run:  julia --project test/testeqstart.jl
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 const ROOT = joinpath(@__DIR__, "..")
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(ROOT, "src", "$f.jl"))
-end
+include(joinpath(ROOT, "src", "load.jl"))
 check(ok, msg) = (println(ok ? "  ✓ " : "  ✗ FAIL: ", msg); ok || error(msg))
 const eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
 

@@ -1,7 +1,5 @@
 include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs, figpath
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── Analytic solution ─────────────────────────────────────────────────────────
 # Right-moving eigenmode: ω = ωR - i Γ_s k²/2, |ω/k| = cs (exact identity).

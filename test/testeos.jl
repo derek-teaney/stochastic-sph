@@ -1,4 +1,4 @@
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 

@@ -21,9 +21,7 @@
 #       SC_REPLOT=<file.jls>: no runs, only redo the plot from saved data
 include(joinpath(@__DIR__, "plotsetup.jl"))      # PyPlot, Agg in batch jobs
 using StaticArrays, LinearAlgebra, Printf, Serialization
-include(joinpath(@__DIR__, "..", "src", "sph.jl"))
-include(joinpath(@__DIR__, "..", "src", "celllist.jl"))
-include(joinpath(@__DIR__, "..", "src", "setup.jl"))
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 envf(k, d) = parse(Float64, get(ENV, k, string(d)))
 envl(k, d) = split(get(ENV, k, d), ",")

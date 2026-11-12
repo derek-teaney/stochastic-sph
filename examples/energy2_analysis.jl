@@ -9,9 +9,7 @@
 #   energy2_L24.png       C_T at L = 2.4 (h/a = 2) in the six smallest shells, with e^{−νk²τ}
 # Run:  julia --project examples/energy2_analysis.jl [dir]   (default $SCRATCH/sph/energy2)
 using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
-for f in ("sph", "celllist", "setup", "rng", "stochrep", "measure")
-    include(joinpath(@__DIR__, "..", "src", "$f.jl"))
-end
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const S = ENV["SCRATCH"]
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(S, "sph", "energy2")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
