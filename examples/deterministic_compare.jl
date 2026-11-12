@@ -17,6 +17,7 @@ using Random
 using Statistics
 using Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 # reuse the sound-wave initialization and time loop (everything above "# ── Main")
 let src = read(joinpath(@__DIR__, "testsound_viscous.jl"), String)

@@ -5,7 +5,7 @@ using LinearAlgebra
 using Statistics
 using Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-include(joinpath(@__DIR__, "..", "src", "stochastic.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 # The stochastic sweep implements the noise of the two-level dissipative function
 # only, so this script uses :two_level (the default is :bond).

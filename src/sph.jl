@@ -34,10 +34,10 @@ end
 # dissipation: the viscous step.  :particle (default; formerly :changerep, still accepted)
 #   is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
-#   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form.
-#   Default from the environment variable SPH_DISSIPATION (else :bond), so any
-#   script can be run with the two-level form:  SPH_DISSIPATION=two_level julia --project …
-#   The stochastic sweep (particle_sweep!) has noise only for :two_level.
+#   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
+#   (sph2.tex), superseded: it and its stochastic sweep (particle_sweep!, which never
+#   worked) are in src/legacy/, loaded by src/legacy/load.jl after src/load.jl.
+#   Default from the environment variable SPH_DISSIPATION (else :particle).
 # Default scheme (2026-11-10): hamiltonian = :energy with volume = :number, the n-scheme
 #   (volume_n.tex, number_tests.tex).  The old schemes are kept: SPH_HAMILTONIAN=smoothed,
 #   SPH_VOLUME=entropy.  With SPH_DISSIPATION=two_level the default Hamiltonian is :smoothed

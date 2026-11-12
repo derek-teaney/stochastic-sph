@@ -1,3 +1,6 @@
+# particle_sweep.jl — superseded (was src/stochastic.jl): the old stochastic step, a particle
+# sweep with the lab-frame noise tensor; needs SPH_DISSIPATION=two_level.  Loaded by
+# src/legacy/load.jl.
 using Random
 using LinearAlgebra
 using StaticArrays

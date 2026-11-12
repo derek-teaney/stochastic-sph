@@ -7,6 +7,7 @@
 # Run:  julia --project examples/changerep_convergence.jl  → docs/figs/changerep_convergence.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 let src = read(joinpath(@__DIR__, "testgaussian.jl"), String)
     body = split(src, "# ── Main")[1]
     body = replace(body, r"^using PyPlot\n"m => "", r"^include\(.*\)\n"m => "")

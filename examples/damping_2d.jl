@@ -9,6 +9,7 @@
 # Run:  julia --project examples/damping_2d.jl   → docs/figs/damping_2d.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 const ηs, ζs, d = 1.0, 0.0, 3
 eos = ConformalEOS(1/3, 1.0, ηs, ζs)

@@ -15,6 +15,7 @@
 # Run:  julia --project examples/damping_1d.jl   → docs/figs/damping_1d.png
 using PyPlot, StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 const KER = WendlandC2_1D()
 W(r, h)  = wendland_c2(abs(r), h, KER)

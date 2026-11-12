@@ -2,6 +2,7 @@ using PyPlot
 using Random
 using Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # two_level, particle_sweep (superseded)
 
 # ── Shared resolution ─────────────────────────────────────────────────────────
 const h_test  = 0.05

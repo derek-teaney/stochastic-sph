@@ -13,7 +13,8 @@ the `.tex`).  Owner: D. Teaney.
   — the deterministic step it builds on.
 - `src/` — library, loaded by `src/load.jl`: `sph.jl` (kernels, params, EOS), `celllist.jl`, `ideal.jl`
   (Hamiltonian step), `pointwise.jl` (particle representation), `viscous.jl` (deterministic
-  viscous step), `stochrep.jl`, `measure.jl`, …
+  viscous step), `stochrep.jl`, `measure.jl`, …  Superseded code (two-level strain form, the
+  old particle sweep) in `src/legacy/`.
 - `examples/stochrep_hamiltonian.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/stochrep_equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.
