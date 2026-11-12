@@ -1,0 +1,240 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Lattice modes, star and residual rates versus $h/a$}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+Companion to \texttt{multistep.tex}.  On a perfect hexagonal lattice the rates of
+the ideal step and of the two viscous moves (star and residual) are closed-form
+lattice sums.  We evaluate them for $h/a=2$--$16$ at fixed $h$, and restate the
+stability scan in terms of the entropy per particle and per kernel.  Script:
+\texttt{examples/multistep\_rates.jl} (\texttt{--check} compares every sum with the
+code).
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Entropy per particle and per kernel}
+
+Symbols: entropy density $S_0$, lattice spacing $a$, particle volume
+$V_a=\tfrac{\sqrt3}{2}a^2$, entropy per particle $s_a=S_0V_a$, enthalpy $w=TS_0$.
+For the conformal fluid at rest the thermal velocity of one particle is set by
+$s_a$ alone,
+\st
+\delta v^2=\frac{T}{V_aw}=\frac1{s_a} .
+\stp
+The smoothed velocity fluctuates with
+\st
+\delta v_h^2=\frac{1}{S_0}\int W^2\,d^2x=\frac{1}{S_0A_{\rm eff}},\qquad
+A_{\rm eff}=\Big(\int W^2\Big)^{-1}=3.63\,h^2=1.15\,\pi h^2
+\stp
+for the Wendland C2 kernel.  So the entropy per kernel is $S_0\pi h^2$, not
+$S_0\pi(2h)^2$ (the support area, four times larger).
+
+The stability scan of \texttt{nersc/LOG.md} ($\lambda=1$, box $0.6$, $h=0.05$, $t=200$) in
+these variables:
+\begin{center}
+\begin{tabular}{cccccl}
+$h/a$ & $S_0$ & $s_a$ & $S_0\pi h^2$ & $\delta v$ & outcome \\ \hline
+2 & $10^6$           & 541 & 7854 & 0.043 & stable, $\Delta H/H=+0.05$ \\
+2 & $3\times10^5$    & 162 & 2356 & 0.078 & heats, $\Delta H/H=+0.47$, 1/16 melt \\
+2 & $10^5$           & 54  & 785  & 0.136 & 16/16 blow up, $t\approx28$ \\
+3 & $10^5$           & 24  & 785  & 0.204 & 16/16 blow up, $t\approx11$
+\end{tabular}
+\end{center}
+At fixed entropy per kernel ($785$) the finer lattice blows up sooner, so the
+entropy per kernel alone does not decide.  The decisive run, $h/a=3$ at $s_a=54$
+($S_0=2.25\times10^5$, $S_0\pi h^2=1767$), has not been done.
+
+%=============================================================================
+\section{The ideal step on the lattice}
+
+At rest the Hamiltonian is $U=\sum_as\,\varepsilon(S_a)$, with $\varepsilon=e/S$ and
+$S_a=s\sum_bW(\bm x_a-\bm x_b)$.  For a displacement
+$\bm u_b=U\hat{\bm e}\cos(\bm k\cdot\bm x_b)$ and inertia $M=V_aw=sT$, the second
+variation gives
+\st
+\omega^2(\bm k,\hat{\bm e})=s^2\frac{\varepsilon''}{T}\,(\bm g\cdot\hat{\bm e})^2
++2s\,\frac{\varepsilon'}{T}\sum_b\big(1-\cos\bm k\cdot\bm r_b\big)\,
+\hat{\bm e}^T\nabla\nabla W(\bm r_b)\,\hat{\bm e},
+\qquad \bm g=\sum_b\sin(\bm k\cdot\bm r_b)\nabla W(\bm r_b).
+\stp
+For the conformal EOS $\varepsilon'/T=1/(4S)$ and $\varepsilon''/T=-1/(6S^2)$, so with
+$\Sigma_0=\sum_bW(\bm r_b)$ (self term included)
+\st
+\omega^2=-\frac{(\bm g\cdot\hat{\bm e})^2}{6\Sigma_0^2}
++\frac1{2\Sigma_0}\sum_b\big(1-\cos\bm k\cdot\bm r_b\big)\,\hat{\bm e}^T\nabla\nabla W\,\hat{\bm e},
+\label{w2}
+\stp
+which depends only on the geometry, not on $S_0$ or $T$.  The two terms are the
+compressibility and the pressure.  At small $k$ the integrals replace the sums
+and $\omega_L\to c_sk$.  For the transverse mode the continuum gives zero, and
+\st
+\omega_T^2\to c_t^2k^2,\qquad c_t^2=\frac1{4\Sigma_0}\sum_bx_b^2\,\partial_y^2W(\bm r_b),
+\stp
+is a pure lattice-sum error: the shear rigidity of the particle arrangement.
+\Eq{w2} agrees with \texttt{hamiltonian\_force!} to all printed digits.
+
+\begin{center}
+\begin{tabular}{rrcccc}
+$h/a$ & bonds & $c_t$ & $\min\omega^2h^2$ & $\max\omega_Th$ & $\max\omega_Lh$ \\ \hline
+2  &   58 & 0.035  & $>0$ & 0.264 & 1.06 \\
+3  &  124 & 0.022  & $>0$ & 0.149 & 1.06 \\
+4  &  238 & $0.012\,i$ & $-4.9\times10^{-4}$ ($kh=2.95$, T) & 0.103 & 1.06 \\
+6  &  514 & 0.0070 & $>0$ & 0.053 & 1.06 \\
+8  &  928 & $0.0027\,i$ & $-3.4\times10^{-5}$ ($kh=3.2$, T) & 0.034 & 1.06 \\
+12 & 2080 & 0.0015 & $>0$ & 0.019 & 1.06 \\
+16 & 3694 & 0.0012 & $>0$ & 0.013 & 1.06
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item At $h/a=2$ the lattice value $c_t=0.035$ is close to the $c_t\approx0.029$
+  measured from $C_T$ in the $L=1.2$ ensembles.  The transverse oscillation is the
+  rigidity of the perfect lattice, reduced somewhat by the thermal disorder.
+\item $c_t$ and the transverse lattice frequencies fall with $h/a$, but not
+  monotonically in sign: at $h/a=4$ and $8$ the perfect lattice is weakly
+  unstable to transverse modes (growth rate $0.44$ and $0.12$ at $h=0.05$).
+\item The sound branch is unchanged: $\max\omega_L=1.06/h$ for all $h/a$.
+\end{itemize}
+
+\paragraph{Equipartition.}  With $\lambda=1$ each lattice mode has
+$\avg{|u_{\bm k}|^2}=1/(s_a\omega^2)$.  On the $k$-grid of the run box at $h/a=2$
+this gives an rms displacement of $26.2\,a/\sqrt{s_a}$, i.e.\ $1.12\,a$ at
+$s_a=541$; measured $1.1$--$1.6\,a$.  The nearest-neighbour distance change is
+predicted $15.0\,a/\sqrt{s_a}=0.65\,a$ against $0.25$--$0.32\,a$ measured.  The
+harmonic estimate fails for the soft short-wavelength modes at that amplitude.
+
+%=============================================================================
+\section{Star and residual rates}
+
+For the bond form at bond range $h_\psi=h$, with $\Gamma(k)=2K(k)/(V_awT)$ and
+$\nu=\eta/w$,
+\st
+\Gamma(k)=\Gamma_{\rm res}(k)+\Gamma_{\rm resid}(k),\qquad
+\Gamma_{\rm res}=\frac{2K_{\rm res}}{V_awT}\ \text{(star move)},\quad
+\Gamma_{\rm resid}=\frac{2(K-K_{\rm res})}{V_awT}\ \text{(residual move)} .
+\stp
+These are again lattice sums, in units of $\nu/h^2$; they agree with
+\texttt{Kmode} on a code star.  Over the whole zone, for all $h/a=2$--$16$:
+\st
+\max\Gamma_{\rm res}=1.73\,\frac{\nu}{h^2},\qquad
+\max\Gamma_{\rm resid}=14.0\,\frac{\nu}{h^2},\qquad
+\Gamma_{\rm res}=\tfrac12\Gamma\ \text{at}\ kh\simeq1.4 .
+\stp
+None of them depends on $a$: with $h_\psi=h$ both moves live on the scale $h$.
+
+%=============================================================================
+\section{Acceptance at fixed $S_0$}
+
+\paragraph{The two votes.}  A move of particle $a$ kicks its $N_{\rm nb}$ neighbours by
+$\bm{\mathsf p}_{ab}$ and particle $a$ by $-\sum_b\bm{\mathsf p}_{ab}$, and is accepted or rejected as a
+whole.  To linear order the entropy changes are
+\st
+\Delta\mathbb S_b\simeq-\beta_b\cdot\bm{\mathsf p}_{ab},\qquad
+\Delta\mathbb S_a\simeq\beta_a\cdot\sum_b\bm{\mathsf p}_{ab},\qquad
+|\beta|\sim\frac{\delta v}{T}=\frac{1}{T\sqrt{s_a}} .
+\stp
+The \emph{single vote} accepts with $\min(1,e^{\Delta\mathbb S})$,
+$\Delta\mathbb S=\Delta\mathbb S_a+\sum_b\Delta\mathbb S_b$; its rejection is set by $|\Delta\mathbb S|$.  The
+\emph{bond vote} splits $\Delta\mathbb S$ into one share per bond, $\Delta\mathbb S_{ab}$ ($\Delta\mathbb S_b$
+plus a share of $\Delta\mathbb S_a$), and accepts with $\prod_b\min(1,e^{\Delta\mathbb S_{ab}})$; if
+one bond fails the whole move fails, and the rejection is set by $\sum_b|\Delta\mathbb S_{ab}|$.
+
+The bond weights are
+\st
+w_{ab}=\frac{V_b\,\psi_{ab}}{n_a}\sim\frac{a^2}{h^4}\sim\frac{1}{N_{\rm nb}h^2},\qquad
+\sum_bw_{ab}\to\frac{7}{2h_\psi^2},
+\stp
+since the normalization $n_a=\frac12\sum_bV_b\psi_{ab}r_{ab}^2$ tends to an integral.
+Below, $\epsilon\equiv\sqrt{\nu\Delta t/h^2}$, and all measurements are on a frozen lattice
+(box $6h$, $S_0=10^6$, $S_0\pi h^2=7854$, $\Delta t=8.66\times10^{-3}$, $\lambda=1$,
+equilibrium start; \texttt{examples/multistep\_acceptance.jl},
+\texttt{examples/multistep\_dS.jl}).
+
+\subsection{The star move}
+
+One stress $\xi_a$, with $\avg{\xi\xi}=2\Delta t\,T\kappa/V_a$, is spread over the bonds
+through the faces,
+\st
+\bm{\mathsf p}_{ab}=\xi_a\bm A_{ab},\qquad \bm A_{ab}=V_aw_{ab}\,\ell_a^{-1}\bm r_{ab}\propto\frac{1}{N_{\rm nb}} .
+\stp
+\begin{itemize}
+\item The faces close, $\sum_b\bm A_{ab}=0$: particle $a$ receives no kick and
+  $\Delta\mathbb S_a\simeq0$.
+\item Each neighbour's change is $\Delta\mathbb S_b\sim\epsilon/N_{\rm nb}$.
+\item Their sum is coherent, $\Delta\mathbb S=\sum_b\Delta\mathbb S_b=\xi_a{:}G_a$, and the fitted
+  gradient $G_a$ averages the thermal $\beta$ of $N_{\rm nb}$ particles, so
+  $\Delta\mathbb S\sim\epsilon/\sqrt{N_{\rm nb}}$.
+\end{itemize}
+Hence
+\st
+\text{single vote: }1-\text{acc}\sim\frac{\epsilon}{\sqrt{N_{\rm nb}}}\propto\frac ah,\qquad
+\text{bond vote: }1-\text{acc}\sim\sum_b|\Delta\mathbb S_b|\sim\epsilon\quad(\text{constant}).
+\stp
+\begin{center}
+\begin{tabular}{rr|ccc|cc}
+$h/a$ & bonds & rms $\Delta\mathbb S_a$ & rms $\Delta\mathbb S_b$ & rms $\Delta\mathbb S$ & acc, single & acc, bonds \\ \hline
+2 &  54 & 0.004 & 0.0119 & 0.094 & 0.967 & 0.821 \\
+3 & 120 & 0.004 & 0.0053 & 0.043 & 0.981 & 0.803 \\
+4 & 234 & 0.003 & 0.0028 & 0.045 & 0.986 & 0.806 \\
+6 & 510 & 0.004 & 0.0013 & 0.027 & 0.988 & 0.809
+\end{tabular}
+\end{center}
+$\Delta\mathbb S_b$ falls as $1/N_{\rm nb}$ and $\Delta\mathbb S$ as $N_{\rm nb}^{-1/2}$; for a Gaussian $\Delta\mathbb S$ of
+rms $\sigma$ the single-vote acceptance is $2\Phi(-\sigma/2)=0.96$ at $h/a=2$.
+\emph{Conclusion: for the star move neither vote degrades as $h/a$ grows at fixed
+$S_0$, $h$ and $\Delta t$; which vote is used does not matter.}
+
+\subsection{The residual move (to be discussed)}
+
+Measured, same conditions:
+\begin{center}
+\begin{tabular}{rr|ccc|cc}
+$h/a$ & bonds & rms $\Delta\mathbb S_a$ & rms $\Delta\mathbb S_b$ & rms $\Delta\mathbb S$ & acc, single & acc, bonds \\ \hline
+2 &  54 & 0.46 & 0.059 & 0.64 & 0.762 & 0.289 \\
+3 & 120 & 0.48 & 0.041 & 0.69 & 0.774 & 0.168 \\
+4 & 234 & 0.49 & 0.030 & 0.69 & 0.753 & 0.095 \\
+6 & 510 & 0.50 & 0.021 & 0.71 & 0.748 & 0.032
+\end{tabular}
+\end{center}
+($s_a=526$, $229$, $122$, $78$; it differs slightly from $S_0\frac{\sqrt3}{2}a^2$ because the
+box adjusts $a$ to fit.)
+
+%=============================================================================
+\section{Consequences for the multistep question}
+
+\begin{itemize}
+\item The star move needs no sub-steps: its rates stay below $1.73\,\nu/h^2=1.5$
+  at the present numbers ($\nu/h^2=0.88$), and its acceptance is $0.97$.
+\item The residual rate saturates at $14\,\nu/h^2=12$, comparable to
+  $\Omega_H=c_s/h=11.5$ for every $h/a$.  With $h_\psi=h$ the number of residual
+  sub-steps does not grow with $h/a$.
+\item The lattice modes the residual acts on are overdamped, increasingly so:
+  \st
+  \frac{\max\Gamma_{\rm resid}}{\max\omega_T}=\frac{14}{\max\omega_Th}\,\frac{\nu}{h}
+  =2.3\ (h/a=2),\quad 12\ (h/a=6),\quad 47\ (h/a=16),
+  \stp
+  with $\nu/h=c_s/{\rm Re}_h=0.044$.  For $h/a\gg1$ the transverse lattice modes
+  have almost no restoring force, and only the residual damping and noise
+  control them.  Their equilibrium amplitude, $1/(s_a\omega^2)$, grows as
+  $\omega_T$ falls, so at fixed $s_a$ the lattice is softer at larger $h/a$.
+\end{itemize}
+
+\end{document}
