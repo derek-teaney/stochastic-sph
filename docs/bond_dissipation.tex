@@ -10,7 +10,6 @@
 
 \def\st{\begin{equation}}
 \def\stp{\end{equation}}
-\def\bbeta{{\sf b}}
 \def\Teff{{\sf T}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
@@ -19,7 +18,7 @@
 \newcommand{\avg}[1]{\langle #1\rangle}
 \usepackage{dsfont}
 \newcommand{\one}{\mathds{1}}
-\newcommand{\tf}{\bm{\mathsf t}}
+\newcommand{\pf}{\bm{\mathsf p}}
 
 \externaldocument[PM-]{particle_metrics}
 \newcommand{\EqPM}[1]{eq.~(\ref{PM-#1}) of Ref.~\cite{ParticleMetrics}}
@@ -35,7 +34,7 @@ Stony Brook, New York 11794, USA}
 
 \begin{abstract}
 We construct a particle discretization of the viscous dissipative function of
-relativistic hydrodynamics that squares differences of $\bbeta=u/T_{\rm rel}$ across
+relativistic hydrodynamics that squares differences of $\beta=u/T_{\rm rel}$ across
 neighbouring pairs (bonds), rather than squaring a smoothed gradient.  In one
 dimension at rest the bond form is the quadratic form of a graph Laplacian.  It
 is exact for linear profiles on any arrangement, conserves momentum bond by
@@ -96,50 +95,50 @@ and the (effective) temperature,
 \st
 \dot x_a=\frac{\partial H}{\partial m_a},\qquad
 T_a=\frac{\partial H}{\partial s_a},\qquad
-\bbeta_a\equiv\frac{\dot x_a}{T_a}.
+\beta_a\equiv\frac{\dot x_a}{T_a}.
 \label{Ta}
 \stp
 In the code, to linear order at rest,
 \st
 \dot x_a=\sum_b V_b\,v_b\,W(x_a-x_b),\qquad v_b=\frac{M_b}{w_b},
 \stp
-so $\bbeta_a$ is the fluid velocity smoothed \emph{twice}.
+so $\beta_a$ is the fluid velocity smoothed \emph{twice}.
 
 \paragraph{The dissipative step.}
-Dissipation is described by a dissipative function $K[\bbeta]\ge0$, quadratic
-in $\bbeta$.  The viscous update at fixed positions is
+Dissipation is described by a dissipative function $K[\beta]\ge0$, quadratic
+in $\beta$.  The viscous update at fixed positions is
 \st
-\dot m_a=-\frac{\partial K}{\partial \bbeta_a},\qquad
-\dot s_a=-\bbeta_a\,\dot m_a .
+\dot m_a=-\frac{\partial K}{\partial \beta_a},\qquad
+\dot s_a=-\beta_a\,\dot m_a .
 \label{generic}
 \stp
 The second equation keeps the energy fixed:
 \st
 \dot H=\sum_a\big(\dot x_a\,\dot m_a+T_a\,\dot s_a\big)
-=\sum_a\big(\dot x_a-T_a\bbeta_a\big)\,\dot m_a=0 ,
+=\sum_a\big(\dot x_a-T_a\beta_a\big)\,\dot m_a=0 ,
 \stp
-since $T_a\bbeta_a=\dot x_a$.  The total entropy grows,
+since $T_a\beta_a=\dot x_a$.  The total entropy grows,
 \st
-\dot S_{\rm tot}=\sum_a\bbeta_a\frac{\partial K}{\partial\bbeta_a}=2K\ge0,
+\dot S_{\rm tot}=\sum_a\beta_a\frac{\partial K}{\partial\beta_a}=2K\ge0,
 \stp
-using that $K$ is quadratic.  Any $K$ built from differences of $\bbeta$
-conserves total momentum.  Such a $K$ is unchanged by $\bbeta_a\to\bbeta_a+c$,
+using that $K$ is quadratic.  Any $K$ built from differences of $\beta$
+conserves total momentum.  Such a $K$ is unchanged by $\beta_a\to\beta_a+c$,
 so
 \st
-\sum_a\dot m_a=-\sum_a\frac{\partial K}{\partial\bbeta_a}=0 .
+\sum_a\dot m_a=-\sum_a\frac{\partial K}{\partial\beta_a}=0 .
 \stp
 
 \paragraph{The continuum target.}
-In one dimension the strain has a single component $\partial_x\bbeta$, and
+In one dimension the strain has a single component $\partial_x\beta$, and
 \st
-K=\frac12\int dx\;T_{\rm rel}\kappa\,(\partial_x\bbeta)^2,\qquad
+K=\frac12\int dx\;T_{\rm rel}\kappa\,(\partial_x\beta)^2,\qquad
 \kappa\equiv\kappa^{xxxx}=2\eta\,\frac{d-1}{d}+\zeta
 \;\Big(=\tfrac43\eta+\zeta\text{ for } d=3\Big),
 \label{Kcont}
 \stp
 where $d$ is the physical dimension (the simulation is one-dimensional, but
 $\eta$ and $\zeta$ are those of a $d$-dimensional fluid).  At rest $T$ is
-uniform and $T\bbeta=v$, so
+uniform and $T\beta=v$, so
 \st
 \dot M=\partial_x(\kappa\,\partial_xv) .
 \stp
@@ -157,15 +156,15 @@ study only the dissipative step, so there is no oscillation.)
 \label{sec:twolevel}
 
 The two-level form discretizes \Eq{Kcont} literally.  The first level is
-the standard SPH gradient of $\bbeta$ at each particle:
+the standard SPH gradient of $\beta$ at each particle:
 \st
-\varepsilon_a=\frac{1}{S_a}\sum_b s_b\,(\bbeta_b-\bbeta_a)\,
+\varepsilon_a=\frac{1}{S_a}\sum_b s_b\,(\beta_b-\beta_a)\,
 \partial_{x_a}W(x_a-x_b) .
 \label{eps}
 \stp
 The second level squares it with the particle volume as the quadrature weight:
 \st
-K_{2L}=\frac12\sum_aV_a\,(T_{\rm rel})_a\kappa_a\,\varepsilon_a^2 .
+K_{2L}=\frac12\sum_a(T_{\rm rel}\kappa)_a\,V_a\,\varepsilon_a^2 .
 \label{K2L}
 \stp
 Differentiating gives the force
@@ -177,10 +176,10 @@ A_a=\frac{(T_{\rm rel})_a\kappa_a\,\varepsilon_a}{S_a^2},
 which is antisymmetric in each pair, so momentum is conserved.
 
 The force on particle $a$ depends on $\varepsilon_b$ at every neighbour $b$
-within $2h$.  Each $\varepsilon_b$ in turn depends on $\bbeta_c$ within $2h$ of
+within $2h$.  Each $\varepsilon_b$ in turn depends on $\beta_c$ within $2h$ of
 $b$.  The stencil is therefore $4h$ wide (\Fig{fig:stencil}).  More
-importantly, $\bbeta$ enters only through a smoothed gradient.  Any pattern of
-$\bbeta$ that this gradient does not see costs nothing in $K_{2L}$ and is not
+importantly, $\beta$ enters only through a smoothed gradient.  Any pattern of
+$\beta$ that this gradient does not see costs nothing in $K_{2L}$ and is not
 damped.
 
 %=============================================================================
@@ -199,7 +198,7 @@ $W$.  It is an independent function, subject to:
 \item[(P1)] \emph{Symmetric and non-negative}, $\psi_{ab}=\psi_{ba}\ge0$.  This
   gives momentum conservation and entropy production bond by bond (below).
 \item[(P2)] \emph{Connected}: $\psi>0$ at least for nearest neighbours.  Then the
-  only zero mode of $K$ is $\bbeta=$ const, which is the one momentum
+  only zero mode of $K$ is $\beta=$ const, which is the one momentum
   conservation requires.
 \item[(P3)] \emph{Short range}, with range $\ell_\psi$.  The range sets both the
   long-wavelength error, $O(k^2\ell_\psi^2)$, and the damping of unresolved
@@ -229,8 +228,8 @@ is $h_\psi=h$.
 \paragraph{The dissipative function.}
 Instead of squaring a gradient, square the bond differences:
 \st
-\boxed{\;K_{1L}=\frac12\sum_aV_a\,(T_{\rm rel})_a\kappa_a\sum_{b\neq a}w_{ab}\,
-(\bbeta_b-\bbeta_a)^2,\qquad
+\boxed{\;K_{1L}=\frac12\sum_a(T_{\rm rel}\kappa)_a\sum_{b\neq a}V_aw_{ab}\,
+(\beta_b-\beta_a)^2,\qquad
 w_{ab}=\frac{V_b\,\psi_{ab}}{n_a},\qquad
 n_a=\sum_{b\neq a}V_b\,\psi_{ab}\,r_{ab}^2 .\;}
 \label{K1L}
@@ -243,12 +242,12 @@ weights satisfy
 For a linear
 profile the bond differences are exact,
 \st
-\bbeta_b-\bbeta_a=\partial_x\bbeta\;r_{ab},
+\beta_b-\beta_a=\partial_x\beta\;r_{ab},
 \stp
-and the inner sum is $(\partial_x\bbeta)^2$.  Hence
+and the inner sum is $(\partial_x\beta)^2$.  Hence
 \st
-K_{1L}=\frac12\sum_aV_a\,(T_{\rm rel})_a\kappa_a\,(\partial_x\bbeta)^2
-\;\longrightarrow\;\frac12\int dx\,T_{\rm rel}\kappa\,(\partial_x\bbeta)^2 .
+K_{1L}=\frac12\sum_a(T_{\rm rel}\kappa)_a\,V_a\,(\partial_x\beta)^2
+\;\longrightarrow\;\frac12\int dx\,T_{\rm rel}\kappa\,(\partial_x\beta)^2 .
 \stp
 This holds on \emph{any} particle arrangement, not just a lattice, because
 $n_a$ is defined by the same sum.  For smooth non-linear profiles the next
@@ -266,42 +265,42 @@ properties of $w_{ab}$.
 Write $K_{1L}=\sum_aK_a$, with $K_a$ the bond sum of particle $a$ in \Eq{K1L}.
 For each bond $ab$ define
 \st
-\mathsf t_{ab}=-\frac{\partial K_a}{\partial\Delta\bbeta_{ab}}
-=-V_a(T_{\rm rel})_a\kappa_a\,w_{ab}\,\Delta\bbeta_{ab},\qquad
-\Delta\bbeta_{ab}=\bbeta_b-\bbeta_a ,
+\mathsf p_{ab}=-\frac{\partial K_a}{\partial\Delta\beta_{ab}}
+=-(T_{\rm rel}\kappa)_a\,V_aw_{ab}\,\Delta\beta_{ab},\qquad
+\Delta\beta_{ab}=\beta_b-\beta_a ,
 \label{tab}
 \stp
-The quantity $\mathsf t_{ab}$ (known as the traction) is the momentum given by
+The quantity $\mathsf p_{ab}$ (known as the traction) is the momentum given by
 $a$ to $b$ along the bond $ab$.\footnote{In much of the literature on
-elasticity the traction is minus our $\mathsf t_{ab}$.}  It is the bond analogue of
+elasticity the traction is minus our $\mathsf p_{ab}$.}  It is the bond analogue of
 the viscous stress, which is minus the derivative of $K$ with respect to the
-gradient in the continuum.  Along the same bond, $b$ gives $\mathsf t_{ba}$ to $a$.
+gradient in the continuum.  Along the same bond, $b$ gives $\mathsf p_{ba}$ to $a$.
 The force on $a$ is the net momentum it receives:
 \st
-F_a=-\frac{\partial K_{1L}}{\partial\bbeta_a}=\sum_{b\neq a}f_{ab},\qquad f_{ab}=-(\mathsf t_{ab}-\mathsf t_{ba})=-f_{ba}.
+F_a=-\frac{\partial K_{1L}}{\partial\beta_a}=\sum_{b\neq a}f_{ab},\qquad f_{ab}=-(\mathsf p_{ab}-\mathsf p_{ba})=-f_{ba}.
 \label{Fa}
 \stp
 Equivalently, each unordered pair appears twice in \Eq{K1L}, once from each end, so
 \st
-K_{1L}=\frac12\sum_{\rm pairs}c_{ab}\,(\bbeta_b-\bbeta_a)^2,\qquad
-c_{ab}=V_a(T_{\rm rel})_a\kappa_a\,w_{ab}+V_b(T_{\rm rel})_b\kappa_b\,w_{ba} ,
+K_{1L}=\frac12\sum_{\rm pairs}c_{ab}\,(\beta_b-\beta_a)^2,\qquad
+c_{ab}=(T_{\rm rel}\kappa)_a\,V_aw_{ab}+(T_{\rm rel}\kappa)_b\,V_bw_{ba} ,
 \label{Kpairs}
 \stp
 and
 \st
-F_a=\sum_{b\neq a}c_{ab}\,(\bbeta_b-\bbeta_a).
+F_a=\sum_{b\neq a}c_{ab}\,(\beta_b-\beta_a).
 \label{f1L}
 \stp
 This is a sum of pair forces, antisymmetric under $a\leftrightarrow b$.  Each
-pair force pulls $\bbeta_a$ and $\bbeta_b$ toward each other, i.e.\ it is
+pair force pulls $\beta_a$ and $\beta_b$ toward each other, i.e.\ it is
 diffusion (or ``consensus'') on the graph of bonds.  Each bond separately
 produces a non-negative entropy, so the second law holds bond by bond.  The two-level form has no such local statement.
 
-\paragraph{Faces and tractions.}  For a linear profile, $\mathsf t_{ab}$ is a
+\paragraph{Faces and tractions.}  For a linear profile, $\mathsf p_{ab}$ is a
 momentum flux times an area,
 \st
-\mathsf t_{ab}=\Pi_a\,A_{ab},\qquad
-\Pi_a=-(T_{\rm rel})_a\kappa_a\,\partial_x\bbeta,\qquad
+\mathsf p_{ab}=\Pi_a\,A_{ab},\qquad
+\Pi_a=-(T_{\rm rel})_a\kappa_a\,\partial_x\beta,\qquad
 A_{ab}=V_a\,w_{ab}\,r_{ab} .
 \label{tface}
 \stp
@@ -315,7 +314,7 @@ relation for the faces,
 \stp
 the discrete form of $\oint x\,d\Sigma=V$.  It gives the virial
 \st
-\sum_{b\neq a}\mathsf t_{ab}\,r_{ab}=V_a\,\Pi_a ,
+\sum_{b\neq a}\mathsf p_{ab}\,r_{ab}=V_a\,\Pi_a ,
 \label{virial}
 \stp
 so the stress of a particle is recovered from its faces.  For a general profile
@@ -333,7 +332,7 @@ cell volume is a wall area times a normal length.
   \foreach \i in {-12,...,12} \fill[gray!60] (\i,2) circle (2.5pt);
   \fill[red] (0,2) circle (4pt);
   \draw[blue,thick,<->] (-4,1.2) -- (4,1.2) node[midway,below] {$F_a$ uses $\varepsilon_b$, $|x_b-x_a|<2h$};
-  \draw[blue!50,thick,<->] (-8,0.0) -- (8,0.0) node[midway,below] {each $\varepsilon_b$ uses $\bbeta_c$, total width $4h$ each side};
+  \draw[blue!50,thick,<->] (-8,0.0) -- (8,0.0) node[midway,below] {each $\varepsilon_b$ uses $\beta_c$, total width $4h$ each side};
   % one-level
   \node[anchor=west] at (-12.5,-2.8) {\textbf{one-level}};
   \foreach \i in {-12,...,12} \fill[gray!60] (\i,-4) circle (2.5pt);
@@ -344,7 +343,7 @@ cell volume is a wall area times a normal length.
   \draw[red,thick,<->] (-8,-5.0) -- (8,-5.0) node[midway,below] {bonds $\psi_{ab}$, $|r_{ab}|<2h$ (shading $\propto\psi$)};
 \end{tikzpicture}
 \caption{Stencils for $h/a=4$.  The two-level force on particle $a$ (red)
-depends on $\bbeta$ out to $4h$ through two nested SPH sums.  The one-level
+depends on $\beta$ out to $4h$ through two nested SPH sums.  The one-level
 force is a sum of direct pair forces out to $2h$, weighted by $\psi$.}
 \label{fig:stencil}
 \end{figure}
@@ -354,7 +353,7 @@ force is a sum of direct pair forces out to $2h$, weighted by $\psi$.}
 \label{sec:twod}
 
 We now repeat the construction in two dimensions, again for a fluid at rest.
-The new feature is that $\bbeta$ is a vector and its gradient is a tensor.  We
+The new feature is that $\beta$ is a vector and its gradient is a tensor.  We
 first try the direct generalization of the 1D bond form and identify what goes
 wrong (\Sect{sec:plain2d}).  We then fix it by subtracting a mean-field rotation
 and dilation from each bond (\Sect{sec:mf2d}).  To keep the argument simple we
@@ -364,19 +363,19 @@ Ref.~\cite{ParticleMetrics}.
 
 \subsection{The continuum target}
 
-Write the velocity gradient as the matrix $\nabla\bbeta$ with components
+Write the velocity gradient as the matrix $\nabla\beta$ with components
 \st
 \nabla_j\beta_i=\partial_j\beta_i\qquad(\text{row }i,\ \text{column }j),
 \stp
 so that along a bond
 \st
-\bbeta(\bm x+\bm r)-\bbeta(\bm x)\simeq(\nabla\bbeta)\,\bm r .
+\beta(\bm x+\bm r)-\beta(\bm x)\simeq(\nabla\beta)\,\bm r .
 \stp
 Split it into its symmetric part $S$,
 its antisymmetric part $\Omega$ (the local rotation, i.e.\ the vorticity), and
 its trace $\theta$ (the dilation):
 \st
-S=\tfrac12\big(\nabla\bbeta+(\nabla\bbeta)^T\big),\qquad \Omega=\tfrac12\big(\nabla\bbeta-(\nabla\bbeta)^T\big),\qquad \theta=\nabla\!\cdot\!\bbeta .
+S=\tfrac12\big(\nabla\beta+(\nabla\beta)^T\big),\qquad \Omega=\tfrac12\big(\nabla\beta-(\nabla\beta)^T\big),\qquad \theta=\nabla\!\cdot\!\beta .
 \label{split}
 \stp
 We work in $d$ dimensions, the dimension of both the fluid and the
@@ -407,10 +406,10 @@ A transverse (shear) wave and a longitudinal wave decay at
 \label{sec:plain2d}
 
 The direct generalization of \Eq{K1L} squares the vector bond differences
-$\Delta\bbeta_{ab}$:
+$\Delta\beta_{ab}$:
 \st
-K_{\rm plain}=\frac12\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,
-|\Delta\bbeta_{ab}|^2,\qquad
+K_{\rm plain}=\frac12\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,
+|\Delta\beta_{ab}|^2,\qquad
 \sum_{b\neq a}w_{ab}\,\bm r_{ab}\bm r_{ab}^T=\one .
 \label{Kplain}
 \stp
@@ -418,8 +417,8 @@ with $w_{ab}$ defined as in 1D.  The second equation is the isotropy
 assumption; it fixes $n_a$, the 2D analogue of the 1D bond moment.  For a linear
 field the bond differences are exact, so
 \st
-\sum_bw_{ab}|(\nabla\bbeta)\bm r_{ab}|^2=\nabla_j\beta_i\,\nabla_k\beta_i\sum_bw_{ab}r^j_{ab}r^k_{ab}
-=\nabla\bbeta{:}\nabla\bbeta=S{:}S+\Omega{:}\Omega ,
+\sum_bw_{ab}|(\nabla\beta)\bm r_{ab}|^2=\nabla_j\beta_i\,\nabla_k\beta_i\sum_bw_{ab}r^j_{ab}r^k_{ab}
+=\nabla\beta{:}\nabla\beta=S{:}S+\Omega{:}\Omega ,
 \stp
 and
 \st
@@ -430,7 +429,7 @@ Compare with \Eq{K2dcont}.  There are two problems.
 \begin{enumerate}
 \item \emph{Rotation is dissipated.}  $\Omega$ appears.  A rigid rotation has
   $S=0$ but $K_{\rm plain}\neq0$.  Microscopically, the pair force is along
-  $\Delta\bbeta_{ab}$, not along $\bm r_{ab}$.  It exerts a
+  $\Delta\beta_{ab}$, not along $\bm r_{ab}$.  It exerts a
   torque, and angular momentum is not conserved.
 \item \emph{Only one viscosity.}  There is a single coefficient, so the
   bulk viscosity cannot be set independently of the shear viscosity.  A
@@ -458,22 +457,22 @@ due to the local rotation and dilation at particle $a$.
 field that best fits its own bond differences, with the same weights as the
 bonds:
 \st
-(\nabla\bbeta)_a\equiv\arg\min_{G}\;\sum_{b\neq a}V_b\,\psi_{ab}\,\big|\Delta\bbeta_{ab}-G\,\bm r_{ab}\big|^2 .
+(\nabla\beta)_a\equiv\arg\min_{G}\;\sum_{b\neq a}V_b\,\psi_{ab}\,\big|\Delta\beta_{ab}-G\,\bm r_{ab}\big|^2 .
 \label{Gmin}
 \stp
 Setting the derivative with respect to $G$ to zero gives
 \st
-(\nabla\bbeta)_a\sum_{b\neq a}V_b\,\psi_{ab}\,\bm r_{ab}\bm r_{ab}^T
-=\sum_{b\neq a}V_b\,\psi_{ab}\,\Delta\bbeta_{ab}\,\bm r_{ab}^T .
+(\nabla\beta)_a\sum_{b\neq a}V_b\,\psi_{ab}\,\bm r_{ab}\bm r_{ab}^T
+=\sum_{b\neq a}V_b\,\psi_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T .
 \stp
 With the isotropy assumption the bond moment on the left is $n_a\one$, so
 \st
-(\nabla\bbeta)_a=\sum_{b\neq a}w_{ab}\,\Delta\bbeta_{ab}\,\bm r_{ab}^T .
+(\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T .
 \label{Ga}
 \stp
 Split it as in \Eq{split}:
 \st
-\Omega_a=\tfrac12\big((\nabla\bbeta)_a-(\nabla\bbeta)_a^T\big),\qquad \theta_a=(\nabla\!\cdot\!\bbeta)_a .
+\Omega_a=\tfrac12\big((\nabla\beta)_a-(\nabla\beta)_a^T\big),\qquad \theta_a=(\nabla\!\cdot\!\beta)_a .
 \label{Omegaa}
 \stp
 For a linear field every bond is fitted exactly, and the fit is the true
@@ -482,18 +481,18 @@ sense for any $\psi$.
 We call $\Omega_a$ and $\theta_a$ mean-field quantities: each is an average over
 the neighbourhood of $a$.
 
-\paragraph{Subtract.}  Replace $\Delta\bbeta_{ab}$ by
+\paragraph{Subtract.}  Replace $\Delta\beta_{ab}$ by
 \st
-\mathcal D_{ab}\bbeta=\Delta\bbeta_{ab}-\Big(\Omega_a+\frac{\theta_a}{d}\one\Big)\bm r_{ab},
+\mathcal D_{ab}\beta=\Delta\beta_{ab}-\Big(\Omega_a+\frac{\theta_a}{d}\one\Big)\bm r_{ab},
 \label{Dab}
 \stp
-the \emph{covariant bond difference}.  It vanishes when $\bbeta$ is, around $a$,
+the \emph{covariant bond difference}.  It vanishes when $\beta$ is, around $a$,
 a rigid rotation plus a dilation, i.e.\ a conformal Killing field: $\Omega_a$
 and $\theta_a$ act as local rotation and Weyl connections
 (Appendix~\ref{app:variational}).  Put the bulk viscosity back in an explicit term:
 \st
-\boxed{\;K=\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,
-|\mathcal D_{ab}\bbeta|^2+\frac12\sum_aV_a(T_{\rm rel})_a\zeta_a\,\theta_a^2 .\;}
+\boxed{\;K=\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,
+|\mathcal D_{ab}\beta|^2+\frac12\sum_a(T_{\rm rel}\zeta)_a\,V_a\theta_a^2 .\;}
 \label{KMF}
 \stp
 
@@ -501,11 +500,11 @@ and $\theta_a$ act as local rotation and Weyl connections
 \begin{itemize}
 \item \emph{Continuum limit.}  For a linear field,
   \st
-  \mathcal D_{ab}\bbeta=\Big(\nabla\bbeta-\Omega-\frac{\theta}{d}\one\Big)\bm r_{ab}=\Big(S-\frac{\theta}{d}\one\Big)\bm r_{ab},
+  \mathcal D_{ab}\beta=\Big(\nabla\beta-\Omega-\frac{\theta}{d}\one\Big)\bm r_{ab}=\Big(S-\frac{\theta}{d}\one\Big)\bm r_{ab},
   \stp
   and the bond sum gives
   \st
-  \sum_{b\neq a}w_{ab}\,|\mathcal D_{ab}\bbeta|^2=\tr\Big[\Big(S-\frac{\theta}{d}\one\Big)^2\Big].
+  \sum_{b\neq a}w_{ab}\,|\mathcal D_{ab}\beta|^2=\tr\Big[\Big(S-\frac{\theta}{d}\one\Big)^2\Big].
   \stp
   This is $\mathring S{:}\mathring S$, and with the $\zeta$ term \Eq{KMF} reduces
   exactly to \Eq{K2dcont}.  Both viscosities are now correct and
@@ -516,36 +515,36 @@ and $\theta_a$ act as local rotation and Weyl connections
 \item \emph{Unresolved modes.}  For a mode on the scale of the lattice, the fit
   \Eq{Ga} sees almost nothing.  The subtraction switches off, and
   $K$ reduces to the plain bond form.  That form has no null modes
-  (it is positive for every non-constant $\bbeta$), so short wavelengths are still damped.
+  (it is positive for every non-constant $\beta$), so short wavelengths are still damped.
 \end{itemize}
 
 \paragraph{Resolved plus residual.}  The argument above used linear fields.
 For a general field, split each bond difference into the part that the fit
 explains and the rest,
 \st
-\Delta\bbeta_{ab}=(\nabla\bbeta)_a\,\bm r_{ab}+\bm\delta_{ab} .
+\Delta\beta_{ab}=(\nabla\beta)_a\,\bm r_{ab}+\delta_{ab}\beta .
 \label{resid}
 \stp
-The residual $\bm\delta_{ab}$ is what the fit misses.  It vanishes for a linear
-field, is of order the curvature of $\bbeta$ across the star for a smooth field,
-and is nearly all of $\Delta\bbeta_{ab}$ for an unresolved mode.  Because
-$(\nabla\bbeta)_a$ is a least-squares fit, the residuals are orthogonal to the
+The residual $\delta_{ab}\beta$ is what the fit misses.  It vanishes for a linear
+field, is of order the curvature of $\beta$ across the star for a smooth field,
+and is nearly all of $\Delta\beta_{ab}$ for an unresolved mode.  Because
+$(\nabla\beta)_a$ is a least-squares fit, the residuals are orthogonal to the
 bond vectors; this is the condition that defines the minimum in \Eq{Gmin}:
 \st
-\sum_{b\neq a}w_{ab}\,\bm\delta_{ab}\,\bm r_{ab}^T=0 .
+\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\,\bm r_{ab}^T=0 .
 \label{orthog2d}
 \stp
 The subtraction in \Eq{Dab} is linear in $\bm r_{ab}$, so
 \st
-\mathcal D_{ab}\bbeta=\Big(S_a-\frac{\theta_a}{d}\one\Big)\bm r_{ab}+\bm\delta_{ab},
+\mathcal D_{ab}\beta=\Big(S_a-\frac{\theta_a}{d}\one\Big)\bm r_{ab}+\delta_{ab}\beta,
 \stp
 with $S_a$ the symmetric part of the fit.  When this is squared and summed
 with $w_{ab}$, the cross term is proportional to \Eq{orthog2d} and vanishes, and
 the isotropy condition of \Eq{Kplain} turns the first term into a trace.
 $K$ splits exactly into two non-negative pieces:
 \st
-K=\underbrace{\frac12\sum_aV_a(T_{\rm rel})_a\big[2\eta\,\mathring S_a{:}\mathring S_a+\zeta\,\theta_a^2\big]}_{\text{resolved}}
-+\underbrace{\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,|\bm\delta_{ab}|^2}_{\text{residual}} .
+K=\underbrace{\frac12\sum_aV_a\big[(2T_{\rm rel}\eta)_a\,\mathring S_a{:}\mathring S_a+(T_{\rm rel}\zeta)_a\,\theta_a^2\big]}_{\text{resolved}}
++\underbrace{\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,|\delta_{ab}\beta|^2}_{\text{residual}} .
 \label{split2d}
 \stp
 \begin{itemize}
@@ -569,11 +568,11 @@ $\kappa$, so the plain form \Eq{K1L} is already right.
 The viscous force on particle $a$ is minus the derivative of the dissipative
 function, as in \Eq{generic}:
 \st
-\bm F_a=-\frac{\partial K}{\partial\bbeta_a} .
+\bm F_a=-\frac{\partial K}{\partial\beta_a} .
 \stp
-$K$ depends on $\bbeta$ in two ways.  It depends explicitly on the bond
-differences $\Delta\bbeta_{ab}$ in $\mathcal D_{ab}\bbeta$.  And it depends
-implicitly on the neighbours' $\bbeta$ through the mean fields $\Omega_a$ and
+$K$ depends on $\beta$ in two ways.  It depends explicitly on the bond
+differences $\Delta\beta_{ab}$ in $\mathcal D_{ab}\beta$.  And it depends
+implicitly on the neighbours' $\beta$ through the mean fields $\Omega_a$ and
 $\theta_a$, which are computed from the fit.  The force therefore has two parts,
 \st
 \bm F_a=\bm F_a^{\rm bond}+\bm F_a^{\rm MF} .
@@ -587,21 +586,21 @@ holds exactly; everything below then holds on any arrangement.
 \paragraph{Bond forces.}  Write $K=\sum_aK_a$, with $K_a$ the contribution of
 particle $a$.  As in 1D, \Eq{tab}, define for each bond the traction
 \st
-\tf_{ab}=-\frac{\partial K_a}{\partial\Delta\bbeta_{ab}}\Big|_{\rm MF}
-=-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\mathcal D_{ab}\bbeta ,
+\pf_{ab}=-\frac{\partial K_a}{\partial\Delta\beta_{ab}}\Big|_{\rm MF}
+=-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\mathcal D_{ab}\beta ,
 \label{tab2d}
 \stp
 the momentum given by $a$ to $b$ along the bond $ab$.  It is now a vector, and
-need not point along the bond.  Along the same bond $b$ gives $\tf_{ba}$ to
+need not point along the bond.  Along the same bond $b$ gives $\pf_{ba}$ to
 $a$, so the bond force is a sum of antisymmetric pair forces, as in \Eq{Fa}:
 \st
 \bm F_a^{\rm bond}=\sum_{b\neq a}\bm f_{ab},\qquad
-\bm f_{ab}=-(\tf_{ab}-\tf_{ba})=-\bm f_{ba} .
+\bm f_{ab}=-(\pf_{ab}-\pf_{ba})=-\bm f_{ba} .
 \stp
 For a linear field the traction is a momentum flux times a face area, as in
 \Eq{tface}:
 \st
-\tf_{ab}=\Pi_a\,\bm A_{ab},\qquad
+\pf_{ab}=\Pi_a\,\bm A_{ab},\qquad
 \Pi_a=-2(T_{\rm rel})_a\eta_a\Big(S_a-\frac{\theta_a}{d}\one\Big),\qquad
 \bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab} .
 \stp
@@ -612,7 +611,7 @@ The faces close,
 As in \Eq{virial}, for a
 general field we define the stress of particle $a$ by the virial of its faces,
 \st
-V_a\Pi_a=\sum_{b\neq a}\tf_{ab}\,\bm r_{ab}^T ,
+V_a\Pi_a=\sum_{b\neq a}\pf_{ab}\,\bm r_{ab}^T ,
 \label{virial2d}
 \stp
 which for a linear field is the expression above.
@@ -622,7 +621,7 @@ which for a linear field is the expression above.
 particle's dissipation:
 \st
 \Omega_a=\arg\min_{\Omega'\in\text{antisym}}\;\sum_{b\neq a}w_{ab}
-\Big|\Delta\bbeta_{ab}-\Big(\Omega'+\frac{\theta_a}{d}\one\Big)\bm r_{ab}\Big|^2 .
+\Big|\Delta\beta_{ab}-\Big(\Omega'+\frac{\theta_a}{d}\one\Big)\bm r_{ab}\Big|^2 .
 \label{Omegavar}
 \stp
 The minimizer is exactly the antisymmetric part of the fit
@@ -630,7 +629,7 @@ The minimizer is exactly the antisymmetric part of the fit
 been given a variational meaning.  The payoff is in the chain rule.  The
 force through the rotation is
 \st
--\sum_b\frac{\partial K}{\partial\Omega_b}{:}\frac{\partial\Omega_b}{\partial\bbeta_a}=0 ,
+-\sum_b\frac{\partial K}{\partial\Omega_b}{:}\frac{\partial\Omega_b}{\partial\beta_a}=0 ,
 \stp
 because at the minimum the derivative of $K$ with respect to each $\Omega_b$
 vanishes.  (This is the envelope theorem: the total derivative of $K$ equals
@@ -639,14 +638,14 @@ the partial derivative at fixed $\Omega$.)  The rotation therefore produces
 faces of each particle carry no net torque, i.e.\ that the stress of each
 particle is symmetric:
 \st
-\sum_{b\neq a}\bm r_{ab}\times\tf_{ab}=0,\qquad \Pi_a=\Pi_a^T .
+\sum_{b\neq a}\bm r_{ab}\times\pf_{ab}=0,\qquad \Pi_a=\Pi_a^T .
 \stp
 
 \paragraph{The dilation force.}  Only the dilation, which is not variational,
-carries a mean-field force.  Writing $G_a=(\nabla\bbeta)_a$ for short, the chain
+carries a mean-field force.  Writing $G_a=(\nabla\beta)_a$ for short, the chain
 rule through $\theta_a=\tr G_a$ gives
 \st
-\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\bbeta_a},\qquad
+\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\beta_a},\qquad
 E_a=\frac{\partial K}{\partial G_a}=V_a\Big((T_{\rm rel})_a\zeta_a\,\theta_a+\frac{\tr\Pi_a}{d}\Big)\one .
 \label{fMF}
 \stp
@@ -669,6 +668,53 @@ $\Pi_a$ would not be symmetric, and an extra torque term, proportional to the
 antisymmetric part of $\Pi_a$, would appear in $E_a$.  The same happens on
 particles where the $\Lambda$ correction fails.)
 
+\paragraph{Mean field plus residual.}  The bond and mean-field forces can be
+collected into a single traction per bond.  With the isotropy condition the
+covariant bond difference splits as
+\st
+\mathcal D_{ab}\beta=\mathring S_a\,\bm r_{ab}+\delta_{ab}\beta ,
+\stp
+with $\mathring S_a$ the traceless symmetric part of the fit and $\delta_{ab}\beta$ the
+residual of \Eq{resid}.  The bond traction \Eq{tab2d} is therefore
+\st
+\pf_{ab}=\Pi_a\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta,
+\qquad \Pi_a=-(2T_{\rm rel}\eta)_a\,\mathring S_a ,
+\stp
+and the virial \Eq{virial2d} is this $\Pi_a$, since the residuals are orthogonal
+to the bonds; in particular $\tr\Pi_a=0$.  The mean-field force is also a
+difference of tractions.  With $E_a=V_a(T_{\rm rel}\zeta)_a\theta_a\one$ and
+$w_{ab}V_a\bm r_{ab}=\bm A_{ab}$, \Eq{fMF} reads
+\st
+\bm f^{\rm MF}_{ab}=-\big(\pf^{\rm MF}_{ab}-\pf^{\rm MF}_{ba}\big),\qquad
+\pf^{\rm MF}_{ab}=-(T_{\rm rel}\zeta)_a\,\theta_a\,\bm A_{ab} .
+\stp
+Adding the two, the whole viscous force is
+\st
+\boxed{\;\bm F_a=-\frac{\partial K}{\partial\beta_a}=-\sum_{b\neq a}\big(\pf^{\rm tot}_{ab}-\pf^{\rm tot}_{ba}\big),\qquad
+\pf^{\rm tot}_{ab}=\underbrace{\Pi^{\rm visc}_a\,\bm A_{ab}}_{\text{mean field}}
+\;\underbrace{-\,(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta}_{\text{residual}}\;}
+\label{tmfres}
+\stp
+with
+\st
+\Pi^{\rm visc}_a=-(2T_{\rm rel}\eta)_a\,\mathring S_a-(T_{\rm rel}\zeta)_a\,\theta_a\one
+=-(T_{\rm rel})_a\,\kappa_a{:}G_a ,
+\stp
+the viscous stress of the fitted gradient, shear and bulk.  The two forms are
+the same force:
+\begin{itemize}
+\item \emph{Bond plus mean field} (\Eq{tab2d} and \Eq{fMF}): the traction along
+  $\mathcal D_{ab}\beta$ carries the shear; the bulk is a separate central force
+  through the dilation.
+\item \emph{Mean field plus residual} (\Eq{tmfres}): the continuum stress of the
+  fit acts through the faces, a finite-volume flux, and the residual is what the
+  bonds add.  The residual is zero for linear fields, is shear only, and damps
+  the unresolved modes.
+\end{itemize}
+The second form is the one the stochastic step reproduces: its stress move
+gives $\Pi^{\rm visc}_a\bm A_{ab}$ on average and its residual move the residual
+(\texttt{stochrep.tex}).
+
 %=============================================================================
 \section{A moving fluid in two dimensions}
 \label{sec:moving2d}
@@ -690,9 +736,9 @@ $T=T_{\rm rel}/\gamma$, so
 \st
 T_a=\frac{(T_{\rm rel})_a}{\gamma_a},\qquad
 \gamma_a=\frac{1}{\sqrt{1-v_a^2}},\qquad
-\bbeta_a=\frac{\dot{\bm x}_a}{T_a}=\frac{\gamma_a\bm v_a}{(T_{\rm rel})_a}=\frac{\bm u_a}{(T_{\rm rel})_a}.
+\beta_a=\frac{\dot{\bm x}_a}{T_a}=\frac{\gamma_a\bm v_a}{(T_{\rm rel})_a}=\frac{\bm u_a}{(T_{\rm rel})_a}.
 \stp
-So $\bbeta$ is the spatial part of the thermal vector $\beta^\mu=u^\mu/T_{\rm rel}$.  At
+So $\beta$ is the spatial part of the thermal vector $\beta^\mu=u^\mu/T_{\rm rel}$.  At
 rest the two temperatures coincide.  As throughout, $T$ is $\partial H/\partial s$;
 the rest-frame temperature appears only with the viscous coefficients, as
 $T_{\rm rel}\kappa$, $T_{\rm rel}\eta$ and $T_{\rm rel}\zeta$.
@@ -730,7 +776,7 @@ change to the density frame.  The shear and bulk parts are
 \end{align}
 
 \paragraph{A comoving norm.}  Define the comoving dilation, which at rest is
-$\nabla\!\cdot\!\bbeta$, and the strain with its scalar part removed,
+$\nabla\!\cdot\!\beta$, and the strain with its scalar part removed,
 \st
 \theta=\frac{\ell^{ij}S_{ij}}{\avg{P\ell}},\qquad
 \mathring S_{ij}=S_{ij}-\theta P_{ij} ,
@@ -775,37 +821,37 @@ The face vectors then close on the comoving metric,
 \bm A_{ab}=V_aw_{ab}\bm r_{ab},\qquad \sum_{b\neq a}\bm A_{ab}\bm r_{ab}^T=V_a\ell_a .
 \stp
 
-\paragraph{Mean field.}  The fit $(\nabla\bbeta)_a$ is defined by \Eq{Gmin}, which
+\paragraph{Mean field.}  The fit $(\nabla\beta)_a$ is defined by \Eq{Gmin}, which
 involves no metric.  Its rotation $\Omega_a$ is the antisymmetric part, as at
 rest, and its scalar is the comoving dilation,
 \st
-\Omega_a=\tfrac12\big((\nabla\bbeta)_a-(\nabla\bbeta)_a^T\big),\qquad
+\Omega_a=\tfrac12\big((\nabla\beta)_a-(\nabla\beta)_a^T\big),\qquad
 \theta_a=\frac{\ell_a^{ij}\,(\nabla_j\beta_i)_a}{\avg{P\ell}_a} .
 \label{thetaav}
 \stp
 
 \paragraph{Subtract and square.}  The covariant bond difference becomes
 \st
-\mathcal D_{ab}\bbeta=\Delta\bbeta_{ab}-\big(\Omega_a+\theta_aP_a\big)\bm r_{ab},
+\mathcal D_{ab}\beta=\Delta\beta_{ab}-\big(\Omega_a+\theta_aP_a\big)\bm r_{ab},
 \label{Dabv}
 \stp
 which reduces to \Eq{Dab} at rest.  Contracting it with the comoving metric,
 \st
-\boxed{\;K=\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,
-\mathcal D_{ab}\bbeta\cdot\ell_a\cdot\mathcal D_{ab}\bbeta
-+\frac12\sum_aV_a(T_{\rm rel})_a\zeta_a\,\theta_a^2 ,\;}
+\boxed{\;K=\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,
+\mathcal D_{ab}\beta\cdot\ell_a\cdot\mathcal D_{ab}\beta
++\frac12\sum_a(T_{\rm rel}\zeta)_a\,V_a\theta_a^2 ,\;}
 \label{KMFv}
 \stp
 where
 \st
-\mathcal D\bbeta\cdot\ell\cdot\mathcal D\bbeta=(\mathcal D\beta)_i\,\ell^{ij}(\mathcal D\beta)_j .
+\mathcal D\beta\cdot\ell\cdot\mathcal D\beta=(\mathcal D\beta)_i\,\ell^{ij}(\mathcal D\beta)_j .
 \stp
 
 \paragraph{Why it works.}
 \begin{itemize}
 \item \emph{Continuum limit.}  For a linear field the fit is exact, and
   \st
-  \mathcal D_{ab}\bbeta=\big(\nabla\bbeta-\Omega-\theta P\big)\bm r_{ab}=\mathring S\,\bm r_{ab} .
+  \mathcal D_{ab}\beta=\big(\nabla\beta-\Omega-\theta P\big)\bm r_{ab}=\mathring S\,\bm r_{ab} .
   \stp
   By \Eq{wv} the bond sum is
   \st
@@ -824,8 +870,8 @@ where
 the residual of \Eq{resid}, the cross terms vanish for any contraction, since the
 orthogonality \Eq{orthog2d} does not involve the metric.  With \Eq{wv},
 \st
-K=\underbrace{\sum_aV_a(T_{\rm rel})_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_a\theta_a^2\Big]}_{\text{resolved}}
-+\underbrace{\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,\bm\delta_{ab}\cdot\ell_a\cdot\bm\delta_{ab}}_{\text{residual}} ,
+K=\underbrace{\sum_aV_a\Big[(T_{\rm rel}\eta)_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12(T_{\rm rel}\zeta)_a\theta_a^2\Big]}_{\text{resolved}}
++\underbrace{\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,\delta_{ab}(\beta)\cdot\ell_a\cdot\delta_{ab}(\beta)}_{\text{residual}} ,
 \stp
 with $\mathring S_a$ built from the fit.  The resolved term is the continuum
 \Eq{normid} on the fitted gradient; the residual damps what the fit cannot
@@ -834,7 +880,7 @@ see.
 \subsection{Viscous forces}
 \label{sec:forcev}
 
-As at rest, the force $\bm F_a=-\partial K/\partial\bbeta_a$ has a bond part, the
+As at rest, the force $\bm F_a=-\partial K/\partial\beta_a$ has a bond part, the
 derivative at fixed mean fields, and a mean-field part, the chain rule through
 $\Omega_a$ and $\theta_a$:
 \st
@@ -842,25 +888,25 @@ $\Omega_a$ and $\theta_a$:
 \stp
 
 \paragraph{Bond forces.}  The traction is defined as in \Eq{tab2d}.  Since
-$\mathcal D_{ab}\bbeta$ is now contracted with $\ell_a$, the traction carries an
+$\mathcal D_{ab}\beta$ is now contracted with $\ell_a$, the traction carries an
 upper index, raised by $\ell_a$:
 \st
-\mathsf t^i_{ab}=-\frac{\partial K_a}{\partial(\Delta\beta_{ab})_i}\Big|_{\rm MF}
-=-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\ell_a^{ij}(\mathcal D_{ab}\beta)_j ,
+\mathsf p^i_{ab}=-\frac{\partial K_a}{\partial(\Delta\beta_{ab})_i}\Big|_{\rm MF}
+=-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\ell_a^{ij}(\mathcal D_{ab}\beta)_j ,
 \label{tabv}
 \stp
 the momentum given by $a$ to $b$ along the bond $ab$.  The bond force is again
 a sum of antisymmetric pair forces,
 \st
 \bm F_a^{\rm bond}=\sum_{b\neq a}\bm f_{ab},\qquad
-\bm f_{ab}=-(\tf_{ab}-\tf_{ba})=-\bm f_{ba} .
+\bm f_{ab}=-(\pf_{ab}-\pf_{ba})=-\bm f_{ba} .
 \stp
 Because $\rho_{ab}$ and $\ell_a$ use the velocity of $a$, the two ends of a bond
-see different weights and $\tf_{ab}\neq-\tf_{ba}$; the pair force is
+see different weights and $\pf_{ab}\neq-\pf_{ba}$; the pair force is
 antisymmetric regardless.  For a linear field the traction is a momentum flux
 times a face area,
 \st
-\mathsf t^i_{ab}=\Pi_a^{ik}A_{ab\,k},\qquad
+\mathsf p^i_{ab}=\Pi_a^{ik}A_{ab\,k},\qquad
 A_{ab\,k}=(\ell_a^{-1})_{kl}A^l_{ab},\qquad
 \Pi_a=-2(T_{\rm rel})_a\eta_a\,\ell_a\mathring S\ell_a ,
 \stp
@@ -869,7 +915,7 @@ shear stress carried by the bonds; the remainder of the viscous stress, which is
 proportional to $\ell^{ij}$, is carried by the mean field.  For a general field the stress of the particle is
 again the virial of its faces,
 \st
-V_a\Pi_a^{ij}=\sum_{b\neq a}\mathsf t^i_{ab}\,r^j_{ab} .
+V_a\Pi_a^{ij}=\sum_{b\neq a}\mathsf p^i_{ab}\,r^j_{ab} .
 \label{virialv}
 \stp
 
@@ -880,17 +926,17 @@ $\Omega'$.  With $M_a=n_a\ell_a$ and the contraction with $\ell_a$ it is
 proportional to a Frobenius norm,
 \st
 \tr\big(\ell X\ell X^T\big)=\big|\ell^{1/2}X\ell^{1/2}\big|^2,\qquad
-X=\nabla\bbeta-\theta P-\Omega' .
+X=\nabla\beta-\theta P-\Omega' .
 \stp
 It is minimized when
 \st
-\ell^{1/2}\,\Omega'\,\ell^{1/2}=\text{antisym}\big(\ell^{1/2}\,\nabla\bbeta\,\ell^{1/2}\big),
+\ell^{1/2}\,\Omega'\,\ell^{1/2}=\text{antisym}\big(\ell^{1/2}\,\nabla\beta\,\ell^{1/2}\big),
 \stp
 since $P$ is symmetric and drops out.  In 2D every antisymmetric matrix is a
 multiple of a single matrix $J$, and $BJB=(\det B)\,J$ for symmetric $B$.
 Hence the minimizer is
 \st
-\Omega'=\tfrac12\big(\nabla\bbeta-(\nabla\bbeta)^T\big)=\Omega_a\qquad(\text{2D, any }\bm v),
+\Omega'=\tfrac12\big(\nabla\beta-(\nabla\beta)^T\big)=\Omega_a\qquad(\text{2D, any }\bm v),
 \stp
 the same subtraction as at rest.  (In 3D it is instead the $\ell$-weighted
 antisymmetric part.)
@@ -900,7 +946,7 @@ mean-field force, and the stationarity condition says that the
 faces carry no net torque: $\Pi_a$ of \Eq{virialv} is symmetric.
 
 \paragraph{The dilation force.}  Only the dilation, which is not variational,
-carries a mean-field force.  Writing $G_a=(\nabla\bbeta)_a$,
+carries a mean-field force.  Writing $G_a=(\nabla\beta)_a$,
 the chain rule goes through
 \st
 \frac{\partial\theta_a}{\partial G_{a,ij}}=\frac{\ell^{ij}_a}{\avg{P\ell}_a},
@@ -915,17 +961,39 @@ The first term is from the bulk term of $K$; the second is from the
 dilation subtracted in every bond.  At rest this reduces to the $E_a$ of
 \Eq{fMF}.  With the corrected weights the fit carries a factor $\ell_b^{-1}$,
 \st
-G_b=\sum_{c\neq b}w_{bc}\,\Delta\bbeta_{bc}\,\bm r_{bc}^T\,\ell_b^{-1},
+G_b=\sum_{c\neq b}w_{bc}\,\Delta\beta_{bc}\,\bm r_{bc}^T\,\ell_b^{-1},
 \stp
 which cancels the $\ell_b$ in $E_b$.  Thus each
 neighbour of $a$ (for instance particle $b$) exerts a central force,
 \st
-\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\bbeta_a}
+\bm F^{\rm MF}_a=-\sum_bE_b{:}\frac{\partial G_b}{\partial\beta_a}
 =\sum_{b\neq a}\bm f^{\rm MF}_{ab},\qquad
 \bm f^{\rm MF}_{ab}=\big(w_{ab}\,e_a+w_{ba}\,e_b\big)\,\bm r_{ab}=-\bm f^{\rm MF}_{ba} .
 \label{fMFv}
 \stp
 It is directed along the bond and antisymmetric, so momentum is conserved.
+
+\paragraph{Mean field plus residual.}  As at rest, \Eq{tmfres}, the two forces
+combine into one traction per bond.  Now
+$\mathcal D_{ab}\beta=\mathring S_a\bm r_{ab}+\delta_{ab}\beta$ with $\mathring S_a$
+traceless in $\ell_a$, so \Eq{tabv} is
+$\mathsf p^i_{ab}=\Pi_a^{ik}A_{ab\,k}-(2T_{\rm rel}\eta)_aV_aw_{ab}\,\ell_a^{ij}(\delta_{ab}\beta)_j$
+with $\Pi_a=-(2T_{\rm rel}\eta)_a\,\ell_a\mathring S_a\ell_a$, the virial
+\Eq{virialv}.  The mean-field force \Eq{fMFv} is a difference of the tractions
+$-(e_a/V_a)\,\ell_a^{ik}A_{ab\,k}$, since $w_{ab}V_a\bm r_{ab}=\bm A_{ab}$ and
+$A^i_{ab}=\ell_a^{ik}A_{ab\,k}$.  Together
+\st
+\boxed{\;\mathsf p^{{\rm tot},i}_{ab}=\Pi^{{\rm visc},ik}_a\,A_{ab\,k}
+-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\ell_a^{ij}(\delta_{ab}\beta)_j ,\qquad
+\Pi^{\rm visc}_a=\Pi_a-\frac{e_a}{V_a}\,\ell_a\;}
+\label{tmfresv}
+\stp
+with $e_a$ of \Eq{Eav}.  Inserting $\mathring S=S-\theta P$ and
+$\theta=\ell^{ij}S_{ij}/\avg{P\ell}$ one checks that
+$\Pi^{{\rm visc},ij}_a=-(T_{\rm rel})_a\,\kappa_a^{ijmn}G_{a,mn}$, the full
+viscous stress of the fitted gradient with the tensors $\kappa_\eta$ and $\kappa_\zeta$
+of the continuum target.  The stochastic step reproduces this form
+(\texttt{stochrep.tex}).
 
 %=============================================================================
 \section{Implementation}
@@ -936,7 +1004,7 @@ in the code (\texttt{dissipative\_force!}, which calls
 \texttt{\_bond\_dissipation!} in \texttt{src/celllist.jl}).  The fluid at rest is
 the special case $\bm v_a=0$.  The routine accumulates the gradient
 \st
-\bm g_a=\frac{\partial K}{\partial\bbeta_a}
+\bm g_a=\frac{\partial K}{\partial\beta_a}
 \stp
 and returns the force $\bm F_a=-\bm g_a$.
 
@@ -950,7 +1018,7 @@ equal and opposite pairs.
 
 \medskip
 \noindent\fbox{\begin{minipage}{0.95\textwidth}
-\textbf{Algorithm: viscous force} $\bm F_a=-\partial K/\partial\bbeta_a$
+\textbf{Algorithm: viscous force} $\bm F_a=-\partial K/\partial\beta_a$
 \begin{algorithmic}[1]
 \State $\bm g_a\gets0$ for all $a$
 \For{each particle $a$}
@@ -960,12 +1028,12 @@ equal and opposite pairs.
   \State \textbf{correction}: solve the $4\times4$ system \EqPM{Lambdadef} for $\Lambda_a$ and $n_a$
   \If{a corrected weight is negative} \State fall back to $\Lambda_a=0$ \EndIf
   \State \textbf{weights}: $w_{ab}$ of \Eq{wv}
-  \State \textbf{fit}: bond moment $M_a$ and $G_a=(\nabla\bbeta)_a$ by \Eq{Gmin}
+  \State \textbf{fit}: bond moment $M_a$ and $G_a=(\nabla\beta)_a$ by \Eq{Gmin}
   \State \textbf{mean field}: $\Omega_a$ and $\theta_a$ by \Eq{thetaav}
   \For{each $b$ in the star} \Comment{bond force}
-    \State $\mathcal D_{ab}\bbeta$ by \Eq{Dabv}, traction $\tf_{ab}$ by \Eq{tabv}
-    \State $\bm g_a\gets\bm g_a+\tf_{ab}$, \quad $\bm g_b\gets\bm g_b-\tf_{ab}$
-    \State $V_a\Pi_a\gets V_a\Pi_a+\tf_{ab}\,\bm r_{ab}^T$ \Comment{virial \Eq{virialv}}
+    \State $\mathcal D_{ab}\beta$ by \Eq{Dabv}, traction $\pf_{ab}$ by \Eq{tabv}
+    \State $\bm g_a\gets\bm g_a+\pf_{ab}$, \quad $\bm g_b\gets\bm g_b-\pf_{ab}$
+    \State $V_a\Pi_a\gets V_a\Pi_a+\pf_{ab}\,\bm r_{ab}^T$ \Comment{virial \Eq{virialv}}
   \EndFor
   \State \textbf{mean-field stress}: $E_a=e_a\ell_a$ by \Eq{Eav}
   \For{each $b$ in the star} \Comment{mean-field force}
@@ -980,12 +1048,12 @@ equal and opposite pairs.
 
 \paragraph{Remarks.}
 \begin{itemize}
-\item \emph{Bond force.}  Particle $a$ gives $\tf_{ab}$ to $b$, so it is added
+\item \emph{Bond force.}  Particle $a$ gives $\pf_{ab}$ to $b$, so it is added
   to the force on $b$ and subtracted from the force on $a$.  The traction of
   the reverse bond is added when the loop reaches $b$.  Together they give the
   pair force of \Eq{tabv}.
 \item \emph{Mean-field force.}  The vector $\bm q_{ab}$ is the derivative of the
-  dilation term of particle $a$ with respect to $\bbeta_b$, through the fit.
+  dilation term of particle $a$ with respect to $\beta_b$, through the fit.
   It is written with the full $M_a^{-1}$, so it remains correct when the
   $\Lambda$ correction falls back.  When the correction succeeds,
   $M_a=n_a\ell_a$, and $\bm q_{ab}$ reduces to the central force of
@@ -1005,7 +1073,7 @@ equal and opposite pairs.
 fixed positions, and the entropy follows from \Eq{generic}:
 \st
 \Delta\bm m_a=\Delta t\,\bm F_a,\qquad
-\Delta s_a=-\bbeta_a\cdot\Delta\bm m_a .
+\Delta s_a=-\beta_a\cdot\Delta\bm m_a .
 \stp
 The total entropy grows by $2K\,\Delta t$, and the total momentum is unchanged.
 
@@ -1015,13 +1083,13 @@ The total entropy grows by $2K\,\Delta t$, and the total momentum is unchanged.
 
 \begin{enumerate}
 \item In one dimension at rest, the one-level form \Eq{K1L} is the graph
-  Laplacian of $\bbeta$ with weights $w_{ab}$.  It is normalized so that
+  Laplacian of $\beta$ with weights $w_{ab}$.  It is normalized so that
   linear profiles are exact on any arrangement.  Its force is a sum of
-  momentum-conserving pair forces, the differences of the tractions $\mathsf t_{ab}$,
+  momentum-conserving pair forces, the differences of the tractions $\mathsf p_{ab}$,
   and each bond produces entropy.
-\item The two-level form sees $\bbeta$ only through a smoothed gradient, and
+\item The two-level form sees $\beta$ only through a smoothed gradient, and
   patterns that gradient misses, such as the zigzag, are not damped.  The
-  bond form has $\bbeta=$ const as its only zero mode.
+  bond form has $\beta=$ const as its only zero mode.
 \item In 2D the plain bond form dissipates rotation and has only one
   viscosity.  Subtracting the mean-field rotation $\Omega_a$ and dilation
   $\theta_a$, taken from the least-squares fit, fixes both.  The rotation is
@@ -1065,22 +1133,22 @@ Replace the subtraction in \Eq{Dab} by a general linear one, $A\bm r_{ab}$.  As
 in \Eq{split2d}, the residual does not depend on $A$, and the bond sum of
 particle $a$ splits as
 \st
-\sum_{b\neq a}w_{ab}\big|\Delta\bbeta_{ab}-A\bm r_{ab}\big|^2
-=\tr\big[(\nabla\bbeta-A)(\nabla\bbeta-A)^T\big]+\sum_{b\neq a}w_{ab}|\bm\delta_{ab}|^2 .
+\sum_{b\neq a}w_{ab}\big|\Delta\beta_{ab}-A\bm r_{ab}\big|^2
+=\tr\big[(\nabla\beta-A)(\nabla\beta-A)^T\big]+\sum_{b\neq a}w_{ab}|\delta_{ab}\beta|^2 .
 \label{genid}
 \stp
 The Frobenius norm splits orthogonally into symmetric and antisymmetric parts.
 Subtracting a rotation $\Omega'$ and the dilation,
 \st
 A=\Omega'+\frac{\theta}{d}\one,\qquad
-\tr\big[(\nabla\bbeta-A)(\nabla\bbeta-A)^T\big]
+\tr\big[(\nabla\beta-A)(\nabla\beta-A)^T\big]
 =\Big|S-\frac{\theta}{d}\one\Big|^2+\big|\Omega-\Omega'\big|^2 .
 \stp
 The bond term of $K$, and therefore $K$ itself (the bulk
 term does not involve $\Omega'$), is minimized by $\Omega'=\Omega_a$:
 \st
 \boxed{\;\Omega_a=\arg\min_{\Omega'\,\in\,\text{antisym}}\;
-\sum_{b\neq a}V_b\psi_{ab}\Big|\Delta\bbeta_{ab}-\Big(\Omega'+\frac{\theta_a}{d}\one\Big)\bm r_{ab}\Big|^2 .\;}
+\sum_{b\neq a}V_b\psi_{ab}\Big|\Delta\beta_{ab}-\Big(\Omega'+\frac{\theta_a}{d}\one\Big)\bm r_{ab}\Big|^2 .\;}
 \label{Omegamin}
 \stp
 Subtracting the fitted rotation is therefore the same as letting each particle
@@ -1094,16 +1162,16 @@ consequences follow.
 \paragraph{1. No net torque.}  The stationarity condition of \Eq{Omegamin} is
 \st
 \Pi_a=\Pi_a^T,\qquad
-V_a\Pi_a=\sum_{b\neq a}\tf_{ab}\,\bm r_{ab}^T,\quad
-\tf_{ab}=-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\mathcal D_{ab}\bbeta.
+V_a\Pi_a=\sum_{b\neq a}\pf_{ab}\,\bm r_{ab}^T,\quad
+\pf_{ab}=-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\mathcal D_{ab}\beta.
 \stp
 In 2D the antisymmetric part of the virial is the torque of the tractions about
 $a$.  The faces of each particle carry \emph{no net
-torque} about it, for any $\bbeta$ field, not just a rigid rotation.
+torque} about it, for any $\beta$ field, not just a rigid rotation.
 
 \paragraph{2. No rotational mean-field force.}  The derivative of $K$ with
 respect to $\Omega_a$ vanishes at the minimum, so the total derivative of $K$
-with respect to $\bbeta$ equals the partial derivative at fixed $\Omega_a$ (the
+with respect to $\beta$ equals the partial derivative at fixed $\Omega_a$ (the
 envelope theorem).  The chain-rule force through $\Omega_a$, which
 would be proportional to the antisymmetric part of $\Pi_a$, vanishes identically.  Only
 the dilation carries a mean-field force:
@@ -1114,7 +1182,7 @@ E_a=V_a\Big((T_{\rm rel})_a\zeta_a\,\theta_a+\frac{\tr\Pi_a}{d}\Big)\one .
 \subsection{Rotation and dilation as connections}
 
 For a linear field the covariant bond difference \Eq{Dab} is the traceless
-strain applied to the bond, i.e.\ the conformal Killing operator.  Its kernel is the rigid rotations and dilations.  Subtracting the rotation compares $\bbeta_b$ with $\bbeta_a$ after a local rotation:
+strain applied to the bond, i.e.\ the conformal Killing operator.  Its kernel is the rigid rotations and dilations.  Subtracting the rotation compares $\beta_b$ with $\beta_a$ after a local rotation:
 $\Omega_a$ is a linearized rotation connection at $a$.  Minimizing over it,
 \Eq{Omegamin}, integrates the connection out, and its equation of motion is the
 no-torque condition.  The subtracted dilation is likewise a Weyl
@@ -1131,7 +1199,7 @@ The Legendre dual of the dissipative function is the dissipation potential in
 terms of forces.  Under this duality the infimum over local rotations in
 \Eq{Omegamin} becomes a constraint on the tractions: the faces of each
 particle must carry no net torque.  For the stochastic scheme this suggests the
-form of the noise.  Draw an independent random traction $\delta\tf_{ab}$ on each
+form of the noise.  Draw an independent random traction $\delta\pf_{ab}$ on each
 face, as in DPD, and project it onto the torque-free subspace around each
 particle.  In the grid scheme~\cite{BhambureSinghTeaney2025} the noise is instead a
 tensor $\xi^{ij}$ at the cell corners, contracted with the wall areas

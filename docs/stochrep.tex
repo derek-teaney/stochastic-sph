@@ -6,13 +6,12 @@
 
 \def\st{\begin{equation}}
 \def\stp{\end{equation}}
-\def\bbeta{{\sf b}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
 \def\Fig#1{Fig.~\ref{#1}}
 \usepackage{dsfont}
 \newcommand{\one}{\mathds{1}}
-\newcommand{\tf}{\bm{\mathsf t}}
+\newcommand{\pf}{\bm{\mathsf p}}
 \DeclareMathOperator{\tr}{tr}
 \newcommand{\avg}[1]{\langle #1\rangle}
 \let\oldparagraph\paragraph
@@ -65,7 +64,7 @@ The stochastic step should leave the distribution $e^{\mathbb S}$ at fixed
 energies and total momentum invariant.  In equilibrium every particle-scale
 momentum mode then carries its thermal share, $\avg{|\bm m_{\bm k}|^2}\propto wTV$,
 at all $k$.  This is the point of the change of representation: with the
-smoothed $\bbeta$ the short-wavelength modes are damped by $R^2$ while their
+smoothed $\beta$ the short-wavelength modes are damped by $R^2$ while their
 noise is not, and they run away.
 
 %=============================================================================
@@ -109,18 +108,18 @@ at rest, and check its mean traction.
 \item \emph{Distribute it across the star.}  Each face of $a$ carries the
   traction
   \st
-  \tf_{ab}=\xi_a\bm A_{ab},\qquad \bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab},
+  \pf_{ab}=\xi_a\bm A_{ab},\qquad \bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab},
   \label{tstress}
   \stp
   with $\bm A_{ab}$ the face of \texttt{bond\_dissipation.tex}.  Particle $b$
-  receives $\tf_{ab}$ and $a$ gives up their sum:
+  receives $\pf_{ab}$ and $a$ gives up their sum:
   \st
-  \delta\bm m_b=\tf_{ab},\qquad \delta\bm m_a=-\sum_{b\neq a}\tf_{ab}.
+  \delta\bm m_b=\pf_{ab},\qquad \delta\bm m_a=-\sum_{b\neq a}\pf_{ab}.
   \stp
   Momentum is conserved.  By the closure of the faces the virial of the
   tractions is the stress itself,
   \st
-  \sum_{b\neq a}\tf_{ab}\,\bm r_{ab}^T=V_a\,\xi_a ,
+  \sum_{b\neq a}\pf_{ab}\,\bm r_{ab}^T=V_a\,\xi_a ,
   \stp
   which is symmetric, so the faces exert no net torque.  This is the
   angular-momentum constraint.
@@ -129,7 +128,7 @@ at rest, and check its mean traction.
   untouched.
 \end{enumerate}
 Each particle in turn does the same, so particle $b$, with its own stress
-$\xi_b$ of variance $\kappa_b$, gives the traction $\tf_{ba}$ to $a$.
+$\xi_b$ of variance $\kappa_b$, gives the traction $\pf_{ba}$ to $a$.
 
 \paragraph{The consensus.}  The proposal changes the entropy of $a$ and of every
 member of its star,
@@ -156,13 +155,13 @@ respect to $e^{\mathbb S}$, provided
 \begin{enumerate}
 \item the bond terms add up to $\Delta\mathbb S$, \Eq{dSbonds};
 \item each bond term flips its sign exactly under the reverse move, which
-  starts from the new momenta and proposes $-\tf_{ab}$ on every bond.
+  starts from the new momenta and proposes $-\pf_{ab}$ on every bond.
 \end{enumerate}
 It rejects more often than the single vote: a bond that loses entropy can
 veto the move even when the others gain more.
 
 \paragraph{Partitioning $\Delta S_a$.}  Particle $b$ receives only the traction
-$\tf_{ab}$, so $\Delta S_b$ belongs to the bond $ab$.  Particle $a$ gives up the sum
+$\pf_{ab}$, so $\Delta S_b$ belongs to the bond $ab$.  Particle $a$ gives up the sum
 of all its tractions, so $\Delta S_a$ has to be divided among the bonds:
 \st
 \Delta S_a=\sum_{b\neq a}\delta S_{ab},\qquad
@@ -175,14 +174,14 @@ full on every bond would violate condition 1.)  We take
 \st
 \delta S_{ab}=\sigma_{ab}+\frac{R_a}{n_{\rm b}} ,
 \stp
-where $\sigma_{ab}$ is the part of $\Delta S_a$ due to $\tf_{ab}$, $R_a$ is the rest, and
+where $\sigma_{ab}$ is the part of $\Delta S_a$ due to $\pf_{ab}$, $R_a$ is the rest, and
 $n_{\rm b}$ is the number of bonds of $a$.
 
 For $\sigma_{ab}$, with $\bm m_a$ and
 $\bm m_a'=\bm m_a+\delta\bm m_a$ the momenta of $a$ before and after the move,
 \st
-\sigma_{ab}=\frac12\Big[S_a(\bm m_a-\tf_{ab})-S_a(\bm m_a)\Big]
--\frac12\Big[S_a(\bm m_a'+\tf_{ab})-S_a(\bm m_a')\Big],
+\sigma_{ab}=\frac12\Big[S_a(\bm m_a-\pf_{ab})-S_a(\bm m_a)\Big]
+-\frac12\Big[S_a(\bm m_a'+\pf_{ab})-S_a(\bm m_a')\Big],
 \label{sigmaab}
 \stp
 at fixed $e_a$, and the rest
@@ -190,11 +189,11 @@ at fixed $e_a$, and the rest
 R_a=\Delta S_a-\sum_{b\neq a}\sigma_{ab}
 \stp
 is split evenly.  The reverse move exchanges $\bm m_a$ and $\bm m_a'$ and flips
-$\tf_{ab}$, so it flips the sign of each $\sigma_{ab}$ exactly, and of $R_a$:
-condition 2 holds.  To leading order $\sigma_{ab}\simeq\beta_a\cdot\tf_{ab}$, $R_a$ is of
+$\pf_{ab}$, so it flips the sign of each $\sigma_{ab}$ exactly, and of $R_a$:
+condition 2 holds.  To leading order $\sigma_{ab}\simeq\beta_a\cdot\pf_{ab}$, $R_a$ is of
 third order, and
 \st
-\Delta S_{ab}\simeq-\big(\beta_b-\beta_a\big)\cdot\tf_{ab} :
+\Delta S_{ab}\simeq-\big(\beta_b-\beta_a\big)\cdot\pf_{ab} :
 \stp
 each factor is the entropy produced by the bond itself.  It depends only on the
 difference $\beta_b-\beta_a$, so it vanishes for a uniformly moving fluid, as the
@@ -203,14 +202,14 @@ dissipation does.
 For an entropy quadratic in the momentum the second-order terms
 cancel in \Eq{sigmaab}, and
 \st
-\sigma_{ab}=\beta_a^{\rm mid}\cdot\tf_{ab},\qquad
-\Delta S_b=-\beta_b^{\rm mid}\cdot\tf_{ab},
+\sigma_{ab}=\beta_a^{\rm mid}\cdot\pf_{ab},\qquad
+\Delta S_b=-\beta_b^{\rm mid}\cdot\pf_{ab},
 \stp
 where $\beta^{\rm mid}$ is evaluated at the midpoint of each particle's move:
 $\beta_a^{\rm mid}$ at the average of $\bm m_a$ and $\bm m_a'$, and $\beta_b^{\rm mid}$ at
-$\bm m_b+\tf_{ab}/2$.  The bond factor is then
+$\bm m_b+\pf_{ab}/2$.  The bond factor is then
 \st
-\Delta S_{ab}=-\big(\beta_b^{\rm mid}-\beta_a^{\rm mid}\big)\cdot\tf_{ab} ,
+\Delta S_{ab}=-\big(\beta_b^{\rm mid}-\beta_a^{\rm mid}\big)\cdot\pf_{ab} ,
 \stp
 the entropy produced by the bond, with the midpoint $\beta$ at each end, exact up
 to third-order terms, which go into $R_a$.
@@ -218,7 +217,7 @@ to third-order terms, which go into $R_a$.
 The simpler even split, $\delta S_{ab}=\Delta S_a/n_{\rm b}$, also satisfies both
 conditions, but it
 is not invariant under a uniform shift of $\beta$: in a fluid moving with
-velocity $\bm v$, $\Delta S_b\simeq-\beta_b\cdot\tf_{ab}$ contains $-(\bm v/T)\cdot\tf_{ab}$,
+velocity $\bm v$, $\Delta S_b\simeq-\beta_b\cdot\pf_{ab}$ contains $-(\bm v/T)\cdot\pf_{ab}$,
 which is large and of random sign, and the bonds reject even though nothing
 dissipates.  In a fluid moving at $v=0.32$, the even split accepts 7\% of the
 residual moves in 2D, and \Eq{sigmaab} 47\%, the same as at rest.
@@ -226,9 +225,9 @@ residual moves in 2D, and \Eq{sigmaab} 47\%, the same as at rest.
 \paragraph{The mean traction.}  For a small proposal the entropy change is
 linear in the momentum changes, with $\partial S_c/\partial\bm m_c=-\beta_c$:
 \st
-\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\tf_{ab}
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\pf_{ab}
 =-V_a\,\xi_a{:}G_a,\qquad
-G_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T ,
+G_a(\beta)=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T ,
 \stp
 where $G_a$ is the fitted gradient of $\beta$ at $a$
 (\texttt{bond\_dissipation.tex}, mean-field form) and $\Delta\beta_{ab}=\beta_b-\beta_a$.  The proposal sees $\beta$ only
@@ -267,15 +266,15 @@ the viscous stress of the fitted gradient.  A single test on the whole star,
 $\min(1,e^{\Delta\mathbb S})$, gives the same mean: the factorization changes
 the rejection rate, not the drift.  The mean traction is therefore
 \st
-\avg{\tf_{ab}}=\Delta t\,\Pi_a(G_a)\,\bm A_{ab} .
+\avg{\pf_{ab}}=\Delta t\,\Pi_a(G_a)\,\bm A_{ab} .
 \label{tmean}
 \stp
 Compare the deterministic traction of the bond form,
 \st
-\tf_{ab}^{\rm det}=-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\mathcal D_{ab}\beta
-=\Pi_a(G_a)\,\bm A_{ab}-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\bm\delta_{ab},
+\pf_{ab}^{\rm det}=-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\mathcal D_{ab}\beta
+=\Pi_a(G_a)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta,
 \stp
-where $\bm\delta_{ab}=\Delta\beta_{ab}-G_a\bm r_{ab}$ is the residual of the fit
+where $\delta_{ab}\beta=\Delta\beta_{ab}-G_a(\beta)\,\bm r_{ab}$ is the residual of the fit
 (\texttt{bond\_dissipation.tex}, resolved plus residual).
 \begin{itemize}
 \item For a linear field the residual vanishes and \Eq{tmean} is the
@@ -293,7 +292,7 @@ resolved and a residual part, with no cross term
 (\texttt{bond\_dissipation.tex}):
 \st
 K=K_{\rm res}+K_{\rm resid},\qquad
-K_{\rm resid}=\sum_aV_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,|\bm\delta_{ab}|^2 .
+K_{\rm resid}=\sum_a(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,|\delta_{ab}\beta|^2 .
 \stp
 The stress move of \Sect{sec:stress} is the noise of $K_{\rm res}$.  The noise of
 $K_{\rm resid}$ is added on top of it, as a second, independent move.  Since there
@@ -304,25 +303,28 @@ is no cross term, the covariances add, and so do the mean tractions.
 \item \emph{Draw a random vector on each bond}, independent from bond to bond,
   with zero mean and variance
   \st
-  \avg{\bm y_{ab}\bm y_{ab}^T}=2\Delta t\cdot 2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\one .
+  \avg{\mathfrak p_{ab}\mathfrak p_{ab}^T}=2\Delta t\cdot (2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\one .
   \stp
   In 1D replace $2\eta_a$ by $\kappa_a$.
-\item \emph{Remove the part the fit sees.}  Form the virial of the bond vectors,
+\item \emph{Remove the part the fit sees.}  The virial of the draws,
+  $\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T$, is a stress.  Subtract it,
+  distributed through the faces.  The residual traction is
   \st
-  Y_a=\sum_{b\neq a}\bm y_{ab}\,\bm r_{ab}^T ,
-  \stp
-  and subtract it as a stress distributed through the faces.  The residual
-  traction is
-  \st
-  \vec t_{ab}=\bm y_{ab}-\frac{Y_a}{V_a}\,\bm A_{ab} .
+  \vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} .
   \label{tauab}
   \stp
-  By the closure of the faces its virial vanishes,
+  Vectors are columns, so the virial is a matrix acting on the face vector
+  $\bm A_{ab}$.  In components the second (bond) index of the virial is
+  contracted with the face,
+  $\vec p^{\,i}_{ab}=\mathfrak p^i_{ab}-V_a^{-1}\sum_c\mathfrak p^i_{ac}\,r^k_{ac}\,A_{ab\,k}$.
+  By the closure of the faces, $\sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\one$,
+  its virial vanishes,
   \st
-  \sum_{b\neq a}\vec t_{ab}\,\bm r_{ab}^T=Y_a-Y_a=0 ,
+  \sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T
+  =\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T-\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T=0 ,
   \stp
   so the residual tractions carry no stress and exert no torque.
-\item \emph{Kick and ask the bonds.}  Particle $b$ receives $\vec t_{ab}$ and $a$
+\item \emph{Kick and ask the bonds.}  Particle $b$ receives $\vec p_{ab}$ and $a$
   gives up their sum.  Accept with the factorized filter \Eq{Pfact}, with the
   bond factors \Eq{dSab}.
 \end{enumerate}
@@ -330,28 +332,29 @@ is no cross term, the covariances add, and so do the mean tractions.
 \paragraph{The mean traction.}  To leading order the entropy change of the
 star is
 \st
-\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\vec t_{ab}
-=-\sum_{b\neq a}\bm y_{ab}\cdot\bm\delta_{ab} ,
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\vec p_{ab}
+=-\sum_{b\neq a}\mathfrak p_{ab}\cdot\delta_{ab}\beta ,
 \stp
-because the subtracted stress removes $Y_a{:}G_a$ from the pair term.  The
-argument of \Sect{sec:stress} gives
+because the subtracted stress removes $\sum_{c\neq a}\mathfrak p_{ac}\cdot G_a\bm r_{ac}$
+from the pair term.  The argument of \Sect{sec:stress} gives
 \st
-\avg{\bm y_{ab}}=-\Delta t\cdot 2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\bm\delta_{ab} .
+\avg{\mathfrak p_{ab}}=-\Delta t\cdot (2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta .
 \stp
 The residuals are orthogonal to the bonds,
 \st
-\sum_{b\neq a}w_{ab}\,\bm\delta_{ab}\,\bm r_{ab}^T=0 ,
+\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\,\bm r_{ab}^T=0 ,
 \stp
-so the mean of $Y_a$ vanishes, and so does the mean of the subtracted stress.
+so the mean of the virial of the draws vanishes, and so does the mean of the
+subtracted stress.
 The mean residual traction is
 \st
-\avg{\vec t_{ab}}=-\Delta t\cdot 2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\bm\delta_{ab} .
+\avg{\vec p_{ab}}=-\Delta t\cdot (2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta .
 \stp
 Added to the mean stress traction \Eq{tmean},
 \st
-\avg{\tf_{ab}}+\avg{\vec t_{ab}}
-=\Delta t\Big[\Pi_a(G_a)\,\bm A_{ab}-2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\bm\delta_{ab}\Big]
-=\Delta t\,\tf^{\rm det}_{ab} ,
+\avg{\pf_{ab}}+\avg{\vec p_{ab}}
+=\Delta t\Big[\Pi_a(G_a)\,\bm A_{ab}-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\delta_{ab}\beta\Big]
+=\Delta t\,\pf^{\rm det}_{ab} ,
 \stp
 the deterministic traction of the bond form, on every bond.
 
@@ -677,7 +680,7 @@ temperature $(T_{\rm rel})_a=\gamma_aT_a$:
   \stp
 \item the fit, now
   \st
-  G_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,\ell_a^{-1},\qquad
+  G_a(\beta)=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,\ell_a^{-1},\qquad
   G_{a,ik}=\sum_{b\neq a}\frac{1}{V_a}\,(\Delta\beta_{ab})_i\,A_{ab\,k} .
   \label{Gmoving}
   \stp
@@ -697,8 +700,8 @@ the choice affects only the coefficients, at order $h^2$.
 
 \paragraph{The stress move.}  The resolved part of the dissipative function is
 \st
-K_{{\rm res},a}=\frac12V_a(T_{\rm rel})_a\,\kappa_a^{ijmn}(\bm v_a)\,G_{a,ij}G_{a,mn}
-=V_a(T_{\rm rel})_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\frac12\zeta_a\theta_a^2\Big],
+K_{{\rm res},a}=\frac12V_a\,(T_{\rm rel}\kappa^{ijmn})_a\,G_{a,ij}G_{a,mn}
+=V_a\Big[(T_{\rm rel}\eta)_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12(T_{\rm rel}\zeta)_a\theta_a^2\Big],
 \stp
 with $\mathring S=S-\theta P$, $S$ the symmetric part of $G$ and
 $\theta=\ell^{ij}S_{ij}/\avg{P\ell}$.  Draw the stress with
@@ -707,20 +710,20 @@ $\theta=\ell^{ij}S_{ij}/\avg{P\ell}$.  Draw the stress with
 \stp
 and distribute it through the faces,
 \st
-\mathsf t^i_{ab}=\xi_a^{ik}A_{ab\,k} .
+\mathsf p^i_{ab}=\xi_a^{ik}A_{ab\,k} .
 \stp
 By \Eq{Amoving} the virial is again the stress,
 \st
-\sum_{b\neq a}\mathsf t^i_{ab}\,r^j_{ab}=V_a\,\xi_a^{ij} ,
+\sum_{b\neq a}\mathsf p^i_{ab}\,r^j_{ab}=V_a\,\xi_a^{ij} ,
 \stp
 which is symmetric: no torque.  The linear entropy change is, by \Eq{Gmoving},
 \st
-\Delta\mathbb S=-\sum_{b\neq a}(\Delta\beta_{ab})_i\,\mathsf t^i_{ab}=-V_a\,\xi_a^{ik}G_{a,ik},
+\Delta\mathbb S=-\sum_{b\neq a}(\Delta\beta_{ab})_i\,\mathsf p^i_{ab}=-V_a\,\xi_a^{ik}G_{a,ik},
 \stp
 exactly as at rest, and the argument of \Sect{sec:stress} gives
 \st
 \avg{\xi_a^{ij}}=-\Delta t\,(T_{\rm rel})_a\,\kappa_a^{ijmn}G_{a,mn}=\Delta t\,\Pi_a^{ij}(G_a),\qquad
-\avg{\mathsf t^i_{ab}}=\Delta t\,\Pi_a^{ik}(G_a)\,A_{ab\,k} ,
+\avg{\mathsf p^i_{ab}}=\Delta t\,\Pi_a^{ik}(G_a)\,A_{ab\,k} ,
 \stp
 the traction of the resolved part of the moving bond form.
 
@@ -742,34 +745,35 @@ draw of \Sect{sec:stress}.  (With unresolved dimensions, $\zeta\to\zeta_{\rm eff
 
 \paragraph{The residual move.}  The residual part is
 \st
-K_{{\rm resid},a}=V_a(T_{\rm rel})_a\eta_a\sum_{b\neq a}w_{ab}\,\bm\delta_{ab}\cdot\ell_a\cdot\bm\delta_{ab},
-\qquad \bm\delta_{ab}=\Delta\beta_{ab}-G_a\bm r_{ab} .
+K_{{\rm resid},a}=(T_{\rm rel}\eta)_a\sum_{b\neq a}V_aw_{ab}\,\delta_{ab}(\beta)\cdot\ell_a\cdot\delta_{ab}(\beta),
+\qquad \delta_{ab}\beta=\Delta\beta_{ab}-G_a(\beta)\,\bm r_{ab} .
 \stp
 Draw on each bond
 \st
-\bm y_{ab}=\sqrt{2\Delta t\,c_{ab}/\lambda}\;\ell_a^{1/2}\bm z_{ab},\qquad
-c_{ab}=2V_a(T_{\rm rel})_a\eta_a\,w_{ab},
+\mathfrak p_{ab}=\sqrt{2\Delta t\,c_{ab}/\lambda}\;\ell_a^{1/2}\bm z_{ab},\qquad
+c_{ab}=(2T_{\rm rel}\eta)_a\,V_aw_{ab},
 \stp
 with $\bm z_{ab}$ a vector of independent unit Gaussians, so
-$\avg{\bm y_{ab}\bm y_{ab}^T}=2\Delta t\,c_{ab}\,\ell_a/\lambda$.  Remove the part
-the fit sees, now through the face covector:
+$\avg{\mathfrak p_{ab}\mathfrak p_{ab}^T}=2\Delta t\,c_{ab}\,\ell_a/\lambda$.  Remove the part
+the fit sees, now through the face covector $A_{ab\,k}$ of \Eq{Amoving}: the
+bond index $k$ of the virial of the draws is contracted with it,
 \st
-Y_a=\sum_{b\neq a}\bm y_{ab}\,\bm r_{ab}^T,\qquad
-\vec t^{\,i}_{ab}=y^i_{ab}-\frac{1}{V_a}\,Y_a^{ik}A_{ab\,k} .
+\vec p^{\,i}_{ab}=\mathfrak p^i_{ab}-\frac1{V_a}\Big(\sum_{c\neq a}\mathfrak p^i_{ac}\,r^k_{ac}\Big)A_{ab\,k} .
 \stp
-By \Eq{Amoving} its virial vanishes, $\sum_b\vec t^{\,i}_{ab}r^j_{ab}=Y_a^{ij}-Y_a^{ij}=0$.
-The linear entropy change is $-\sum_b\bm y_{ab}\cdot\bm\delta_{ab}$, and since the
+By \Eq{Amoving}, $\sum_bA_{ab\,k}\,r^j_{ab}=V_a\,\delta_k{}^j$, its virial vanishes,
+$\sum_b\vec p^{\,i}_{ab}r^j_{ab}=\sum_c\mathfrak p^i_{ac}r^j_{ac}-\sum_c\mathfrak p^i_{ac}r^j_{ac}=0$.
+The linear entropy change is $-\sum_b\mathfrak p_{ab}\cdot\delta_{ab}\beta$, and since the
 residuals are still orthogonal to the bonds (the orthogonality involves no
-metric), the mean of $Y_a$ vanishes and
+metric), the mean of the virial of the draws vanishes and
 \st
-\avg{\vec t^{\,i}_{ab}}=-\Delta t\cdot2V_a(T_{\rm rel})_a\eta_a\,w_{ab}\,\ell_a^{ij}(\delta_{ab})_j ,
+\avg{\vec p^{\,i}_{ab}}=-\Delta t\cdot(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\ell_a^{ij}(\delta_{ab}\beta)_j ,
 \stp
 the residual part of the moving bond traction.  The two moves together give
-the deterministic traction $-2V_a(T_{\rm rel})_a\eta_aw_{ab}\,\ell_a\,\mathcal D_{ab}\beta$ on
+the deterministic traction $-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\ell_a\,\mathcal D_{ab}\beta$ on
 every bond, plus the mean-field force of the bulk and dilation terms, as at rest.
 
 \paragraph{The consensus.}  Unchanged.  The bond factor is still, to leading
-order, $-(\beta_b-\beta_a)\cdot\tf_{ab}$, so it is not affected by the
+order, $-(\beta_b-\beta_a)\cdot\pf_{ab}$, so it is not affected by the
 background flow; this is why the partition \Eq{sigmaab} was chosen
 (\Sect{sec:tests}: in a fluid moving at $v=0.32$ the acceptance is the same as
 at rest).
