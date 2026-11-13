@@ -23,6 +23,11 @@ const SETS = GROUP == "L24" ?
              GROUP == "GRID" ?                    # the grid step (gridstep.tex), run with: julia ... $SCRATCH/sph/grid
     [("v=0", ["g_v0"], 0.0, "C0"), ("v=0.3", ["g_v0.3"], 0.3, "C2"), ("v=0.6", ["g_v0.6"], 0.6, "C1"),
      ("v=0.8", ["g_v0.8", "g_v0.8_long"], 0.8, "C3")] :
+             GROUP == "GSTATS" ?                  # high statistics, $SCRATCH/sph/grid_stats
+    [("v=0", ["gs_v0"], 0.0, "C0"), ("v=0.3", ["gs_v0.3"], 0.3, "C2"), ("v=0.6", ["gs_v0.6"], 0.6, "C1"),
+     ("v=0.8", ["gs_v0.8"], 0.8, "C3")] :
+             GROUP == "GSTATS24" ?
+    [("v=0", ["gs24_v0"], 0.0, "C0"), ("v=0.6", ["gs24_v0.6"], 0.6, "C1"), ("v=0.8", ["gs24_v0.8"], 0.8, "C3")] :
              GROUP == "GRID24" ?
     [("v=0", ["g24_v0"], 0.0, "C0"), ("v=0.6", ["g24_v0.6"], 0.6, "C1"), ("v=0.8", ["g24_v0.8"], 0.8, "C3")] :
              GROUP == "ETA" ?

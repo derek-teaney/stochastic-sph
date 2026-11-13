@@ -1,0 +1,10 @@
+# Campaign `grid_stats` (2026-11-12): high statistics with the grid step (docs/gridstep.tex, SR_GRID=1), the sets
+# of boost.tex, t = 1000.  L = 1.2: 64 runs per v (tasks 1-256); L = 2.4: 32 runs per v (tasks 257-352).
+# Seeds offset by 1000 (no overlap with grid/boost).  Analysis: BOOST_GROUP=GSTATS / GSTATS24 examples/boost_analysis.jl.
+gs_v0      64  SR_GRID=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 1.2 2 1000 1 4 gs_v0
+gs_v0.3    64  SR_GRID=1 SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 1.2 2 1000 1 4 gs_v0.3
+gs_v0.6    64  SR_GRID=1 SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 1.2 2 1000 1 4 gs_v0.6
+gs_v0.8    64  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 1.2 2 1000 1 4 gs_v0.8
+gs24_v0    32  SR_GRID=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=0.6 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 2.4 2 1000 1 4 gs24_v0
+gs24_v0.6  32  SR_GRID=1 SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=0.6 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 2.4 2 1000 1 4 gs24_v0.6
+gs24_v0.8  32  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=0.6 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 2.4 2 1000 1 4 gs24_v0.8
