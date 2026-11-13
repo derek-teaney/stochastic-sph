@@ -82,9 +82,11 @@ function run_meta(params, st, n, wall, complete)
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
-# the static spectra of the grid runs for the .h5 (empty otherwise)
-grid_spectra(st, gF) = (gF === nothing || !haskey(st, :gCk)) ? NamedTuple() :
-    (grid_Ck_re = real.(st.gCk), grid_Ck_im = imag.(st.gCk), grid_Cn = [st.gCn[]],
+# the series and static spectra of the grid runs for the .h5 (nothing for the particle step, whose files
+# are unchanged)
+grid_series(st, gF) = (gF === nothing || !haskey(st, :gCk)) ? NamedTuple() :
+    (grid_dST = st.grid_dST, grid_hkm = st.grid_hkm, grid_hke = st.grid_hke,
+     grid_Ck_re = real.(st.gCk), grid_Ck_im = imag.(st.gCk), grid_Cn = [st.gCn[]],
      grid_kmin = [gF.kmin[i, j][c] for c in 1:2, i in 1:gF.Nx, j in 1:gF.Ny], grid_V = [st.gstencil.V])
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
@@ -226,7 +228,7 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke), grid_spectra(st, gF)))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
@@ -234,7 +236,7 @@ function one_realization(seed)
     end
     wall = st.wall + time() - t0
     ndone = gfail ? (st.gstats.steps) : nsteps
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke), grid_spectra(st, gF)))
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF)))
     runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
     rm(chk; force = true)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",
