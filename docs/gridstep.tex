@@ -552,6 +552,25 @@ Wendland C6 & $0.994$ & $0.977$ & $0.910$ \\
 \end{center}
 a correction of order $(kh)^2$, accepted.
 
+\paragraph{Kernels.}  The reduced set of waves (ideal and $\eta/s=0.2$; $v_0=0$, $0.8$; $kh=0.52$, $1.05$; five periods)
+with the Wendland C4 and C6 kernels (\texttt{SPH\_KERNEL}), for the grid and the particles alike:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+ & C2 & C4 & C6 \\ \hline
+grid: sound at rest, $(\omega-\omega_n)/c_sk$, $kh=0.52$ & $-0.040$ & $-0.029$ & $-0.023$ \\
+grid: sound at rest, $(\omega-\omega_n)/c_sk$, $kh=1.05$ & $-0.143$ & $-0.110$ & $-0.089$ \\
+grid: shear $\bm k\parallel\bm v$, $v_0=0.8$, $\eta/s=0.2$, $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ & $1.012$ & $1.012$ & $1.012$ \\
+particles: the same & $3.98$ & $1.00$ & $1.66$ \\
+particles: the same, $kh=1.05$ & $2.31$ & $1.12$ & $1.40$ \\
+\hline
+\end{tabular}
+\end{center}
+For the grid the kernel changes only the dispersion, as $\kappa/k$ above, and nothing else.  For the
+particles the excess damping of the shear wave along a moving flow depends strongly on the kernel,
+and not monotonically (C4 removes it at $kh=0.52$): a numerical effect of the particle arrangement
+rather than of the viscous step.
+
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_series.png}
 \caption{The mode amplitude $c(t)/|c(0)|$ at $kh=0.52$: real part (thin) and modulus (dashed); blue grid,
