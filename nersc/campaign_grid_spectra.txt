@@ -1,0 +1,5 @@
+# Campaign `grid_spectra` (2026-11-12): full-zone static spectra of the grid step with the stochastic step
+# (SR_GRID=1 records Σ δU_k δU_k†/N for all N lattice modes after t = 5).  L = 1.2, h/a = 2, η/s = 0.2,
+# S0 = 1e6, t = 100, at rest and at v = 0.8.  Analysis: examples/grid_spectra.jl.
+sp_v0     16  SR_GRID=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=2000  -- examples/equilibrium.jl 1.2 2 100 1 4 sp_v0
+sp_v0.8   16  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0 SR_SEEDOFFSET=2000  -- examples/equilibrium.jl 1.2 2 100 1 4 sp_v0.8
