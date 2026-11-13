@@ -361,6 +361,37 @@ while at $v_0=0$ and $0.8$ it follows hydrodynamics.  The deterministic tests 2 
 whether this is statistics or a real effect at intermediate $v_0$ is open (a deterministic check at $v_0=0.3$, $0.6$ and
 more statistics would decide).
 
+\paragraph{6. Two follow-up checks.}  (i) \emph{Deterministic, at intermediate speed.}  $K/K_{\rm target}$ of one mode (test 2) at
+$v_0=0.3$ and $0.6$: for the shear wave along the flow the one-kernel step gives $1.007$ and $1.002$ at $kh=0.26$ (present:
+$1.008$, $1.005$), and every mode at every $v_0$ is within $1\%$ at $kh=0.26$.  The slow late-time decay of grid + one
+kernel at $v_0=0.3$, $0.6$ (\Fig{fig:ckgshear}) is therefore not in the dissipation of the viscous step.
+
+(ii) \emph{Where does the equal-time deficit along the flow come from?}  The ideal step alone (\texttt{SR\_NOVISC=1}, job
+61239202), from the exact equilibrium start, 16 runs each, $L=1.2$, $t=100$; $C_{AA}(\bm k,0)/\chi_{AA}$ for $\bm k\parallel\hat x$ in time
+windows (\texttt{examples/equal\_time\_windows.jl}):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+$C_{EE}/\chi$, $kh=0.52$ & $t<5$ & $5$--$20$ & $20$--$50$ & $50$--$100$ \\ \hline
+particles, ideal only, $v_0=0.8$ & $0.89(29)$ & $0.69(20)$ & $0.74(21)$ & $0.70(11)$ \\
+particles, ideal only, at rest & $0.89(24)$ & $0.80(19)$ & $0.68(12)$ & $0.79(12)$ \\
+particles, with viscosity, $v_0=0.8$ (\texttt{boost.tex}) & $0.94(29)$ & $0.75(15)$ & $0.68(16)$ & $0.83(13)$ \\
+\hline
+\end{tabular}
+\end{center}
+(at $kh=0.79$ the ideal-only values fall to $0.55$--$0.67$).  The particle ideal step alone drains the fluctuations of
+$E$ and $M_x$ to about $0.7$ within $t\approx10$--$20$, at rest and moving, and the kinetic energy of the fluctuations
+falls with them (KE/eq $0.70$--$0.75$ at rest): the energy goes into the arrangement of the particles, which acts
+as a further reservoir.  With the stochastic step, at rest, the fluctuations are restored (no deficit); along a
+moving flow they are not fully, which leaves the deficit of the benchmark.  The deficit is thus made by the
+particle ideal step.  It is not the exact conservation of the energy: the grid conserves it better and shows no
+deficit.
+
+\emph{The grid ideal step alone is unstable} on a thermal state: all 32 runs heat up (KE/eq $3.8$--$5.6$ at rest by
+$t\approx15$--$19$; $23$--$27$ at $v_0=0.8$ by $t\approx40$) until a site has no state.  The linear tests of \texttt{gridstep.tex} found it
+neutral; with thermal fluctuations the undamped lattice-scale modes collect energy.  With the stochastic step
+every grid run so far has been stable.
+
 In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
 Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.
