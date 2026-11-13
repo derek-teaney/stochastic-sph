@@ -160,6 +160,13 @@ smoke test `$SCRATCH/sph/grid_smoke` (61209993).  Kernel comparison C4/C6: 61211
 - Outcome: the excess shear damping with flow and the equal-time deficit along the flow of boost.tex are
   gone; ΔH/H ~1e-5 (particles 1e-3); phase errors κ(k)/k − 1 ~ (kh)² from the kernel (accepted).
 - Lesson: debug jobs with Julia print tables at the end only when stdout is flushed; read the .toml.
+- Longer runs (L = 2.4, v = 0.8 to t = 600): job **61212123** (1 h, 2 nodes).  Kernel C4 with the particle step
+  (`nersc/campaign_kernel.txt`): job **61212224** — helps a little, not a fix.  Full-zone spectra
+  (`nersc/campaign_grid_spectra.txt`): job **61213116** (debug).  Test suite on 4d5d9c2: job 61212619 (all pass).
+- High statistics (`nersc/campaign_grid_stats.txt`, t = 1000, 64 runs per v at L = 1.2, 32 at L = 2.4): jobs
+  **61212171** (2 nodes, 2.3 h) and **61212170** (3 nodes, 3.5 h), 352/352 complete, output `$SCRATCH/sph/grid_stats/`.
+  Shear damping at the hydrodynamic rate at every v to a few percent; a uniform 2-7% long-wave excess in the
+  equal-time values (also in the full-zone spectra); the near-null modes of the stencil poorly equilibrated.
 
 ### `boost` — moving fluid, 2026-11-11, `nersc/campaign_boost.txt`, docs/boost.tex
 
