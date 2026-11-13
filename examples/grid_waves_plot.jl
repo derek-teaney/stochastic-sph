@@ -63,4 +63,26 @@ if visc !== nothing && !isempty(visc.vres)
              title = "Deterministic viscosity η/s = 0.2: damping against boosted hydrodynamics (filled/solid: grid, open/dashed: particles)")
 end
 
-# the waves themselves: examples/grid_waves_series.jl
+# summary of the waves (viscous runs): Re c(t)/|c(0)| against hydrodynamics c₀ e^{−iω_n t − Γ_hyd t},
+# kh ≈ 0.52; rows: shear at rest, shear along / across the flow at v0 = 0.8, sound + along / across at
+# v0 = 0.8; columns grid, particles.  All cases: examples/grid_waves_series.jl.
+if visc !== nothing && !isempty(visc.vres)
+    rows = (("shear", "x", 0.0, "shear at rest"), ("shear", "x", 0.8, "shear, k ∥ v, v0 = 0.8"),
+            ("shear", "y", 0.8, "shear, k ⊥ v, v0 = 0.8"), ("soundp", "x", 0.8, "sound +, k ∥ v, v0 = 0.8"),
+            ("soundp", "y", 0.8, "sound +, k ⊥ v, v0 = 0.8"))
+    fig, axs = subplots(length(rows), 2, figsize = (15, 2.9 * length(rows)), squeeze = false)
+    for (i, (mode, dir, v0, ttl)) in enumerate(rows), (j, sch) in enumerate(("grid", "particle"))
+        ax = axs[i, j]
+        k = findfirst(((r, _),) -> r.scheme == sch && r.mode == mode && r.dir == dir && r.v0 == v0 && r.nk == 2, visc.vres)
+        k === nothing && continue
+        r, sr = visc.vres[k];  c0 = sr.cs[1]
+        hyd = [c0 * exp(-im * r.omega_hydro * t - r.Gamma_hydro * t) for t in sr.ts]
+        ax.plot(sr.ts, real.(sr.cs) ./ abs(c0), color = sch == "grid" ? "C0" : "C1", lw = 1.3, label = sch)
+        ax.plot(sr.ts, real.(hyd) ./ abs(c0), "k--", lw = 0.9, label = "hydrodynamics")
+        ax.plot(sr.ts, abs.(hyd) ./ abs(c0), "k:", lw = 0.8);  ax.plot(sr.ts, -abs.(hyd) ./ abs(c0), "k:", lw = 0.8)
+        ax.axhline(0, color = "k", lw = 0.4);  ax.set_ylim(-1.1, 1.1)
+        ax.set_title(@sprintf("%s: %s, kh = %.2f, η/s = %.1f   (Γ/Γ_hyd = %.2f)", sch, ttl, r.kh, r.etas, r.Gamma / r.Gamma_hydro), fontsize = 10)
+        i == length(rows) && ax.set_xlabel("t");  i == 1 && ax.legend(fontsize = 8, loc = "upper right")
+    end
+    tight_layout();  savefig(joinpath(FIGD, "grid_viscous_series.png"), dpi = 100);  close();  println("wrote grid_viscous_series.png")
+end

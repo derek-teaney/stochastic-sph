@@ -481,7 +481,7 @@ and $3$--$12\%$ at $kh=1.05$; in particular the shear wave along the flow, whose
 $\gamma^3=4.6$, comes out at $1.01$.  The particle step damps it four times too fast: the numerical
 damping of the moving particles found in \texttt{boost.tex} (paragraph 6), here without noise.
 
-\paragraph{The waves themselves.}  Figures~\ref{fig:gw026}--\ref{fig:gwv105} show the real part of the
+\paragraph{The waves themselves.}  \Fig{fig:gwsum} is a summary; Figures~\ref{fig:gw026}--\ref{fig:gwv105} show the real part of the
 mode amplitude, $\mathrm{Re}\,c(t)/|c(0)|$, for every case, with hydrodynamics
 $c_0e^{-i\omega_nt-\Gamma_{\rm hydro}t}$ (dashed; dotted: its envelope).  In the ideal runs the grid stays on
 the hydrodynamic amplitude in every panel and drifts in phase by its dispersion; the particles show
@@ -519,6 +519,13 @@ For the particle shear at rest the fit is to an oscillation, not a decay.}
 shear and sound $+$, along and across the flow; filled/solid grid, open/dashed particles; blue $v_0=0$,
 red $v_0=0.8$.  (Particle shear at rest: fitted to an oscillation.)}
 \label{fig:gvisc}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_viscous_series.png}
+\caption{Summary of the waves, $\eta/s=0.2$, $kh=0.52$: $\mathrm{Re}\,c(t)/|c(0)|$, grid (left) and particles (right), for the
+shear wave at rest, the shear wave along and across the flow at $v_0=0.8$, and sound $+$ along and across
+the flow at $v_0=0.8$; dashed boosted hydrodynamics, dotted its envelope.}
+\label{fig:gwsum}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/grid_ideal_waves_kh0.26.png}
