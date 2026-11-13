@@ -1,0 +1,5 @@
+# Campaign `kernel` (2026-11-12): the particle step (default n-scheme) with the Wendland C4 kernel on the boost sets
+# (L = 1.2, h/a = 2, η/s = 0.2, t = 300), v = 0 and 0.8.  In the deterministic waves C4 removed the excess shear
+# damping along a moving flow (gridstep.tex, "Kernels"); does it with noise?  Analysis: BOOST_GROUP=K4.
+k4_v0     16  SPH_KERNEL=wc4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 k4_v0
+k4_v0.8   16  SPH_KERNEL=wc4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 k4_v0.8
