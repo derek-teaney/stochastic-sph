@@ -62,7 +62,7 @@ const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step t
 # same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke), and the static spectra of
 # all N lattice modes, Σ_records δU_k δU_k† / N with U = (ε, M_x, M_y) the site densities (src/grid.jl, GridFFT),
 # summed after t = 5: grid_Ck_re, grid_Ck_im (3×3×N_x×N_y), grid_Cn (the number of records), grid_kmin (2×N_x×N_y).
-haskey(ENV, "SR_GRID") && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
+setting("SR_GRID", false) && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
 const GRID   = setting("SPH_IDEAL", :particle) === :grid      # as SimParams decides (params.ideal)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
