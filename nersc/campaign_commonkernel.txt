@@ -15,3 +15,9 @@ ckg_v0      16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0   SR_RECORD_E=1
 ckg_v0.3    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.3
 ckg_v0.6    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.6
 ckg_v0.8    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.8
+# Is the C_EE deficit along the flow made by the ideal step?  The ideal step alone (SR_NOVISC=1) from the exact
+# equilibrium start, particles and grid, at v = 0.8 and at rest, t = 100, recorded every 2 steps (tasks 161-224).
+ie_p_v0.8   16  SR_NOVISC=1 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0                      -- examples/equilibrium.jl 1.2 2 100 1 2 ie_p_v0.8
+ie_p_v0     16  SR_NOVISC=1 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0                       -- examples/equilibrium.jl 1.2 2 100 1 2 ie_p_v0
+ie_g_v0.8   16  SR_NOVISC=1 SPH_IDEAL=grid SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0       -- examples/equilibrium.jl 1.2 2 100 1 2 ie_g_v0.8
+ie_g_v0     16  SR_NOVISC=1 SPH_IDEAL=grid SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0        -- examples/equilibrium.jl 1.2 2 100 1 2 ie_g_v0
