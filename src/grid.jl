@@ -286,3 +286,88 @@ function grid_highk_fraction(particles::Vector{Particle}, params::SimParams, f::
     end
     return 1 - lo / tot
 end
+
+# ── The lattice Fourier transform ────────────────────────────────────────────
+# The sites form a Bravais lattice (a1 = (a, 0), a2 = (a/2, a√3/2); rows iy with offset (iy odd)·a/2, N_y
+# even), so the box modes k = 2π(n/L_x, m/L_y), n = 0…N_x−1, m = 0…N_y−1, are exactly the N classes of the
+# Brillouin zone, and f_k = Σ_a f_a e^{−ik·(R_a − R_0)} is complete: f_a = (1/N) Σ_k f_k e^{ik·(R_a − R_0)},
+# Σ_k|f_k|² = N Σ_a|f_a|².  R_0 = (0, a_y/2), the first site, so that R_a − R_0 is a lattice vector and
+# f_{k+G} = f_k for every reciprocal vector G.  Done as an FFT along each row, the phase e^{−i k_x a/2} of the
+# odd rows, and an FFT across the rows.
+# kmin[n,m] is the representative of k in the first Brillouin zone (smallest |k|), for plotting and |k|h.
+struct GridFFT
+    Nx :: Int;  Ny :: Int
+    site :: Matrix{Int}                        # site[ix+1, iy+1] = a
+    k    :: Matrix{SVector{2,Float64}}         # the k of the transform, 2π(n/L_x, m/L_y)
+    kmin :: Matrix{SVector{2,Float64}}         # its first-zone representative
+    rowphase :: Matrix{ComplexF64}             # [n+1, iy+1]: e^{−i k_x(n) off_iy}
+    R0 :: SVector{2,Float64}                   # the origin of the transform, the first site (0, a_y/2)
+end
+
+function GridFFT(particles::Vector{Particle}, params::SimParams)
+    a = params.a;  Lx, Ly = params.L;  Nx = round(Int, Lx / a);  N = length(particles);  Ny = N ÷ Nx
+    ay = Ly / Ny;  site = zeros(Int, Nx, Ny)
+    for (i, p) in enumerate(particles)
+        iy = round(Int, p.x[2] / ay - 0.5);  off = isodd(iy) ? a / 2 : 0.0
+        ix = mod(round(Int, (p.x[1] - off) / a), Nx)
+        abs(p.x[2] - (iy + 0.5) * ay) < 1e-9 * a && abs(mod(p.x[1] - off - ix * a + Lx / 2, Lx) - Lx / 2) < 1e-9 * a ||
+            error("GridFFT: particle $i is not on a lattice site")
+        site[ix + 1, iy + 1] == 0 || error("GridFFT: two particles on site ($ix, $iy)")
+        site[ix + 1, iy + 1] = i
+    end
+    k = [SVector(2π * n / Lx, 2π * m / Ly) for n in 0:Nx-1, m in 0:Ny-1]
+    b1 = (2π / a) * SVector(1.0, -1 / sqrt(3));  b2 = (2π / a) * SVector(0.0, 2 / sqrt(3))
+    kmin = [argmin(norm, [q + p * b1 + r * b2 for p in -3:3, r in -3:3]) for q in k]
+    rowphase = [cis(-2π * n / Lx * (isodd(iy) ? a / 2 : 0.0)) for n in 0:Nx-1, iy in 0:Ny-1]
+    return GridFFT(Nx, Ny, site, k, kmin, rowphase, SVector(0.0, ay / 2))
+end
+
+# f_k for a site field f (numbers); returns an Nx × Ny complex matrix indexed [n+1, m+1]
+function grid_fft(F::GridFFT, f::AbstractVector{<:Number})
+    A = ComplexF64[f[F.site[ix, iy]] for ix in 1:F.Nx, iy in 1:F.Ny]
+    return fft(fft(A, 1) .* F.rowphase, 2)
+end
+# the inverse: the site field from f_k (complex; take real() for a real field)
+function grid_ifft(F::GridFFT, fk::AbstractMatrix)
+    A = ifft(fk, 2) ./ F.rowphase
+    A = ifft(A, 1);  f = zeros(ComplexF64, length(F.site))
+    for ix in 1:F.Nx, iy in 1:F.Ny;  f[F.site[ix, iy]] = A[ix, iy];  end
+    return f
+end
+
+# ── The bare lattice propagator ──────────────────────────────────────────────
+# The one-step map of the deterministic scheme, linearized about a uniform state U_0 = (ε, M_x, M_y): by
+# translation invariance δU_k → M(k) δU_k, a 3×3 matrix per mode.  Found from the step itself: three
+# random real perturbations δU^{(j)} of size ε_rel U_0[1] (all modes at once), one step each, and
+# M(k) = Y(k) X(k)^{-1} with X[:, j] = δU^{(j)}_k, Y[:, j] = (U^{(j)} − U^{base})_k after the step.
+# `step!(particles)` makes one step on particles[a].s, .m (positions fixed).  Returns M as a
+# 3 × 3 × N_x × N_y complex array (indices as grid_fft) and U_0.  The modes of the step are the
+# eigenvalues λ(k) of M(k): λ = e^{−iΩΔt − ΓΔt}.
+function grid_site_U(ps, V, eos)
+    [(e = grid_forward(p.s, p.m, V, 0.0, eos)[1];  SVector(e / V, p.m[1] / V, p.m[2] / V)) for p in ps]
+end
+function grid_set_U!(ps, U, V, eos)
+    for (a, p) in enumerate(ps)
+        s, _, _, _, ok = grid_inverse(V * U[a][1], V * SVector(U[a][2], U[a][3]), V, eos)
+        ok || error("grid_set_U!: no state at site $a");  p.s = s;  p.m = V * SVector(U[a][2], U[a][3])
+    end
+end
+function grid_linear_map(step!, ps::Vector{Particle}, st::GridStencil, F::GridFFT, eos::AbstractEOS;
+                         ε_rel = 1e-7, rng = Xoshiro(7))
+    U0s = grid_site_U(ps, st.V, eos);  U0 = sum(U0s) / length(U0s);  N = length(ps)
+    s0 = [p.s for p in ps];  m0 = [p.m for p in ps]
+    restore() = (for a in 1:N;  ps[a].s = s0[a];  ps[a].m = m0[a];  end)
+    step!(ps);  Ub = grid_site_U(ps, st.V, eos);  restore()
+    X = zeros(ComplexF64, 3, 3, F.Nx, F.Ny);  Y = similar(X)
+    for j in 1:3
+        δ = [ε_rel * U0[1] * SVector(randn(rng), randn(rng), randn(rng)) for _ in 1:N]
+        grid_set_U!(ps, U0s .+ δ, st.V, eos);  step!(ps);  U1 = grid_site_U(ps, st.V, eos);  restore()
+        for c in 1:3
+            X[c, j, :, :] = grid_fft(F, [x[c] for x in δ])
+            Y[c, j, :, :] = grid_fft(F, [U1[a][c] - Ub[a][c] for a in 1:N])
+        end
+    end
+    M = similar(X)
+    for i in 1:F.Nx, j in 1:F.Ny;  M[:, :, i, j] = Y[:, :, i, j] / X[:, :, i, j];  end
+    return M, U0
+end

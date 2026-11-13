@@ -59,7 +59,9 @@ stoch_opts(params) = StochOptions(params; λ = LAMBDA, vote = VOTE)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
 # SR_GRID=1: the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
 # src/grid.jl) in place of the leapfrog.  The particles never move; the stochastic step is the
-# same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke).
+# same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke), and the static spectra of
+# all N lattice modes, Σ_records δU_k δU_k† / N with U = (ε, M_x, M_y) the site densities (src/grid.jl, GridFFT),
+# summed after t = 5: grid_Ck_re, grid_Ck_im (3×3×N_x×N_y), grid_Cn (the number of records), grid_kmin (2×N_x×N_y).
 const GRID   = setting("SR_GRID", false)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
@@ -79,6 +81,11 @@ function run_meta(params, st, n, wall, complete)
      grid = GRID, grid_stats = haskey(st, :gstats) ? grid_summary(st.gstats) : NamedTuple(),
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
+
+# the static spectra of the grid runs for the .h5 (empty otherwise)
+grid_spectra(st, gF) = (gF === nothing || !haskey(st, :gCk)) ? NamedTuple() :
+    (grid_Ck_re = real.(st.gCk), grid_Ck_im = imag.(st.gCk), grid_Cn = [st.gCn[]],
+     grid_kmin = [gF.kmin[i, j][c] for c in 1:2, i in 1:gF.Nx, j in 1:gF.Ny], grid_V = [st.gstencil.V])
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
@@ -163,6 +170,10 @@ function one_realization(seed)
     haskey(st, :gstats) || (st = merge(st, (gstencil = nothing, gchecks = NamedTuple(), gstats = GridStats(),
                                             grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[])))
     gsc = GRID ? GridScratch(N) : nothing;  gfail = false
+    gF = GRID ? GridFFT(ps, params) : nothing
+    if GRID && !haskey(st, :gCk)
+        st = merge(st, (gCk = zeros(ComplexF64, 3, 3, gF.Nx, gF.Ny), gCn = Ref(0)))
+    end
     if GRID                                          # warm start of the Newton solves of the grid step
         for a in 1:N;  gsc.er[a] = ps[a].e;  end
     end
@@ -188,6 +199,12 @@ function one_realization(seed)
                 push!(st.grid_dST, st.gstats.sum_dS_T)
                 push!(st.grid_hkm, grid_highk_fraction(ps, params, [q.m for q in ps]))
                 push!(st.grid_hke, grid_highk_fraction(ps, params, [q.s * q.H_over_S for q in ps]))
+                if n * dt > 5.0                      # static spectra of all lattice modes
+                    Ua = [SVector(q.s * q.H_over_S, q.m[1], q.m[2]) * (q.S_smooth / q.s) for q in ps];  Ub = sum(Ua) / N
+                    Uk = [grid_fft(gF, [u[c] - Ub[c] for u in Ua]) for c in 1:3]
+                    for c1 in 1:3, c2 in 1:3;  @views st.gCk[c1, c2, :, :] .+= Uk[c1] .* conj.(Uk[c2]) ./ N;  end
+                    st.gCn[] += 1
+                end
             end
             u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
@@ -209,7 +226,7 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke), grid_spectra(st, gF)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
@@ -217,7 +234,7 @@ function one_realization(seed)
     end
     wall = st.wall + time() - t0
     ndone = gfail ? (st.gstats.steps) : nsteps
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke))
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke), grid_spectra(st, gF)))
     runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
     rm(chk; force = true)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",

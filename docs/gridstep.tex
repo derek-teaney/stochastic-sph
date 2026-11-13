@@ -552,6 +552,42 @@ Wendland C6 & $0.994$ & $0.977$ & $0.910$ \\
 \end{center}
 a correction of order $(kh)^2$, accepted.
 
+\paragraph{The lattice Fourier transform.}  The sites are a Bravais lattice, $\bm a_1=(a,0)$, $\bm a_2=(a/2,a\sqrt3/2)$
+(odd rows shifted by $a/2$, $N_y$ even), so the box modes $\bm k=2\pi(n/L_x,m/L_y)$, $n<N_x$, $m<N_y$, are exactly the
+$N$ wave vectors of the Brillouin zone and
+\st
+f_{\bm k}=\sum_af_a\,e^{-i\bm k\cdot(\bm R_a-\bm R_0)},\qquad f_a=\frac1N\sum_{\bm k}f_{\bm k}\,e^{i\bm k\cdot(\bm R_a-\bm R_0)},\qquad
+\sum_{\bm k}|f_{\bm k}|^2=N\sum_a|f_a|^2,
+\stp
+is complete, with $f_{\bm k+\bm G}=f_{\bm k}$ for every reciprocal vector $\bm G$ ($\bm R_0$ the first site).  It is an
+FFT along the rows, a phase $e^{-ik_xa/2}$ on the odd rows, and an FFT across them (\texttt{GridFFT},
+\texttt{grid\_fft}, \texttt{grid\_ifft}; \texttt{test/testgridfft.jl}: the direct sum to $10^{-13}$, Parseval and the
+inverse to roundoff).  Each $\bm k$ is labelled by its first-zone representative.  Grid runs now record the
+static spectra of all $N$ modes, $\sum\delta U_{\bm k}\delta U_{\bm k}^\dagger/N$ after $t=5$ (\texttt{grid\_Ck\_re}, \texttt{\_im} in the
+\texttt{.h5}): equipartition can be checked over the whole zone (a 174-record smoke run gives
+$\langle|\delta M_{x,\bm k}|^2\rangle V/N=0.99\,wT$ averaged over the zone).
+
+\paragraph{The bare lattice propagator.}  Linearized about a uniform state $U_0$, the deterministic step is
+diagonal in $\bm k$: $\delta U_{\bm k}\to M(\bm k)\,\delta U_{\bm k}$, a $3\times3$ matrix per mode.  It is found from the step
+itself (\texttt{grid\_linear\_map}): three random real perturbations of all modes at once, one step each,
+$M(\bm k)=Y(\bm k)X(\bm k)^{-1}$.  Its eigenvalues $\lambda=e^{-i\Omega\Delta t-\Gamma\Delta t}$ are the frequency and damping of
+every mode of the lattice, including the time integration, with no fit
+(\texttt{examples/grid\_bare.jl}; Figs.~\ref{fig:gbfreq}--\ref{fig:gbideal}, the time steps of the stochastic runs).  It
+reproduces the wave fits exactly: shear along the flow at $v_0=0.8$, $kh=0.52$, $\eta/s=0.2$:
+$(\Omega-\omega_n)/c_sk=-0.0554$, $\Gamma/\Gamma_{\rm hydro}=1.012$ (fit: $-0.0553$, $1.012$; the stochastic campaign:
+$\Omega/k=0.768$).  Over the zone:
+\begin{itemize}
+\item up to $kh\approx1$ every mode is damped at the rate of hydrodynamics, at rest and moving; the shear
+  mode rises to $1.2\,\Gamma_{\rm hydro}$ at $kh\approx2$;
+\item beyond $kh\approx3.7$ sound stops propagating ($\Omega\to0$; the lattice derivative $\kappa(\bm k)$ peaks at $kh\approx1.9$ and
+  falls), and one branch is barely damped, $\Gamma/\Gamma_{\rm hydro}\to0$: lattice-scale modes on which the stencil
+  derivative nearly vanishes, so neither the ideal nor the viscous step acts on them (the grid's
+  analogue of checkerboard modes) --- to be checked in the static spectra of the stochastic runs;
+\item the ideal step is neutral for every mode: $|\Gamma|/c_sk\lesssim10^{-6}$ at rest, a few $10^{-4}$ moving.
+\end{itemize}
+This gives, mode by mode, the linear (bare) propagator against which the measured correlators can be
+compared; the difference is the fluctuation (nonlinear) part, the renormalization.
+
 \paragraph{Kernels.}  The reduced set of waves (ideal and $\eta/s=0.2$; $v_0=0$, $0.8$; $kh=0.52$, $1.05$; five periods)
 with the Wendland C4 and C6 kernels (\texttt{SPH\_KERNEL}), for the grid and the particles alike:
 \begin{center}
@@ -672,6 +708,22 @@ at $kh=0.26$, one row per $v_0$ (as \texttt{boost.tex}, Fig.~4).}
 \includegraphics[width=\textwidth]{figs/boost_fit_GRID.png}
 \caption{Stochastic grid campaign: fitted advection speed and shear damping against $v_0$ at $kh=0.26$ (as \texttt{boost.tex}, Fig.~5).}
 \label{fig:gbfit}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_bare_freq.png}
+\caption{Bare lattice propagator, $\eta/s=0.2$: the frequency error $(\Omega-\omega_{\rm hydro})/c_sk$ of every mode of the lattice
+against $|\bm k|h$ (first zone), in the hydrodynamic range; colour: the three modes, sorted by $\Omega$.}
+\label{fig:gbfreq}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_bare_damp.png}
+\caption{Bare lattice propagator, $\eta/s=0.2$: $\Gamma/\Gamma_{\rm hydro}$ of every mode over the whole zone, $v_0=0$, $0.3$, $0.8$.}
+\label{fig:gbdamp}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_bare_ideal.png}
+\caption{Bare lattice propagator of the ideal step: $\Gamma/c_sk$ of every mode (note the scales).}
+\label{fig:gbideal}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_smoke.png}
