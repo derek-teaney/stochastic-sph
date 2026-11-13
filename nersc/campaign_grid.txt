@@ -7,3 +7,9 @@ g_v0.3    16  SR_GRID=1 SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0   -- examples/eq
 g_v0.6    16  SR_GRID=1 SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0.6
 g_v0.8    16  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0.8
 g_L06      8  SR_GRID=1 SR_RECORD_E=1                             -- examples/equilibrium.jl 0.6 2.0 100 1 2 g_L06
+# Longer runs (2026-11-12, tasks 73-112): L = 2.4 (kh ≥ 0.13) as b24_* of boost, and more statistics at v = 0.8
+# (t = 600, new seeds, pooled with g_v0.8 in the analysis).
+g24_v0      8  SR_GRID=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=0.6  -- examples/equilibrium.jl 2.4 2 300 1 4 g24_v0
+g24_v0.6    8  SR_GRID=1 SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=0.6  -- examples/equilibrium.jl 2.4 2 300 1 4 g24_v0.6
+g24_v0.8    8  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=0.6  -- examples/equilibrium.jl 2.4 2 300 1 4 g24_v0.8
+g_v0.8_long 16 SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=100 -- examples/equilibrium.jl 1.2 2 600 1 4 g_v0.8_long
