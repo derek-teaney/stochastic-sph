@@ -691,7 +691,10 @@ For the grid the kernel changes only the dispersion, as $\kappa/k$ above, and no
 smaller phase error than the grid).  For the
 particles the excess damping of the shear wave along a moving flow depends strongly on the kernel,
 and not monotonically (C4 removes it at $kh=0.52$): a numerical effect of the particle arrangement
-rather than of the viscous step.
+rather than of the viscous step.  The rigidity follows the kernel: the ideal particle shear wave at rest oscillates with
+$c_t/c_s\approx0.055$ for C2, $\approx0.03$ for C6, and stays static to $c_t/c_s<5\times10^{-4}$ over the run for C4 (the
+same $c_t$ at $kh=0.52$ and $1.05$: a transverse sound).  For C4 the transverse rigidity of the particle
+lattice nearly cancels.
 
 \emph{With noise} (\texttt{nersc/campaign\_kernel.txt}, job 61212224): the particle step with C4 on the boost sets,
 16 runs at $v_0=0$ and $0.8$, $t=300$.  At $v_0=0.8$, $kh=0.52$:
@@ -710,7 +713,8 @@ $\Delta H/H$ at rest, $t=300$ & $9\times10^{-4}$ & $1.5\times10^{-3}$ & $2\times
 C4 helps the particles a little but, with noise, does not repeat the deterministic result: the shear
 along the flow stays about $2\sigma$ high, the kinetic energy $13\%$ above the prediction, and the energy is
 not conserved better (at rest the C4 shear across $\bm k$ is also high, $1.17\pm0.06$).  The grid remains the
-closest to hydrodynamics (Figs.~\ref{fig:k4static}--\ref{fig:k4fit}; the equal-time deficit along the flow at
+closest to hydrodynamics.  Since $c_t\approx0$ for C4, the discrepancies that remain with noise are not
+caused by the rigidity alone (Figs.~\ref{fig:k4static}--\ref{fig:k4fit}; the equal-time deficit along the flow at
 $v_0=0.8$ persists with C4, $0.86$--$0.91$ at $kh=0.52$--$0.78$).
 
 With noise (\texttt{nersc/campaign\_kernel.txt}, job 61212224: the particle step with C4 on the boost sets,
