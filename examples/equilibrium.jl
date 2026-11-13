@@ -57,12 +57,13 @@ const VOTE   = :star                                                 # stochasti
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
 stoch_opts(params) = StochOptions(params; λ = LAMBDA, vote = VOTE)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
-# SR_GRID=1: the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
-# src/grid.jl) in place of the leapfrog.  The particles never move; the stochastic step is the
+# SPH_IDEAL=grid (SimParams.ideal): the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
+# src/grid.jl) in place of the leapfrog.  (Was SR_GRID=1 until 2026-11-13; that name now stops the run.)  The particles never move; the stochastic step is the
 # same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke), and the static spectra of
 # all N lattice modes, Σ_records δU_k δU_k† / N with U = (ε, M_x, M_y) the site densities (src/grid.jl, GridFFT),
 # summed after t = 5: grid_Ck_re, grid_Ck_im (3×3×N_x×N_y), grid_Cn (the number of records), grid_kmin (2×N_x×N_y).
-const GRID   = setting("SR_GRID", false)
+haskey(ENV, "SR_GRID") && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
+const GRID   = setting("SPH_IDEAL", :particle) === :grid      # as SimParams decides (params.ideal)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
@@ -138,6 +139,7 @@ function one_realization(seed)
         start = initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
+        GRID == (params.ideal === :grid) || error("equilibrium.jl: SPH_IDEAL and SimParams.ideal disagree")
         gstencil = GRID ? GridStencil(ps, params, cl) : nothing
         gchecks = GRID ? grid_checks(gstencil, params, eos, dt) : NamedTuple()
         GRID && print_grid_checks(gchecks)

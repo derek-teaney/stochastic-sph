@@ -151,6 +151,10 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ### `grid` — the grid step (gridstep.tex), 2026-11-12, branch `gridcode`
 
+**Option (2026-11-13):** the grid step is `SimParams.ideal = :grid`, set by `SPH_IDEAL=grid` (default
+`particle`), recorded in `[sim]` and `[settings]` of the run record.  The campaign files of 2026-11-12 used
+`SR_GRID=1`, which now stops the run with a message: use `SPH_IDEAL=grid`.  `examples/equilibrium.jl` only.
+
 `src/grid.jl`, `SR_GRID=1` in `examples/equilibrium.jl`.  Checkouts `~/stochastic-sph-run{,2,3,4}` (worktrees
 at gridcode commits).  Deterministic tests: `examples/grid_waves.jl` (debug 61209546 ideal, 15 min;
 viscous full set timed out 61209692, quick set 61211081), `examples/grid_gaussian.jl` (61209795),

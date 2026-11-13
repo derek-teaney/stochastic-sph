@@ -13,7 +13,8 @@ the `.tex`).  Owner: D. Teaney.
   — the deterministic step it builds on.
 - `src/` — library, loaded by `src/load.jl`: `sph.jl` (kernels, params, EOS), `celllist.jl`, `ideal.jl`
   (Hamiltonian step), `pointwise.jl` (particle representation), `viscous.jl` (deterministic
-  viscous step), `stochastic.jl`, `measure.jl`, …  Superseded code (two-level strain form, the
+  viscous step), `stochastic.jl`, `grid.jl` (the ideal step on the fixed lattice, its lattice FFT and
+  bare propagator; `SPH_IDEAL=grid`, `docs/gridstep.tex`), `measure.jl`, …  Superseded code (two-level strain form, the
   old particle sweep) in `src/legacy/`.
 - `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.

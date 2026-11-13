@@ -26,6 +26,7 @@ const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))   
 const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star (single vote) or :bonds
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const SPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split
+setting("SPH_IDEAL", :particle) === :grid && error("stability.jl: SPH_IDEAL=grid is not supported yet (equilibrium.jl only)")
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s

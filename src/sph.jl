@@ -29,6 +29,7 @@ mutable struct SimParams{K<:AbstractKernel}
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
+    ideal       :: Symbol          # :particle (default) or :grid — see below
 end
 
 # dissipation: the viscous step.  :particle (default; formerly :changerep, still accepted)
@@ -52,6 +53,10 @@ end
 #   of the weights s, so the back map of the stochastic step at fixed positions conserves
 #   H exactly (volume_n.tex).  Stored as S_smooth = s_a n_a, so V_a = s_a/S_smooth either
 #   way.  Default from SPH_VOLUME, else :number with :energy (:entropy with :smoothed).
+# ideal: the ideal step.  :particle (default) is the Hamiltonian leapfrog of the moving particles
+#   (ideal.jl); :grid is the step on the fixed lattice — kick, drift and return (gridstep.tex,
+#   grid.jl): the particles stay on the sites of the hexagonal lattice, which needs lattice = :hex,
+#   hamiltonian = :energy and volume = :number.  Default from SPH_IDEAL, else :particle.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
@@ -63,7 +68,8 @@ default_hamiltonian(dissipation = setting("SPH_DISSIPATION", :particle)) =
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
                    dissipation=setting("SPH_DISSIPATION", :particle), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
-                   volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy))
+                   volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
+                   ideal=setting("SPH_IDEAL", :particle))
     dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
@@ -108,7 +114,11 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     volume === :number && @printf("SimParams: volume = number, V_a = 1/n_a (volume_n.tex)\n")
     hψ = bond_h === nothing ? Float64(h) : Float64(bond_h)
     0 < hψ <= h || error("bond_h = $hψ must satisfy 0 < bond_h ≤ h (bond support 2·bond_h ≤ 2h stencil)")
-    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian, volume)
+    ideal in (:particle, :grid) || error("ideal must be :particle or :grid, got $ideal")
+    ideal === :grid && (lattice === :hex && sim_dim == 2 && hamiltonian === :energy && volume === :number ||
+        error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
+    ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
+    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal)
 end
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.
