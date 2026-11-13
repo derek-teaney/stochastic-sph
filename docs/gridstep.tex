@@ -494,7 +494,7 @@ the sets of \texttt{boost.tex} with \texttt{SR\_GRID=1} --- $L=1.2$, $h/a=2$, $\
 equilibrium start, $t=300$, 16 runs at each $v_0=0$, $0.3$, $0.6$, $0.8$ --- and 8 runs at $L=0.6$ at rest.
 All 72 runs finished with no failure of the grid step.  Analysis as in \texttt{boost.tex}
 (\texttt{BOOST\_GROUP=GRID examples/boost\_analysis.jl}), against the particle step of \texttt{boost.tex}
-(Figs.~\ref{fig:gbstatic}--\ref{fig:gbfit}).
+(Figs.~\ref{fig:gbstatic}--\ref{fig:gbfit}; the same five figures as \texttt{boost.tex}).
 
 \emph{Energy and the fluctuations.}  $\Delta H/H$ at $t=300$ is $-(0.5$--$3)\times10^{-5}$ (particles:
 $+(0.3$--$2)\times10^{-3}$); at $L=0.6$, $-5\times10^{-6}$ with KE/eq $=0.999$.  The kinetic energy of the
@@ -636,6 +636,18 @@ filled $\bm k\parallel\bm v$, open $\bm k\perp\bm v$.}
 \caption{Stochastic grid campaign: the advected shear mode, $C_{yy}(k\hat x,\tau)/C_{yy}(k\hat x,0)$ at $kh=0.26$, one row per $v_0$;
 dashed hydrodynamics.}
 \label{fig:gbshear}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_par_GRID.png}
+\caption{Stochastic grid campaign: sound along the flow, $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ for $\bm k\parallel\bm v$ at $kh=0.26$, one row per $v_0$;
+dashed hydrodynamics (as \texttt{boost.tex}, Fig.~3).}
+\label{fig:gbpar}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_perp_GRID.png}
+\caption{Stochastic grid campaign: across the flow, $\mathrm{Re}\,C_{yy}$ (sound) and $\mathrm{Re}\,C_{xx}$ (shear mixed with sound) for $\bm k\perp\bm v$
+at $kh=0.26$, one row per $v_0$ (as \texttt{boost.tex}, Fig.~4).}
+\label{fig:gbperp}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_fit_GRID.png}
