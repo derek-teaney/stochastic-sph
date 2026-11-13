@@ -645,6 +645,24 @@ particles the excess damping of the shear wave along a moving flow depends stron
 and not monotonically (C4 removes it at $kh=0.52$): a numerical effect of the particle arrangement
 rather than of the viscous step.
 
+With noise (\texttt{nersc/campaign\_kernel.txt}, job 61212224: the particle step with C4 on the boost sets,
+16 runs each at $v_0=0$, $0.8$, $t=300$), at $v_0=0.8$:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+ & particles, C2 & particles, C4 & grid, C2 \\ \hline
+shear $\bm k\parallel\bm v$, $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ & $1.36(7)$ & $1.26(16)$ & $1.12(12)$ \\
+\phantom{shear $\bm k\parallel\bm v$, $\Gamma/\Gamma_{\rm hydro}$,} $kh=0.26$ & $1.52(20)$ & $1.39(23)$ & $0.84(16)$ \\
+$C_{EE}(\bm k,0)/\chi_{EE}$, $\bm k\parallel\bm v$, $kh=0.52$ & $0.84(4)$ & $0.91(9)$ & $1.01(18)$ \\
+fluctuation KE$/2VwT$ (predicted $17.6$) & $19.3$ & $19.9$ & $18.2$ \\
+$\Delta H/H$ at $t=300$, $v_0=0$ & $+1\times10^{-3}$ & $+1.5\times10^{-3}$ & $-2\times10^{-5}$ \\
+\hline
+\end{tabular}
+\end{center}
+C4 helps the particles only in part once the noise is on (and at rest it gives the shear damping across
+$\bm k$ $1.17(6)$); the grid is the closest to hydrodynamics in every line.  The errors at $v_0=0.8$ are
+large for all three; the high-statistics grid campaign (\texttt{nersc/campaign\_grid\_stats.txt}) is to reduce them.
+
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_series.png}
 \caption{The mode amplitude $c(t)/|c(0)|$ at $kh=0.52$: real part (thin) and modulus (dashed); blue grid,
