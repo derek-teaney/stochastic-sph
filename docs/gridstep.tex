@@ -328,6 +328,12 @@ the comparison to run if $\Delta S_{\rm T}$ is not small.
 Since the state lives in the particle vector, the stochastic step at fixed positions, the
 recorders and the run records are used unchanged.
 
+\paragraph{Test suite} (\texttt{test/run.sh all}, job 61212619, commit \texttt{4d5d9c2}): all unit, physics and
+load tests pass (with the new \texttt{test/testgridfft.jl}); the regression against \texttt{main} is
+bit-identical in every number.  It differed only in structure: the particle runs of the equilibrium
+driver wrote three empty grid series (fixed in \texttt{f63ac11}: written only in grid runs), and the run
+record lists the new setting \texttt{SR\_GRID} and the file \texttt{src/grid.jl} (expected).
+
 \paragraph{Driver.}  \texttt{examples/equilibrium.jl} with \texttt{SR\_GRID=1}: the grid step in
 place of the leapfrog; its diagnostics are written to the run record and the series
 $\sum\Delta S_{\rm T}/S$ and the power at $kh>1$ to the \texttt{.h5} file.
