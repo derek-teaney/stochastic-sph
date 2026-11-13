@@ -49,7 +49,7 @@ function run(scheme, etas)
             smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
             push!(ts, t);  push!(Ht, sum(p.s * p.H_over_S for p in ps) / H0 - 1);  push!(St, sum(p.s for p in ps) / S0 - 1)
         end
-        for ts_ in SNAP;  (ts_ > 0 && abs(t - ts_) < dt / 2) && (snaps[ts_] = slices(ps, params, cl));  end
+        for ts_ in SNAP;  (ts_ > 0 && i == round(Int, ts_ / dt)) && (snaps[ts_] = slices(ps, params, cl));  end   # nearest step
     end
     @printf("%-8s η/s = %.3f: %d steps, ΔH/H = %+.2e  ΔS/S = %+.2e  fails %d  (grid: ΣΔS_T/S %+.2e, max|v|Δt/a %.3f)\n",
             scheme, etas, n, Ht[end], St[end], fails, g.sum_dS_T, g.disp_max)

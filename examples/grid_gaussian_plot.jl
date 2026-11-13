@@ -4,7 +4,7 @@
 #   t = 0.55, 1.1, 2.2, grid (η/s = 0.002), particles (η/s = 0.002), grid without viscosity.
 # docs/figs/grid_gaussian_maps.png: the energy density on the sites/particles at t = 2.2, and
 #   ΔH/H, ΔS/S against t.
-using PyPlot, Serialization, Printf
+using PyPlot, Serialization, Printf, StaticArrays
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "grid", "gaussian")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
 res = deserialize(joinpath(DIR, "grid_gaussian.jls"))

@@ -405,9 +405,53 @@ sound $+$ & 1, \ 1/2, \ 1/4 & $-0.0637$, \ $-0.0651$, \ $-0.0655$ & $-1.3\times1
 \end{center}
 The growth falls as $\Delta t^3$; the frequency error is spatial.
 
-\paragraph{Still running} (to be added): the same waves with deterministic viscosity $\eta/s=0.2$, the
-Gaussian pulse (test 5), a short stochastic smoke test, and the stochastic campaign
-(\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with \texttt{SR\_GRID=1}).
+\paragraph{Test 5: the Gaussian pulse} (\texttt{examples/testgaussian.jl}: $e=0.1+e^{-x^2/2\sigma_x^2-y^2/2\sigma_y^2}$,
+$\sigma_x=0.1$, $\sigma_y=0.14$, $L=1$, $h=0.015$, $h/a=2$, 20\,544 sites, $t=2.2$), a strongly nonlinear flow
+($\max|\bm v|\Delta t/a=0.43$).  Three runs: the grid step with the deterministic viscous step of the
+code around it (viscous $\tfrac12$ · grid · viscous $\tfrac12$, $\eta/s=0.002$), the particle step
+(\texttt{generic\_step!}, the same viscosity), and the grid step without any viscosity
+(Figs.~\ref{fig:ggslice}, \ref{fig:ggmap}):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & steps & $\Delta H/H$ & $\Delta S/S$ & $\sum\Delta S_{\rm T}/S$ \\ \hline
+grid, $\eta/s=0.002$ & 861 & $+2.3\times10^{-5}$ & $+3.68\times10^{-2}$ & $+5.8\times10^{-4}$ \\
+particles, $\eta/s=0.002$ & 861 & $+2.2\times10^{-5}$ & $+3.63\times10^{-2}$ & -- \\
+grid, no viscosity & 424 & $-2.2\times10^{-4}$ & $+8.6\times10^{-3}$ & $+8.6\times10^{-3}$ \\
+\hline
+\end{tabular}
+\end{center}
+With viscosity the grid and the particles agree: the profiles lie on each other and the entropy
+grows alike.  Without viscosity the grid step is stable to the end, with no failure of the
+equation of state, but the shortest waves are not damped and ripples at the scale of a few $h$
+grow where the reflected waves meet (\Fig{fig:ggmap}, third panel); the return then makes
+entropy, $0.9\%$, the numerical dissipation of a nonlinear flow.  (The $t=1.1$ profiles of the two
+viscous runs were missed by the snapshot test; fixed for later runs.)
+
+\paragraph{The stochastic step: a smoke test.}  The grid step with the stochastic step at fixed
+positions (\texttt{SR\_GRID=1}), against the particle step: $L=0.6$ (672 sites), $h/a=2$, $\eta/s=0.2$,
+$S_0=10^6$, equilibrium start, $t=20$, 4 seeds each, at rest and at $v_0=0.8$ (\Fig{fig:gsmoke}):
+\begin{center}
+\begin{tabular}{lccccc}
+\hline
+ & KE/eq & $\Delta H/H$ & acceptance & $\sum\Delta S_{\rm T}/S$ & power at $kh>1$ \\ \hline
+grid, $v_0=0$ & $0.996$ & $-1.0\times10^{-6}$ & $0.969$, $0.773$ & $-1.5\times10^{-3}$ & $0.988$ \\
+particles, $v_0=0$ & $1.000$ & $+5.9\times10^{-5}$ & $0.969$, $0.771$ & -- & -- \\
+grid, $v_0=0.8$ & $17.3$ & $-3.4\times10^{-7}$ & $0.968$, $0.841$ & $-5.6\times10^{-4}$ & $0.989$ \\
+particles, $v_0=0.8$ & $17.2$ & $+2.9\times10^{-5}$ & $0.968$, $0.838$ & -- & -- \\
+\hline
+\end{tabular}
+\end{center}
+(KE in units of $2VwT$, mean over the second half; the boosted value is $\approx18$, \texttt{boost.tex};
+acceptance of the stress and the residual moves.)  The grid holds the equilibrium as the particles
+do, with the same acceptances, and conserves the energy 50--100 times better.  The return removes a
+little entropy, $\sum\Delta S_{\rm T}/S\approx-7\times10^{-5}$ per unit time at rest, which the stochastic step
+restores.  The fraction of the momentum power at $kh>1$ is the white-noise value (only $\approx1.7\%$
+of the box modes have $kh\le1$): no pile-up at the lattice scale.
+
+\paragraph{Still running} (to be added): the waves with deterministic viscosity $\eta/s=0.2$, and the
+stochastic campaign (\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with
+\texttt{SR\_GRID=1}), analysed as in \texttt{boost.tex}.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_series.png}
@@ -428,6 +472,27 @@ and the sign of the fitted $\omega$ is arbitrary.)}
 \caption{Numerical damping $\Gamma/c_sk$ ($\Gamma<0$: growth) of the ideal step against $kh$; as \Fig{fig:gdisp}.
 For the particle shear at rest the fit is to an oscillation, not a decay.}
 \label{fig:gdamp}
+\end{figure}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_gaussian_slices.png}
+\caption{Gaussian pulse: the rest-frame energy density along $x$ (top) and $y$ (bottom) through the
+centre at $t=0.55$, $1.1$, $2.2$; grid with $\eta/s=0.002$ (blue), particles with $\eta/s=0.002$ (orange),
+grid without viscosity (red); grey: $t=0$.}
+\label{fig:ggslice}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_gaussian_maps.png}
+\caption{Gaussian pulse at $t=2.2$: the energy density on the sites (grid) and on the particles (which
+have moved), and $\Delta H/H$, $\Delta S/S$ against $t$.}
+\label{fig:ggmap}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_smoke.png}
+\caption{Stochastic smoke test, $L=0.6$, 4 seeds each (mean): grid (solid) and particles (dashed), at rest
+(blue) and at $v_0=0.8$ (red).  Fluctuation kinetic energy, $\Delta H/H$, acceptances, the entropy made
+by the return, the fraction of the momentum power at $kh>1$, and the largest particle speed.}
+\label{fig:gsmoke}
 \end{figure}
 
 \end{document}
