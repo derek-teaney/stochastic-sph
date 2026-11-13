@@ -354,6 +354,13 @@ $v_0=0.8$ & $0.84(4)$ & $0.77(6)$ & $1.01(18)$ & $0.99(14)$ \\
   $0.3$), as they did for the grid with the present step ($0.84\pm0.12$); the high-statistics grid runs of \texttt{gridstep.tex}
   settled those at $0.97$--$0.98$, and the same is needed here before a difference can be claimed.
 \end{itemize}
+The correlators themselves are in Figs.~\ref{fig:ckshear}--\ref{fig:ckgpar}.  For the grid with the one-kernel step the
+shear correlator along the flow at $kh=0.26$ decays visibly more slowly than hydrodynamics at late times for
+$v_0=0.3$ and $0.6$ (\Fig{fig:ckgshear}; at $\tau=80$ the envelope is $\approx0.25$ against $0.08$ at $v_0=0.6$) --- the low fits above ---
+while at $v_0=0$ and $0.8$ it follows hydrodynamics.  The deterministic tests 2 and 3 covered only $v_0=0$ and $0.8$;
+whether this is statistics or a real effect at intermediate $v_0$ is open (a deterministic check at $v_0=0.3$, $0.6$ and
+more statistics would decide).
+
 In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
 Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.
@@ -367,6 +374,27 @@ the benchmark, whose remaining discrepancies belong to the particle ideal step.
 \includegraphics[width=\textwidth]{figs/boost_fit_CK.png}
 \caption{Boost benchmark, particle ideal step with the one-kernel viscous step: advection speed and shear damping at $kh=0.26$.}
 \label{fig:ckfit}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_CK.png}
+\caption{Particle ideal step, one-kernel viscous step: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$, real and imaginary
+parts, one row per $v_0$; dashed hydrodynamics.}
+\label{fig:ckshear}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_par_CK.png}
+\caption{Particle ideal step, one-kernel viscous step: sound along the flow, $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ for $\bm k\parallel\bm v$ at $kh=0.26$.}
+\label{fig:ckpar}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_CKG.png}
+\caption{Grid ideal step, one-kernel viscous step: the advected shear correlator at $kh=0.26$, one row per $v_0$; dashed hydrodynamics.}
+\label{fig:ckgshear}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_par_CKG.png}
+\caption{Grid ideal step, one-kernel viscous step: sound along the flow at $kh=0.26$.}
+\label{fig:ckgpar}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_static_CKG.png}
