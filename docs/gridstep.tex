@@ -481,6 +481,14 @@ and $3$--$12\%$ at $kh=1.05$; in particular the shear wave along the flow, whose
 $\gamma^3=4.6$, comes out at $1.01$.  The particle step damps it four times too fast: the numerical
 damping of the moving particles found in \texttt{boost.tex} (paragraph 6), here without noise.
 
+\paragraph{The waves themselves.}  Figures~\ref{fig:gw026}--\ref{fig:gwv105} show the real part of the
+mode amplitude, $\mathrm{Re}\,c(t)/|c(0)|$, for every case, with hydrodynamics
+$c_0e^{-i\omega_nt-\Gamma_{\rm hydro}t}$ (dashed; dotted: its envelope).  In the ideal runs the grid stays on
+the hydrodynamic amplitude in every panel and drifts in phase by its dispersion; the particles show
+the transverse oscillation of the shear wave at rest, damp the shear wave of a moving fluid, and
+pass amplitude between the two sound modes along the flow.  With viscosity the grid follows the
+hydrodynamic envelope throughout.
+
 \paragraph{Still running} (to be added): the stochastic campaign (\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with
 \texttt{SR\_GRID=1}), analysed as in \texttt{boost.tex}.
 
@@ -511,6 +519,30 @@ For the particle shear at rest the fit is to an oscillation, not a decay.}
 shear and sound $+$, along and across the flow; filled/solid grid, open/dashed particles; blue $v_0=0$,
 red $v_0=0.8$.  (Particle shear at rest: fitted to an oscillation.)}
 \label{fig:gvisc}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/grid_ideal_waves_kh0.26.png}
+\caption{Ideal step, $kh=0.26$: $\mathrm{Re}\,c(t)/|c(0)|$ for each mode (rows: shear, sound $+$, sound $-$; along and across
+the flow) and $v_0=0$, $0.3$, $0.8$ (columns); blue grid, orange particles, dashed ideal hydrodynamics; the
+legend gives the fitted $\Gamma/c_sk$.}
+\label{fig:gw026}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/grid_ideal_waves_kh0.52.png}
+\caption{As \Fig{fig:gw026}, $kh=0.52$.}
+\label{fig:gw052}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/grid_viscous_waves_kh0.52.png}
+\caption{Deterministic viscosity $\eta/s=0.2$, $kh=0.52$: shear and sound $+$, along and across the flow (rows);
+columns: grid and particles at $v_0=0$, grid and particles at $v_0=0.8$; dashed boosted hydrodynamics,
+dotted its envelope.}
+\label{fig:gwv052}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/grid_viscous_waves_kh1.05.png}
+\caption{As \Fig{fig:gwv052}, $kh=1.05$.}
+\label{fig:gwv105}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_gaussian_slices.png}

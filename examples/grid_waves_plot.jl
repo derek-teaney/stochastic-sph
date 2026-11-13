@@ -62,3 +62,5 @@ if visc !== nothing && !isempty(visc.vres)
     grid_fig(visc.vres, r -> r.Gamma / r.Gamma_hydro, "Γ / Γ_hydro", "grid_viscous.png"; hline = 1.0, ylim = (0, 4.2),
              title = "Deterministic viscosity η/s = 0.2: damping against boosted hydrodynamics (filled/solid: grid, open/dashed: particles)")
 end
+
+# the waves themselves: examples/grid_waves_series.jl
