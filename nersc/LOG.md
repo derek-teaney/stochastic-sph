@@ -30,12 +30,12 @@ or learn something about running the code here.
 
 ## Lessons
 
-- **What was run**: every `stochrep_equilibrium.jl` run writes `<run>.json` (all settings,
-  defaults spelled out: Hamiltonian, volume, dissipation, kernel, EOS, the stochastic-step
-  options — vote, λ, residual, gradient map, grid shift, back map — the integrator and
-  splitting, the Δt rule, the SPH_*/SR_* environment, commit, host, Slurm job; and the
-  outcomes) and the same as one CSV row; `julia nersc/collect_runs.jl $SCRATCH/sph/<campaign>`
-  makes `runs.csv` for a spreadsheet.  The task log (`slurm/<job>_<task>.out`) has a monitor
+- **What was run** (since 2026-11-12): every run of `equilibrium.jl` and `stability.jl` writes
+  `<run>.toml`, generated from the values used: every field of SimParams, the EOS and
+  StochOptions, every SR_*/SPH_* setting read (value, default, whether set), the start,
+  commit (+dirty and a diff hash), host, Slurm job, and the outcomes (`src/runinfo.jl`).
+  `julia --project=nersc nersc/collect_runs.jl $SCRATCH/sph/<campaign>` makes `runs.csv`
+  for a spreadsheet; Python reads a record with `tomllib`.  The task log (`slurm/<job>_<task>.out`) has a monitor
   line every 5% of the run (acceptances, |v| ≥ 1 rejections, speeds) and a summary block.
 
 - **Plotting scripts in batch jobs**: matplotlib needs no display with the Agg backend.
@@ -91,10 +91,10 @@ or learn something about running the code here.
   physical cores and `-c 2` is one core with 2 threads; shared QOS charges per physical
   core.  Results are identical for any thread count.  Default is now `-c 2`.  Speed-up needs
   threading the serial parts (star rebuild, fits, smoothing, leapfrog), `docs/plan.tex`.
-- Output of `stochrep_equilibrium.jl` is HDF5 (`equilibrium_<tag>_r<seed>.h5`):
+- Output of `equilibrium.jl` is HDF5 (`equilibrium_<tag>_r<seed>.h5`):
   datasets `ks t ML MT S H KE`, parameters as root attributes (incl. `commit`).  Read
   with `read_equilibrium` (`src/measure.jl`) or h5py (arrays appear as (nt, nk)).
-  `stochrep_hamiltonian.jl` still writes `.jls` (Julia `serialize`; needs the same
+  `stability.jl` still writes `.jls` (Julia `serialize`; needs the same
   `src/` definitions to load).
 - **Throughput in `shared`: `MaxJobsAccruePU = 2`.**  Only two pending tasks gain
   priority at a time; array tasks start in pairs about every 5 min (≈ 24 per hour),
@@ -103,6 +103,23 @@ or learn something about running the code here.
 - Recording interval: the sound period at k h = 1.5 is 2π/(c_s k) ≈ 0.36; keep
   `rec_every × Δt ≲ 0.05` (Δt = 8.66e-3 at h/a = 2) if C_L is wanted at large k.
 - Cost model: wall ≈ c × N × steps, steps = t_end / 8.66e-3 at h/a = 2.
+
+## The code after the cleanup (2026-11-12)
+
+All campaigns before this date are finished and their runs will be discarded (the figures in
+`docs/figs` stay).  The code was reorganized without any change to the numerics
+(`docs/codeplan.tex`; bit-identical against the old `main`):
+- Drivers renamed: `examples/stochrep_equilibrium.jl` → `examples/equilibrium.jl`,
+  `examples/stochrep_hamiltonian.jl` → `examples/stability.jl`.  The old campaign files
+  (`campaign_*.txt`) keep the old names; new campaign files use the new ones.
+- Library: scripts include `src/load.jl`; the stochastic step is `stochastic_step!` in
+  `src/stochastic.jl`; superseded code in `src/legacy/`.  Settings go through `setting()`;
+  `SPH_DISSIPATION=changerep` is now `particle` (the old value still works).
+- Run record `<run>.toml` (above) instead of `.json`/`.csv`.
+- Tests: `test/run.sh all` (unit, physics, load, regression against `main`);
+  `nersc/unittests.sh` runs it on one debug node.  Run it once at NERSC before the first
+  new campaign.
+- Scripts behind the older notes: git tag `notes-2026-11`.
 
 ## Campaigns
 
