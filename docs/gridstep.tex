@@ -516,7 +516,7 @@ $v_0$ & $E$ & $M_x$ & $M_y$ & $E$ & $M_x$ & $M_y$ \\ \hline
 0 & $1.06(2)$ & $1.06(3)$ & $1.05(3)$ & $0.99(3)$ & $0.98(3)$ & $1.04(3)$ \\
 0.3 & $1.01(3)$ & $1.00(4)$ & $1.04(2)$ & $0.91(3)$ & $0.87(3)$ & $1.01(3)$ \\
 0.6 & $1.05(6)$ & $1.05(7)$ & $1.00(4)$ & $0.86(4)$ & $0.83(5)$ & $0.98(2)$ \\
-0.8 & $1.01(18)$ & $1.01(18)$ & $0.91(4)$ & $0.84(4)$ & $0.83(4)$ & $0.97(3)$ \\
+0.8 & $0.93(10)$ & $0.93(10)$ & $0.94(3)$ & $0.84(4)$ & $0.83(4)$ & $0.97(3)$ \\
 \hline
 \end{tabular}
 \end{center}
@@ -533,15 +533,23 @@ $v_0$ & grid & particles & grid & particles \\ \hline
 0 & $0.97(5)$ & $1.00(4)$ & $0.98(5)$ & $1.00(4)$ \\
 0.3 & $0.95(4)$ & $1.11(4)$ & $0.88(5)$ & $1.16(6)$ \\
 0.6 & $0.96(7)$ & $1.10(7)$ & $0.94(6)$ & $1.21(6)$ \\
-0.8 & $1.12(12)$ & $1.36(7)$ & $1.00(6)$ & $1.14(4)$ \\
+0.8 & $1.06(8)$ & $1.36(7)$ & $0.97(4)$ & $1.14(4)$ \\
 \hline
 \end{tabular}
 \end{center}
-At $kh=0.26$, $v_0=0.8$ along the flow: grid $0.84(16)$, particles $1.52(20)$.  The excess damping of the
+(At $v_0=0.8$ the grid pools 32 runs: the first 16 and 16 more to $t=600$, job 61212123; with the first 16
+alone $1.12(12)$ and $1.00(6)$.)  At $kh=0.26$, $v_0=0.8$ along the flow: grid $0.93(13)$, particles $1.52(20)$.  The excess damping of the
 shear mode with flow, which \texttt{boost.tex} traced to the particle step, is gone: the grid is at the
 rate of hydrodynamics within the errors at every $v_0$, including the rate along the flow slowed by
 $\gamma^3$.  The advection speed is $\Omega/k=0.791$, $0.768$ at $kh=0.26$, $0.52$ for $v_0=0.8$, i.e.
 $v_0\,\kappa(k)/k$: the dispersion of the stencil, below.
+
+\emph{The larger box,} $L=2.4$ ($kh\ge0.13$), 8 runs each at $v_0=0$, $0.6$, $0.8$, $t=300$ (job 61212123;
+Figs.~\ref{fig:gb24static}, \ref{fig:gb24shear}).  The shear mode is advected at $\Omega/k=0.796$ at $kh=0.13$ and damped
+as in hydrodynamics within large errors ($v_0=0.8$: $1.03\pm0.23$ at $kh=0.26$, $0.96\pm0.59$ at $kh=0.13$).  The
+equal-time values scatter by 10--40\% at this statistics, as with the particles (one value $3\sigma$ low,
+$C_{EE}/\chi=0.60\pm0.13$ along the flow at $v_0=0.8$, $kh=0.26$); the high-statistics set (32 runs to $t=1000$,
+running) will tell.
 
 \paragraph{Dispersion.}  The phase errors above (sound, advection) are $\kappa(k)/k-1$, where
 $\kappa(k)\approx k\,\hat W(kh)$ is the lattice derivative of the kernel-smoothed field.  It depends on $kh$, not
@@ -810,6 +818,16 @@ $\kappa(\bm k)h$; top $v_0=0$, bottom $v_0=0.8$; 16 runs each, $t=100$.}
 \includegraphics[width=\textwidth]{figs/grid_spectra_maps.png}
 \caption{The same over the Brillouin zone ($k_xh$, $k_yh$; first-zone representatives): equipartition is white.}
 \label{fig:gspmap}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_static_GRID24.png}
+\caption{Stochastic grid runs at $L=2.4$: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per $v_0$; 8 runs each.}
+\label{fig:gb24static}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_GRID24.png}
+\caption{Stochastic grid runs at $L=2.4$: the advected shear mode at $kh=0.13$, one row per $v_0$; dashed hydrodynamics.}
+\label{fig:gb24shear}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_smoke.png}
