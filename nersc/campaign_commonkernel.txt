@@ -1,0 +1,7 @@
+# Campaign `commonkernel` (2026-11-13, docs/commonkernel.tex, branch commonkernel).
+# Test 4: the stochastic step alone (positions frozen, SR_NOHAM=1), the present step against the one-kernel
+# step, at rest and at v = 0.8 (L = 1.2, h/a = 2, η/s = 0.2, S0 = 1e6, t = 50).  Tasks 1-32.
+ck_alone_p_v0     8  SR_NOHAM=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0                           -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_p_v0
+ck_alone_c_v0     8  SR_NOHAM=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0 SPH_DISSIPATION=common    -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_c_v0
+ck_alone_p_v0.8   8  SR_NOHAM=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0                           -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_p_v0.8
+ck_alone_c_v0.8   8  SR_NOHAM=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0 SPH_DISSIPATION=common    -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_c_v0.8
