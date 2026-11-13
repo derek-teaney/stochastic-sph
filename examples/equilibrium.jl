@@ -209,7 +209,8 @@ function one_realization(seed)
                 end
             end
             u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
-            record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
+            GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
+                   record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
             mbar = sum(q.m for q in ps) / N                                # fluctuations about the mean flow
             push!(KE, sum(dot(q.m - mbar, q.m - mbar) for q in ps) / (2 * (N - 1) * V * w * T))

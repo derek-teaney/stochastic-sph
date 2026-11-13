@@ -293,6 +293,29 @@ function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::Ab
     return rec
 end
 
+# The same record on the fixed lattice of the grid step (src/grid.jl): every box mode k = 2π(n_x/L_x, n_y/L_y) is a
+# mode of the lattice FFT (n_y < 0 is n_y + N_y: 2πN_y/L_y is a reciprocal vector), so one FFT per field gives all
+# the recorded M_k, S_k, E_k at once, equal to the direct sums of record! up to roundoff (the factor e^{−ik·R_0}
+# restores the origin).  The displacements are zero (the particles never move).
+function record_grid!(rec::Recorder, F::GridFFT, particles::Vector{Particle}, t::Float64, eos::AbstractEOS)
+    nk = length(rec.ks)
+    fk(f) = grid_fft(F, f)
+    Mx = fk([pa.m[1] for pa in particles]);  My = fk([pa.m[2] for pa in particles]);  Sk = fk([pa.s for pa in particles])
+    Ek = rec.energies ? fk([particle_energy(pa, eos) for pa in particles]) : nothing
+    ML = zeros(ComplexF64, nk);  MT = zeros(ComplexF64, nk);  S = zeros(ComplexF64, nk)
+    E  = zeros(ComplexF64, rec.energies ? nk : 0)
+    for (i, k) in enumerate(rec.ks)
+        n = mod(round(Int, k[1] / F.k[2, 1][1]), F.Nx) + 1;  m = mod(round(Int, k[2] / F.k[1, 2][2]), F.Ny) + 1
+        ph = cis(-dot(k, F.R0));  kh = k / norm(k);  M = SVector(Mx[n, m], My[n, m]) * ph
+        ML[i] = kh[1] * M[1] + kh[2] * M[2];  MT[i] = kh[1] * M[2] - kh[2] * M[1];  S[i] = Sk[n, m] * ph
+        rec.energies && (E[i] = Ek[n, m] * ph)
+    end
+    if !isempty(rec.x0);  push!(rec.UL, zeros(ComplexF64, nk));  push!(rec.UT, zeros(ComplexF64, nk));  end
+    push!(rec.t, t);  push!(rec.ML, ML);  push!(rec.MT, MT);  push!(rec.S, S)
+    rec.energies && push!(rec.E, E)
+    return rec
+end
+
 # ── Particle motion: pair separation and the lattice's Fourier components ───────────
 # Unwrapped displacements u_a(t) = x_a(t) − x_a(0), accumulated record by record by minimum
 # image (a particle moves far less than L/2 between records), with the mean drift removed.
