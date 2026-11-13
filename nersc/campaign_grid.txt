@@ -1,0 +1,9 @@
+# Campaign `grid` (2026-11-12): the grid step (docs/gridstep.tex, SR_GRID=1) with the stochastic step,
+# the sets of the boost campaign (L = 1.2, h/a = 2, η/s = 0.2, S0 = 1e6 at rest, t = 300, equilibrium
+# start; Δt lowered with v by c_s/v_signal) and L = 0.6 at rest as in volume_n (n_dt1).
+# Analysis: BOOST_GROUP=GRID examples/boost_analysis.jl.  Packed: nersc/node.sh, THREADS=4.
+g_v0      16  SR_GRID=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0
+g_v0.3    16  SR_GRID=1 SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0.3
+g_v0.6    16  SR_GRID=1 SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0.6
+g_v0.8    16  SR_GRID=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 g_v0.8
+g_L06      8  SR_GRID=1 SR_RECORD_E=1                             -- examples/equilibrium.jl 0.6 2.0 100 1 2 g_L06
