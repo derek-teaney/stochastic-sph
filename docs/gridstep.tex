@@ -421,8 +421,10 @@ grid, no viscosity & 424 & $-2.2\times10^{-4}$ & $+8.6\times10^{-3}$ & $+8.6\tim
 \hline
 \end{tabular}
 \end{center}
-With viscosity the grid and the particles agree: the profiles lie on each other and the entropy
-grows alike.  Without viscosity the grid step is stable to the end, with no failure of the
+With viscosity the grid and the particles agree to a few percent, and the entropy grows alike.
+The largest difference is in the rarefied centre at $t=0.55$, $e=0.06$ (grid) against $0.08$
+(particles), where the particles have spread apart and resolve the flow less well; by $t=2.2$ the
+profiles differ by $\lesssim5\%$.  Without viscosity the grid step is stable to the end, with no failure of the
 equation of state, but the shortest waves are not damped and ripples at the scale of a few $h$
 grow where the reflected waves meet (\Fig{fig:ggmap}, third panel); the return then makes
 entropy, $0.9\%$, the numerical dissipation of a nonlinear flow.  (The $t=1.1$ profiles of the two
@@ -478,7 +480,8 @@ For the particle shear at rest the fit is to an oscillation, not a decay.}
 \includegraphics[width=\textwidth]{figs/grid_gaussian_slices.png}
 \caption{Gaussian pulse: the rest-frame energy density along $x$ (top) and $y$ (bottom) through the
 centre at $t=0.55$, $1.1$, $2.2$; grid with $\eta/s=0.002$ (blue), particles with $\eta/s=0.002$ (orange),
-grid without viscosity (red); grey: $t=0$.}
+grid without viscosity (red).  At $t=0$ the pulse is $0.1+e^{-x^2/2\sigma_x^2-y^2/2\sigma_y^2}$ (peak $1.1$).  The
+$t=1.1$ profiles of the two viscous runs are missing.}
 \label{fig:ggslice}
 \end{figure}
 \begin{figure}[t]

@@ -19,8 +19,6 @@ for (j, t) in enumerate((0.55, 1.1, 2.2)), (i, dim) in enumerate((:x, :y))
         s = r.snaps[t];  c, ls, lw = sty[k]
         ax.plot(dim === :x ? s.xs : s.ys, dim === :x ? s.ex : s.ey, color = c, ls = ls, lw = lw, label = lab(r))
     end
-    s0 = res[1].snaps[0.0]
-    ax.plot(dim === :x ? s0.xs : s0.ys, dim === :x ? s0.ex : s0.ey, color = "0.6", lw = 0.8, label = "t = 0")
     ax.set_title(@sprintf("t = %.2f, slice along %s through the centre", t, dim), fontsize = 10)
     ax.set_xlabel(string(dim));  j == 1 && ax.set_ylabel("e (rest frame)")
     i == 1 && j == 1 && ax.legend(fontsize = 8)
