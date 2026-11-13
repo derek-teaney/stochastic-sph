@@ -30,6 +30,15 @@ const SETS = GROUP == "L24" ?
     [("v=0", ["gs24_v0"], 0.0, "C0"), ("v=0.6", ["gs24_v0.6"], 0.6, "C1"), ("v=0.8", ["gs24_v0.8"], 0.8, "C3")] :
              GROUP == "K4" ?                      # particles with the C4 kernel, $SCRATCH/sph/kernel
     [("v=0", ["k4_v0"], 0.0, "C0"), ("v=0.8", ["k4_v0.8"], 0.8, "C3")] :
+             GROUP == "CKALONE" ?                 # commonkernel.tex, test 4: the stochastic step alone, $SCRATCH/sph/commonkernel
+    [("present v=0", ["ck_alone_p_v0"], 0.0, "C0"), ("common v=0", ["ck_alone_c_v0"], 0.0, "C2"),
+     ("present v=0.8", ["ck_alone_p_v0.8"], 0.8, "C3"), ("common v=0.8", ["ck_alone_c_v0.8"], 0.8, "C1")] :
+             GROUP == "CK" ?                      # commonkernel.tex: the boost benchmark with SPH_DISSIPATION=common
+    [("v=0", ["ck_v0"], 0.0, "C0"), ("v=0.3", ["ck_v0.3"], 0.3, "C2"), ("v=0.6", ["ck_v0.6"], 0.6, "C1"),
+     ("v=0.8", ["ck_v0.8"], 0.8, "C3")] :
+             GROUP == "CKG" ?                     # commonkernel.tex: grid ideal step + one-kernel viscous step
+    [("v=0", ["ckg_v0"], 0.0, "C0"), ("v=0.3", ["ckg_v0.3"], 0.3, "C2"), ("v=0.6", ["ckg_v0.6"], 0.6, "C1"),
+     ("v=0.8", ["ckg_v0.8"], 0.8, "C3")] :
              GROUP == "GRID24" ?
     [("v=0", ["g24_v0"], 0.0, "C0"), ("v=0.6", ["g24_v0.6"], 0.6, "C1"), ("v=0.8", ["g24_v0.8"], 0.8, "C3")] :
              GROUP == "ETA" ?

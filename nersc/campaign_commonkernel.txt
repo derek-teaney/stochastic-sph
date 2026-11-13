@@ -5,3 +5,13 @@ ck_alone_p_v0     8  SR_NOHAM=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0         
 ck_alone_c_v0     8  SR_NOHAM=1 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0 SPH_DISSIPATION=common    -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_c_v0
 ck_alone_p_v0.8   8  SR_NOHAM=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0                           -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_p_v0.8
 ck_alone_c_v0.8   8  SR_NOHAM=1 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0 SPH_DISSIPATION=common    -- examples/equilibrium.jl 1.2 2 50 1 4 ck_alone_c_v0.8
+# The boost benchmark (boost.tex) with the one-kernel viscous step, SPH_DISSIPATION=common: with the particle ideal
+# step (the default, tasks 33-96) and with the grid ideal step (SPH_IDEAL=grid, tasks 97-160).  L = 1.2, t = 300.
+ck_v0       16  SPH_DISSIPATION=common SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0                  -- examples/equilibrium.jl 1.2 2 300 1 4 ck_v0
+ck_v0.3     16  SPH_DISSIPATION=common SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0                  -- examples/equilibrium.jl 1.2 2 300 1 4 ck_v0.3
+ck_v0.6     16  SPH_DISSIPATION=common SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0                  -- examples/equilibrium.jl 1.2 2 300 1 4 ck_v0.6
+ck_v0.8     16  SPH_DISSIPATION=common SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0                  -- examples/equilibrium.jl 1.2 2 300 1 4 ck_v0.8
+ckg_v0      16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0
+ckg_v0.3    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.3
+ckg_v0.6    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.6
+ckg_v0.8    16  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 ckg_v0.8

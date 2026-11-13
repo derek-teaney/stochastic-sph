@@ -278,12 +278,43 @@ $kh=0.52$ (\Sect{sec:resid}); with $f_{ab}$ it is within $0.3\%$, better than th
 modes across the flow.  The price is the longitudinal wave along the flow, $4\%$ low at $kh=0.52$ (the
 present scheme: $1\%$), where the weaker residual no longer offsets the low SPH gradient.
 
-\begin{enumerate}
-\setcounter{enumi}{2}
-\item The viscous step alone (positions fixed, no ideal step), deterministic: decay of shear and
-  longitudinal waves of a moving fluid, both schemes.
-\item The stochastic step alone: equilibrium of a moving fluid, equal-time correlators and acceptance.
-\item The boost benchmark (\texttt{boost.tex}) with \texttt{SPH\_DISSIPATION=common}.
-\end{enumerate}
+\paragraph{3. The viscous step alone,} deterministic (\texttt{examples/commonkernel\_waves.jl}, job 61227129): one mode
+$\delta\bm m_a=\epsilon\,\bm e\sin\bm k\cdot\bm x_a$, positions fixed, no ideal step, $v_0=0$ and $0.8$.  The entropy deficit
+$D=\sum_a[S_a(e_a,\bar{\bm m})-S_a(e_a,\bm m_a)]$ obeys $\dot D=-2K$, so the mode decays at $\Gamma=K/D$.  In every case the fitted
+decay equals $K/D$ of the same scheme to $0.01$--$0.3\%$, the entropy produced equals $2\!\int\!K\,dt$ to $10^{-4}$, and
+$\Delta H/H\sim10^{-13}$: the time stepping is consistent with the dissipative function.  At rest the three schemes are
+identical.  At $v_0=0.8$, $\Gamma/\Gamma_{\rm hydro}$ at $kh=0.26$, $0.52$, $1.05$:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+ & present & \texttt{common\_lab} & \texttt{common} \\ \hline
+shear, $\bm k\parallel\bm v$ & $1.003$, $1.013$, $1.050$ & $1.059$, $1.230$, $1.802$ & $0.999$, $0.997$, $0.992$ \\
+long., $\bm k\perp\bm v$ & $1.007$, $1.028$, $1.095$ & $1.007$, $1.028$, $1.095$ & $1.002$, $1.009$, $1.024$ \\
+\hline
+\end{tabular}
+\end{center}
+the same as the $K$ ratios of test 2.  (A momentum perturbation \emph{along} a moving flow is not a pure mode of the
+viscous step alone: the step holds each particle's energy and $\delta e=\bm v\cdot\delta\bm m$; those modes are covered by test 2.)
+
+\paragraph{4. The stochastic step alone} (positions frozen, \texttt{SR\_NOHAM=1}; \texttt{nersc/campaign\_commonkernel.txt}, job 61227130;
+$L=1.2$, 8 runs each, $t=50$):
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+ & acceptance, stress & residual & KE$/2VwT$ \\ \hline
+present, $v_0=0$ & $0.969$ & $0.773$ & $0.997$ \\
+\texttt{common}, $v_0=0$ & $0.969$ & $0.774$ & $0.998$ \\
+present, $v_0=0.8$ & $0.968$ & $0.841$ & $17.660$ \\
+\texttt{common}, $v_0=0.8$ & $0.981$ & $0.878$ & $17.661$ \\
+\hline
+\end{tabular}
+\end{center}
+Both sample the moving equilibrium (predicted KE $17.6$); $\Delta H/H\sim10^{-10}$.  At rest they are identical.  At $v_0=0.8$
+the one-kernel step accepts more: its faces are smaller (the lab stencil is not contracted along $\bm v$, so
+$\sum_b|\bm A_{ab}|^2$ is $0.33$ of the present one) and its residual coefficients carry $f_{ab}\le1$ ($\sum_bc_{ab}$ is $0.57$).  Without
+the ideal step the long waves relax only by diffusion, and the equal-time correlators are not converged
+by $t=50$; they are measured in the full benchmark.
+
+\paragraph{5. The boost benchmark} (\texttt{boost.tex}) with \texttt{SPH\_DISSIPATION=common}: running.
 
 \end{document}
