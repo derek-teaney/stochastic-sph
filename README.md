@@ -57,6 +57,7 @@ src/        library code; scripts include src/load.jl, which loads it in order
 test/       checks with pass/fail assertions (some also make plots)
 examples/   physics validation runs (sound waves, shear waves, Gaussian pulse,
             stochastic uniform background); write PNGs next to the script
+            (scripts behind the older notes: git tag notes-2026-11, docs/codeplan.tex)
 docs/       notes (LaTeX source + PDF)
 ```
 
