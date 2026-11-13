@@ -1,0 +1,309 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The ideal step on a fixed lattice: kick, drift and return}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The particles start each step on the sites of a hexagonal lattice.  They take one
+step of the Hamiltonian of \texttt{energystep.tex} (number volume), and are then
+returned to their sites, carrying their energy and momentum with them.  The fields
+live on the sites and the code becomes a grid code.  The force is only ever
+evaluated on the perfect lattice, so the transverse sound of \texttt{rigidity.tex}
+is absent, $c_t=0$.  This note defines the step and lists what an implementation
+must monitor.  Nothing here has been run.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Lattice, stencil and state}
+\label{sec:lattice}
+
+\paragraph{Sites.}  The sites $\bm R_a$, $a=1\ldots N$, form a hexagonal lattice of
+spacing $a$ in a periodic box that holds the lattice exactly.  They never move.
+
+\paragraph{Stencil.}  With the kernel $W$ of the code and $\bm r_{ab}=\bm R_a-\bm R_b$
+(minimum image),
+\st
+\bm D_{ab}\equiv\frac{\partial W(\bm r_{ab})}{\partial\bm R_a},\qquad
+\bm D_{ba}=-\bm D_{ab},\qquad \bm D_{aa}=0 .
+\stp
+The number density and the volume of a site are the same for every site,
+\st
+n_0=\sum_bW(\bm r_{ab})\quad(\text{including }b=a),\qquad V=\frac1{n_0},
+\stp
+as in \texttt{volume\_n.tex} ($V_a=1/n_a$) on the perfect lattice.  The lattice is
+symmetric under inversion about a site, so
+\st
+\sum_b\bm D_{ab}=0 .
+\label{sumD}
+\stp
+The stencil $\{\bm r_{ab},\bm D_{ab}\}$ is the same for every site and is built once.
+The lattice gradient and divergence are
+\st
+(\nabla f)_a=V\sum_b(f_a+f_b)\,\bm D_{ab},\qquad
+(\nabla\cdot\bm w)_a=V\sum_b(\bm w_b-\bm w_a)\cdot\bm D_{ab} ,
+\label{ops}
+\stp
+(the $f_a$ and $\bm w_a$ terms vanish by \Eq{sumD}; they are kept so that every sum
+below is odd under $a\leftrightarrow b$ term by term).
+
+\paragraph{State.}  Each site holds an energy $e_a$, a momentum $\bm m_a$
+(Density Frame, $\bm m_a/V=T^{0i}$) and an entropy $s_a$, related by the equation of
+state at the fixed volume $V$,
+\st
+e_a=V\,h\Big(\frac{s_a}{V},\frac{\bm m_a}{V}\Big),\qquad
+de_a=T_a\,ds_a+\bm v_a\cdot d\bm m_a-p_a\,dV .
+\label{eos}
+\stp
+$T_a$ is the bare temperature, $\bm v_a$ the fluid velocity and $p_a$ the pressure of
+the site.  Two calls are used:
+\begin{itemize}
+\item forward, $(s_a,\bm m_a)\to(e_a,\bm v_a,p_a)$: \texttt{solve\_eos!} /
+  \texttt{particle\_energy};
+\item inverse, $(e_a,\bm m_a)\to(s_a,\bm v_a,p_a)$: \texttt{eos\_from\_energy}.
+\end{itemize}
+
+%=============================================================================
+\section{The three pieces}
+\label{sec:pieces}
+
+The Hamiltonian is $H=\sum_ae_a(s_a,\bm m_a,V_a)$ with $V_a=1/n_a$
+(\texttt{energystep.tex}, \texttt{volume\_n.tex}).  Evaluated with the particles on
+the sites, Hamilton's equations give the kick and the drift.
+
+\paragraph{Kick.}  At fixed positions and fixed $s_a$,
+\st
+\dot{\bm m}_a=\bm F_a\equiv-V^2\sum_b(p_a+p_b)\,\bm D_{ab},\qquad \dot s_a=0 .
+\label{kick}
+\stp
+The energy follows from \Eq{eos} at the new momentum, $\dot e_a=\bm v_a\cdot\bm F_a$.
+The pressure depends on $\bm m_a$ (at fixed $s_a$), so the force changes during the
+kick.
+
+\paragraph{Drift.}  At fixed $s_a$ and $\bm m_a$ the particle moves with its own
+velocity, $\dot{\bm x}_a=\bm v_a$.  A displacement $\bm u_a$ changes its volume by
+\st
+\delta V_a=-V^2\,\delta n_a=V\,(\nabla\cdot\bm u)_a ,
+\stp
+and its energy by $-p_a\,\delta V_a$.
+
+\paragraph{Return.}  After the drift, particle $b$ sits at $\bm R_b+\bm u_b$ and carries
+$q_b$, where $q$ is $e$ or a component of $\bm m$.  The density $Q=q/V$ that these
+particles represent is the push-forward of the old one,
+\st
+Q'=Q-\partial_i(u_iQ)+\tfrac12\,\partial_i\partial_j(u_iu_jQ)+O(u^3) .
+\label{push}
+\stp
+Sampled on the sites with the operators \Eq{ops}, the first-order term is
+\st
+q_a'=q_a-V\sum_b\big(q_a\,\bm u_a+q_b\,\bm u_b\big)\cdot\bm D_{ab} .
+\label{return}
+\stp
+Each pair term is odd under $a\leftrightarrow b$, so $\sum_aq_a$ is unchanged.  For a
+uniform state and $(\nabla\cdot\bm u)_a=0$ nothing changes at all: the
+volume-preserving displacements are returned for free.
+
+\paragraph{Drift and return together: the transport rates.}  With
+$\bm u_a=\bm v_a\,\delta t$ and $\delta t\to0$, the drift and the return give
+\st
+\boxed{\;
+\begin{aligned}
+\dot e_a\big|_{\rm T}&=-V\sum_b\big(e_a\bm v_a+e_b\bm v_b\big)\cdot\bm D_{ab}
+\;-\;p_a\,V^2\sum_b(\bm v_b-\bm v_a)\cdot\bm D_{ab},\\[4pt]
+\dot{\bm m}_a\big|_{\rm T}&=-V\sum_b\Big[\bm m_a\,(\bm v_a\cdot\bm D_{ab})
++\bm m_b\,(\bm v_b\cdot\bm D_{ab})\Big],
+\end{aligned}\;}
+\label{transport}
+\stp
+with $\bm v_a$, $p_a$ from the inverse equation of state at $(e_a,\bm m_a)$.  The flow
+of \Eq{transport} over a finite time is, in the continuum, the drift followed by the
+return to all orders in $\bm u$, including the change of a particle's velocity as its
+volume changes.
+
+\paragraph{Continuum limit.}  With $\varepsilon=e/V$ and $\bm M=\bm m/V$, the kick
+\Eq{kick} and the transport \Eq{transport} add up to
+\st
+\partial_t\varepsilon=-\nabla\cdot\big[(\varepsilon+p)\,\bm v\big],\qquad
+\partial_tM_i=-\partial_j(v_jM_i)-\partial_ip ,
+\stp
+the ideal equations, and $\partial_tS=-\nabla\cdot(S\bm v)$ follows from \Eq{eos}.
+
+%=============================================================================
+\section{The step}
+\label{sec:step}
+
+One ideal step of size $\Delta t$ is
+\st
+\text{kick}\big(\tfrac12\Delta t\big)\;\to\;\text{transport}(\Delta t)\;\to\;
+\text{kick}\big(\tfrac12\Delta t\big) ,
+\stp
+with the return inside the transport, before the second kick.  Both substeps are
+integrated with one predictor and one corrector (Heun), which makes each of them, and
+the step, second order in $\Delta t$.
+
+\paragraph{Kick$(\tau)$,} $\tau=\Delta t/2$; holds $s_a$ fixed.
+\begin{enumerate}
+\item Forward equation of state at $(s_a,\bm m_a)$: $p_a$.  Force $\bm F_a$, \Eq{kick}.
+\item Predictor: $\bm m_a^*=\bm m_a+\tau\,\bm F_a$.  Forward equation of state at
+  $(s_a,\bm m_a^*)$: $p_a^*$, and $\bm F_a^*$.
+\item Corrector:
+  \st
+  \bm m_a\leftarrow\bm m_a+\tfrac12\tau\,(\bm F_a+\bm F_a^*) .
+  \stp
+\item Forward equation of state at $(s_a,\bm m_a)$: $e_a$.
+\end{enumerate}
+
+\paragraph{Transport$(\Delta t)$;} acts on $(e_a,\bm m_a)$.  Write
+$\bm R=(\dot e_a,\dot{\bm m}_a)\big|_{\rm T}$ for the rates \Eq{transport}.
+\begin{enumerate}
+\item Inverse equation of state at $(e_a,\bm m_a)$: $\bm v_a$, $p_a$.  Rates $\bm R$.
+\item Predictor: $(e_a^*,\bm m_a^*)=(e_a,\bm m_a)+\Delta t\,\bm R$.  Inverse equation of
+  state at $(e_a^*,\bm m_a^*)$: $\bm v_a^*$, $p_a^*$.  Rates $\bm R^*$.
+\item Corrector:
+  \st
+  (e_a,\bm m_a)\leftarrow(e_a,\bm m_a)+\tfrac12\Delta t\,(\bm R+\bm R^*) .
+  \stp
+\item Inverse equation of state at $(e_a,\bm m_a)$: the new $s_a$.
+\end{enumerate}
+The velocity that carries the fields is thus the velocity after the first half kick,
+and its average with the predicted one.
+
+\paragraph{With the stochastic step.}  The positions never change, so the stochastic
+step is the one at fixed positions and fixed $V$ (\texttt{stochastic\_frozen}); it
+acts on the same $(e_a,\bm m_a)$ between ideal steps.
+
+%=============================================================================
+\section{What is exact and what is not}
+\label{sec:exact}
+
+\begin{enumerate}
+\item \emph{Momentum}: every sum in \Eq{kick} and \Eq{transport} is odd under
+  $a\leftrightarrow b$, so $\sum_a\bm m_a$ is conserved to roundoff in every substep.
+\item \emph{Entropy}: the kicks hold every $s_a$ fixed.  Only the transport changes
+  $\sum_as_a$; this change is the numerical dissipation of the return (either sign).
+\item \emph{Energy}: the transport part of \Eq{transport} conserves $\sum_ae_a$; the
+  volume work does not.  It is balanced by the work of the kick: at equal $\bm v_a$,
+  $p_a$,
+  \st
+  \sum_a\bm v_a\cdot\bm F_a-\sum_ap_a\,V^2\sum_b(\bm v_b-\bm v_a)\cdot\bm D_{ab}
+  =-V^2\sum_{ab}\big(p_b\,\bm v_a+p_a\,\bm v_b\big)\cdot\bm D_{ab}=0 .
+  \stp
+  In the step the two are evaluated at different times, so $H=\sum_ae_a$ is conserved
+  to the order of the integrator, $O(\Delta t^3)$ per step, not to roundoff.
+\item \emph{Rigidity}: for a shear wave at rest, $\bm m_a=\hat{\bm y}\,A\sin kx_a$,
+  the lattice divergence of $\bm v$ and the transport of $\bm m$ and $e$ vanish
+  exactly (the stencil is even in $y$).  The wave is static to linear order in $A$:
+  $c_t=0$.
+\item \emph{Stability}: the scheme is centered and has no built-in damping.  Sound is
+  a leapfrog between kick and transport, stable for $c_s\kappa_{\max}\Delta t<2$,
+  with $\kappa_{\max}$ the largest value of
+  \st
+  \kappa(\bm k)=\Big|V\sum_b\bm D_{ab}\,e^{-i\bm k\cdot\bm r_{ab}}\Big|
+  \stp
+  over the Brillouin zone.  The Heun transport amplifies advected modes by
+  $1+z^4/4$ per step, $z=v\,\kappa\,\Delta t$: negligible for thermal velocities, to be
+  watched for a fast uniform flow.
+\end{enumerate}
+
+%=============================================================================
+\section{What to monitor}
+\label{sec:monitor}
+
+\paragraph{Once, at set-up} (print, and stop if a check fails):
+\begin{enumerate}
+\item $\big|\sum_b\bm D_{ab}\big|$, \Eq{sumD}: zero to roundoff.
+\item $n_0$ and $V$, and $N V$ against the area of the box.
+\item The first moment of the stencil,
+  \st
+  c_1^{ij}=-V\sum_b r_{ab}^i\,D_{ab}^j ,
+  \stp
+  which should be $\delta^{ij}$.  Print $c_1^{xx}-1$, $c_1^{yy}-1$, $c_1^{xy}$: the
+  error of the lattice gradient of a linear function, which rescales $c_s$.
+\item $\kappa_{\max}$ and $c_s\kappa_{\max}\Delta t$.
+\end{enumerate}
+
+\paragraph{Every step} (global sums; written every $n$ steps and summed over the run):
+\begin{enumerate}
+\item \emph{Momentum.}  $\big|\Delta\sum_a\bm m_a\big|\big/\sum_a|\bm m_a|$ for each
+  substep: roundoff.
+\item \emph{Energy, by substep.}  $\delta H_{\rm K1}$, $\delta H_{\rm T}$,
+  $\delta H_{\rm K2}$, with $H=\sum_ae_a$, and their sum $\delta H$.  Expected: the
+  three are $O(\Delta t)$ each and cancel to $O(\Delta t^3)$.  Record the running
+  $\Delta H/H$.
+\item \emph{Entropy.}  $\delta S_{\rm T}=\sum_a\Delta s_a$ over the transport, and the
+  running $\Delta S_{\rm T}/S$: the dissipation of the return, the main number.
+  $\delta S_{\rm K}$ over each kick must be zero to the tolerance of the equation of
+  state (it tests the round trip $e\to s\to e$).
+\item \emph{Size of the displacement.}  $\max_a|\bm v_a|\Delta t/a$ and
+  $\max_a|(\nabla\cdot\bm v)_a|\Delta t$: the expansion parameters of \Eq{push}.
+\item \emph{Failures of the equation of state.}  The number of sites with
+  $e_a\le|\bm m_a|$ (no state), at the predictor and at the corrector; the first
+  occurrence with its site, step and substep.
+\item \emph{Lattice-scale noise.}  The scheme does not damp the shortest waves.
+  Record the fraction of $\sum_{\bm k}|\bm m_{\bm k}|^2$ and of
+  $\sum_{\bm k}|\delta e_{\bm k}|^2$ at $kh>1$ against time.
+\end{enumerate}
+
+\paragraph{Against $\Delta t$} ($\Delta t$, $\Delta t/2$, $\Delta t/4$ on the same
+initial state, to a fixed time): $\Delta H/H$ should fall by $4$ per halving.
+$\Delta S_{\rm T}/S$ has a part that falls with $\Delta t$ and a part that does not
+(the truncation of the stencil); report both, and the latter against $h/a$ and the
+kernel.
+
+%=============================================================================
+\section{Tests}
+\label{sec:tests}
+
+Deterministic, ideal step only, against the present particle step with the same
+kernel and $h/a$:
+\begin{enumerate}
+\item \emph{Uniform fluid}, at rest and moving with $v_0=0.3$, $0.8$: the state stays
+  uniform to roundoff.
+\item \emph{Shear wave} (\texttt{examples/shearwave\_scan.jl}): $A(t)/A(0)$ for
+  $A=0.002$, several $k$.  Expected: constant, no oscillation.  Fit a rate
+  $A\propto e^{-\Gamma t}$ and report $\Gamma/k^2$ (a numerical viscosity, either
+  sign) against $k$ and $\Delta t$.
+\item \emph{Sound wave}, one period and many: the speed against $c_s$ (and against
+  $c_1$ above) and the growth or decay of the amplitude.
+\item \emph{Waves on a moving fluid}, $v_0=0.3$, $0.8$, shear and sound, along and
+  across the flow: the advection speed, the Doppler shift and the damping, as in
+  \texttt{boost.tex}.  This is the test of the transport at large $|\bm u|/a$.
+\item \emph{Gaussian pulse} (\texttt{examples/testgaussian.jl}): residuals against
+  the analytic solution, as in the table of \texttt{energystep.tex}.
+\end{enumerate}
+With the stochastic step ($L=0.6$ and $1.2$, $h/a=2$, $\eta/s=0.2$, $S_0=10^6$,
+equilibrium start), against the runs of \texttt{volume\_n.tex} and
+\texttt{frozen.tex}:
+\begin{enumerate}
+\setcounter{enumi}{5}
+\item $\Delta H/H(t)$ and $\Delta S_{\rm T}/S$ per unit time; KE/eq.
+\item The equal-time correlators $C_T(k,0)$ and $C_L(k,0)$, expected to be one at all
+  $kh$: the test that the return does not cool or heat the short waves.
+\item $C_T(k,\tau)$ against $e^{-\nu k^2\tau}$: no oscillation, and the ratio of the
+  fitted rate to $\nu k^2$.  $C_L(k,\tau)$: the sound speed and damping.
+\end{enumerate}
+
+\paragraph{Open choice.}  The transport could carry $s_a$ instead of $e_a$
+(\Eq{return} with $q=s$, no volume-work term, $e_a$ from the forward equation of
+state).  The ideal step is then exactly isentropic and the error of the return shows
+up in $H$ instead of in $S$.  This note takes the energy form; the entropy form is
+the comparison to run if $\Delta S_{\rm T}$ is not small.
+
+\end{document}
