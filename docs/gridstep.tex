@@ -8,6 +8,7 @@
 \def\stp{\end{equation}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
 \let\oldparagraph\paragraph
 \renewcommand{\paragraph}{\par\bigskip\oldparagraph}
 
@@ -26,7 +27,8 @@ returned to their sites, carrying their energy and momentum with them.  The fiel
 live on the sites and the code becomes a grid code.  The force is only ever
 evaluated on the perfect lattice, so the transverse sound of \texttt{rigidity.tex}
 is absent, $c_t=0$.  This note defines the step and lists what an implementation
-must monitor.  Nothing here has been run.
+must monitor.  Sections~\ref{sec:impl}--\ref{sec:results} describe the implementation and the
+first results.
 \end{abstract}
 
 \maketitle
@@ -305,5 +307,127 @@ equilibrium start), against the runs of \texttt{volume\_n.tex} and
 state).  The ideal step is then exactly isentropic and the error of the return shows
 up in $H$ instead of in $S$.  This note takes the energy form; the entropy form is
 the comparison to run if $\Delta S_{\rm T}$ is not small.
+
+%=============================================================================
+\section{Implementation}
+\label{sec:impl}
+
+\paragraph{Code.}  \texttt{src/grid.jl} (loaded by \texttt{src/load.jl}):
+\begin{itemize}
+\item \texttt{GridStencil(particles, params, cl)}: the stencil $\{b,\bm D_{ab},\bm r_{ab}\}$ of every site,
+  $n_0$ and $V=1/n_0$, built once from the particles on the perfect lattice;
+  \texttt{grid\_checks} and \texttt{print\_grid\_checks}: the set-up checks of \Sect{sec:monitor}.
+\item \texttt{grid\_forward}, \texttt{grid\_inverse}: the forward and inverse equation of state at the
+  volume $V$ (the inverse returns ``no state'' when $e_a\le|\bm m_a|$ or $|\bm v_a|\ge1$).
+\item \texttt{grid\_step!(particles, st, dt, eos, scratch, stats)}: one step, \Sect{sec:step}, on
+  \texttt{particles[a].s}, \texttt{.m}; the positions are never touched.  \texttt{GridStats} holds the
+  per-step diagnostics of \Sect{sec:monitor} ($\delta H$ by substep, $\delta S_{\rm T}$, momentum,
+  round trip, $\max|\bm v|\Delta t/a$, $\max|\nabla\cdot\bm v|\Delta t$, failures with the first one).
+\item \texttt{grid\_highk\_fraction}: the fraction of $\sum_{\bm k}|f_{\bm k}|^2$ at $kh>1$.
+\end{itemize}
+Since the state lives in the particle vector, the stochastic step at fixed positions, the
+recorders and the run records are used unchanged.
+
+\paragraph{Driver.}  \texttt{examples/equilibrium.jl} with \texttt{SR\_GRID=1}: the grid step in
+place of the leapfrog; its diagnostics are written to the run record and the series
+$\sum\Delta S_{\rm T}/S$ and the power at $kh>1$ to the \texttt{.h5} file.
+
+\paragraph{Tests.}  \texttt{examples/grid\_waves.jl} (tests 1--4, ideal and with deterministic viscosity,
+against the particle step), \texttt{examples/grid\_gaussian.jl} (test 5); plots
+\texttt{examples/grid\_waves\_plot.jl}, \texttt{grid\_gaussian\_plot.jl}.  The particle step is the default
+n-scheme (energy Hamiltonian, $V_a=1/n_a$).
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+All at $h=0.05$, $h/a=2$, Wendland C2, $L=1.2$ (2688 sites), $S_0=10^6$, $c_s^2=1/3$; time step
+$\Delta t=0.2\,h/c_s$, lowered by $c_s/v_{\rm sig}$ for a moving fluid as in \texttt{boost.tex}.
+
+\paragraph{Set-up checks.}
+\begin{center}
+\begin{tabular}{lc}
+\hline
+$\max_a|\sum_b\bm D_{ab}|\,Va$ & $2\times10^{-15}$ \\
+$\max_a|n_a/n_0-1|$ & $2\times10^{-15}$ \\
+$NV/\text{area}-1$ & $-8.1\times10^{-4}$ \\
+neighbours of a site & 55 \\
+$c_1^{xx}-1=c_1^{yy}-1$, \ $c_1^{xy}$ & $-0.0029$, \ $10^{-17}$ \\
+$\kappa_{\max}$, \ $c_s\kappa_{\max}\Delta t$ & $22.7$, \ $0.23$ \\
+\hline
+\end{tabular}
+\end{center}
+The lattice gradient of a linear function is $0.3\%$ low, and sound is far inside its stability
+limit ($c_s\kappa_{\max}\Delta t<2$).
+
+\paragraph{Test 1: the uniform state} stays uniform to roundoff: after 200 steps
+$\max|\Delta s_a/s_a|\approx6\times10^{-14}$, $\max|\Delta\bm m_a|/(V\varepsilon)\approx9\times10^{-14}$,
+$|\Delta H/H|<10^{-14}$, at $v_0=0$, $0.3$ and $0.8$.
+
+\paragraph{Tests 2--4: waves, ideal step.}  A uniform fluid moving with $v_0$ along $x$ carries one
+plane wave $\delta U=A\,\mathrm{Re}\,(r_n e^{i\bm k\cdot\bm x})$, $U=(\varepsilon,M_x,M_y)$, with $r_n$ the right
+eigenvector of the ideal $K=k_j\partial F_j/\partial U$ for the mode $n$ (shear, sound $+$, sound $-$),
+$A=10^{-4}\varepsilon_0$; $v_0=0$, $0.3$, $0.8$; $\bm k$ along and across the flow; $kh=0.26$, $0.52$, $1.05$.
+The amplitude of the mode,
+\st
+c(t)=\frac1N\sum_a\ell_n\cdot(U_a-U_0)\,e^{-i\bm k\cdot\bm x_a},
+\stp
+($\ell_n$ the left eigenvector), is fitted to $c_0e^{-i\omega t-\Gamma t}$ over ten sound periods.  Ideal
+hydrodynamics has $\omega=\omega_n$ and $\Gamma=0$.  Figures~\ref{fig:gseries}--\ref{fig:gdamp}.
+\begin{enumerate}
+\item \emph{No rigidity.}  The shear wave at rest is static to $|\Gamma|/c_sk<10^{-12}$
+  (\Fig{fig:gseries}, left): $c_t=0$.  The particle step oscillates at $c_t=0.073\,c_s$.
+\item \emph{No numerical damping.}  The grid step neither damps nor amplifies sound or shear at rest
+  or across the flow ($|\Gamma|/c_sk\lesssim10^{-8}$).  Along a moving flow it amplifies slightly,
+  $\Gamma/c_sk=-1.3\times10^{-4}$ at $v_0=0.8$, $kh=0.52$, falling by 8 per halving of $\Delta t$ (the Heun
+  factor $1+z^4/4$ per step): an error of the time step, not an instability.  The particle step
+  damps the shear wave of a moving fluid, along and across the flow, by $\Gamma/c_sk=0.02$--$0.04$
+  at $v_0=0.8$ \emph{without any viscosity} (the amplitude falls to $0.2$--$0.6$ in ten periods,
+  \Fig{fig:gseries}, middle) --- the excess damping of \texttt{boost.tex}, paragraph 6 --- and it
+  exchanges amplitude between the two sound modes along a moving flow (up to $\pm50\%$).
+\item \emph{Dispersion.}  The price is a larger error of the frequency at large $kh$
+  (\Fig{fig:gdisp}): sound at rest is slow by $1.2\%$, $4\%$, $14\%$ at $kh=0.26$, $0.52$, $1.05$ (the
+  particle step: $0.2\%$, $0.5\%$, $3.6\%$), and advection is slow in the same way, $\Omega=v_0\,\kappa(k)$
+  rather than $v_0k$.  This is the lattice derivative $\kappa(\bm k)<k$, independent of $\Delta t$ (below).
+\item \emph{Conservation.}  $\sum\bm m$ to roundoff; $|\Delta H/H|\lesssim10^{-11}$ and
+  $|\sum\Delta S_{\rm T}/S|\lesssim4\times10^{-10}$ over the runs at this amplitude; no failure of the equation of state.
+\end{enumerate}
+
+\paragraph{$\Delta t$ scan} (grid, $v_0=0.8$, $\bm k$ along the flow, $kh=0.52$, five periods):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & $\Delta t/\Delta t_0$ & $(\omega-\omega_n)/c_sk$ & $\Gamma/c_sk$ & $\sum\Delta S_{\rm T}/S$ \\ \hline
+shear & 1, \ 1/2, \ 1/4 & $-0.0541$, \ $-0.0553$, \ $-0.0556$ & $-1.0\times10^{-4}$, \ $-1.3\times10^{-5}$, \ $-1.6\times10^{-6}$ & $-4\times10^{-11}$, \ $-5\times10^{-12}$, \ $-7\times10^{-13}$\\
+sound $+$ & 1, \ 1/2, \ 1/4 & $-0.0637$, \ $-0.0651$, \ $-0.0655$ & $-1.3\times10^{-4}$, \ $-1.7\times10^{-5}$, \ $-2.1\times10^{-6}$ & $-2\times10^{-12}$, \ $-3\times10^{-13}$, \ $-2\times10^{-13}$\\
+\hline
+\end{tabular}
+\end{center}
+The growth falls as $\Delta t^3$; the frequency error is spatial.
+
+\paragraph{Still running} (to be added): the same waves with deterministic viscosity $\eta/s=0.2$, the
+Gaussian pulse (test 5), a short stochastic smoke test, and the stochastic campaign
+(\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with \texttt{SR\_GRID=1}).
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_series.png}
+\caption{The mode amplitude $c(t)/|c(0)|$ at $kh=0.52$: real part (thin) and modulus (dashed); blue grid,
+orange particles.  Left: shear at rest (the particles oscillate, transverse sound).  Middle: shear
+along the flow at $v_0=0.8$ (advected; the particles damp it).  Right: sound $+$ along the flow.}
+\label{fig:gseries}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_dispersion.png}
+\caption{Frequency error $(\omega-\omega_n)/c_sk$ against $kh$; filled/solid grid, open/dashed particles;
+colour $v_0$.  (For the particle shear at rest and across the flow the mode oscillates at $\pm c_tk$
+and the sign of the fitted $\omega$ is arbitrary.)}
+\label{fig:gdisp}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_damping.png}
+\caption{Numerical damping $\Gamma/c_sk$ ($\Gamma<0$: growth) of the ideal step against $kh$; as \Fig{fig:gdisp}.
+For the particle shear at rest the fit is to an oscillation, not a decay.}
+\label{fig:gdamp}
+\end{figure}
 
 \end{document}
