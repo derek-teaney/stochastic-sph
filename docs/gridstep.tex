@@ -548,8 +548,46 @@ $v_0\,\kappa(k)/k$: the dispersion of the stencil, below.
 Figs.~\ref{fig:gb24static}, \ref{fig:gb24shear}).  The shear mode is advected at $\Omega/k=0.796$ at $kh=0.13$ and damped
 as in hydrodynamics within large errors ($v_0=0.8$: $1.03\pm0.23$ at $kh=0.26$, $0.96\pm0.59$ at $kh=0.13$).  The
 equal-time values scatter by 10--40\% at this statistics, as with the particles (one value $3\sigma$ low,
-$C_{EE}/\chi=0.60\pm0.13$ along the flow at $v_0=0.8$, $kh=0.26$); the high-statistics set (32 runs to $t=1000$,
-running) will tell.
+$C_{EE}/\chi=0.60\pm0.13$ along the flow at $v_0=0.8$, $kh=0.26$); with 32 runs to $t=1000$ (below) that value is $1.20\pm0.12$: a fluctuation.
+
+\emph{High statistics} (\texttt{nersc/campaign\_grid\_stats.txt}, jobs 61212170/1, 2.3 and 3.5 hours): $t=1000$,
+64 runs per $v_0$ at $L=1.2$ and 32 at $L=2.4$, about 13 times the statistics above
+(Figs.~\ref{fig:gsfit}, \ref{fig:gsstatic}).  The shear mode, $\Gamma/\Gamma_{\rm hydro}$:
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{4}{c}{$L=1.2$} & \multicolumn{2}{c}{$L=2.4$} \\
+ & \multicolumn{2}{c}{$\bm k\parallel\bm v$} & \multicolumn{2}{c}{$\bm k\perp\bm v$} & $\bm k\parallel\bm v$ & $\bm k\perp\bm v$ \\
+$v_0$ & $kh=0.26$ & $0.52$ & $0.26$ & $0.52$ & $kh=0.26$ & $0.26$ \\ \hline
+0 & $0.90(3)$ & $0.97(2)$ & $0.93(2)$ & $0.97(1)$ & $1.00(4)$ & $0.92(3)$ \\
+0.3 & $0.98(4)$ & $1.00(1)$ & $1.03(3)$ & $0.98(1)$ & -- & -- \\
+0.6 & $0.97(4)$ & $0.99(2)$ & $0.97(3)$ & $0.97(2)$ & $0.98(6)$ & $1.02(4)$ \\
+0.8 & $0.91(5)$ & $0.98(4)$ & $0.98(4)$ & $0.99(2)$ & $1.03(9)$ & $1.02(6)$ \\
+\hline
+\end{tabular}
+\end{center}
+The grid damps the shear mode at the rate of hydrodynamics at every $v_0$ to a few percent, including along
+the flow at $v_0=0.8$, where the rate is slowed by $\gamma^3$.  At rest it is a few percent low at the smallest $k$
+($0.90$--$0.93$ at $kh=0.26$, about $3\sigma$).  (At $kh=0.13$, $L=2.4$, the decay time, $\approx300$ at $v_0=0.8$, is far beyond
+the fit window $\tau\le100$, and the fit gives $0.78$--$1.03$; not a measurement of the rate.)  Equal time,
+$C_{AA}(\bm k,0)/\chi_{AA}$ at $kh=0.52$, $L=1.2$:
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{3}{c}{$\bm k\parallel\bm v$} & \multicolumn{3}{c}{$\bm k\perp\bm v$} \\
+$v_0$ & $E$ & $M_x$ & $M_y$ & $E$ & $M_x$ & $M_y$ \\ \hline
+0 & $1.051(7)$ & $1.048(7)$ & $1.042(8)$ & $1.056(7)$ & $1.045(9)$ & $1.054(7)$ \\
+0.3 & $1.060(11)$ & $1.066(13)$ & $1.032(10)$ & $1.038(7)$ & $1.046(7)$ & $1.034(8)$ \\
+0.6 & $1.073(22)$ & $1.076(24)$ & $1.023(11)$ & $1.022(6)$ & $1.034(6)$ & $1.006(7)$ \\
+0.8 & $1.072(44)$ & $1.074(46)$ & $1.007(20)$ & $1.018(6)$ & $1.021(7)$ & $1.004(7)$ \\
+\hline
+\end{tabular}
+\end{center}
+The deficit of the particles along the flow is gone; instead every component carries the few-percent
+long-wave excess of the full-zone spectra, $1.02$--$1.07$, the same at every $v_0$ within the errors.  The
+fluctuation kinetic energy per site, $1.00$, $1.39$, $4.41$, $19.0$ against $1$, $1.45$, $4.2$, $17.6$, is a weaker test:
+it is dominated by the modes at the zone boundary, among them the poorly equilibrated near-null modes.
+$\Delta H/H$ over $t=1000$: $-(2$--$11)\times10^{-5}$.
 
 \paragraph{Dispersion.}  The phase errors above (sound, advection) are $\kappa(k)/k-1$, where
 $\kappa(k)\approx k\,\hat W(kh)$ is the lattice derivative of the kernel-smoothed field.  It depends on $kh$, not
@@ -828,6 +866,17 @@ $\kappa(\bm k)h$; top $v_0=0$, bottom $v_0=0.8$; 16 runs each, $t=100$.}
 \includegraphics[width=\textwidth]{figs/boost_shear_GRID24.png}
 \caption{Stochastic grid runs at $L=2.4$: the advected shear mode at $kh=0.13$, one row per $v_0$; dashed hydrodynamics.}
 \label{fig:gb24shear}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/boost_fit_GSTATS.png}
+\caption{High statistics, $L=1.2$, 64 runs per $v_0$ to $t=1000$: advection speed and shear damping against $v_0$ at $kh=0.26$
+(as \texttt{boost.tex}, Fig.~5).}
+\label{fig:gsfit}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_static_GSTATS.png}
+\caption{High statistics, $L=1.2$: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per $v_0$.}
+\label{fig:gsstatic}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_smoke.png}
