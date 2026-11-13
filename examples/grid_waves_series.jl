@@ -11,7 +11,8 @@ const VDIR = length(ARGS) > 1 ? ARGS[2] : joinpath(ENV["SCRATCH"], "sph", "grid"
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
 load(d, f) = (p = joinpath(d, f);  isfile(p) ? deserialize(p) : nothing)
 ideal = something(load(IDIR, "grid_waves_all.jls"), load(IDIR, "grid_waves_ideal.jls"), load(IDIR, "grid_waves.jls"), Some(nothing))
-visc = load(VDIR, "grid_waves_viscous.jls")
+visc = something(load(VDIR, "grid_waves_viscous.jls"), load(VDIR, "grid_waves_all.jls"), Some(nothing))
+const SUFFIX = get(ENV, "WAVES_SUFFIX", "")          # e.g. _wc4 for the kernel runs
 const ROWS = (("shear", "x", "shear, k ∥ v"), ("shear", "y", "shear, k ⊥ v"), ("soundp", "x", "sound +, k ∥ v"),
               ("soundp", "y", "sound +, k ⊥ v"), ("soundm", "x", "sound −, k ∥ v"), ("soundm", "y", "sound −, k ⊥ v"))
 COL = Dict("grid" => "C0", "particle" => "C1")
@@ -28,6 +29,7 @@ wave!(ax, r, sr; lw = 1.2) = ax.plot(sr.ts, real.(sr.cs) ./ abs(sr.cs[1]), color
 
 if ideal !== nothing
     for nk in (1, 2)
+        any(r.nk == nk for (r, _) in ideal.res) || continue
         rows = [rw for rw in ROWS if find(ideal.res, "grid", rw[1], rw[2], 0.0, nk) !== nothing]
         fig, axs = subplots(length(rows), 3, figsize = (18, 2.6 * length(rows)), squeeze = false)
         for (i, (mode, dir, ttl)) in enumerate(rows), (j, v0) in enumerate((0.0, 0.3, 0.8))
@@ -42,11 +44,12 @@ if ideal !== nothing
             ax.legend(fontsize = 6.5, loc = "lower left");  i == length(rows) && ax.set_xlabel("t")
         end
         tight_layout()
-        f = @sprintf("grid_ideal_waves_kh%.2f.png", nk * 0.262);  savefig(joinpath(FIGD, f), dpi = 90);  close();  println("wrote $f")
+        f = @sprintf("grid_ideal_waves_kh%.2f%s.png", nk * 0.262, SUFFIX);  savefig(joinpath(FIGD, f), dpi = 90);  close();  println("wrote $f")
     end
 end
 if visc !== nothing && !isempty(visc.vres)
     for nk in (2, 4)
+        any(r.nk == nk for (r, _) in visc.vres) || continue
         rows = [rw for rw in ROWS if find(visc.vres, "grid", rw[1], rw[2], 0.0, nk) !== nothing]
         fig, axs = subplots(length(rows), 4, figsize = (22, 2.7 * length(rows)), squeeze = false)
         for (i, (mode, dir, ttl)) in enumerate(rows), (j, (v0, sch)) in enumerate(((0.0, "grid"), (0.0, "particle"), (0.8, "grid"), (0.8, "particle")))
@@ -57,6 +60,6 @@ if visc !== nothing && !isempty(visc.vres)
             ax.legend(fontsize = 6.5, loc = "lower left");  i == length(rows) && ax.set_xlabel("t")
         end
         tight_layout()
-        f = @sprintf("grid_viscous_waves_kh%.2f.png", nk * 0.262);  savefig(joinpath(FIGD, f), dpi = 90);  close();  println("wrote $f")
+        f = @sprintf("grid_viscous_waves_kh%.2f%s.png", nk * 0.262, SUFFIX);  savefig(joinpath(FIGD, f), dpi = 90);  close();  println("wrote $f")
     end
 end
