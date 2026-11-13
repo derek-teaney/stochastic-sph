@@ -645,6 +645,25 @@ particles the excess damping of the shear wave along a moving flow depends stron
 and not monotonically (C4 removes it at $kh=0.52$): a numerical effect of the particle arrangement
 rather than of the viscous step.
 
+\emph{With noise} (\texttt{nersc/campaign\_kernel.txt}, job 61212224): the particle step with C4 on the boost sets,
+16 runs at $v_0=0$ and $0.8$, $t=300$.  At $v_0=0.8$, $kh=0.52$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & particles, C2 & particles, C4 & grid, C2 & hydrodynamics \\ \hline
+shear $\bm k\parallel\bm v$, $\Gamma/\Gamma_{\rm hydro}$ & $1.36(7)$ & $1.26(16)$ & $1.12(12)$ & 1 \\
+the same at $kh=0.26$ & $1.52(20)$ & $1.39(23)$ & $0.84(16)$ & 1 \\
+$C_{EE}(\bm k,0)/\chi$, $\bm k\parallel\bm v$ & $0.84(4)$ & $0.91(9)$ & $1.01(18)$ & 1 \\
+fluctuation KE$/2VwT$ & $19.3$ & $19.9$ & $18.2$ & $17.6$ \\
+$\Delta H/H$ at rest, $t=300$ & $9\times10^{-4}$ & $1.5\times10^{-3}$ & $2\times10^{-5}$ & 0 \\
+\hline
+\end{tabular}
+\end{center}
+C4 helps the particles a little but, with noise, does not repeat the deterministic result: the shear
+along the flow stays about $2\sigma$ high, the kinetic energy $13\%$ above the prediction, and the energy is
+not conserved better (at rest the C4 shear across $\bm k$ is also high, $1.17\pm0.06$).  The grid remains the
+closest to hydrodynamics.
+
 With noise (\texttt{nersc/campaign\_kernel.txt}, job 61212224: the particle step with C4 on the boost sets,
 16 runs each at $v_0=0$, $0.8$, $t=300$), at $v_0=0.8$:
 \begin{center}
