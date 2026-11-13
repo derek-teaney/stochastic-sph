@@ -1,0 +1,1035 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The ideal step in the energy representation}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The Hamiltonian is written as the sum of the particle energies,
+$H=\sum_ae_a$, each evaluated from the particle's own entropy, momentum and
+volume.  The volume is coarse grained with the entropy weights already in the
+code, $V_a=s_a/S(\bm x_a)$.  Hamilton's equations then give an ideal step in
+which each particle moves with its own velocity and feels only a pressure force.
+Viscosity is left out.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Variables and the volume}
+\label{sec:vars}
+
+Each particle $a$ has a position $\bm x_a$, a momentum $\bm m_a$ and an entropy
+weight $s_a$.  The weights are constants of the ideal step; a convenient start
+is $s_a=1$ for all particles.  The coarse-grained entropy density at the
+particle is the kernel sum
+\st
+S_a\equiv S(\bm x_a)=\sum_bs_b\,W(\bm x_a-\bm x_b),
+\stp
+and the particle's volume is defined by
+\st
+V_a=\frac{s_a}{S_a},\qquad\text{so that}\qquad \frac1{V_a}=\frac{S_a}{s_a}
+\;\xrightarrow{\,s_a=1\,}\;\sum_bW(\bm x_a-\bm x_b).
+\label{Va}
+\stp
+For unit weights $1/V_a$ is the number density of particles.  The particle's
+entropy density $s_a/V_a$ is then the smoothed one, $S_a$.  Its momentum
+density is its own, $\bm m_a/V_a$, not smoothed.
+
+When the particles move, the volume changes as
+\st
+\frac{\dot V_a}{V_a}=-\frac{\dot S_a}{S_a}
+=\frac{1}{S_a}\sum_bs_b\,(\dot{\bm x}_b-\dot{\bm x}_a)\cdot\bm D_{ab},
+\qquad
+\bm D_{ab}\equiv\frac{\partial W(\bm x_a-\bm x_b)}{\partial\bm x_a},
+\label{Vdot}
+\stp
+the SPH estimate of $\nabla\cdot\dot{\bm x}$ at $\bm x_a$.
+
+%=============================================================================
+\section{The particle energy}
+\label{sec:energy}
+
+The equation of state gives the energy density $h(S,\bm M)$ as a function of the
+entropy and momentum densities.  The particle's energy is
+\st
+e_a=E_a(s_a,\bm m_a,V_a)\equiv V_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big),
+\label{ea}
+\stp
+the same particle energy as in the particle representation of
+\texttt{changerep.tex}.  Its differential is the first law for the particle,
+\st
+de_a=T_a\,ds_a+\bm v_a\cdot d\bm m_a-p_a\,dV_a ,
+\label{firstlaw}
+\stp
+where $T_a$ (bare, $T_{\rm rel}/\gamma$), $\bm v_a$ and $p_a$ are the temperature,
+velocity and pressure at the particle's densities $(S_a,\bm m_a/V_a)$.
+
+%=============================================================================
+\section{The Hamiltonian and Hamilton's equations}
+\label{sec:ham}
+
+The Hamiltonian is the sum of the particle energies,
+\st
+\boxed{\;H(\bm x,\bm m)=\sum_ae_a=\sum_aV_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big),
+\qquad V_a=\frac{s_a}{S(\bm x_a)}\;}
+\label{H}
+\stp
+It depends on the positions only through the volumes.  Since $s_a=V_aS_a$,
+\Eq{H} is the same as
+\st
+H=\sum_as_a\,\mathcal E\Big(S_a,\frac{\bm m_a}{s_a}\Big),
+\stp
+with $\mathcal E$ the energy per unit entropy.  The present Hamiltonian
+(\texttt{sph2.tex}) is $\sum_as_a\mathcal E(S_a,\bm M_a/S_a)$, with the smoothed
+momentum $\bm M_a=\sum_b\bm m_bW_{ab}$ in place of the particle's own
+$\bm m_a$; that is the only difference.
+
+Hamilton's equations are
+\st
+\dot{\bm x}_a=\frac{\partial H}{\partial\bm m_a},\qquad
+\dot{\bm m}_a=-\frac{\partial H}{\partial\bm x_a},\qquad \dot s_a=0 .
+\stp
+By \Eq{firstlaw}, $\partial H/\partial\bm m_a=\bm v_a$: the particle moves with
+its own velocity,
+\st
+\boxed{\;\dot{\bm x}_a=\bm v_a\;}
+\label{xdot}
+\stp
+For the force, $\partial H/\partial\bm x_a=-\sum_cp_c\,\partial V_c/\partial\bm x_a$ with
+$\partial V_c/\partial\bm x_a=-(V_c/S_c)\,\partial S_c/\partial\bm x_a$, and
+\st
+\frac{\partial S_c}{\partial\bm x_a}=\delta_{ca}\sum_bs_b\bm D_{ab}+s_a\bm D_{ac}.
+\stp
+Collecting terms,
+\st
+\boxed{\;\dot{\bm m}_a=-\sum_bs_as_b\left(\frac{p_a}{S_a^2}+\frac{p_b}{S_b^2}\right)\bm D_{ab}\;}
+\label{mdot}
+\stp
+This is the standard symmetric SPH pressure force, with $S$ in the role of the
+mass density and $s_a$ in the role of the mass.  Compared with \texttt{sph2.tex},
+the terms in $\Delta\mathcal M_b(\bm x_a)=\bm m_b/s_b-\bm M_a/S_a$ are gone,
+because the momentum is not smoothed.
+
+\paragraph{Continuum limit.}  With $\sum_bV_bf_b\bm D_{ab}\to\nabla f$,
+\Eq{mdot} becomes $\dot{\bm m}_a\to-V_a\nabla p$.  This is the momentum equation
+for a parcel moving with $\bm v$: relative to such a parcel the momentum flux
+$T^{ij}=M^iv^j+p\,\delta^{ij}$ reduces to $p\,\delta^{ij}$.
+
+\paragraph{The particle energies.}  From \Eq{firstlaw} at fixed $s_a$,
+\st
+\dot e_a=\bm v_a\cdot\dot{\bm m}_a-p_a\dot V_a ,
+\label{edot}
+\stp
+with $\dot V_a$ from \Eq{Vdot}.  The particle energies change by the work done on
+the particle; their sum does not.
+
+%=============================================================================
+\section{What is conserved}
+\label{sec:cons}
+
+\begin{enumerate}
+\item \emph{Energy.}  $H=\sum_ae_a$ is conserved by Hamilton's equations, and it is
+  the same sum of particle energies \Eq{ea} that the viscous step of
+  \texttt{changerep.tex} works with: the smoothed and the particle energies are
+  one and the same.
+\item \emph{Momentum.}  $\bm D_{ba}=-\bm D_{ab}$, so the pair forces in
+  \Eq{mdot} cancel and $\sum_a\bm m_a$ is conserved.
+\item \emph{Entropy.}  Each $s_a$ is constant, so $\sum_as_a$ is conserved, and
+  each particle's entropy $S_a(e_a,\bm m_a)$ at volume $V_a$ equals $s_a$.
+\end{enumerate}
+
+%=============================================================================
+\section{What it does not change: the static rigidity}
+\label{sec:rigidity}
+
+At rest, $\bm m_a=0$, the new and the present Hamiltonians are the same function of
+the positions,
+\st
+H\big|_{\bm m=0}=\sum_as_a\,\mathcal E(S_a,0),
+\stp
+because the two differ only in which momentum enters $\mathcal E$.  The static phonon
+spectrum of \texttt{rigidity.tex} (Sect.~``The ideal Hamiltonian's phonons''),
+and with it the static shear modulus $G$ and $c_t$, are therefore unchanged: the
+positions still enter only through the kernel sum $S_a=\sum_bs_bW_{ab}$, which is
+what breaks the relabeling symmetry.  The energy representation is \emph{not} a
+fix for the rigidity.  (Volumes that partition space, $\sum_aV_a=A$, would be; that
+is a different choice of $V_a$ in \Eq{Va}, and \Eq{H}--\Eq{mdot} would carry over
+with $\partial V_c/\partial\bm x_a$ from the partition.)
+
+What does change is the dynamics: the particles move with their own velocities
+rather than a doubly smoothed one, and the force has no $\Delta\mathcal M$ terms.
+Whether that changes the measured transverse oscillation in $C_T$ (its frequency
+or damping) is an open question for the runs, not something this note predicts.
+The gain that is certain is consistency with the viscous step, \Sect{sec:visc}.
+
+%=============================================================================
+\section{The deterministic viscous step}
+\label{sec:visc}
+
+With $H=\sum_ae_a$, the viscous step is done on the particles' own variables; there
+is no change of representation.  The derivative of $H$ with respect to a weight at
+fixed $\bm x$, $\bm m$ is
+\st
+T^{\rm eff}_a\equiv\frac{\partial H}{\partial s_a}
+=T_a-\frac{p_a}{S_a}+\sum_bs_b\frac{p_b}{S_b^2}W_{ab}
+=T_a+O(h^2),
+\label{Teff}
+\stp
+using $\mathcal E-\bm v\cdot\bm m/s=T-p/S$; the last two terms are the smoothed minus
+the local $p/S$.  With
+\st
+\beta_a=\frac{\bm v_a}{T^{\rm eff}_a},\qquad
+\Delta\bm m_a=-\Delta t\,\frac{\partial K}{\partial\beta_a},\qquad
+\Delta s_a=-\beta_a\cdot\Delta\bm m_a ,
+\label{viscstep}
+\stp
+$\Delta H=\sum_a(T^{\rm eff}_a\Delta s_a+\bm v_a\cdot\Delta\bm m_a)=0$ to first order
+in $\Delta t$, and $\sum_a\Delta s_a=2K\Delta t\ge0$, as in \texttt{sph2.tex}.  $K$ is
+the bond dissipative function of \texttt{changerep.tex}, which already takes a
+pointwise $\beta_a$.
+
+Compared with \texttt{changerep.tex}: the forward map $s_a\to e_a$ is no longer a
+map, since $e_a$ is already the energy in $H$; the gradient correction $g_a$
+(its Appendix~A) was the difference between $\sum_ae_a$ and the smoothed $H$, and is
+now zero.  The exact back map at fixed $e_a$, $V_a$ does not carry over as it is: a
+change of $s_a$ changes $S_b$, hence $V_b$, at every neighbour, so fixing every
+$e_a$ at fixed $V_a$ does not fix $H$ exactly.  The step \Eq{viscstep} conserves $H$
+to first order in $\Delta t$; the drift is measured (plan, step 6).
+
+%=============================================================================
+\section{Implementation plan}
+\label{sec:plan}
+
+The Hamiltonian is chosen by a new field \texttt{params.hamiltonian} $\in$
+\{\texttt{:smoothed}, \texttt{:energy}\} (environment \texttt{SPH\_HAMILTONIAN}),
+default \texttt{:smoothed}, so that every existing run and test is unchanged.
+
+\paragraph{Unchanged.}  The \texttt{Particle} struct (\texttt{x}, \texttt{s},
+\texttt{m}, \texttt{S\_smooth} and the EOS fields are enough); kernels, cell and
+neighbour lists; the EOS solvers \texttt{eos\_newton}, \texttt{solve\_eos!},
+\texttt{particle\_energy}, \texttt{eos\_from\_energy}; the integrators
+\texttt{leapfrog\_step!} and \texttt{kdk\_step!} (their structure; they call the
+functions below); the bond dissipative function and force; the set-up of initial
+conditions ($s_a=S(\bm x_a)\,{\rm vol}$, or $s_a=1$); the recorders.  The stochastic
+step is left alone.
+
+\paragraph{Changed (all in \texttt{celllist.jl}, dispatched on \texttt{params.hamiltonian}).}
+\begin{enumerate}
+\item \texttt{smooth\_to\_particles!}: sum $S_a$ only, and set the momentum density to
+  the particle's own, \texttt{M\_smooth} $=\bm m_aS_a/s_a=\bm m_a/V_a$.  Then
+  \texttt{solve\_eos!} returns, unchanged, the particle's own $T_a$, $\bm v_a$, $p_a$
+  and $e_a/s_a$ (\texttt{H\_over\_S}).  One neighbour sum fewer.
+\item \texttt{update\_velocities!}: $\dot{\bm x}_a=\bm v_a$, local, no neighbour sum;
+  \texttt{Teff} from \Eq{Teff}, one neighbour sum (needed only by the viscous step and
+  by the bond metric).
+\item \texttt{hamiltonian\_force!}: the pair bracket becomes
+  $-s_as_b(p_a/S_a^2+p_b/S_b^2)$, \Eq{mdot}.
+\item Viscous step: \texttt{dissipative\_step\_changerep!} with $\beta_a$ of
+  \Eq{viscstep} read from the particle (no \texttt{pointwise\_state} copy), and
+  $\Delta s_a=-\beta_a\cdot\Delta\bm m_a$.  \texttt{dissipative\_step!} calls it, not
+  the gradient-corrected step, when \texttt{params.hamiltonian == :energy}.
+\item Diagnostics: the total energy is $\sum_ae_a=\sum_as_a\,$\texttt{H\_over\_S}$_a$,
+  the same number as $H$.
+\end{enumerate}
+
+\paragraph{Steps and checks.}
+\begin{enumerate}
+\item Implement 1--3 behind the flag; \texttt{test/testregress\_step.jl} must stay
+  bit-identical for \texttt{:smoothed}.
+\item A test \texttt{test/testenergystep.jl}: $\partial H/\partial\bm m_a$ and
+  $\partial H/\partial\bm x_a$ against finite differences of $H$ on a jittered
+  lattice; $\sum_a\dot{\bm m}_a=0$; $\dot s_a=0$.
+\item Ideal runs: energy drift of $H$ versus $\Delta t$ (second order for the
+  leapfrog), a sound wave (speed and damping) against the present step
+  (\texttt{examples/testsound.jl}), and the time step: the unsmoothed $\bm v_a$ may
+  need a smaller CFL.
+\item Static check: the phonon spectrum of \Sect{sec:rigidity} must agree with the
+  present one to roundoff (it is the same $H$ at $\bm m=0$).
+\item Implement 4; check $\sum_a\Delta s_a=2K\Delta t$ and $\Delta H=O(\Delta t^2)$
+  per step; a shear wave against $e^{-\nu k^2t}$ (\texttt{examples/testshearwave.jl}).
+\item Energy drift over long coupled deterministic runs, against the present step with
+  the gradient-corrected map.
+\end{enumerate}
+
+\paragraph{Documentation.}  Each changed function gets a comment that states the
+equation it implements and cites this note by equation; \texttt{params.hamiltonian}
+is described where \texttt{SimParams} is defined; the outcome of each check above
+is added to this note as it is done.
+
+\paragraph{Status (2026-11-09).}  Items 1--3 of the changes and item 4 (the viscous step,
+\texttt{dissipative\_step\_energy!}) are in \texttt{src/sph.jl} and
+\texttt{src/celllist.jl}.  On a jittered lattice with a moving fluid, $\partial H/\partial\bm
+m_a$, $\partial H/\partial\bm x_a$ and $\partial H/\partial s_a$ agree with $\dot{\bm x}_a$,
+$-\dot{\bm m}_a$ and $T^{\rm eff}_a$ to $10^{-6}$ (finite differences); $\sum_a\dot{\bm
+m}_a=7\times10^{-16}$; $H=\sum_a$\texttt{particle\_energy} exactly.  The deterministic
+shear wave is \Sect{sec:shear}.
+
+%=============================================================================
+\section{The deterministic shear wave}
+\label{sec:shear}
+
+\texttt{examples/shearwave\_decay.jl} (viscous and ideal) and
+\texttt{examples/shearwave\_scan.jl} (ideal, kernels and $h/a$).  A uniform fluid with
+\st
+M_y(x,0)=A\sin kx,\qquad k=\frac{2\pi}{L},
+\stp
+evolved with the full deterministic step.  A fluid keeps the amplitude with $\eta=0$
+and decays as $e^{-\nu k^2t}$, $\nu=(\eta/s)/T_{\rm rel}$, with $\eta>0$.  An elastic
+solid with transverse speed $c_t$ instead gives, with $\eta=0$,
+\st
+\frac{A(t)}{A(0)}=\cos(c_tkt).
+\stp
+At $h/a=2$ (C2, $kh=0.31$):
+\begin{enumerate}
+\item The two Hamiltonians agree: amplitudes to $10^{-3}$ with and without viscosity,
+  $|\Delta H/H|\sim10^{-11}$ for the ideal step.  The viscous step drifts by
+  $4\times10^{-8}$ (\texttt{:energy}) and $8\times10^{-9}$ (\texttt{:smoothed}).
+\item For $A\le0.005$ (displacements $\le0.4a$) the ideal wave is an undamped cosine with
+  $c_t=0.0340$ (\texttt{:energy}) and $0.0335$ (\texttt{:smoothed}): the static value
+  $0.034$ of \texttt{rigidity.tex}.  For $A=0.02$ the particles slip by $2.4a$ and the
+  response is not linear.
+\item With $\eta/s=0.02$ the amplitude falls below $e^{-\nu k^2t}$ and turns negative: a
+  damped transverse oscillation.
+\end{enumerate}
+
+\paragraph{Kernels and $h/a$.}  \texttt{examples/shearwave\_scan.jl}: ideal step only,
+$A=0.002$, a periodic strip $L_x=1$, $L_y\simeq6h$ (2D, the wave depends on $x$ only;
+560 to 3400 particles), $t\le30$.  $c_t$ is a least-squares fit of $\cos(c_tkt)$, or
+$\cosh(|c_t|kt)$ for an unstable wave (written $c_t<0$), over the first quarter period.
+Dynamic $c_t$ (\texttt{:energy} / \texttt{:smoothed}) against the static phonon values of
+\texttt{rigidity.tex} ($qh\simeq0.26$; here $kh=0.31$):
+\begin{center}
+\begin{tabular}{llccccc}
+\hline
+kernel & & $h/a=2$ & $2.5$ & $3$ & $4$ & $5$ \\ \hline
+C2 & dynamic & $0.0340/0.0335$ & $0.0308/0.0304$ & $0.0214/0.0211$ & $-0.005^{\,a}$ & $-0.0027/-0.0027$ \\
+   & static  & $0.035$ & $0.031$ & $0.022$ & $-0.011$ & $-0.0034$ \\
+C4 & dynamic & grows$^{\,b}$ & $-0.0047/-0.0047$ & $-0.0018/-0.0018$ & $0.0022/0.0022$ & $0.0008/0.0008$ \\
+   & static  & $-0.0054$ & unstable & $-0.0029$ & $0.0029$ & $0.0008$ \\
+C6 & dynamic & $0.0170/0.0169$ & $0.0065/0.0064$ & $0.0027/0.0026$ & $0.0004/0.0004$ & $0.0002/0.0002$ \\
+   & static  & $0.017$ & $0.0066$ & $0.0026$ & $-0.0003$ & $0.0002$ \\
+\hline
+\end{tabular}
+\end{center}
+$^a$ grows, then not linear (poor fit).  $^b$ $A$ rises to $1.03$ by $t\simeq10$, then the
+displacement reaches $0.9a$ and the response is not linear.
+
+\begin{enumerate}
+\item The dynamic and static $c_t$ agree, signs included, wherever the wave stays linear: the
+  transverse sound of the runs is the elastic stiffness of $H$, and the time stepping adds
+  nothing.
+\item The two Hamiltonians agree to $1$--$2\%$, as they must ($H$ is the same function of
+  the positions at $\bm m=0$).  The energy representation by itself does not change the
+  rigidity.
+\item $|c_t|$ falls with $h/a$ and with the kernel order, oscillating in sign (C2, C4); C6
+  is below $10^{-3}$ from $h/a=4$ on.  $\Delta H/H\le10^{-13}$ in every linear run.
+\end{enumerate}
+(The strips at $h/a=3$ and $5$ have two cell rows in $y$; they first blew up through a
+double counting in the cell list for \texttt{ncy}${}=2$, fixed in \texttt{neighbor\_range}.)
+
+\paragraph{The deterministic test suite.}  \texttt{examples/test*.jl} with
+\texttt{SPH\_HAMILTONIAN=smoothed} and \texttt{energy} (one thread; PyPlot does not run in a
+multithreaded process).  Residuals are rms against the analytic solution:
+\begin{center}
+\begin{tabular}{llcc}
+\hline
+test & & \texttt{:smoothed} & \texttt{:energy} \\ \hline
+Gaussian 2D, $t=2.2$ & $\Delta S/S$ & $0.0362$ & $0.0363$ \\
+ & $\Delta H/H$ & $1.9\times10^{-5}$ & $2.4\times10^{-5}$ \\
+Gaussian 1D, $t=2.2$ & $\Delta S/S$ & $0.0512$ & $0.0513$ \\
+ & $\Delta H/H$ & $1.4\times10^{-4}$ & $1.8\times10^{-4}$ \\
+viscous sound 2D (amplitude $2.5\times10^{-3}$) & residual & $1.9\times10^{-4}$ & $3.4\times10^{-5}$ \\
+ & $\Delta H/H$ & $1.1\times10^{-8}$ & $4.0\times10^{-8}$ \\
+viscous sound 1D (amplitude $5.2\times10^{-3}$) & residual & $2.2\times10^{-5}$ & $1.5\times10^{-5}$ \\
+ & $\Delta H/H$ & $7\times10^{-10}$ & $2.5\times10^{-9}$ \\
+ideal sound, one period (amplitude $5.2\times10^{-3}$) & residual & $5.6\times10^{-3}$ & $1.8\times10^{-3}$ \\
+shear diffusion (amplitude $1.0\times10^{-3}$) & residual & $1.55\times10^{-5}$ & $1.24\times10^{-5}$ \\
+\hline
+\end{tabular}
+\end{center}
+The entropy production agrees to $0.1\%$; \texttt{:energy} follows the analytic waves as well
+or better (no doubly smoothed velocity); its energy drift is larger by $1.3$--$4$, from the
+viscous step, which conserves $H$ to first order in $\Delta t$.
+
+%=============================================================================
+\section{Proposal: volumes that add up to the area}
+\label{sec:norm}
+
+\paragraph{Why the kernel volume gives a modulus.}  Since $H$ depends on the positions only
+through the volumes, to second order in their changes
+\st
+\delta H=-\sum_ap_a\,\delta V_a+\sum_a\frac{K_a}{2V_a}\,\delta V_a^2 ,
+\label{dH}
+\stp
+with $K$ the bulk modulus.
+
+\paragraph{The bulk modulus of a moving particle.}  At fixed $s_a$ and $\bm m_a$ a change of
+$V_a$ scales the densities along a ray, $S\to\lambda S$, $\bm M\to\lambda\bm M$,
+$\lambda=V_0/V$: a line of constant $\bm M/S$, the adiabat of \texttt{theory.tex}.  Along
+it $d\varepsilon=(TS+\bm v\cdot\bm M)\,d\lambda/\lambda=(\varepsilon+p)\,d\lambda/\lambda$,
+with $\varepsilon=T^{00}$, so
+\st
+\delta T^{0\nu}=\frac{\delta\lambda}{\lambda}\,w\gamma\,u^\nu ,
+\stp
+and
+\st
+\frac{\partial e_a}{\partial V_a}=-p_a,\qquad
+K_a\equiv V_a\frac{\partial^2e_a}{\partial V_a^2}
+=(\varepsilon+p)\Big(\frac{dp}{d\varepsilon}\Big)_{\bm M/S}
+=\frac{w\,c_s^2}{1-c_s^2v^2} .
+\label{Kmov}
+\stp
+In terms of the inverse susceptibility $\chi^{-1}_{\mu\nu}=\partial\beta_\mu/\partial T^{0\nu}$
+of \texttt{theory.tex} (eq.~\texttt{inversesusc}),
+\st
+K_a=\frac{w^2\gamma}{\beta}\,u^\mu\chi^{-1}_{\mu\nu}u^\nu ,
+\stp
+since $u^\mu(u_\mu+\Delta^0_\mu/\gamma)=-1$ and $u^\mu\Delta_{\mu\nu}=0$ leave only the
+adiabat term.  At rest $K=w\,c_s^2=s\,dp/ds$, the adiabatic bulk modulus; in a moving fluid
+it is larger by $1/(1-c_s^2v^2)$, the factor of transverse sound in \texttt{theory.tex}.
+To second order the position dependence of $H$ is thus set by $p$ and by the adiabat
+projection of $\chi^{-1}$.  Checked against finite differences of the particle energy (conformal
+EOS, $v=0$--$0.9$): $\partial e/\partial V=-p$ and \Eq{Kmov} to $10^{-6}$.
+
+For $V_a=s_a/S_a$ a homogeneous shear $\epsilon$ of a
+lattice changes every volume by the same amount at second order, $\delta V_a=c\,\epsilon^2$,
+so $\sum_a\delta V_a\neq0$, and the first term gives a modulus
+\st
+G\sim p\,c(h/a,\text{kernel}).
+\stp
+This is the $\epsilon$ of \texttt{rigidity.tex}, proportional to the pressure.
+
+\paragraph{The condition.}  If the volumes always add up to the area,
+\st
+\sum_aV_a=A ,
+\label{sumV}
+\stp
+then at uniform pressure $\sum_ap\,\delta V_a=p\sum_a\delta V_a=0$, and the second term of
+\Eq{dH} is of fourth order in $\epsilon$ on a lattice: no modulus.  A partition of space
+(Voronoi cells, or the partition of unity of meshless finite-mass methods) satisfies
+\Eq{sumV}; so does the simplest choice, a global normalization of the kernel volume,
+\st
+V_a=\frac{A}{Z}\,\tilde V_a,\qquad \tilde V_a=\frac{s_a}{S_a},\qquad Z=\sum_c\tilde V_c .
+\label{Vnorm}
+\stp
+The particle's entropy density is then $s_a/V_a=(Z/A)\,S_a$.
+
+\paragraph{Hamilton's equations.}  With \Eq{Vnorm} in \Eq{H},
+$\partial H/\partial\bm x_a=-\sum_cp_c\,\partial V_c/\partial\bm x_a$ and
+\st
+\frac{\partial V_c}{\partial\bm x_a}=\frac AZ\Big(\frac{\partial\tilde V_c}{\partial\bm x_a}
+-\frac{\tilde V_c}{Z}\sum_d\frac{\partial\tilde V_d}{\partial\bm x_a}\Big).
+\stp
+The second term subtracts the volume-averaged pressure
+\st
+\bar p=\frac1A\sum_cp_cV_c ,
+\stp
+and the force is \Eq{mdot} with $p\to p-\bar p$:
+\st
+\dot{\bm m}_a=-\frac AZ\sum_bs_as_b\left(\frac{p_a-\bar p}{S_a^2}+\frac{p_b-\bar p}{S_b^2}\right)\bm D_{ab}.
+\label{mdotnorm}
+\stp
+The same substitution in \Eq{Teff} gives the derivative with respect to the weights,
+\st
+T^{\rm eff}_a=T_a-\frac AZ\left[\frac{p_a-\bar p}{S_a}-\sum_bs_b\,\frac{p_b-\bar p}{S_b^2}\,W_{ab}\right].
+\stp
+Still exact: $H$ is conserved by Hamilton's equations, and the pair terms of
+\Eq{mdotnorm} are odd under $a\leftrightarrow b$, so momentum is conserved.  The continuum
+limit is unchanged, $\nabla(p-\bar p)=\nabla p$.  The cost is one global sum per step.
+In SPH, subtracting a background pressure is a known remedy for the tensile
+instability; here it follows from the Hamiltonian, and energy conservation is kept.
+
+\paragraph{Expected, and tests.}
+\begin{enumerate}
+\item Perfect lattice: $c_t$ falls from $0.034$ to near zero.  Test: the shear-wave scan
+  with \Eq{Vnorm}, against \Sect{sec:shear}.
+\item Thermal state: what is left is driven by the pressure fluctuations $\delta p$
+  rather than by $p$, with random sign; no coherent long-wavelength modulus is expected.
+  Test: the stochastic runs, \Sect{sec:stoch}.
+\item Disordered arrangements: an affine shear changes the individual $\delta V_a$ at first
+  order, with random sign, which leaves a modulus $\propto K\,(\text{disorder})^2$ from the
+  second term of \Eq{dH}: the caveat (a) of \texttt{rigidity.tex} for Voronoi volumes.  A
+  local partition does not remove it either.  Test: the static phonon spectrum on jittered
+  lattices (\texttt{ideal\_lattice\_modes.jl}, \texttt{JITTER}).
+\end{enumerate}
+Implementation: an option \texttt{volume = :normalized} of the \texttt{:energy}
+Hamiltonian; one reduction for $\bar p$ and $Z$, and $p\to p-\bar p$, $S\to(Z/A)S$ where
+the particle state is evaluated.
+
+\paragraph{Global, not local.}  The normalization makes $\sum_a\delta V_a=0$, not
+$\delta V_a=0$: it removes the pressure term only where the pressure is uniform, and leaves the
+second term of \Eq{dH}.  \Sect{sec:relabel} asks the local question.
+
+%=============================================================================
+\section{The relabeling symmetry}
+\label{sec:relabel}
+
+\paragraph{The transformation.}  Let $\bm\xi(\bm x)$ be a vector field that preserves the
+entropy density,
+\st
+\nabla\cdot(S\bm\xi)=0 ,
+\stp
+which for a uniform fluid is $\nabla\cdot\bm\xi=0$.  The generator
+\st
+G_\xi=\sum_a\bm m_a\cdot\bm\xi(\bm x_a)
+\label{Gxi}
+\stp
+is the cotangent lift of the flow of $\bm\xi$, so it generates a canonical transformation:
+\st
+\delta\bm x_a=\varepsilon\,\bm\xi(\bm x_a),\qquad
+\delta m_{a,i}=-\varepsilon\,\partial_i\xi_j(\bm x_a)\,m_{a,j},\qquad \delta s_a=0 .
+\label{canxi}
+\stp
+In the continuum it moves the densities by Lie derivatives,
+\st
+\delta S=-\varepsilon\,\nabla\cdot(S\bm\xi)=0,\qquad
+\delta M_i=-\varepsilon\big[\partial_j(M_i\xi_j)+M_j\partial_i\xi_j\big].
+\label{dSdM}
+\stp
+The entropy density is unchanged, and so is the momentum density at rest.  At rest this is
+the relabeling symmetry of a fluid; its Noether charge is the circulation.
+
+\paragraph{How the particle Hamiltonian changes, particle by particle.}  The Hamiltonian
+\st
+H=\sum_ae_a(s_a,\bm m_a,V_a)
+\stp
+depends on the positions only through the volumes, at any momenta.  Under \Eq{canxi}, with
+$s_a$ fixed, exactly
+\st
+\delta H=\sum_a\big[e_a(\bm m_a+\delta\bm m_a,V_a)-e_a(\bm m_a,V_a)\big]+\sum_ab_a[\bm\xi],
+\label{dHsplit}
+\stp
+\st
+b_a=e_a(\bm m_a+\delta\bm m_a,V_a+\delta V_a)-e_a(\bm m_a+\delta\bm m_a,V_a).
+\stp
+The first sum is the particle version of the continuum change from $\delta\bm M$ in
+\Eq{dSdM}; it is not a lattice effect, and it vanishes at rest.  The breaking of the
+symmetry by the discretization is $b_a$, which comes only from $\delta V_a$.  Write
+\st
+\delta V_a=\delta V_a^{(1)}+\delta V_a^{(2)}+O(\varepsilon^3)
+\stp
+for its first- and second-order parts.  To second order,
+\st
+b_a=-p_a\big(\delta V_a^{(1)}+\delta V_a^{(2)}\big)+\frac{K_a}{2V_a}\big(\delta V_a^{(1)}\big)^2
+-\frac{\partial p_a}{\partial\bm m_a}\cdot\delta\bm m_a\,\delta V_a^{(1)} ,
+\label{ba}
+\stp
+with $p_a$ and $K_a$ (\Eq{Kmov}) at the particle's state, moving or not; the last term is
+absent at rest.  The first-order term,
+\st
+-\sum_ap_a\,\delta V_a^{(1)} ,
+\stp
+is the work against the forces, zero in a uniform state.  For the kernel volume, at first
+order
+\st
+\frac{\delta V_a^{(1)}}{V_a}=-\frac{\varepsilon}{S_a}\sum_bs_b\,(\bm\xi_a-\bm\xi_b)\cdot\bm D_{ab},
+\stp
+the SPH divergence of $\bm\xi$ at $a$.  For a linear $\bm\xi$ it is
+\st
+\frac{\delta V_a^{(1)}}{V_a}=\frac{\varepsilon}{S_a}\,C_a^{ij}\,\partial_j\xi_i ,\qquad
+C_a^{ij}=-\sum_bs_b\,D^i_{ab}\,(x_a-x_b)^j ,
+\stp
+with $C_a$ the kernel moment tensor.  On the hexagonal lattice $C_a$ is isotropic, so
+$\delta V_a^{(1)}=0$ when $\nabla\cdot\bm\xi=0$, and the breaking is the second-order
+lattice sum $\delta V_a^{(2)}$: the $c_t=0.034$ of \Sect{sec:shear}.  On a disordered
+arrangement $C_a$ is anisotropic, $\delta V_a^{(1)}\neq0$, and the bulk modulus enters.
+
+The breaking is thus a local density $b_a[\bm\xi]$, and it is a property of one object, the
+volume functional $V_a(\{\bm x\})$.  Restoring the symmetry means
+\st
+\delta V_a[\bm\xi]=0\quad\text{for each }a ,
+\label{dVzero}
+\stp
+at any momenta, not only $\sum_a\delta V_a=0$.
+
+\paragraph{The breaking, analytically.}  Take a hexagonal lattice of sites $\bm R$ with area
+$v_0$ per particle, all $s_b=s$, and the circular kernel $W$ with Fourier transform
+\st
+\tilde W(\bm G)=\int d^2r\,W(r)\,e^{-i\bm G\cdot\bm r},\qquad \tilde W(0)=1 .
+\stp
+By Poisson summation over the lattice, at a site,
+\st
+S_a=s\sum_{\bm R}W(\bm R)=\frac{s}{v_0}\sum_{\bm G}\tilde W(\bm G)
+=\frac{s}{v_0}\Big[1+\sum_{\bm G\neq0}\tilde W(\bm G)\Big],
+\label{poisson}
+\stp
+with $\bm G$ the reciprocal lattice.  The $\bm G=0$ term is the continuum; the others are the
+lattice error, small for $h/a\gg1$ since the first shell has $|\bm G|h=4\pi h/\sqrt3a\simeq7.3\,h/a$.
+
+Deform the lattice by the area-preserving flow of $\varepsilon\bm\xi$, with $kh\ll1$ ($k$ the
+wavenumber of $\bm\xi$).  Near particle $a$ the neighbourhood is the lattice mapped by the local
+deformation gradient,
+\st
+F_a=\mathbf 1+\varepsilon\,\nabla\bm\xi(\bm x_a),\qquad \det F_a=1 ,
+\stp
+up to corrections of relative order $kh$.  The deformed lattice has the same area per particle
+and the reciprocal vectors $F_a^{-\rm T}\bm G$, so
+\st
+S_a'=\frac{s}{v_0}\Big[1+\sum_{\bm G\neq0}\tilde W\big(F_a^{-\rm T}\bm G\big)\Big].
+\label{poissonF}
+\stp
+The continuum term is unchanged to all orders: this is the symmetry.  Only the lattice terms
+change.  With the strain $e=\tfrac12(\nabla\bm\xi+\nabla\bm\xi^{\rm T})$, traceless since
+$\nabla\cdot\bm\xi=0$, expand $|F_a^{-\rm T}\bm G|^2$ to second order in $\varepsilon$.  The first
+order is proportional to
+\st
+\sum_{\bm G}\bm G^{\rm T}e\,\bm G\ \propto\ {\rm tr}\,e=0 ,
+\stp
+because the second moments of a hexagonal shell are isotropic.  At second order the fourth
+moments of a shell are isotropic too, and the only quadratic invariant of $e$ is ${\rm tr}\,e^2$:
+\st
+\frac{\delta S_a}{S_a}=2c_L\,\varepsilon^2\,{\rm tr}\,e_a^2,\qquad
+c_L=\frac1{16}\sum_{\bm G\neq0}\Big[G^2\tilde W''(G)+3G\,\tilde W'(G)\Big]
+=\frac1{16}\sum_{\bm G\neq0}\frac1G\frac{d}{dG}\Big[G^3\tilde W'(G)\Big],
+\label{cL}
+\stp
+to leading order in the lattice error, with $\tilde W(G)$ the radial transform.  At rest
+$\partial e_a/\partial V_a=-p$ and $\delta V_a/V_a=-\delta S_a/S_a$, so the Hamiltonian changes by
+an elastic energy,
+\st
+\delta H=-p\sum_a\delta V_a=\int d^2x\;2p\,c_L\,\varepsilon^2\,{\rm tr}\,e^2 ,
+\label{dHel}
+\stp
+with shear modulus and transverse sound speed
+\st
+G_s=2p\,c_L,\qquad c_t^2=\frac{G_s}{w}=2c_L\,\frac pw .
+\label{ctcL}
+\stp
+For the conformal equation of state, $p/w=1/4$.  The rigidity is a property of the kernel
+alone: $\tilde W$ and its first two derivatives at the reciprocal-lattice vectors.  Its sign
+follows the oscillations of $\tilde W$ through the shells; $c_L<0$ means the lattice is unstable
+to shear.
+
+\paragraph{Checks.}  For the shear wave $\bm\xi=\hat{\bm e}_yA\sin kx$ (for which
+$\bm x\to\bm x+\varepsilon\bm\xi$ is the flow exactly), in the periodic strip with the
+\texttt{:energy} Hamiltonian (C2, $h/a=2$, $kh=0.31$), $\delta H$ computed directly and from
+the measured $\langle\delta S_a/S_a\rangle$ through \Eq{dHel} give the same $c_t=0.0341$ for
+$\varepsilon Ak=0.005$--$0.02$.  The reciprocal-lattice sum \Eq{cL}, with $\tilde W$ by Hankel
+transform, against the measured $c_t$ (dynamic, \Sect{sec:shear}, or static,
+\texttt{rigidity.tex}):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+kernel & $h/a$ & $c_L$ from \Eq{cL} & $c_t$ from \Eq{ctcL} & $c_t$ measured \\ \hline
+C2 & $2$   & $+2.40\times10^{-3}$ & $+0.0347$ & $+0.0340$ \\
+C2 & $3$   & $+9.29\times10^{-4}$ & $+0.0216$ & $+0.0214$ \\
+C2 & $4$   & $-2.45\times10^{-4}$ & $-0.0111$ & $-0.0110$ \\
+C4 & $2$   & $-6.31\times10^{-5}$ & $-0.0056$ & $-0.0054$ \\
+C6 & $2$   & $+5.85\times10^{-4}$ & $+0.0171$ & $+0.0170$ \\
+C6 & $2.5$ & $+8.63\times10^{-5}$ & $+0.0066$ & $+0.0065$ \\
+\hline
+\end{tabular}
+\end{center}
+(negative $c_t$: $c_t^2<0$).  \Eq{cL} is the limit $kh\to0$; the small difference for C2 at
+$h/a=2$ is the finite-$k$ correction.
+
+\paragraph{Large $h/a$: $c_t\to0$.}  The lattice terms sample $\tilde W$ far in its tail.  A
+Wendland kernel vanishes at the edge of its support as
+\st
+W(r)\propto\Big(1-\frac r{2h}\Big)^{n},\qquad n=4,\,6,\,8\ \text{ for C2, C4, C6},
+\stp
+and for $qh\gg1$ its transform is dominated by that edge,
+\st
+\tilde W(q)\simeq A_n\,(2qh)^{-(n+3/2)}\cos(2qh-\phi_n),
+\stp
+with constants $A_n$, $\phi_n$.  Then $G^2\tilde W''\simeq-(2Gh)^2\tilde W$ dominates \Eq{cL}, and
+the first shell (six vectors, $G_1=4\pi/\sqrt3a$) gives
+\st
+c_L\simeq-\frac{6}{16}\,A_n\,(2G_1h)^{1/2-n}\cos(2G_1h-\phi_n),\qquad
+2G_1h=\frac{8\pi}{\sqrt3}\,\frac ha .
+\label{cLasym}
+\stp
+The rigidity oscillates in sign with period $\Delta(h/a)=\sqrt3/4\simeq0.43$ under an envelope
+\st
+|c_L|\propto\Big(\frac ha\Big)^{-(n-1/2)},\qquad
+c_t\propto\Big(\frac ha\Big)^{-(2n-1)/4} ,
+\stp
+that is $c_t\propto(h/a)^{-1.75}$, $(h/a)^{-2.75}$, $(h/a)^{-3.75}$ for C2, C4, C6: $c_t\to0$ as
+$h/a\to\infty$.  The sum \Eq{cL} on a grid $h/a=2$--$8$ in steps of $0.25$ shows the sign
+changing at almost every step; the peaks of C2 fall from $2.4\times10^{-3}$ ($h/a=2$) to
+$4\times10^{-5}$ ($h/a\simeq7.75$), an exponent $\simeq3.1$ against $3.5$ (the grid does not land
+on the peaks); C6 is below $10^{-6}$ ($c_t<7\times10^{-4}$) from $h/a\simeq4$ on.  The static
+values of \texttt{rigidity.tex} at $h/a=4$, $5$, $6$ ($c_L=-2.4\times10^{-4}$, $-2.3\times10^{-5}$,
+$+9.5\times10^{-5}$) agree with the sum ($-2.60\times10^{-4}$, $-2.46\times10^{-5}$,
+$+9.74\times10^{-5}$); their irregular signs are the period $0.43$ sampled at steps of $1$.
+
+\paragraph{The C2 kernel precisely.}  In units of the support $R=2h$, with $x=r/R$,
+\st
+W(r)=\frac{7}{\pi R^2}\,f(x),\qquad
+f(x)=(1-x)^4(1+4x)=1-10x^2+20x^3-15x^4+4x^5 ,
+\stp
+and with $\kappa=2qh$,
+\st
+\tilde W(q)=14\int_0^1x\,f(x)\,J_0(\kappa x)\,dx .
+\stp
+For $\kappa\gg1$ the transform comes from the two places where $f$ is not smooth.  At the
+origin the odd powers $20x^3$ and $4x^5$ are $|\bm r|^3$ and $|\bm r|^5$, whose two-dimensional
+transforms are $18\pi\kappa^{-5}$ and $-450\pi\kappa^{-7}$; they give a tail of fixed sign.  At the
+edge, $f\simeq5(1-x)^4$; with the asymptotic form of $J_0$, integration by parts at $x=1$ gives
+an oscillating tail.  To next order,
+\st
+\tilde W_{\rm C2}(q)\simeq14\big[180\,\kappa^{-5}-900\,\kappa^{-7}\big]
++14\sqrt{\frac2\pi}\,\Big[120\,\kappa^{-11/2}\sin\Big(\kappa-\frac\pi4\Big)
++765\,\kappa^{-13/2}\cos\Big(\kappa-\frac\pi4\Big)\Big].
+\label{WtC2}
+\stp
+The reciprocal lattice lies on the shells
+\st
+\kappa_{\bm G}=\kappa_1\sqrt{m^2+mn+n^2},\qquad \kappa_1=\frac{8\pi}{\sqrt3}\,\frac ha ,
+\stp
+and with $G\,d/dG=\kappa\,d/d\kappa$ in \Eq{cL}, the leading terms of each tail give
+\st
+c_L\simeq\sum_{\bm G\neq0}\Big[\,2362.5\,\kappa_{\bm G}^{-5}
+-105\sqrt{\frac2\pi}\;\kappa_{\bm G}^{-7/2}\sin\Big(\kappa_{\bm G}-\frac\pi4\Big)\Big],
+\qquad c_t^2=\frac{c_L}{2}.
+\label{cLC2}
+\stp
+The oscillating term is the one of \Eq{cLasym}, with $A_4\propto120$ and $\phi_4=3\pi/4$; the
+origin term is positive, falls as $(h/a)^{-5}$, and is $18\%$ of the total at $h/a=2$ and $2\%$
+at $h/a=8$.  Against the exact sum \Eq{cL} (Hankel transform):
+\begin{center}
+\begin{tabular}{lccccccc}
+\hline
+$h/a$ & $2$ & $2.5$ & $3$ & $4$ & $5$ & $6$ & $8$ \\ \hline
+exact $10^4c_L$ & $+23.7$ & $+19.1$ & $+9.47$ & $-2.60$ & $-0.246$ & $+0.974$ & $-0.145$ \\
+\Eq{WtC2} $10^4c_L$ & $+24.0$ & $+19.7$ & $+9.75$ & $-2.68$ & $-0.239$ & $+0.976$ & $-0.142$ \\
+\hline
+\end{tabular}
+\end{center}
+Within $1$--$7\%$ on the grid $h/a=2$--$8$ (steps of $0.25$), except right at the sign changes,
+where $c_L$ itself is near zero.
+
+\paragraph{A Gaussian kernel.}  For
+\st
+W(r)=\frac{1}{\pi\sigma^2}\,e^{-r^2/\sigma^2},\qquad \tilde W(q)=e^{-q^2\sigma^2/4},
+\stp
+write $u=G^2\sigma^2/4$.  Then
+\st
+G^2\tilde W''+3G\tilde W'=4u(u-2)\,e^{-u},
+\stp
+and \Eq{cL} becomes
+\st
+c_L=\frac14\sum_{\bm G\neq0}u_{\bm G}\,(u_{\bm G}-2)\,e^{-u_{\bm G}},\qquad
+u_{\bm G}=u_1\,(m^2+mn+n^2),\qquad u_1=\frac{4\pi^2}{3}\Big(\frac\sigma a\Big)^2\simeq13.2\Big(\frac\sigma a\Big)^2 .
+\label{cLgauss}
+\stp
+$c_L>0$ once $u_1>2$ ($\sigma/a>0.39$): the transform is positive, so there is no shear
+instability and no change of sign.  The first shell dominates,
+\st
+c_t^2=\frac{c_L}2\simeq\frac34\,u_1^2\,e^{-u_1},\qquad
+c_t\simeq\frac{\sqrt3}{2}\,u_1\,e^{-u_1/2}\simeq11.4\Big(\frac\sigma a\Big)^2e^{-6.6(\sigma/a)^2}:
+\stp
+a Gaussian decay in $\sigma/a$, against the power laws of the Wendland kernels, whose tails come
+from the compact support and the $|\bm r|^3$ term at the origin.  At equal second moment
+($\langle r^2\rangle=\tfrac59h^2$ for C2), $\sigma\simeq0.745\,h$, and \Eq{cLgauss} gives
+\begin{center}
+\begin{tabular}{lccccc}
+\hline
+$h/a$ & $1.5$ & $1.75$ & $2$ & $2.5$ & $3$ \\
+$\sigma/a$ & $1.12$ & $1.30$ & $1.49$ & $1.86$ & $2.24$ \\ \hline
+$c_L$ & $2.6\times10^{-5}$ & $1.3\times10^{-7}$ & $2.4\times10^{-10}$ & $4.5\times10^{-17}$ & $1.8\times10^{-25}$ \\
+$c_t$ & $3.6\times10^{-3}$ & $2.6\times10^{-4}$ & $1.1\times10^{-5}$ & $5\times10^{-9}$ & $3\times10^{-13}$ \\
+\hline
+\end{tabular}
+\end{center}
+At the equivalent of $h/a=2$, $c_t\simeq10^{-5}$ against $0.034$ for C2.
+
+\emph{Truncation.}  A code cuts the Gaussian at some $r_c$, and the cut has its own lattice
+terms.  A jump at $r_c$ gives an oscillating power-law tail of order $e^{-r_c^2/\sigma^2}$, which
+at $r_c=3\sigma$ would bring $c_L$ back to the level of C2 (an estimate).  A taper that brings
+$W$ and a few derivatives to zero at $r_c$ suppresses the tail further, and leaves a floor of
+roughly
+\st
+c_L\sim e^{-r_c^2/\sigma^2}\qquad(\sim10^{-7}\text{ at }r_c=4\sigma,\ \sim10^{-11}\text{ at }5\sigma),
+\stp
+below which $c_t$ stops falling.  The number of neighbours grows as $(r_c/a)^2$: at
+$r_c=4\sigma\simeq3h$, about $2.3$ times that of a Wendland kernel of the same $h$.  The floor for a
+given taper is to be computed with \Eq{cL}.
+
+\paragraph{Small $kh$: $c_t$ does not vanish.}  The elastic energy \Eq{dHel} contains no $k$: at
+fixed $h/a$ and kernel, $G_s$ and $c_t$ are constants, and the transverse branch is
+\st
+\omega_T=c_t\,k\qquad(kh\ll1),
+\stp
+as measured ($c_t=0.022$ for $kh=0.13$--$0.74$, \texttt{campaigns.tex}).  Against the viscous
+decay rate $\nu k^2$ of a fluid,
+\st
+\frac{\omega_T}{\nu k^2}=\frac{c_t}{\nu k}\ \longrightarrow\ \infty\qquad(k\to0):
+\stp
+the longest wavelengths are the most solid-like.  Refining at fixed $h/a$ ($h\to0$, so $kh\to0$)
+does not change $c_t$; only $h/a\to\infty$, more neighbours per kernel, removes it.
+
+\paragraph{What a deforming kernel does.}  In \Eq{poissonF} the kernel is fixed while the
+reciprocal lattice is deformed.  If instead the kernel of particle $a$ is deformed with its
+neighbourhood, $W\to W\circ F_a^{-1}$ at unit determinant, its transform is $\tilde W(F_a^{\rm T}\bm
+q)$, and it samples the deformed lattice at
+\st
+\tilde W\big(F_a^{\rm T}F_a^{-\rm T}\bm G\big)=\tilde W(\bm G):
+\stp
+every term of \Eq{poissonF} is unchanged, and $c_L\to0$ for homogeneous strain.  This is the
+construction below.
+
+\paragraph{The volume: a kernel that deforms with its neighbourhood.}  The kernel sum uses a
+circular kernel.  Under an area-preserving affine map of the separations
+$\bm r_{ab}=\bm x_a-\bm x_b$,
+\st
+\bm r_{ab}\to F\bm r_{ab},\qquad \det F=1 ,
+\label{affine}
+\stp
+the neighbours move but the kernel does not, so $S_a$ changes.  Give each particle a kernel
+whose shape follows its neighbourhood.  Write the present kernel in units of $h$,
+\st
+W(r)=\frac1{h^2}\,\hat W(r/h),
+\stp
+and define
+\st
+S_a=\sum_bs_b\,W_a(\bm r_{ab}),\qquad
+W_a(\bm r)=\frac1{h^2}\,\hat W\big(\rho_a(\bm r)\big),\qquad
+\rho_a(\bm r)=\frac1h\big(\bm r^{\rm T}\hat Q_a^{-1}\bm r\big)^{1/2}.
+\label{Saniso}
+\stp
+Here $\hat Q_a$ is the shape tensor of the neighbourhood of $a$, a symmetric $2\times2$
+matrix of unit determinant, defined as the solution of
+\st
+\hat Q_a=\frac{Q_a}{(\det Q_a)^{1/2}},\qquad
+Q_a^{ij}=\sum_bs_b\,\omega\big(\rho_a(\bm r_{ab})\big)\,r_{ab}^i\,r_{ab}^j ,\qquad
+\omega(\rho)=-\frac{\hat W'(\rho)}{\rho}\ \ (\ge0).
+\label{Qhat}
+\stp
+$Q_a$ depends on $\hat Q_a$ through $\rho_a$, so \Eq{Qhat} is a fixed-point equation.  Since
+$\det\hat Q_a=1$, the inverse is the adjugate,
+\st
+\hat Q_a^{-1}=\begin{pmatrix}\hat Q_a^{yy}&-\hat Q_a^{xy}\\[2pt]-\hat Q_a^{xy}&\hat Q_a^{xx}\end{pmatrix},
+\stp
+and no square roots of matrices are needed.  The weight $\omega$ is the bond weight of
+\texttt{bond\_dissipation.tex}; it is finite at $\rho=0$ for the Wendland kernels.  It is
+chosen so that $\hat Q_a$ is a stationary point of $S_a$.
+
+\paragraph{$\hat Q_a$ is stationary.}  Vary $\hat Q_a$ at fixed positions, keeping its
+determinant fixed:
+\st
+{\rm tr}\big(\hat Q_a^{-1}\delta\hat Q_a\big)=0 .
+\label{detfix}
+\stp
+From \Eq{Saniso} and \Eq{Qhat},
+\st
+\delta S_a=\mathsf G_a^{ij}\,\delta\hat Q_a^{ij},\qquad
+\mathsf G_a=\frac1{2h^4}\,\hat Q_a^{-1}\Big[\sum_bs_b\,\omega(\rho_a)\,\bm r_{ab}\bm r_{ab}^{\rm T}\Big]
+\hat Q_a^{-1}=\frac{(\det Q_a)^{1/2}}{2h^4}\,\hat Q_a^{-1},
+\label{Gc}
+\stp
+so that
+\st
+\delta S_a=\frac{(\det Q_a)^{1/2}}{2h^4}\,{\rm tr}\big(\hat Q_a^{-1}\delta\hat Q_a\big)=0 .
+\stp
+At the solution of \Eq{Qhat}, $S_a$, and with it $V_a$ and $H$, do not change to first order
+when the shape tensor changes.  Two consequences:
+\begin{enumerate}
+\item The forces from the dependence of $\hat Q_c$ on the positions vanish (\Eq{mdotaniso}
+  below); no implicit derivatives are needed.
+\item An approximate $\hat Q_a$ is good enough: an error $\delta\hat Q_a$ changes $H$ only at
+  second order.  As the system evolves, $\hat Q_a$ can be carried along, predicted from the
+  local velocity gradient $L_a=\nabla\bm v$ at $a$,
+  \st
+  \dot{\hat Q}_a=L_a\hat Q_a+\hat Q_aL_a^{\rm T}-({\rm tr}L_a)\,\hat Q_a ,
+  \label{Qdot}
+  \stp
+  which is the change of shape of a material neighbourhood at fixed determinant, and then
+  corrected by iterating \Eq{Qhat} until its residual is below a tolerance.
+\end{enumerate}
+
+\paragraph{The update of $\hat Q$ in a time step.}  $Q_a$ involves only $\hat Q_a$ and the
+positions of the neighbours of $a$, not the $\hat Q_b$ of other particles, so the fixed point
+decouples particle by particle.  In the loop over particles that computes $S_a$:
+\begin{enumerate}
+\item predict $\hat Q_a$ from the previous step with \Eq{Qdot};
+\item sweep the neighbours of $a$ with the current $\hat Q_a$, accumulate $Q_a$ and set
+  $\hat Q_a\leftarrow Q_a/(\det Q_a)^{1/2}$; repeat until
+  \st
+  \big\|\hat Q_a^{\rm new}-\hat Q_a\big\|<\tau ;
+  \stp
+\item sweep once more for $S_a$ with the final $\hat Q_a$ (or use the last sweep).
+\end{enumerate}
+Each iteration multiplies the error by the contraction factor $\lambda$ of the map
+\Eq{Qhat}.  From a warm start the error is the change per step, of order
+$|\nabla\bm v|\,\Delta t$, so one or two iterations should reach $\tau$.  The tolerance
+controls the energy (second order) and the angular momentum (first order); the momentum is
+exact for any $\hat Q$.
+
+\paragraph{Properties.}
+\begin{enumerate}
+\item \emph{Exact invariance under area-preserving affine maps, for any arrangement.}  Under
+  \Eq{affine},
+  \st
+  \hat Q_a\to F\hat Q_aF^{\rm T}
+  \stp
+  solves \Eq{Qhat} again: it leaves every $\rho_a(\bm r_{ab})$ unchanged, so
+  $Q_a\to FQ_aF^{\rm T}$, and $\det F=1$.  So $S_a$, $V_a$ and $H$ are unchanged, to all
+  orders.  This holds on disordered arrangements as well, so it removes all terms of
+  \Eq{ba} for homogeneous strain.
+\item \emph{Compression still costs energy.}  The kernel keeps its area and only its shape
+  adapts, so $S_a$ still measures the density.  On the undeformed hexagonal lattice
+  $\hat Q_a=1$, and \Eq{Saniso} is the present kernel sum.
+\item \emph{Translations and rotations} remain symmetries; under a rotation $R$,
+  \st
+  \hat Q_a\to R\hat Q_aR^{\rm T},
+  \stp
+  so momentum and angular momentum are conserved.
+\item \emph{Expected.}  A shear wave of wavenumber $k$ differs from a homogeneous strain only
+  through the gradients of the strain across a neighbourhood, so the modulus becomes
+  \st
+  G(k)\sim\alpha\,p\,(kh)^2,\qquad c_t(k)\propto k ,
+  \stp
+  and there is no transverse sound at long wavelengths.  It is a fluid when the oscillation
+  is slower than the viscous decay,
+  \st
+  c_t k\ll\nu k^2,\qquad\text{roughly}\qquad \alpha\lesssim\Big(\frac{\nu}{c_sh}\Big)^2 ;
+  \stp
+  the coefficient $\alpha$ is a lattice number to be measured.
+\end{enumerate}
+We take \Eq{Saniso}--\Eq{Qhat} as the definition of the volume,
+\st
+V_a=\frac{s_a}{S_a}\quad\text{with the anisotropic }S_a ;
+\stp
+the Hamiltonian is \Eq{H} with this $V_a$, unchanged otherwise.
+
+\paragraph{Hamilton's equations.}  $\dot{\bm x}_a=\bm v_a$ is unchanged.  With
+\st
+P_c=\frac{p_c}{S_c^2},\qquad
+\frac{\partial V_c}{\partial\bm x_a}=-\frac{V_c}{S_c}\,\frac{\partial S_c}{\partial\bm x_a},
+\stp
+the force is
+\st
+\dot{\bm m}_a=-s_a\sum_bs_b\big[P_a\nabla W_a(\bm r_{ab})+P_b\nabla W_b(\bm r_{ab})\big]
+-\sum_cs_cP_c\,\mathsf G_c^{ij}\,\frac{\partial\hat Q_c^{ij}}{\partial\bm x_a},
+\label{mdotaniso}
+\stp
+with the gradient of the anisotropic kernel
+\st
+\nabla W_a(\bm r)=-\frac{\omega(\rho_a)}{h^4}\,\hat Q_a^{-1}\bm r .
+\stp
+By \Eq{Gc} the second term is proportional to
+\st
+{\rm tr}\Big(\hat Q_c^{-1}\frac{\partial\hat Q_c}{\partial\bm x_a}\Big)
+=\frac{\partial\ln\det\hat Q_c}{\partial\bm x_a}=0 ,
+\stp
+so it vanishes, and
+\st
+\boxed{\;\dot{\bm m}_a=-s_a\sum_bs_b\big[P_a\nabla W_a(\bm r_{ab})+P_b\nabla W_b(\bm r_{ab})\big]\;}
+\label{mdotaniso2}
+\stp
+the pressure force \Eq{mdot} with each particle's own kernel.  Each kernel is even in
+$\bm r$, so its gradient is odd, and the force of $b$ on $a$,
+\st
+\bm F_{a\leftarrow b}=-s_as_b\big[P_a\nabla W_a(\bm r_{ab})+P_b\nabla W_b(\bm r_{ab})\big]
+=-\bm F_{b\leftarrow a},
+\stp
+is odd pair by pair, whatever the $\hat Q$'s: the total momentum is conserved exactly, even
+with an approximate $\hat Q$.  The pair force is not along $\bm r_{ab}$, so the angular momentum
+is conserved only through the rotation invariance of $H$, exactly at the exact $\hat Q$ and to
+first order in its error otherwise.  With an approximate $\hat Q$ the force is that of $H$ to
+first order in the error, and the energy is conserved to second order.  The
+variable-$h$ SPH of Springel \& Hernquist (2002) needs explicit ``grad-$h$'' terms; here the
+stationarity of $S_a$ removes their tensor analogue.  The anisotropic kernel is that of
+adaptive SPH (Owen et al.\ 1998).
+
+\paragraph{Costs and risks.}  One or two extra sweeps over each particle's neighbours, inside
+the loop that computes $S_a$.  The
+fixed point must be smooth and unique; a neighbourhood squeezed into a line makes $\hat Q_a$
+degenerate (the zero modes of the caveat (b) in \texttt{rigidity.tex}), and strongly
+anisotropic kernels may shorten the time step.  A one-pass $Q_a$ with the circular weight
+$\omega(|\bm r_{ab}|/h)$ is simpler but only partly equivariant: the weight itself changes
+under $F$, which rescales the response of $\hat Q_a$ to the strain instead of matching it.
+Where the lattice error is small (C6, large $h/a$), $S_a$ is nearly flat in $\hat Q_a$; the
+stationary point is then poorly determined, but also matters little.
+
+\paragraph{Tests.}
+\begin{enumerate}
+\item The fixed point: its contraction factor $\lambda$ on the lattice and on jittered
+  arrangements; stationarity, $\delta S_a=0$ under a change of $\hat Q_a$ at fixed
+  determinant.  Then the force \Eq{mdotaniso2} against finite differences of $H$ (with $\hat Q$
+  re-solved), on a jittered lattice; the total momentum (exact) and angular momentum.
+\item Time stepping: $\Delta H/H$ and the angular momentum against $\tau$ and the number of
+  iterations, with and without the prediction \Eq{Qdot}.
+\item Invariance: $H$ before and after an area-preserving affine map of a jittered
+  arrangement (should agree to the fixed-point tolerance), and the static phonon spectrum
+  (\texttt{ideal\_lattice\_modes.jl}), expected
+  \st
+  \omega_T^2(q)\propto q^4\quad\text{instead of}\quad q^2 .
+  \stp
+\item The shear-wave scan, against \Sect{sec:shear}: $c_t(k)$ for several $k$, expected
+  $\propto k$.
+\item Sound: $c_s$ unchanged (the compression response is the same at leading order).
+\end{enumerate}
+
+%=============================================================================
+\section{The stochastic step with \texttt{:energy}}
+\label{sec:stoch}
+
+Not yet tested.  The stochastic step (\texttt{stochastic.tex}) works at fixed positions,
+volumes $V_a=s_a/S_a$ and particle energies $e_a$, which are exactly the variables of
+\Eq{H}; on a frozen lattice it is the same step for both Hamiltonians.  Two differences:
+\begin{enumerate}
+\item \emph{No gradient correction.}  The gradient energy $g_a$ of \texttt{changerep.tex}
+  (Appendix~A) absorbs the difference between $\sum_ae_a$ and the smoothed $H$, which is
+  now zero.  With \texttt{:energy} the step must use the plain back map
+  $s_a'=S_a(e_a,\bm m_a')$ (\texttt{gradient = false}).
+\item \emph{The back map and the volumes.}  The back map holds $e_a$ and $V_a$ fixed, but a
+  change of $s_a$ changes $S_b$ and so $V_b$ at every neighbour.  To first order
+  \st
+  \Delta H\simeq\sum_a\big(T^{\rm eff}_a-T_a\big)\Delta s_a ,
+  \stp
+  with $T^{\rm eff}_a-T_a$ the smoothed minus the local $p/S$, of order $h^2$.  In the
+  deterministic step this is $4\times10^{-8}$ (\Sect{sec:shear}); with noise the $\Delta s_a$
+  are larger and fluctuate, so its size has to be measured.
+\end{enumerate}
+Tests, in order:
+\begin{enumerate}
+\item \texttt{stochastic\_step!} defaults to \texttt{gradient = false} when
+  \texttt{params.hamiltonian == :energy}, and the drivers keep that default.
+\item One step on a thermal state: $\Delta H$ per stochastic step, \texttt{:energy} against
+  \texttt{:smoothed} (with its gradient-corrected map).
+\item Coupled runs, \texttt{stability.jl}: $L=0.6$, $h/a=2$, $\eta/s=0.2$,
+  $S_0=10^6$, to $t\approx50$, 2--4 realizations per Hamiltonian: $\Delta H/H(t)$,
+  KE/eq, the lattice disorder.  Local.
+\item At NERSC, after 1--3: equilibrium $C_T$, $C_L$ with \texttt{:energy}, as campaign
+  \texttt{second}; the node-hour estimate first.
+\end{enumerate}
+\paragraph{Status.}  Test 1 is done; \texttt{:smoothed} stays bit-identical
+(\texttt{test/testregress\_step.jl}).  Test 2 (\texttt{examples/energystep\_stoch\_onestep.jl},
+$L=0.6$, $h/a=2$, equilibrium start, 20 half steps $\Delta t/2=0.0043$ at fixed positions,
+3 seeds):
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+ & \texttt{:smoothed} (gradient map) & \texttt{:energy} \\ \hline
+$\Delta H/H$ per half step, rms & $3.4\times10^{-5}$ & $1.8\times10^{-7}$ \\
+$\Delta H/H$ per half step, mean & $\pm\,7\times10^{-6}$ (seed to seed) & $-1.8\times10^{-7}$ (every seed) \\
+\hline
+\end{tabular}
+\end{center}
+With \texttt{:energy}, $\Delta H=\Delta\sum_ae_a$ exactly, and the change is $200$ times smaller
+than with \texttt{:smoothed}, but systematic: a cooling of about $4\times10^{-5}$ per unit
+time.  It is correlated ($-0.8$) with $\sum_a(T^{\rm eff}_a-T_a)\Delta s_a$, but of the
+opposite sign and twice the size; not understood yet.
+
+With \Sect{sec:norm}, the same tests with \texttt{volume = :normalized} decide whether the
+transverse oscillation of the equilibrium $C_T$ is the pressure term of \Eq{dH}.
+
+\end{document}
