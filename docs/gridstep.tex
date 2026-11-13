@@ -594,6 +594,38 @@ $\Omega/k=0.768$).  Over the zone:
 This gives, mode by mode, the linear (bare) propagator against which the measured correlators can be
 compared; the difference is the fluctuation (nonlinear) part, the renormalization.
 
+\paragraph{Equipartition over the whole zone.}  Grid runs record their Fourier modes with the lattice FFT
+(\texttt{record\_grid!}, equal to the direct sums of \texttt{record!} to $2\times10^{-12}$) and the static spectra of all $N$
+modes.  A short campaign (\texttt{nersc/campaign\_grid\_spectra.txt}, job 61213116: $L=1.2$, 16 runs each at
+$v_0=0$ and $0.8$, $t=100$) gives $C_{AA}(\bm k,0)V/\chi_{AA}$ at every $\bm k$ (\texttt{examples/grid\_spectra.jl};
+Figs.~\ref{fig:gspkh}, \ref{fig:gspmap}); shell averages with jackknife errors over the runs:
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{3}{c}{$v_0=0$} & \multicolumn{3}{c}{$v_0=0.8$} \\
+$kh$ & $\varepsilon$ & $M_x$ & $M_y$ & $\varepsilon$ & $M_x$ & $M_y$ \\ \hline
+0.5--1 & $1.048(9)$ & $1.052(9)$ & $1.049(9)$ & $0.987(15)$ & $0.987(15)$ & $0.999(10)$ \\
+1--2 & $1.018(3)$ & $1.015(2)$ & $1.018(2)$ & $1.017(5)$ & $1.018(6)$ & $1.001(3)$ \\
+2--3 & $1.009(1)$ & $1.002(1)$ & $1.002(1)$ & $1.008(4)$ & $1.009(4)$ & $0.996(2)$ \\
+3--4 & $1.001(1)$ & $0.998(1)$ & $0.997(1)$ & $1.000(3)$ & $1.001(3)$ & $0.998(1)$ \\
+4--6 & $0.968(5)$ & $0.996(0)$ & $0.996(1)$ & $1.002(10)$ & $1.003(10)$ & $0.996(1)$ \\
+6--9 & $0.832(8)$ & $0.996(0)$ & $0.996(0)$ & $1.022(6)$ & $1.023(6)$ & $0.995(1)$ \\
+\hline
+\end{tabular}
+\end{center}
+Two effects.  (i) At rest the long waves carry a few percent more than equipartition, $1.05\pm0.01$ at
+$0.5<kh\le1$ in every component, falling to $1.015$ and $1.002$ at $kh=1$--$2$ and $2$--$3$ (the excess of the
+campaign at $kh=0.52$); the sum over the zone is fixed by Parseval, so this is a redistribution towards
+long wavelengths --- a candidate for the renormalization to be compared with the bare propagator.
+(ii) The modes on which the stencil derivative nearly vanishes ($\kappa h<0.1$, 1519 of 2688, the outer zone
+$kh\gtrsim4.5$) are poorly equilibrated in the energy (and, when the fluid moves, in the momentum along
+$\bm k$, which the boost mixes with it): at rest $\varepsilon$ is under-populated there ($0.83$ at $kh=6$--$9$), at
+$v_0=0.8$ the mode-by-mode values scatter from $0.6$ to $1.5$ about a mean of 1 --- far more than the
+statistics allow, so these modes barely decorrelate in a run.  The momentum across $\bm k$ is at
+equipartition to $0.4\%$ on every mode.  The stochastic step at fixed sites moves momentum and keeps each
+site's energy, and on the near-null modes the ideal step does nothing, so nothing exchanges their
+energy but the nonlinear coupling.  These are the barely damped modes of the bare propagator.
+
 \paragraph{Kernels.}  The reduced set of waves (ideal and $\eta/s=0.2$; $v_0=0$, $0.8$; $kh=0.52$, $1.05$; five periods)
 with the Wendland C4 and C6 kernels (\texttt{SPH\_KERNEL}), for the grid and the particles alike:
 \begin{center}
@@ -730,6 +762,17 @@ against $|\bm k|h$ (first zone), in the hydrodynamic range; colour: the three mo
 \includegraphics[width=\textwidth]{figs/grid_bare_ideal.png}
 \caption{Bare lattice propagator of the ideal step: $\Gamma/c_sk$ of every mode (note the scales).}
 \label{fig:gbideal}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_spectra_kh.png}
+\caption{Equal-time spectra of every lattice mode, $C_{AA}(\bm k,0)V/\chi_{AA}$ against $|\bm k|h$, coloured by the lattice derivative
+$\kappa(\bm k)h$; top $v_0=0$, bottom $v_0=0.8$; 16 runs each, $t=100$.}
+\label{fig:gspkh}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_spectra_maps.png}
+\caption{The same over the Brillouin zone ($k_xh$, $k_yh$; first-zone representatives): equipartition is white.}
+\label{fig:gspmap}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_smoke.png}
