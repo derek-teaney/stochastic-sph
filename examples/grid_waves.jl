@@ -153,6 +153,10 @@ vcases = cases
 if setting("SR_SMOKE", false)                      # seconds: two short runs, code paths only
     cases = [(:grid, :soundp, :x, 0.8, 4), (:particle, :shear, :y, 0.3, 4)];  dtcases = dtcases[1:1];  vcases = cases
 end
+if setting("SR_QUICK", false)                      # a reduced set: v0 = 0, 0.8; kh = 0.52, 1.05; shear, sound+
+    vcases = [(sch, mode, dir, v0, nk) for sch in (:grid, :particle), mode in (:shear, :soundp),
+              dir in (:x, :y), v0 in (0.0, 0.8), nk in (2, 4)]
+end
 const ONLY = setting("SR_ONLY", "all")             # all | ideal | viscous
 ONLY == "viscous" && (cases = [];  dtcases = [])
 ONLY == "ideal" && (vcases = [])
