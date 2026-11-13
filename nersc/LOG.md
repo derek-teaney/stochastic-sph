@@ -4,6 +4,32 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Next session at NERSC — start here (written 2026-11-12, on the laptop)
+
+The code was reorganized on the laptop and merged into `main` (see "The code after the
+cleanup" below).  Before any new campaign:
+1. **Switch the checkouts to `main`.**  `~/stochastic-sph` and the run copies
+   `~/stochastic-sph-run*` are on `nextstage`, which is fully contained in `main`:
+   `git -C <checkout> status` (no local changes expected), then
+   `git -C <checkout> switch main && git -C <checkout> pull`.
+2. **Precompile** (login node): `julia --project=nersc -e 'using Pkg; Pkg.instantiate();
+   Pkg.precompile()'`, and the same for the plotting environment `$HOME/stochastic-sph`.
+   Smoke test, seconds: `julia --project=nersc -e 'include("src/load.jl")'`.
+3. **Run the test suite once** in a debug job (it has only run on the laptop so far):
+   `sbatch -A m3722 -q debug -C cpu -N 1 -t 00:30:00 --export=ALL,SR_REPO=<checkout>
+   <checkout>/nersc/unittests.sh` from `$SCRATCH/sph`.  Expect PASS for every line:
+   unit tests, physics (three wave tests, about a minute, four threads each), load, and
+   the regression against `main` (built in a git worktree under the output directory).
+   Read `<out>/results.toml` and the `slurm/` log; if anything fails, find the cause first.
+4. **New campaign files use the new drivers**: `examples/equilibrium.jl`,
+   `examples/stability.jl` (same arguments and SR_* settings as before).  Each run now
+   writes `<run>.toml`; gather a campaign with `julia --project=nersc nersc/collect_runs.jl
+   $SCRATCH/sph/<campaign>`.  The old `campaign_*.txt` files name the removed drivers
+   (`stochrep_*`): do not resubmit them.
+5. **Old runs on `$SCRATCH/sph/`**: the owner expects to discard them (the figures are in
+   `docs/figs`).  Ask before deleting anything.
+6. Budget rule unchanged: ask before more than ~20 node-hours, with the estimate.
+
 ## Setup (done 2026-11-08, user `dteaney`)
 
 - Code: `~/stochastic-sph`, branch `nextstage`.

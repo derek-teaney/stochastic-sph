@@ -51,8 +51,8 @@ run_unit() {   # <repo> <outdir>: every <repo>/test/*.jl → <outdir>/<name>.log
     ls "$1"/test/*.jl | grep -v '/testregress_step.jl$' | xargs -P "$JOBS" -n 1 "$OUT/one_unit.sh" "$1" "$2" | sort > "$2/unit.txt"
 }
 
-# log comparison, timing and temporary paths masked; test/regress/logmask.sed maps renames
-mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g' | sed -E -f "$R/test/regress/logmask.sed"; }
+# log comparison, timing, temporary paths and commit hashes masked; test/regress/logmask.sed maps renames
+mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g; s/commit [0-9a-f]{7,}(\+dirty)?/commit HASH/g' | sed -E -f "$R/test/regress/logmask.sed"; }
 
 if [ "$MODE" = unit ] || [ "$MODE" = all ]; then
     echo "unit tests ($(git rev-parse --short HEAD), $JOBS at a time):"
@@ -91,7 +91,7 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     drv() { [ -f "$1/examples/equilibrium.jl" ] && echo "$1/examples/equilibrium.jl" || echo "$1/examples/stochrep_equilibrium.jl"; }
     for H in energy smoothed; do
         t0=$(date +%s)
-        ( cd "$W" && SPH_HAMILTONIAN=$H julia -t 1 --project="$W" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
+        ( cd "$W" && SPH_HAMILTONIAN=$H julia -t 1 --project="$PROJ" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
         ok=pass
         for th in 1 4; do
             SPH_HAMILTONIAN=$H julia -t $th --project="$PROJ" test/regress/step.jl compare "$OUT/ref_$H.jls" > "$OUT/step_${H}_t$th.log" 2>&1 || ok=fail
@@ -102,7 +102,7 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$c julia -t 2 --project="$d" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_$c.log" 2>&1 ) &
+            ( cd "$d" && SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_$c.log" 2>&1 ) &
         done; wait
         ok=fail
         julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_$c.log" 2>&1 && ok=pass
@@ -113,7 +113,7 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         t0=$(date +%s)
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SPH_HAMILTONIAN=$H SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$d" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
+            ( cd "$d" && SPH_HAMILTONIAN=$H SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
         done; wait
         ok=fail;  f=$(ls "$OUT/stab_ref/$H" 2>/dev/null | head -1)
         [ -n "$f" ] && julia --project="$PROJ" test/regress/jlscmp.jl "$OUT/stab_ref/$H/$f" "$OUT/stab_here/$H/$f" > "$OUT/stab_cmp_$H.log" 2>&1 && ok=pass
