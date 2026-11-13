@@ -489,8 +489,68 @@ the transverse oscillation of the shear wave at rest, damp the shear wave of a m
 pass amplitude between the two sound modes along the flow.  With viscosity the grid follows the
 hydrodynamic envelope throughout.
 
-\paragraph{Still running} (to be added): the stochastic campaign (\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with
-\texttt{SR\_GRID=1}), analysed as in \texttt{boost.tex}.
+\paragraph{The stochastic campaign} (\texttt{nersc/campaign\_grid.txt}, job 61209985, 12 minutes on 3 nodes):
+the sets of \texttt{boost.tex} with \texttt{SR\_GRID=1} --- $L=1.2$, $h/a=2$, $\eta/s=0.2$, $S_0=10^6$ at rest,
+equilibrium start, $t=300$, 16 runs at each $v_0=0$, $0.3$, $0.6$, $0.8$ --- and 8 runs at $L=0.6$ at rest.
+All 72 runs finished with no failure of the grid step.  Analysis as in \texttt{boost.tex}
+(\texttt{BOOST\_GROUP=GRID examples/boost\_analysis.jl}), against the particle step of \texttt{boost.tex}
+(Figs.~\ref{fig:gbstatic}--\ref{fig:gbfit}).
+
+\emph{Energy and the fluctuations.}  $\Delta H/H$ at $t=300$ is $-(0.5$--$3)\times10^{-5}$ (particles:
+$+(0.3$--$2)\times10^{-3}$); at $L=0.6$, $-5\times10^{-6}$ with KE/eq $=0.999$.  The kinetic energy of the
+fluctuations, in units $2VwT$, is $1.00$, $1.40$, $4.33$, $18.2$ at $v_0=0$, $0.3$, $0.6$, $0.8$, against the
+predicted $1$, $1.45$, $4.2$, $17.6$ (particles: $1.00$, $1.46$, $4.49$, $19.3$).
+
+\emph{Equal time,} $C_{AA}(\bm k,0)/\chi_{AA}$ for $\bm k\parallel\bm v$ at $kh=0.52$ (jackknife over the runs):
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{3}{c}{grid} & \multicolumn{3}{c}{particles (\texttt{boost.tex})} \\
+$v_0$ & $E$ & $M_x$ & $M_y$ & $E$ & $M_x$ & $M_y$ \\ \hline
+0 & $1.06(2)$ & $1.06(3)$ & $1.05(3)$ & $0.99(3)$ & $0.98(3)$ & $1.04(3)$ \\
+0.3 & $1.01(3)$ & $1.00(4)$ & $1.04(2)$ & $0.91(3)$ & $0.87(3)$ & $1.01(3)$ \\
+0.6 & $1.05(6)$ & $1.05(7)$ & $1.00(4)$ & $0.86(4)$ & $0.83(5)$ & $0.98(2)$ \\
+0.8 & $1.01(18)$ & $1.01(18)$ & $0.91(4)$ & $0.84(4)$ & $0.83(4)$ & $0.97(3)$ \\
+\hline
+\end{tabular}
+\end{center}
+The deficit of the sound components along the flow, 10--17\% with the particles, is gone.  At rest the
+grid sits a few percent above $\chi$ at $kh=0.52$ ($1.03$--$1.06$ in all components and both directions,
+about $2\sigma$), to be watched.
+
+\emph{The shear mode,} fitted as in \texttt{boost.tex} (projection on the shear mode), $\Gamma/\Gamma_{\rm hydro}$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & \multicolumn{2}{c}{$\bm k\parallel\bm v$, $kh=0.52$} & \multicolumn{2}{c}{$\bm k\perp\bm v$, $kh=0.52$} \\
+$v_0$ & grid & particles & grid & particles \\ \hline
+0 & $0.97(5)$ & $1.00(4)$ & $0.98(5)$ & $1.00(4)$ \\
+0.3 & $0.95(4)$ & $1.11(4)$ & $0.88(5)$ & $1.16(6)$ \\
+0.6 & $0.96(7)$ & $1.10(7)$ & $0.94(6)$ & $1.21(6)$ \\
+0.8 & $1.12(12)$ & $1.36(7)$ & $1.00(6)$ & $1.14(4)$ \\
+\hline
+\end{tabular}
+\end{center}
+At $kh=0.26$, $v_0=0.8$ along the flow: grid $0.84(16)$, particles $1.52(20)$.  The excess damping of the
+shear mode with flow, which \texttt{boost.tex} traced to the particle step, is gone: the grid is at the
+rate of hydrodynamics within the errors at every $v_0$, including the rate along the flow slowed by
+$\gamma^3$.  The advection speed is $\Omega/k=0.791$, $0.768$ at $kh=0.26$, $0.52$ for $v_0=0.8$, i.e.
+$v_0\,\kappa(k)/k$: the dispersion of the stencil, below.
+
+\paragraph{Dispersion.}  The phase errors above (sound, advection) are $\kappa(k)/k-1$, where
+$\kappa(k)\approx k\,\hat W(kh)$ is the lattice derivative of the kernel-smoothed field.  It depends on $kh$, not
+on $h/a$:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+$\kappa/k$ & $kh=0.26$ & $0.52$ & $1.05$ \\ \hline
+Wendland C2, $h/a=2$, $3$, $4$ & $0.988$, $0.991$, $0.991$ & $0.960$, $0.963$, $0.963$ & $0.855$, $0.857$, $0.857$ \\
+Wendland C4 & $0.992$ & $0.971$ & $0.889$ \\
+Wendland C6 & $0.994$ & $0.977$ & $0.910$ \\
+\hline
+\end{tabular}
+\end{center}
+a correction of order $(kh)^2$, accepted.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_series.png}
@@ -564,6 +624,23 @@ $t=1.1$ profiles of the two viscous runs are missing.}
 \caption{Gaussian pulse at $t=2.2$: the energy density on the sites (grid) and on the particles (which
 have moved), and $\Delta H/H$, $\Delta S/S$ against $t$.}
 \label{fig:ggmap}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_static_GRID.png}
+\caption{Stochastic grid campaign: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per $v_0$ (as \texttt{boost.tex}, Fig.~1);
+filled $\bm k\parallel\bm v$, open $\bm k\perp\bm v$.}
+\label{fig:gbstatic}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_GRID.png}
+\caption{Stochastic grid campaign: the advected shear mode, $C_{yy}(k\hat x,\tau)/C_{yy}(k\hat x,0)$ at $kh=0.26$, one row per $v_0$;
+dashed hydrodynamics.}
+\label{fig:gbshear}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/boost_fit_GRID.png}
+\caption{Stochastic grid campaign: fitted advection speed and shear damping against $v_0$ at $kh=0.26$ (as \texttt{boost.tex}, Fig.~5).}
+\label{fig:gbfit}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_smoke.png}

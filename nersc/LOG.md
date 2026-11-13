@@ -149,6 +149,18 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### `grid` — the grid step (gridstep.tex), 2026-11-12, branch `gridcode`
+
+`src/grid.jl`, `SR_GRID=1` in `examples/equilibrium.jl`.  Checkouts `~/stochastic-sph-run{,2,3,4}` (worktrees
+at gridcode commits).  Deterministic tests: `examples/grid_waves.jl` (debug 61209546 ideal, 15 min;
+viscous full set timed out 61209692, quick set 61211081), `examples/grid_gaussian.jl` (61209795),
+smoke test `$SCRATCH/sph/grid_smoke` (61209993).  Kernel comparison C4/C6: 61211910/1.
+- Campaign `nersc/campaign_grid.txt` (the boost sets with SR_GRID=1, + L = 0.6): job **61209985**, 3 nodes,
+  12.5 min, 72/72 runs, no grid-step failure.  Output `$SCRATCH/sph/grid/`.
+- Outcome: the excess shear damping with flow and the equal-time deficit along the flow of boost.tex are
+  gone; ΔH/H ~1e-5 (particles 1e-3); phase errors κ(k)/k − 1 ~ (kh)² from the kernel (accepted).
+- Lesson: debug jobs with Julia print tables at the end only when stdout is flushed; read the .toml.
+
 ### `boost` — moving fluid, 2026-11-11, `nersc/campaign_boost.txt`, docs/boost.tex
 
 `SR_BOOST=v` (fac262c): uniform flow along x at rest-frame S0 = 1e6, equilibrium start at the
