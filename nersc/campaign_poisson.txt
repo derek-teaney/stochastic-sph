@@ -1,0 +1,9 @@
+# Campaign `poisson` (2026-11-13): the boost sets (boost.tex) with the default particle scheme started from a Poisson
+# arrangement (SR_POSITIONS=poisson: independent uniform positions, s_a and m_a rescaled to uniform smoothed
+# densities, then the exact equilibrium draw at the moving β^μ) instead of the hexagonal lattice.  Does the start's
+# imprint fade, and does the equal-time deficit along the flow remain?  Analysis: time windows
+# (examples/equal_time_windows.jl) and BOOST_GROUP=POI examples/boost_analysis.jl.  L = 1.2, t = 300.
+po_v0     16  SR_POSITIONS=poisson SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 po_v0
+po_v0.3   16  SR_POSITIONS=poisson SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 po_v0.3
+po_v0.6   16  SR_POSITIONS=poisson SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 po_v0.6
+po_v0.8   16  SR_POSITIONS=poisson SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 po_v0.8
