@@ -714,7 +714,11 @@ C4 helps the particles a little but, with noise, does not repeat the determinist
 along the flow stays about $2\sigma$ high, the kinetic energy $13\%$ above the prediction, and the energy is
 not conserved better (at rest the C4 shear across $\bm k$ is also high, $1.17\pm0.06$).  The grid remains the
 closest to hydrodynamics.  Since $c_t\approx0$ for C4, the discrepancies that remain with noise are not
-caused by the rigidity alone (Figs.~\ref{fig:k4static}--\ref{fig:k4fit}; the equal-time deficit along the flow at
+caused by the rigidity alone.  In the stochastic runs at rest no transverse sound is seen for any of
+them (\Fig{fig:trest}, \texttt{examples/transverse\_rest.jl}): $C_T(\bm k,\tau)$ decays as $e^{-\nu k^2\tau}$ for the particles with C2
+and C4 and for the grid, with no dip below $-0.03$, although $c_t\approx0.055\,c_s$ of C2 would make the mode at
+$kh=0.26$ underdamped ($c_tk\approx0.17\gg\nu k^2/2\approx0.03$).  The rigidity of the perfect initial lattice does not survive
+the noise in the present scheme (Figs.~\ref{fig:k4static}--\ref{fig:k4fit}; the equal-time deficit along the flow at
 $v_0=0.8$ persists with C4, $0.86$--$0.91$ at $kh=0.52$--$0.78$).
 
 With noise (\texttt{nersc/campaign\_kernel.txt}, job 61212224: the particle step with C4 on the boost sets,
@@ -890,6 +894,12 @@ $\kappa(\bm k)h$; top $v_0=0$, bottom $v_0=0.8$; 16 runs each, $t=100$.}
 \caption{Wendland C4: the waves with deterministic viscosity $\eta/s=0.2$ at $kh=0.52$, as \Fig{fig:gwv052}; columns grid and
 particles at $v_0=0$, grid and particles at $v_0=0.8$.}
 \label{fig:gwc4}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/transverse_rest.png}
+\caption{Stochastic runs at rest: the transverse correlator $C_T(\bm k,\tau)/C_T(\bm k,0)$ at $kh=0.26$, $0.52$, $0.79$ for the particles
+with C2 and C4 and for the grid (16 runs each, $k$ along $x$ and $y$), against $e^{-\nu k^2\tau}$: no transverse sound.}
+\label{fig:trest}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_static_K4.png}
