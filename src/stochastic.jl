@@ -87,7 +87,10 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         # fluid"); 1D: rest frame.
         va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
         ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
+        common = is_common(params)                       # one kernel (commonkernel.tex): lab weights
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
+                  common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb,
+                                                 ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
         Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
         η  = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
@@ -123,8 +126,8 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             (ψs[k] > 0 && n_a > 0) || continue
             wab = V[b] * ψs[k] / n_a;  j += 1
             bs[j] = b;  rs[j] = r;  ws[j] = wab
-            cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab
-            As[j] = V[a] * wab * (ℓi * r)
+            cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
+            As[j] = common ? V[a] * wab * r : V[a] * wab * (ℓi * r)     # faces: Σ_b A_ab r_abᵀ = V_a 𝟙 either way
         end
         stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi)
     end

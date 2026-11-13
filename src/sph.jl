@@ -32,7 +32,10 @@ mutable struct SimParams{K<:AbstractKernel}
     ideal       :: Symbol          # :particle (default) or :grid — see below
 end
 
-# dissipation: the viscous step.  :particle (default; formerly :changerep, still accepted)
+# dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
+#   distance, ψ_ab = −W′(r_ab)/r_ab (bond moment n_a 𝟙), and the comoving metric put in by hand
+#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)², :common_lab
+#   without it (the residual round in the lab).  :particle (default; formerly :changerep, still accepted)
 #   is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
 #   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
@@ -101,8 +104,11 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
             Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
-    dissipation in (:particle, :bond, :two_level) ||
-        error("dissipation must be :particle, :bond or :two_level, got $dissipation")
+    dissipation in (:particle, :bond, :two_level, :common, :common_lab) ||
+        error("dissipation must be :particle, :bond, :two_level, :common or :common_lab, got $dissipation")
+    dissipation in (:common, :common_lab) && (sim_dim == 2 && hamiltonian === :energy ||
+        error("dissipation = :common needs a 2D simulation and hamiltonian = :energy (commonkernel.tex)"))
+    dissipation in (:common, :common_lab) && @printf("SimParams: dissipation = %s, one kernel for the ideal and the viscous step (commonkernel.tex)\n", dissipation)
     hamiltonian in (:smoothed, :energy) ||
         error("hamiltonian must be :smoothed or :energy, got $hamiltonian")
     hamiltonian === :energy && dissipation === :two_level &&

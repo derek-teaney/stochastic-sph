@@ -193,7 +193,7 @@ function compute_dt(particles, params, eos;
     Γ_s          = visc / Trel_min
     dt_diffusive = CFL * params.h^2 / Γ_s
     dt = min(dt_acoustic, dt_diffusive)
-    if params.dissipation === :particle
+    if params.dissipation in (:particle, :common, :common_lab)
         # The particle representation damps the shortest modes at up to Γ_max
         # (changerep.tex, "The time step").  generic_step! applies two viscous half
         # steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.

@@ -1,0 +1,289 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\one{\mathbb 1}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{One kernel for the ideal and the viscous step}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The ideal step smooths with the SPH kernel $W(|\bm r|)$, round in the lab.  The viscous step weights its
+bonds with $\psi(\rho)$ at the comoving distance $\rho^2=\bm r\cdot\ell^{-1}\bm r$, round in the rest frame of the
+particle, so that the bond moment is $n_a\ell_a$.  We replace $\psi$ by the bond weight of the SPH kernel
+itself, $\psi_{ab}=-W'(r_{ab})/r_{ab}$ at the lab distance, so that the bond moment is $n_a\one$, and put the
+comoving metric $\ell_a$ in by hand.  For the stochastic step this changes only the weights and the
+faces: the metric already sits in the Onsager matrix of the stress move.  For the deterministic step the
+bond form is written in its exact resolved-plus-residual form.  This note works out the formulas,
+describes the implementation (\texttt{SPH\_DISSIPATION=common}) and its tests.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The present scheme}
+\label{sec:present}
+
+Notation as in \texttt{particle\_metrics.tex} and \texttt{stochastic.tex}: $\bm r_{ab}=\bm x_b-\bm x_a$, $r_{ab}=|\bm r_{ab}|$,
+$V_a$ the particle volume, $\beta_a=\bm v_a/T_a$, $\Delta\beta_{ab}=\beta_b-\beta_a$, and the comoving metric
+\st
+\ell_a=\one-\bm v_a\bm v_a^T,\qquad \ell_a^{-1}=\one+\gamma_a^2\bm v_a\bm v_a^T .
+\stp
+
+\paragraph{The ideal step} uses the SPH kernel $W(r;h)$ in the lab, through $\bm D_{ab}=\partial W(\bm x_a-\bm x_b)/\partial\bm x_a$
+and the number density $n_a=\sum_bW_{ab}$.
+
+\paragraph{The viscous step} uses a bond weight $\psi_{ab}=\psi(\rho_{ab})$, $\psi(\rho)\propto(1-\rho/2h_\psi)^3$, evaluated at the
+comoving distance
+\st
+\rho_{ab}^2=\bm r_{ab}\cdot\ell_a^{-1}\bm r_{ab} ,
+\stp
+an ellipse contracted by $1/\gamma$ along $\bm v_a$, corrected per particle by $\Lambda_a$ so that the bond moment is
+exactly
+\st
+M_a\equiv\sum_{b\neq a}V_b\,\psi_{ab}\,\bm r_{ab}\bm r_{ab}^T=n_a\,\ell_a .
+\label{Mold}
+\stp
+With the normalized weights $w_{ab}=V_b\psi_{ab}/n_a$, $\sum_bw_{ab}\bm r_{ab}\bm r_{ab}^T=\ell_a$, and the faces
+\st
+\bm A_{ab}=V_a\,w_{ab}\,\ell_a^{-1}\bm r_{ab},\qquad \sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\one .
+\label{Aold}
+\stp
+Two kernels: $W$ round in the lab for the ideal step, $\psi$ round in the rest frame for the viscous step.
+
+%=============================================================================
+\section{One kernel}
+\label{sec:common}
+
+\paragraph{The weights.}  Take the bond weight from the SPH kernel itself, at the lab distance:
+\st
+\psi_{ab}=-\frac{W'(r_{ab};h)}{r_{ab}},\qquad\text{i.e.}\qquad \psi_{ab}\,\bm r_{ab}=\bm D_{ab}.
+\label{psicommon}
+\stp
+The bond vector weighted by $\psi$ is the kernel gradient of the ideal step.  For the Wendland C2 kernel
+$\psi\propto(1-r/2h)^3$, the present shape with $h_\psi=h$; for C4 and C6 it is the gradient of those kernels.
+The weights are round in the lab, so the bond moment is
+\st
+M_a=\sum_{b\neq a}V_b\,\psi_{ab}\,\bm r_{ab}\bm r_{ab}^T=n_a\one
+\label{Mnew}
+\stp
+up to sampling corrections, which the same $\Lambda_a$ removes (with the flat metric in place of $\ell_a$).
+Then
+\st
+w_{ab}=\frac{V_b\psi_{ab}}{n_a},\qquad \sum_{b\neq a}w_{ab}\,\bm r_{ab}\bm r_{ab}^T=\one,\qquad
+\bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab},\qquad \sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\one .
+\label{wnew}
+\stp
+At rest $\ell_a=\one$ and nothing changes: for C2 the scheme is the present one.
+
+\paragraph{The fit} needs no metric (\texttt{particle\_metrics.tex}, Operation 1):
+\st
+G_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,(M_a/n_a)^{-1}=\frac1{V_a}\sum_{b\neq a}\Delta\beta_{ab}\,\bm A_{ab}^T ,
+\qquad (G_a)_{ij}\simeq\partial_j\beta_i ,
+\label{fit}
+\stp
+exact for linear fields.  With \Eq{psicommon} it is the moment-corrected SPH gradient.  The residuals
+$\delta_{ab}=\Delta\beta_{ab}-G_a\bm r_{ab}$ are orthogonal to the bonds,
+\st
+\sum_{b\neq a}w_{ab}\,\delta_{ab}\,\bm r_{ab}^T=0,
+\label{orthog}
+\stp
+for any weights, provided the fit uses the same weights.
+
+\paragraph{The target.}  The dissipative function of a moving fluid contracts both indices of the strain
+with the comoving metric (\texttt{particle\_metrics.tex}, ``The metric''; \texttt{stochastic.tex}, ``A moving fluid''):
+\st
+K_a^{\rm res}=V_aT_a\Big[\eta_a\,\tr\big(\ell_aY_a\ell_aY_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],\qquad
+Y_a=\tfrac12(G_a+G_a^T)-\theta_aP_a,\qquad \theta_a=\frac{\ell_a{:}G_a}{\langle P\ell\rangle_a},
+\label{target}
+\stp
+with $P$ and $\langle P\ell\rangle$ the scalar projector of \texttt{stochastic.tex} and $T_a=T_{\rm rel,a}$.  The question is where the
+two factors of $\ell_a$ come from.
+
+%=============================================================================
+\section{The stochastic step}
+\label{sec:stoch}
+
+\paragraph{The stress move.}  Particle $a$ draws a random symmetric stress $\xi_a$ and gives the traction $\xi_a\bm A_{ab}$
+to each bond.  The entropy it produces is, to first order,
+\st
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}=-\xi_a{:}\sum_{b\neq a}\Delta\beta_{ab}\bm A_{ab}^T=-V_a\,\xi_a{:}G_a ,
+\label{dSstress}
+\stp
+by \Eq{fit}.  Only the closure $\sum_b\bm A_{ab}\bm r_{ab}^T=V_a\one$ is used, and it holds for both \Eq{Aold} and \Eq{wnew}.  The
+stress is drawn as
+\st
+\xi_a=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\sum_{k=1}^3z_kB_k,\qquad
+B_{1,2}=\sqrt{2\eta_a}\,E(e_{1,2}),\quad B_3=\sqrt{\zeta_{\rm eff}}\,\frac{\ell_a}{\langle P\ell\rangle_a},\qquad
+E(e)=\ell_a^{1/2}e\,\ell_a^{1/2}-\frac{P{:}\ell_a^{1/2}e\,\ell_a^{1/2}}{\langle P\ell\rangle_a}\,\ell_a ,
+\label{B}
+\stp
+$z_k$ standard normal, $e_{1,2}$ the traceless symmetric unit matrices.  The dissipation of the move is
+\st
+K_a^{\rm res}=\frac{V_aT_a}{2}\sum_k(B_k{:}G_a)^2=V_aT_a\Big[\eta_a\tr(\ell_aY_a\ell_aY_a)+\tfrac12\zeta_{\rm eff}\theta_a^2\Big],
+\label{Kfromxi}
+\stp
+\Eq{target}.  Indeed $E(e){:}G=e{:}Z$ with $Z=\ell^{1/2}Y\ell^{1/2}$, which is traceless because $\ell{:}Y=\ell{:}G-\theta\,P{:}\ell=0$
+($\langle P\ell\rangle=P{:}\ell$), so $\sum_{k=1,2}(E(e_k){:}G)^2=\tr Z^2=\tr(\ell Y\ell Y)$; checked numerically for a random $G$ at
+$\bm v=(0.7,0.3)$, to roundoff.  The two factors of $\ell_a$ are the two factors $\ell_a^{1/2}$ on each side of $e$ in
+$E(e)$: they are in the Onsager matrix, not in the bond moment.  So the stress move needs \emph{no change} beyond the
+weights and the faces \Eq{wnew}.
+
+\paragraph{The residual move.}  Particle $a$ draws $\bm y_{ab}$ on each bond with $\langle\bm y\bm y^T\rangle\propto c_{ab}\,\ell_a$ and gives
+$\bm y_{ab}-(Y_a/V_a)\bm A_{ab}$, $Y_a=\sum_b\bm y_{ab}\bm r_{ab}^T$.  The projection removes the resolved part by the
+closure alone, $\sum_b[\bm y_{ab}-(Y_a/V_a)\bm A_{ab}]\bm r_{ab}^T=0$.  Its dissipation is the residual
+\st
+K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\,\delta_{ab}\ \ge0 ,
+\label{Kresid}
+\stp
+zero for linear fields; it damps the modes the fit cannot see.  With lab weights it is round in the lab
+instead of the rest frame, which only changes how the unresolved modes are damped.
+
+\paragraph{So:} for the stochastic step, one kernel means $\psi_{ab}$ from \Eq{psicommon} at the lab distance, $\Lambda_a$ for the
+flat metric, and $\bm A_{ab}=V_aw_{ab}\bm r_{ab}$.  Nothing else changes.
+
+%=============================================================================
+\section{The deterministic step}
+\label{sec:det}
+
+The present deterministic bond form,
+\st
+K=\sum_aV_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\,\mathcal D_{ab}+\tfrac12\sum_aV_aT_a\zeta_{\rm eff}\theta_a^2,\qquad
+\mathcal D_{ab}=\Delta\beta_{ab}-\big(\Omega_a+\theta_aP_a\big)\bm r_{ab} ,
+\label{Kold}
+\stp
+gets one factor $\ell_a$ explicitly (between the components) and the other from the moment: with
+$\mathcal D_{ab}=Y_a\bm r_{ab}+\delta_{ab}$ and \Eq{orthog},
+\st
+\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\mathcal D_{ab}=\tr\Big(Y_a\ell_aY_a\,\frac{M_a}{n_a}\Big)+\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\delta_{ab} .
+\label{split}
+\stp
+With \Eq{Mold} the first term is $\tr(\ell Y\ell Y)$; with \Eq{Mnew} it would be $\tr(Y\ell Y)$, one $\ell$ short.  With one kernel
+we therefore write $K$ in its split form directly, the resolved part being the target:
+\st
+\boxed{\;K=\sum_a\Big(K_a^{\rm res}+K_a^{\rm resid}\Big)
+=\sum_aV_aT_a\Big[\eta_a\tr\big(\ell_aY_a\ell_aY_a\big)+\tfrac12\zeta_{\rm eff}\theta_a^2+\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\delta_{ab}\Big].\;}
+\label{Knew}
+\stp
+With \Eq{Mold} this is identical to \Eq{Kold}; with \Eq{Mnew} it is the one-kernel form, and it is the mean of
+the stochastic step of \Sect{sec:stoch}.
+
+\paragraph{The force} $\bm F_a=-\partial K/\partial\beta_a$.  $K$ depends on $\beta$ through $G_a$ (linear in $\Delta\beta_{ab}$, \Eq{fit}) and through the
+$\delta_{ab}$ at fixed $G_a$.  The derivative of $K_a^{\rm resid}$ through $G_a$ is
+\st
+\frac{\partial K_a^{\rm resid}}{\partial G_a}=-2V_aT_a\eta_a\,\ell_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\bm r_{ab}^T=0
+\stp
+by \Eq{orthog}, so the residual acts only through bond tractions,
+\st
+\bm t_{ab}=-2V_aT_a\eta_a\,w_{ab}\,\ell_a\,\delta_{ab}\qquad(\text{momentum }a\text{ gives }b),
+\label{tresid}
+\stp
+and the resolved part only through the fit, with
+\st
+E_a\equiv\frac{\partial K_a^{\rm res}}{\partial G_a}
+=2V_aT_a\eta_a\Big[\ell_aY_a\ell_a-\frac{P{:}\ell_aY_a\ell_a}{\langle P\ell\rangle_a}\,\ell_a\Big]
++V_aT_a\zeta_{\rm eff}\,\theta_a\,\frac{\ell_a}{\langle P\ell\rangle_a}
+\label{E}
+\stp
+(from $dK^{\rm res}=2V_aT_a\eta_a\,\ell Y\ell{:}dY+V_aT_a\zeta_{\rm eff}\theta\,d\theta$, $dY={\rm sym}\,dG-P\,\ell{:}dG/\langle P\ell\rangle$).  Since
+$\partial G_a/\partial\beta_b=w_{ab}\,(\cdot)\,\bm r_{ab}^T(M_a/n_a)^{-1}$ for $b\neq a$ and minus their sum for $b=a$, the resolved force is
+again a sum over bonds, $\partial K/\partial\beta_b\mathrel{+}=E_a(M_a/n_a)^{-1}\bm r_{ab}\,w_{ab}$ and the opposite to $a$.  Both parts
+are sums of antisymmetric pair forces: momentum is conserved.  $E_a$ is symmetric, so the resolved
+part exerts no torque; the residual tractions, as in the present scheme, need not be central.  The
+entropy produced in a step $\Delta t$ is $2K\Delta t\ge0$.
+
+\paragraph{The rest frame.}  At $\bm v_a=0$, $\ell_a=\one$, $Y_a=\mathring S_a$ and \Eq{Knew} is the split form (\texttt{bond\_dissipation.tex}, eq.~split2d) of the present \Eq{Kold}: identical.
+
+%=============================================================================
+\section{The residual in a moving fluid}
+\label{sec:resid}
+
+The resolved part is exact.  The residual \Eq{Kresid} is not: it is a regulator, of relative size $(kh)^2$
+for smooth fields, and it knows only the metric of its weights.  For a smooth field the residual of a
+bond is the curvature, $\delta_{ab}\simeq\frac12\partial_i\partial_j\beta\,r^i_{ab}r^j_{ab}$, so it is weighted by the fourth moment of the
+stencil.  Take the shear wave along the flow, $\beta_y(x)$, $\bm k\parallel\bm v$.  The resolved part is proportional to
+$\ell_{xx}=1/\gamma^2$ (time dilation slows the physical rate); the residual is proportional to $\sum_bw_{ab}r_x^4$, which
+for comoving weights carries $\ell_{xx}^2$ but for lab weights carries nothing.  The relative error of the
+one-kernel residual is therefore enhanced by about $\gamma^2$ (to $\gamma^4$) over the present one, exactly for
+the mode of the boost benchmark.
+
+The cure is again to put $\ell$ in by hand: weight the residual of each bond by
+\st
+f_{ab}=\big(\hat{\bm r}_{ab}\cdot\ell_a\,\hat{\bm r}_{ab}\big)^2 ,
+\qquad K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,f_{ab}\,\delta_{ab}\cdot\ell_a\,\delta_{ab},
+\label{fab}
+\stp
+which is $\ell_{xx}^2$ for bonds along the flow and 1 across it, as for the comoving stencil.  $K^{\rm resid}$ stays
+non-negative and zero for linear fields.  Two consequences:
+\begin{itemize}
+\item \emph{Stochastic step:} the residual move couples its noise only to $\delta_{ab}$ (its entropy change is
+  $-\sum_b\bm y_{ab}\cdot\delta_{ab}$, by the closure), so any positive coefficient may be used: $c_{ab}\to c_{ab}f_{ab}$.
+\item \emph{Deterministic step:} with $f\neq1$ the orthogonality \Eq{orthog} no longer removes the derivative of the
+  residual through the fit; it adds $-\sum_bc_{ab}f_{ab}\,\ell_a\delta_{ab}\bm r_{ab}^T$ to $E_a$ \Eq{E}.
+\end{itemize}
+Both variants are options: \texttt{SPH\_DISSIPATION=common} (with $f_{ab}$) and \texttt{common\_lab} ($f_{ab}=1$).
+
+%=============================================================================
+\section{Implementation}
+\label{sec:impl}
+
+\begin{itemize}
+\item \texttt{SimParams.dissipation = :common} or \texttt{:common\_lab}, set by \texttt{SPH\_DISSIPATION} (recorded in \texttt{[sim]} and
+  \texttt{[settings]} of the run record); 2D, with \texttt{hamiltonian = :energy}.  The default stays \texttt{:particle}.
+\item Weights (\texttt{src/viscous.jl}): $\psi_{ab}=-W'(r_{ab};h)/r_{ab}$ of \texttt{params.kernel} at the lab distance; $\Lambda_a$ with the flat
+  metric; $n_a=\frac12\tr M_a$.
+\item Stochastic step (\texttt{build\_stars}): these weights, $\bm A_{ab}=V_aw_{ab}\bm r_{ab}$, and $c_{ab}f_{ab}$; the rest unchanged.
+\item Deterministic step (\texttt{\_bond\_dissipation!}): \Eq{Knew} with \Eq{fab}, the tractions \Eq{tresid} (times $f_{ab}$) and the
+  mean-field term \Eq{E} plus the residual term above.
+\item The present scheme is untouched (every change is behind \texttt{dissipation} $\in\{$\texttt{:common}, \texttt{:common\_lab}$\}$).
+\end{itemize}
+
+%=============================================================================
+\section{Tests}
+\label{sec:tests}
+
+\paragraph{1. At rest} (\texttt{test/testcommonkernel.jl}, C2): $K$ and the forces of the one-kernel step equal those of the
+present step to $2\times10^{-16}$ and $1\times10^{-15}$, on a perfect and on a jittered ($0.3a$) lattice; $\sum_a\bm F_a=0$ to roundoff.
+
+\paragraph{2. One mode in a moving fluid} ($v_0=0.8$, $L=1.2$, $h/a=2$): $K$ of $\beta=A\,\bm e\sin\bm k\cdot\bm x$ against the target
+\Eq{target}:
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+$K/K_{\rm target}$ at $kh=0.26$, $0.52$, $1.05$ & present & \texttt{common\_lab} & \texttt{common} \\ \hline
+shear, $\bm k\parallel\bm v$ & $1.003$, $1.013$, $1.049$ & $1.059$, $1.229$, $1.799$ & $0.999$, $0.997$, $0.991$ \\
+long., $\bm k\parallel\bm v$ & $0.997$, $0.991$, $0.967$ & $1.017$, $1.067$, $1.229$ & $0.989$, $0.959$, $0.854$ \\
+shear, $\bm k\perp\bm v$ & $1.008$, $1.034$, $1.116$ & $1.008$, $1.034$, $1.116$ & $1.003$, $1.014$, $1.040$ \\
+long., $\bm k\perp\bm v$ & $1.007$, $1.027$, $1.092$ & $1.007$, $1.027$, $1.091$ & $1.002$, $1.008$, $1.021$ \\
+\hline
+\end{tabular}
+\end{center}
+All converge to the target as $(kh)^2$.  With the lab residual the shear wave along the flow is $23\%$ high at
+$kh=0.52$ (\Sect{sec:resid}); with $f_{ab}$ it is within $0.3\%$, better than the present scheme, and so are both
+modes across the flow.  The price is the longitudinal wave along the flow, $4\%$ low at $kh=0.52$ (the
+present scheme: $1\%$), where the weaker residual no longer offsets the low SPH gradient.
+
+\begin{enumerate}
+\setcounter{enumi}{2}
+\item The viscous step alone (positions fixed, no ideal step), deterministic: decay of shear and
+  longitudinal waves of a moving fluid, both schemes.
+\item The stochastic step alone: equilibrium of a moving fluid, equal-time correlators and acceptance.
+\item The boost benchmark (\texttt{boost.tex}) with \texttt{SPH\_DISSIPATION=common}.
+\end{enumerate}
+
+\end{document}
