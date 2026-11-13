@@ -1,5 +1,8 @@
 \documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
 \usepackage{amsmath,amssymb,bm,mathtools,graphicx}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\pf}{\bm{\mathsf p}}
 \usepackage{xcolor}
 \definecolor{darkblue}{RGB}{0,0,160}
 \usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
@@ -9,7 +12,6 @@
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
 \def\Fig#1{Fig.~\ref{#1}}
-\def\one{\mathbb 1}
 \def\tr{\operatorname{tr}}
 \let\oldparagraph\paragraph
 \renewcommand{\paragraph}{\par\bigskip\oldparagraph}
@@ -93,14 +95,14 @@ At rest $\ell_a=\one$ and nothing changes: for C2 the scheme is the present one.
 
 \paragraph{The fit} needs no metric (\texttt{particle\_metrics.tex}, Operation 1):
 \st
-G_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,(M_a/n_a)^{-1}=\frac1{V_a}\sum_{b\neq a}\Delta\beta_{ab}\,\bm A_{ab}^T ,
-\qquad (G_a)_{ij}\simeq\partial_j\beta_i ,
+(\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,(M_a/n_a)^{-1}=\frac1{V_a}\sum_{b\neq a}\Delta\beta_{ab}\,\bm A_{ab}^T ,
+\qquad \big((\nabla\beta)_a\big)_{ij}\simeq\partial_j\beta_i ,
 \label{fit}
 \stp
 exact for linear fields.  With \Eq{psicommon} it is the moment-corrected SPH gradient.  The residuals
-$\delta_{ab}=\Delta\beta_{ab}-G_a\bm r_{ab}$ are orthogonal to the bonds,
+$\delta_{ab}\beta=\Delta\beta_{ab}-(\nabla\beta)_a\bm r_{ab}$ are orthogonal to the bonds,
 \st
-\sum_{b\neq a}w_{ab}\,\delta_{ab}\,\bm r_{ab}^T=0,
+\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\,\bm r_{ab}^T=0,
 \label{orthog}
 \stp
 for any weights, provided the fit uses the same weights.
@@ -108,8 +110,8 @@ for any weights, provided the fit uses the same weights.
 \paragraph{The target.}  The dissipative function of a moving fluid contracts both indices of the strain
 with the comoving metric (\texttt{particle\_metrics.tex}, ``The metric''; \texttt{stochastic.tex}, ``A moving fluid''):
 \st
-K_a^{\rm res}=V_aT_a\Big[\eta_a\,\tr\big(\ell_aY_a\ell_aY_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],\qquad
-Y_a=\tfrac12(G_a+G_a^T)-\theta_aP_a,\qquad \theta_a=\frac{\ell_a{:}G_a}{\langle P\ell\rangle_a},
+K_a^{\rm res}=V_aT_a\Big[\eta_a\,\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],\qquad
+\mathring S_a=\tfrac12\big((\nabla\beta)_a+(\nabla\beta)_a^T\big)-\theta_aP_a,\qquad \theta_a=\frac{\ell_a{:}(\nabla\beta)_a}{\langle P\ell\rangle_a},
 \label{target}
 \stp
 with $P$ and $\langle P\ell\rangle$ the scalar projector of \texttt{stochastic.tex} and $T_a=T_{\rm rel,a}$.  The question is where the
@@ -122,7 +124,7 @@ two factors of $\ell_a$ come from.
 \paragraph{The stress move.}  Particle $a$ draws a random symmetric stress $\xi_a$ and gives the traction $\xi_a\bm A_{ab}$
 to each bond.  The entropy it produces is, to first order,
 \st
-\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}=-\xi_a{:}\sum_{b\neq a}\Delta\beta_{ab}\bm A_{ab}^T=-V_a\,\xi_a{:}G_a ,
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}=-\xi_a{:}\sum_{b\neq a}\Delta\beta_{ab}\bm A_{ab}^T=-V_a\,\xi_a{:}(\nabla\beta)_a ,
 \label{dSstress}
 \stp
 by \Eq{fit}.  Only the closure $\sum_b\bm A_{ab}\bm r_{ab}^T=V_a\one$ is used, and it holds for both \Eq{Aold} and \Eq{wnew}.  The
@@ -135,20 +137,23 @@ E(e)=\ell_a^{1/2}e\,\ell_a^{1/2}-\frac{P{:}\ell_a^{1/2}e\,\ell_a^{1/2}}{\langle 
 \stp
 $z_k$ standard normal, $e_{1,2}$ the traceless symmetric unit matrices.  The dissipation of the move is
 \st
-K_a^{\rm res}=\frac{V_aT_a}{2}\sum_k(B_k{:}G_a)^2=V_aT_a\Big[\eta_a\tr(\ell_aY_a\ell_aY_a)+\tfrac12\zeta_{\rm eff}\theta_a^2\Big],
+K_a^{\rm res}=\frac{V_aT_a}{2}\sum_k(B_k{:}(\nabla\beta)_a)^2=V_aT_a\Big[\eta_a\tr(\ell_a\mathring S_a\ell_a\mathring S_a)+\tfrac12\zeta_{\rm eff}\theta_a^2\Big],
 \label{Kfromxi}
 \stp
-\Eq{target}.  Indeed $E(e){:}G=e{:}Z$ with $Z=\ell^{1/2}Y\ell^{1/2}$, which is traceless because $\ell{:}Y=\ell{:}G-\theta\,P{:}\ell=0$
-($\langle P\ell\rangle=P{:}\ell$), so $\sum_{k=1,2}(E(e_k){:}G)^2=\tr Z^2=\tr(\ell Y\ell Y)$; checked numerically for a random $G$ at
+\Eq{target}.  Indeed $E(e){:}(\nabla\beta)=e{:}Z$ with $Z=\ell^{1/2}\mathring S\ell^{1/2}$, which is traceless because $\ell{:}\mathring S=\ell{:}(\nabla\beta)-\theta\,P{:}\ell=0$
+($\langle P\ell\rangle=P{:}\ell$), so $\sum_{k=1,2}(E(e_k){:}(\nabla\beta))^2=\tr Z^2=\tr(\ell\mathring S\ell\mathring S)$; checked numerically for a random $(\nabla\beta)$ at
 $\bm v=(0.7,0.3)$, to roundoff.  The two factors of $\ell_a$ are the two factors $\ell_a^{1/2}$ on each side of $e$ in
 $E(e)$: they are in the Onsager matrix, not in the bond moment.  So the stress move needs \emph{no change} beyond the
 weights and the faces \Eq{wnew}.
 
-\paragraph{The residual move.}  Particle $a$ draws $\bm y_{ab}$ on each bond with $\langle\bm y\bm y^T\rangle\propto c_{ab}\,\ell_a$ and gives
-$\bm y_{ab}-(Y_a/V_a)\bm A_{ab}$, $Y_a=\sum_b\bm y_{ab}\bm r_{ab}^T$.  The projection removes the resolved part by the
-closure alone, $\sum_b[\bm y_{ab}-(Y_a/V_a)\bm A_{ab}]\bm r_{ab}^T=0$.  Its dissipation is the residual
+\paragraph{The residual move.}  Particle $a$ draws a random vector $\mathfrak p_{ab}$ on each bond, with
+$\langle\mathfrak p_{ab}\mathfrak p_{ab}^T\rangle\propto c_{ab}\,\ell_a$, and gives the residual traction (\texttt{stochastic.tex})
 \st
-K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\,\delta_{ab}\ \ge0 ,
+\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} .
+\stp
+By the closure alone its virial vanishes, $\sum_b\vec p_{ab}\,\bm r_{ab}^T=0$: it carries no resolved part.  Its dissipation is the residual
+\st
+K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\,\delta_{ab}\beta\ \ge0 ,
 \label{Kresid}
 \stp
 zero for linear fields; it damps the modes the fit cannot see.  With lab weights it is round in the lab
@@ -168,46 +173,46 @@ K=\sum_aV_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\,\mathcal D
 \label{Kold}
 \stp
 gets one factor $\ell_a$ explicitly (between the components) and the other from the moment: with
-$\mathcal D_{ab}=Y_a\bm r_{ab}+\delta_{ab}$ and \Eq{orthog},
+$\mathcal D_{ab}=\mathring S_a\bm r_{ab}+\delta_{ab}\beta$ and \Eq{orthog},
 \st
-\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\mathcal D_{ab}=\tr\Big(Y_a\ell_aY_a\,\frac{M_a}{n_a}\Big)+\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\delta_{ab} .
+\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\mathcal D_{ab}=\tr\Big(\mathring S_a\ell_a\mathring S_a\,\frac{M_a}{n_a}\Big)+\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\delta_{ab}\beta .
 \label{split}
 \stp
-With \Eq{Mold} the first term is $\tr(\ell Y\ell Y)$; with \Eq{Mnew} it would be $\tr(Y\ell Y)$, one $\ell$ short.  With one kernel
+With \Eq{Mold} the first term is $\tr(\ell\mathring S\ell\mathring S)$; with \Eq{Mnew} it would be $\tr(\mathring S\ell\mathring S)$, one $\ell$ short.  With one kernel
 we therefore write $K$ in its split form directly, the resolved part being the target:
 \st
 \boxed{\;K=\sum_a\Big(K_a^{\rm res}+K_a^{\rm resid}\Big)
-=\sum_aV_aT_a\Big[\eta_a\tr\big(\ell_aY_a\ell_aY_a\big)+\tfrac12\zeta_{\rm eff}\theta_a^2+\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\cdot\ell_a\delta_{ab}\Big].\;}
+=\sum_aV_aT_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\theta_a^2+\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\delta_{ab}\beta\Big].\;}
 \label{Knew}
 \stp
 With \Eq{Mold} this is identical to \Eq{Kold}; with \Eq{Mnew} it is the one-kernel form, and it is the mean of
 the stochastic step of \Sect{sec:stoch}.
 
-\paragraph{The force} $\bm F_a=-\partial K/\partial\beta_a$.  $K$ depends on $\beta$ through $G_a$ (linear in $\Delta\beta_{ab}$, \Eq{fit}) and through the
-$\delta_{ab}$ at fixed $G_a$.  The derivative of $K_a^{\rm resid}$ through $G_a$ is
+\paragraph{The force} $\bm F_a=-\partial K/\partial\beta_a$.  $K$ depends on $\beta$ through $(\nabla\beta)_a$ (linear in $\Delta\beta_{ab}$, \Eq{fit}) and through the
+$\delta_{ab}\beta$ at fixed $(\nabla\beta)_a$.  The derivative of $K_a^{\rm resid}$ through $(\nabla\beta)_a$ is
 \st
-\frac{\partial K_a^{\rm resid}}{\partial G_a}=-2V_aT_a\eta_a\,\ell_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\bm r_{ab}^T=0
+\frac{\partial K_a^{\rm resid}}{\partial (\nabla\beta)_a}=-2V_aT_a\eta_a\,\ell_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\,\bm r_{ab}^T=0
 \stp
 by \Eq{orthog}, so the residual acts only through bond tractions,
 \st
-\bm t_{ab}=-2V_aT_a\eta_a\,w_{ab}\,\ell_a\,\delta_{ab}\qquad(\text{momentum }a\text{ gives }b),
+\pf_{ab}=-2V_aT_a\eta_a\,w_{ab}\,\ell_a\,\delta_{ab}\beta\qquad(\text{momentum }a\text{ gives }b),
 \label{tresid}
 \stp
 and the resolved part only through the fit, with
 \st
-E_a\equiv\frac{\partial K_a^{\rm res}}{\partial G_a}
-=2V_aT_a\eta_a\Big[\ell_aY_a\ell_a-\frac{P{:}\ell_aY_a\ell_a}{\langle P\ell\rangle_a}\,\ell_a\Big]
+E_a\equiv\frac{\partial K_a^{\rm res}}{\partial (\nabla\beta)_a}
+=2V_aT_a\eta_a\Big[\ell_a\mathring S_a\ell_a-\frac{P{:}\ell_a\mathring S_a\ell_a}{\langle P\ell\rangle_a}\,\ell_a\Big]
 +V_aT_a\zeta_{\rm eff}\,\theta_a\,\frac{\ell_a}{\langle P\ell\rangle_a}
 \label{E}
 \stp
-(from $dK^{\rm res}=2V_aT_a\eta_a\,\ell Y\ell{:}dY+V_aT_a\zeta_{\rm eff}\theta\,d\theta$, $dY={\rm sym}\,dG-P\,\ell{:}dG/\langle P\ell\rangle$).  Since
-$\partial G_a/\partial\beta_b=w_{ab}\,(\cdot)\,\bm r_{ab}^T(M_a/n_a)^{-1}$ for $b\neq a$ and minus their sum for $b=a$, the resolved force is
+(from $dK^{\rm res}=2V_aT_a\eta_a\,\ell\mathring S\ell{:}d\mathring S+V_aT_a\zeta_{\rm eff}\theta\,d\theta$, $d\mathring S={\rm sym}\,d(\nabla\beta)-P\,\ell{:}d(\nabla\beta)/\langle P\ell\rangle$).  Since
+$\partial (\nabla\beta)_a/\partial\beta_b=w_{ab}\,(\cdot)\,\bm r_{ab}^T(M_a/n_a)^{-1}$ for $b\neq a$ and minus their sum for $b=a$, the resolved force is
 again a sum over bonds, $\partial K/\partial\beta_b\mathrel{+}=E_a(M_a/n_a)^{-1}\bm r_{ab}\,w_{ab}$ and the opposite to $a$.  Both parts
 are sums of antisymmetric pair forces: momentum is conserved.  $E_a$ is symmetric, so the resolved
 part exerts no torque; the residual tractions, as in the present scheme, need not be central.  The
 entropy produced in a step $\Delta t$ is $2K\Delta t\ge0$.
 
-\paragraph{The rest frame.}  At $\bm v_a=0$, $\ell_a=\one$, $Y_a=\mathring S_a$ and \Eq{Knew} is the split form (\texttt{bond\_dissipation.tex}, eq.~split2d) of the present \Eq{Kold}: identical.
+\paragraph{The rest frame.}  At $\bm v_a=0$, $\ell_a=\one$, $\mathring S_a$ is the traceless strain at rest and \Eq{Knew} is the split form (\texttt{bond\_dissipation.tex}, eq.~split2d) of the present \Eq{Kold}: identical.
 
 %=============================================================================
 \section{The residual in a moving fluid}
@@ -215,7 +220,7 @@ entropy produced in a step $\Delta t$ is $2K\Delta t\ge0$.
 
 The resolved part is exact.  The residual \Eq{Kresid} is not: it is a regulator, of relative size $(kh)^2$
 for smooth fields, and it knows only the metric of its weights.  For a smooth field the residual of a
-bond is the curvature, $\delta_{ab}\simeq\frac12\partial_i\partial_j\beta\,r^i_{ab}r^j_{ab}$, so it is weighted by the fourth moment of the
+bond is the curvature, $\delta_{ab}\beta\simeq\frac12\partial_i\partial_j\beta\,r^i_{ab}r^j_{ab}$, so it is weighted by the fourth moment of the
 stencil.  Take the shear wave along the flow, $\beta_y(x)$, $\bm k\parallel\bm v$.  The resolved part is proportional to
 $\ell_{xx}=1/\gamma^2$ (time dilation slows the physical rate); the residual is proportional to $\sum_bw_{ab}r_x^4$, which
 for comoving weights carries $\ell_{xx}^2$ but for lab weights carries nothing.  The relative error of the
@@ -225,16 +230,16 @@ the mode of the boost benchmark.
 The cure is again to put $\ell$ in by hand: weight the residual of each bond by
 \st
 f_{ab}=\big(\hat{\bm r}_{ab}\cdot\ell_a\,\hat{\bm r}_{ab}\big)^2 ,
-\qquad K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,f_{ab}\,\delta_{ab}\cdot\ell_a\,\delta_{ab},
+\qquad K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,f_{ab}\,\delta_{ab}\beta\cdot\ell_a\,\delta_{ab}\beta,
 \label{fab}
 \stp
 which is $\ell_{xx}^2$ for bonds along the flow and 1 across it, as for the comoving stencil.  $K^{\rm resid}$ stays
 non-negative and zero for linear fields.  Two consequences:
 \begin{itemize}
-\item \emph{Stochastic step:} the residual move couples its noise only to $\delta_{ab}$ (its entropy change is
-  $-\sum_b\bm y_{ab}\cdot\delta_{ab}$, by the closure), so any positive coefficient may be used: $c_{ab}\to c_{ab}f_{ab}$.
+\item \emph{Stochastic step:} the residual move couples its noise only to $\delta_{ab}\beta$ (its entropy change is
+  $-\sum_b\mathfrak p_{ab}\cdot\delta_{ab}\beta$, by the closure), so any positive coefficient may be used: $c_{ab}\to c_{ab}f_{ab}$.
 \item \emph{Deterministic step:} with $f\neq1$ the orthogonality \Eq{orthog} no longer removes the derivative of the
-  residual through the fit; it adds $-\sum_bc_{ab}f_{ab}\,\ell_a\delta_{ab}\bm r_{ab}^T$ to $E_a$ \Eq{E}.
+  residual through the fit; it adds $-\sum_bc_{ab}f_{ab}\,\ell_a\delta_{ab}\beta\,\bm r_{ab}^T$ to $E_a$ \Eq{E}.
 \end{itemize}
 Both variants are options: \texttt{SPH\_DISSIPATION=common} (with $f_{ab}$) and \texttt{common\_lab} ($f_{ab}=1$).
 

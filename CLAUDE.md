@@ -33,6 +33,20 @@ the `.tex`).  Owner: D. Teaney.
 - `M = T^{0i}` is the **density-frame** momentum density — never call it "Landau".
 - Notes: brief and pedagogical, displayed equations rather than inline ones, symbols
   defined, no material that was not asked for.
+- **LaTeX notation** (match the existing notes, e.g. `docs/stochastic.tex`, `docs/particle_metrics.tex`):
+  - the identity is `\one` with `\usepackage{dsfont}` and `\newcommand{\one}{\mathds{1}}`.  **Never
+    `\mathbb 1` / `\mathbb{1}`**: amsfonts has no blackboard-bold digits, so it does not render.
+  - displayed equations with `\st … \stp` (`\begin{equation}…\end{equation}`); references with `\Eq{}`,
+    `\Sect{}`, `\Fig{}`; `\tr` for the trace.
+  - symbols: $\bm r_{ab}=\bm x_b-\bm x_a$; $V_a$ the particle volume ($1/n_a$ in the n-scheme); $\beta_a=\bm v_a/T_a$;
+    $\ell=\one-\bm v\bm v^T$ the comoving metric; $T_{\rm rel}=\gamma T$; $M$ the density-frame momentum density.
+  - bonds (`stochastic.tex`, `bond_dissipation.tex`): the fitted gradient is $(\nabla\beta)_a$ (not $G_a$); the
+    residual of a bond $\delta_{ab}\beta=\Delta\beta_{ab}-(\nabla\beta)_a\bm r_{ab}$; the traction (momentum $a$ gives $b$)
+    $\pf_{ab}$ with `\newcommand{\pf}{\bm{\mathsf p}}`; the residual move's noise $\mathfrak p_{ab}$ and its residual
+    traction $\vec p_{ab}$, with the virial $\sum_c\mathfrak p_{ac}\bm r_{ac}^T$ written out; faces $\bm A_{ab}$; the stress
+    noise $\xi_a$; the traceless (comoving) strain $\mathring S_a$; $\Delta\mathbb S$ the entropy change.
+  - names should say what they are: no uninformative letters such as $G$, $Y$, $y$, $t$ for quantities that
+    already have a name in the notes.
 - Commit or push only when the owner asks.  Commit messages end with
   `Co-Authored-By: Claude <noreply@anthropic.com>` (or the model's own line).
 

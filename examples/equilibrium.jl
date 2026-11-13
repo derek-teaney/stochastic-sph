@@ -45,6 +45,11 @@ const KERNEL = setting("SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = setting("SR_JITTER", 0.0)
+# SR_POSITIONS=poisson: the particles start at N independent uniform positions in the box (a Poisson
+# arrangement) instead of on the hexagonal lattice (default lattice); then, as for the jitter, the s_a and m_a
+# are rescaled so that the smoothed densities are uniform.  Not with SPH_IDEAL=grid (the grid is the lattice).
+const POSITIONS = setting("SR_POSITIONS", :lattice)
+POSITIONS in (:lattice, :poisson) || error("SR_POSITIONS must be lattice or poisson")
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
@@ -125,13 +130,21 @@ function one_realization(seed)
         Mx0 = w0 * GAMMA^2 * BOOST
         params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
-        if JITTER > 0                            # uniform smoothed entropy: s_a ← s_a S0 / S_a, iterated
-            for _ in 1:30
-                for q in ps;  q.s *= S0 / q.S_smooth;  end
+        if POSITIONS === :poisson
+            params.ideal === :grid && error("SR_POSITIONS=poisson is not possible with SPH_IDEAL=grid")
+            prng = Xoshiro(1000seed + 5)
+            for q in ps;  q.x = SVector(rand(prng) * params.L[1], rand(prng) * params.L[2]);  end
+            rebuild_cell_list!(cl, ps);  thermalize!(ps, params, cl, eos)
+        end
+        if JITTER > 0 || POSITIONS === :poisson  # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ S0), iterated;
+            for _ in 1:30                        # m_a = V_a M0 (the momentum density of the boosted state)
+                for q in ps;  q.s *= GAMMA * S0 / q.S_smooth;  end
                 thermalize!(ps, params, cl, eos)
             end
-            @printf("seed %d: jitter %.2f a: smoothed S/S0 − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, JITTER,
-                    sqrt(sum(abs2, [q.S_smooth / S0 - 1 for q in ps]) / length(ps)),
+            for q in ps;  q.m = (q.s / q.S_smooth) * SVector(Mx0, 0.0);  end
+            thermalize!(ps, params, cl, eos)
+            @printf("seed %d: %s, jitter %.2f a: smoothed S/(γS0) − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, POSITIONS, JITTER,
+                    sqrt(sum(abs2, [q.S_smooth / (GAMMA * S0) - 1 for q in ps]) / length(ps)),
                     (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
@@ -155,7 +168,7 @@ function one_realization(seed)
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
               gstencil = gstencil, gchecks = gchecks, gstats = GridStats(),
               grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[],
-              start = merge((lattice = "hex", jitter = JITTER, S0_rest = S0, boost = BOOST, gamma = GAMMA,
+              start = merge((lattice = "hex", positions = string(POSITIONS), jitter = JITTER, S0_rest = S0, boost = BOOST, gamma = GAMMA,
                              S_lab = GAMMA * S0, M0 = [Mx0, 0.0], s_a = GAMMA * S0 * params.vol,
                              T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
                              rng_seeds = "lattice $(1000seed + 4), start $(1000seed + 3), physics $(1000seed + 1), sweeps $(1000seed + 2)"),
@@ -214,8 +227,13 @@ function one_realization(seed)
             GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
                    record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
-            mbar = sum(q.m for q in ps) / N                                # fluctuations about the mean flow
-            push!(KE, sum(dot(q.m - mbar, q.m - mbar) for q in ps) / (2 * (N - 1) * V * w * T))
+            if JITTER > 0 || POSITIONS === :poisson                         # unequal volumes: the mean flow is V_a M̄,
+                Md = sum(q.m for q in ps) / sum(q.s / q.S_smooth for q in ps)    # M̄ the mean momentum density
+                push!(KE, sum((d = q.m - (q.s / q.S_smooth) * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
+            else
+                mbar = sum(q.m for q in ps) / N                            # fluctuations about the mean flow
+                push!(KE, sum(dot(q.m - mbar, q.m - mbar) for q in ps) / (2 * (N - 1) * V * w * T))
+            end
             push!(sspr, relspread(q.s for q in ps))                         # rms s_a/s̄ − 1
             push!(Vspr, relspread(q.s / q.S_smooth for q in ps))            # rms V_a/V̄ − 1
             # the stochastic step since the last record: acceptance of the stress (star) and the
