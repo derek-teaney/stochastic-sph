@@ -44,8 +44,8 @@ Each step below is one commit on the branch \file{cleanup}, and after each:
 Two steps are done (A1, A2): four functions nothing called were removed, and the PyPlot
 functions moved from \file{src/setup.jl} to \file{examples/plotsetup.jl}.
 
-\paragraph{Status.}  Steps 1--3 of \Sect{sec:order} and the rename (step 4) are done on
-\file{cleanup}, each checked as above.
+\paragraph{Status.}  Steps 1--8 of \Sect{sec:order} are done on \file{cleanup}, each checked as
+above; the scripts are sorted as in \Sect{sec:keep}.
 
 %=============================================================================
 \section{Names and layout}
@@ -186,6 +186,37 @@ of it):
 \end{itemize}
 Each test writes one line to \file{results.toml} in the output directory (name, scheme, pass,
 the measured numbers, time); \file{run.sh} prints the table and exits nonzero on a failure.
+
+%=============================================================================
+\section{What is kept}
+\label{sec:keep}
+
+The next stage is a paper: relativistic stochastic hydrodynamics in a periodic box, and 2D
+deterministic tests that can be compared with the grid code.  The scripts kept are those the
+paper and the open questions use:
+\begin{itemize}
+\item \textbf{Stochastic runs and their analysis:} \file{equilibrium.jl} (at rest and boosted),
+  \file{stability.jl} with \file{stability\_plot.jl} and \file{stability\_real\_plot.jl},
+  \file{stochastic\_correlators.jl}, \file{transverse\_dispersion.jl}, \file{boost\_analysis.jl},
+  \file{cl\_analysis.jl}, \file{cl\_exact\_m2.jl}.
+\item \textbf{The stochastic step on a frozen lattice} (validation):
+  \file{stochastic\_thermalize.jl} (with \file{\_common} and \file{\_plot}),
+  \file{stochastic\_smallk.jl}, \file{stochastic\_moving.jl}.
+\item \textbf{Deterministic tests:} \file{testsound.jl}, \file{testsound\_viscous.jl} and its 1D
+  version, \file{testshearwave.jl}, \file{shearwave\_decay.jl}, \file{testgaussian.jl} and its 1D
+  version, \file{testdiffuse.jl}.
+\item \textbf{Rigidity} (open: the transverse speed $c_t$ should vanish as $h/a\to\infty$):
+  \file{ideal\_lattice\_modes.jl} ($c_t$ from the energy of a volume-preserving transverse
+  displacement) and \file{shearwave\_scan.jl} (the same from the dynamics).
+\item \textbf{Tools:} \file{plotsetup.jl}, \file{bench\_step.jl}, \file{profile\_step.jl}.
+\end{itemize}
+The other scripts answered their questions --- the two-level form and the old sweep, the
+choice of the viscous step (\file{changerep\_*}), of the Hamiltonian and the volume
+(\file{energystep\_*}, \file{volume\_n\_*}), the rates of the stochastic step
+(\file{multistep\_*}), and the analyses of the discarded campaigns.  They are removed from the
+tree; the git tag \file{notes-2026-11} keeps them, with the library they ran against, so every
+figure of the notes can be made again (\file{git checkout notes-2026-11}; one file:
+\file{git show notes-2026-11:examples/<name>.jl}).
 
 %=============================================================================
 \section{Order of the steps}
