@@ -16,9 +16,10 @@ const VCOL = Dict(0.0 => "C0", 0.3 => "C2", 0.8 => "C3")
 pick(rs, sch, mode, dir, v0) = sort([r for (r, _) in rs if r.scheme == sch && r.mode == mode && r.dir == dir && r.v0 == v0], by = r -> r.kh)
 
 # one 3×2 figure: y(r) against kh, rows modes, columns directions; grid solid, particle dashed
-function grid_fig(rs, y, ylab, fname; title = "", ylim = nothing, hline = 0.0)
-    fig, axs = subplots(3, 2, figsize = (13, 10.5), squeeze = false)
-    for (i, (mode, mlab)) in enumerate(MODES), (j, (dir, dlab)) in enumerate(DIRS)
+function grid_fig(rs, y, ylab, fname; title = "", ylim = nothing, hline = 0.0,
+                  modes = [m for m in MODES if any(r.mode == m[1] for (r, _) in rs)])
+    fig, axs = subplots(length(modes), 2, figsize = (13, 3.5 * length(modes)), squeeze = false)
+    for (i, (mode, mlab)) in enumerate(modes), (j, (dir, dlab)) in enumerate(DIRS)
         ax = axs[i, j]
         for v0 in (0.0, 0.3, 0.8), (sch, ls, mk) in (("grid", "-", "o"), ("particle", "--", "s"))
             rr = pick(rs, sch, mode, dir, v0);  isempty(rr) && continue
@@ -58,6 +59,6 @@ if ideal !== nothing
     tight_layout();  savefig(joinpath(FIGD, "grid_series.png"), dpi = 100);  close();  println("wrote grid_series.png")
 end
 if visc !== nothing && !isempty(visc.vres)
-    grid_fig(visc.vres, r -> r.Gamma / r.Gamma_hydro, "Γ / Γ_hydro", "grid_viscous.png"; hline = 1.0, ylim = (0, 2),
+    grid_fig(visc.vres, r -> r.Gamma / r.Gamma_hydro, "Γ / Γ_hydro", "grid_viscous.png"; hline = 1.0, ylim = (0, 4.2),
              title = "Deterministic viscosity η/s = 0.2: damping against boosted hydrodynamics (filled/solid: grid, open/dashed: particles)")
 end

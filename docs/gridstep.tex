@@ -451,8 +451,37 @@ little entropy, $\sum\Delta S_{\rm T}/S\approx-7\times10^{-5}$ per unit time at 
 restores.  The fraction of the momentum power at $kh>1$ is the white-noise value (only $\approx1.7\%$
 of the box modes have $kh\le1$): no pile-up at the lattice scale.
 
-\paragraph{Still running} (to be added): the waves with deterministic viscosity $\eta/s=0.2$, and the
-stochastic campaign (\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with
+\paragraph{Waves with deterministic viscosity,} $\eta/s=0.2$ ($S_0=10^6$, $T_{\rm rel}=90.9$): the grid step between two
+half steps of the viscous step of the code (the particle representation, \texttt{viscous\_step!}),
+against the particle step (\texttt{generic\_step!}); a reduced set, $v_0=0$, $0.8$, $kh=0.52$, $1.05$, five
+sound periods.  The damping is compared with boosted hydrodynamics (\texttt{boost.tex}),
+\st
+\Gamma=\frac{\Gamma'}{\gamma\,(1+v_0\,\partial\Omega/\partial k'_x)},\qquad \Gamma'=\nu k'^2\ (\text{shear}),\quad
+\Gamma'=\tfrac12\cdot\tfrac43\,\nu k'^2\ (\text{sound}),
+\stp
+with $\Omega$, $\bm k'$ the frequency and wave vector in the rest frame and $\nu=(\eta/s)/T_{\rm rel}$
+(\Fig{fig:gvisc}):
+\begin{center}
+\begin{tabular}{llcccc}
+\hline
+ & & \multicolumn{2}{c}{grid} & \multicolumn{2}{c}{particles} \\
+mode & $v_0$ & $kh=0.52$ & $1.05$ & $0.52$ & $1.05$ \\ \hline
+shear, at rest & 0 & $1.04$ & $1.12$ & ($2.2$) & ($1.2$) \\
+shear, $\bm k\parallel\bm v$ & 0.8 & $1.01$ & $1.05$ & $3.98$ & $2.31$ \\
+shear, $\bm k\perp\bm v$ & 0.8 & $1.04$ & $1.12$ & $1.42$ & $1.08$ \\
+sound, at rest & 0 & $1.01$ & $1.03$ & $1.01$ & $1.08$ \\
+sound $+$, $\bm k\parallel\bm v$ & 0.8 & $0.98$ & $0.94$ & $0.91$ & $0.73$ \\
+sound $+$, $\bm k\perp\bm v$ & 0.8 & $1.03$ & $1.11$ & $0.99$ & $0.94$ \\
+\hline
+\end{tabular}
+\end{center}
+($\Gamma/\Gamma_{\rm hydro}$; in brackets the particle shear at rest, fitted to an oscillation.)  The grid step
+damps every mode at the rate of hydrodynamics, at rest and at $v_0=0.8$, to $1$--$4\%$ at $kh=0.52$
+and $3$--$12\%$ at $kh=1.05$; in particular the shear wave along the flow, whose rate is slowed by
+$\gamma^3=4.6$, comes out at $1.01$.  The particle step damps it four times too fast: the numerical
+damping of the moving particles found in \texttt{boost.tex} (paragraph 6), here without noise.
+
+\paragraph{Still running} (to be added): the stochastic campaign (\texttt{nersc/campaign\_grid.txt}: the sets of \texttt{boost.tex} with
 \texttt{SR\_GRID=1}), analysed as in \texttt{boost.tex}.
 
 \begin{figure}[t]
@@ -476,6 +505,13 @@ For the particle shear at rest the fit is to an oscillation, not a decay.}
 \label{fig:gdamp}
 \end{figure}
 
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/grid_viscous.png}
+\caption{Deterministic viscosity, $\eta/s=0.2$: the fitted damping over boosted hydrodynamics against $kh$,
+shear and sound $+$, along and across the flow; filled/solid grid, open/dashed particles; blue $v_0=0$,
+red $v_0=0.8$.  (Particle shear at rest: fitted to an oscillation.)}
+\label{fig:gvisc}
+\end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/grid_gaussian_slices.png}
 \caption{Gaussian pulse: the rest-frame energy density along $x$ (top) and $y$ (bottom) through the
