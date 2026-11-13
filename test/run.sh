@@ -52,7 +52,7 @@ run_unit() {   # <repo> <outdir>: every <repo>/test/*.jl → <outdir>/<name>.log
 }
 
 # log comparison, timing, temporary paths and commit hashes masked; test/regress/logmask.sed maps renames
-mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g; s/commit [0-9a-f]{7,}(\+dirty)?/commit HASH/g' | sed -E -f "$R/test/regress/logmask.sed"; }
+mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g; s/(steps=[0-9]+) [0-9]+ s\b/\1 T s/g; s/commit [0-9a-f]{7,}(\+dirty)?/commit HASH/g' | sed -E -f "$R/test/regress/logmask.sed"; }
 
 if [ "$MODE" = unit ] || [ "$MODE" = all ]; then
     echo "unit tests ($(git rev-parse --short HEAD), $JOBS at a time):"

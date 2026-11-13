@@ -57,6 +57,10 @@ const VOTE   = :star                                                 # stochasti
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
 stoch_opts(params) = StochOptions(params; λ = LAMBDA, vote = VOTE)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
+# SR_GRID=1: the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
+# src/grid.jl) in place of the leapfrog.  The particles never move; the stochastic step is the
+# same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke).
+const GRID   = setting("SR_GRID", false)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
@@ -72,6 +76,7 @@ function run_meta(params, st, n, wall, complete)
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
+     grid = GRID, grid_stats = haskey(st, :gstats) ? grid_summary(st.gstats) : NamedTuple(),
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
@@ -86,11 +91,12 @@ function runinfo(base, params, eos, st, n, complete)
         run = (driver = "equilibrium.jl", tag = TAG, seed = st.seed, args = ARGS),
         params, eos, opts = NOVISC ? nothing : stoch_opts(params),
         driver = (L = LBOX, h_over_a = HA, t_end = TEND, nreal = NREAL, rec_every = RECN, khmax = KHMAX,
-                  S0 = S0, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * S0 * params.vol,
+                  S0 = S0, grid = GRID, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * S0 * params.vol,
                   dv = 1 / sqrt(S0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
                   nsteps = st.nsteps),
         start = haskey(st, :start) ? st.start : (type = string(START),),
         outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), res,
+                        haskey(st, :gstats) ? (grid = grid_summary(st.gstats), grid_checks = st.gchecks) : NamedTuple(),
                         (monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), guards = guards())))
 end
 
@@ -123,6 +129,9 @@ function one_realization(seed)
         start = initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
+        gstencil = GRID ? GridStencil(ps, params, cl) : nothing
+        gchecks = GRID ? grid_checks(gstencil, params, eos, dt) : NamedTuple()
+        GRID && print_grid_checks(gchecks)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
         reset_guards!()
         x0 = [q.x for q in ps]
@@ -133,6 +142,8 @@ function one_realization(seed)
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
+              gstencil = gstencil, gchecks = gchecks, gstats = GridStats(),
+              grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[],
               start = merge((lattice = "hex", jitter = JITTER, S0_rest = S0, boost = BOOST, gamma = GAMMA,
                              S_lab = GAMMA * S0, M0 = [Mx0, 0.0], s_a = GAMMA * S0 * params.vol,
                              T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
@@ -149,9 +160,22 @@ function one_realization(seed)
     st.n == 0 && runinfo(base, params, eos, st, 0, false)
     win = zeros(4)                                   # acceptances and guard fractions since the last record
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
+    haskey(st, :gstats) || (st = merge(st, (gstencil = nothing, gchecks = NamedTuple(), gstats = GridStats(),
+                                            grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[])))
+    gsc = GRID ? GridScratch(N) : nothing;  gfail = false
+    if GRID                                          # warm start of the Newton solves of the grid step
+        for a in 1:N;  gsc.er[a] = ps[a].e;  end
+    end
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
-        NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
+        if GRID
+            if grid_step!(ps, st.gstencil, dt, eos, gsc, st.gstats; n) > 0
+                @printf("seed %d: grid step failed (no state) at step %d: %s\n", seed, n, st.gstats.first_fail)
+                gfail = true;  break
+            end
+        else
+            NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
+        end
         if !NOVISC
             a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos, opts; rng, rngs, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
@@ -159,7 +183,12 @@ function one_realization(seed)
             observe_step!(mon, a)
         end
         if n % RECN == 0
-            (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
+            (NOVISC || NOHAM || GRID) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
+            if GRID                                  # entropy made by the return; power at kh > 1
+                push!(st.grid_dST, st.gstats.sum_dS_T)
+                push!(st.grid_hkm, grid_highk_fraction(ps, params, [q.m for q in ps]))
+                push!(st.grid_hke, grid_highk_fraction(ps, params, [q.s * q.H_over_S for q in ps]))
+            end
             u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
@@ -180,16 +209,19 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, nsteps, wall, true), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax))
-    runinfo(base, params, eos, merge(st, (wall = wall,)), nsteps, true)
+    ndone = gfail ? (st.gstats.steps) : nsteps
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = (; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax, st.grid_dST, st.grid_hkm, st.grid_hke))
+    runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
     rm(chk; force = true)
+    GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",
+                                         seed, g.sum_dH_over_H, g.sum_dS_T_over_S, g.sum_absdS_T_over_S, g.disp_max, g.div_max, g.roundtrip_max, g.dP_max, g.eos_fail))
     print_summary(mon; label = "seed $seed")
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
