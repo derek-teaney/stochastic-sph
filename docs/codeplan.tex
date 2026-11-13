@@ -44,8 +44,11 @@ Each step below is one commit on the branch \file{cleanup}, and after each:
 Two steps are done (A1, A2): four functions nothing called were removed, and the PyPlot
 functions moved from \file{src/setup.jl} to \file{examples/plotsetup.jl}.
 
-\paragraph{Status.}  Steps 1--8 of \Sect{sec:order} are done on \file{cleanup}, each checked as
-above; the scripts are sorted as in \Sect{sec:keep}.
+\paragraph{Status.}  Steps 1--9 of \Sect{sec:order} are done on \file{cleanup}, each checked as
+above; the scripts are sorted as in \Sect{sec:keep}.  The physics tests are plane waves (ideal
+and viscous sound, shear) at $kh=1.4$, $0.7$, $0.35$ fitted for $\omega$ and $\Gamma$
+(\file{test/physics/}); the Gaussian and diffusion scripts stay in \file{examples/} as
+pictures.
 
 %=============================================================================
 \section{Names and layout}

@@ -1,7 +1,7 @@
 #!/bin/bash
 # run.sh — the test suite (docs/codeplan.tex, "The test suite").
 #
-#   test/run.sh [unit|regress|load|all] [-r <ref>] [-o <outdir>] [-j <jobs>]
+#   test/run.sh [unit|physics|regress|load|all] [-r <ref>] [-o <outdir>] [-j <jobs>]
 #
 #   unit     every test/*.jl, in parallel, one thread each.  A test fails if it exits nonzero;
 #            a test whose first line is "# test: visual" only makes plots and is reported as
@@ -11,8 +11,11 @@
 #            Hamiltonian (at 1 and 4 threads), short fixed-seed runs of the equilibrium driver
 #            (at rest and boosted) and of the stability driver (smoothed and energy) with
 #            bit-identical data, and every unit test with the same output (timing masked).
+#   physics  test/physics/*.jl, four threads each: plane waves (ideal and viscous sound, shear)
+#            at kh = 1.4, 0.7, 0.35 against linearized hydrodynamics, with tolerances; the
+#            measured ω and Γ go to <outdir>/physics/<test>.toml (minutes).
 #   load     every examples/*.jl and test/*.jl still loads (its using/include lines run).
-#   all      unit, load, regress.
+#   all      unit, physics, load, regress.
 #
 # Output in <outdir> (default data/tests/<date>): one log per test, results.toml with one
 # [[test]] table per test (name, kind, status, seconds), and a summary on stdout.  Exits 1 if
@@ -57,10 +60,21 @@ if [ "$MODE" = unit ] || [ "$MODE" = all ]; then
     while read -r n s t; do record "$n" unit "$s" "$t"; done < "$OUT/unit/unit.txt"
 fi
 
+if [ "$MODE" = physics ] || [ "$MODE" = all ]; then
+    echo "physics tests:"
+    P=$OUT/physics;  mkdir -p "$P"
+    for f in test/physics/*.jl; do
+        n=$(basename "$f" .jl)
+        ( t0=$(date +%s); SR_TESTOUT=$P julia -t 4 --startup-file=no --project="$PROJ" "$f" > "$P/$n.log" 2>&1
+          echo "$n $([ $? = 0 ] && echo pass || echo fail) $(( $(date +%s) - t0 ))" > "$P/$n.status" ) &
+    done; wait
+    for st in "$P"/*.status; do read -r n s t < "$st"; record "$n" physics "$s" "$t"; done
+fi
+
 if [ "$MODE" = load ] || [ "$MODE" = all ]; then
     echo "load check:"
     L=$OUT/load;  mkdir -p "$L"
-    for f in examples/*.jl test/*.jl test/regress/*.jl; do
+    for f in examples/*.jl test/*.jl test/regress/*.jl test/physics/*.jl; do
         h=$L/$(echo "$f" | tr / _).jl
         { echo "cd(\"$R/$(dirname "$f")\")"; grep -E '^(using|import|include)' "$f" | sed "s#@__DIR__#\"$R/$(dirname "$f")\"#g"; } > "$h"
         echo "$h"
