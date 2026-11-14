@@ -38,6 +38,10 @@ removes the C_EE deficit along the flow; (3) at v = 0.8, g(r)
 along and across the flow and S(k) from `hd_hmc_v0.8` against `hq12_s541_b08`, and C_EE along the flow (the deficit of
 boost.tex).  Commit the figures and the section on `equilibrium`, push, and report the jobs, cost and outcome here.
 
+**Submitted (2026-11-14, NERSC):** `pairs_low` was still running from `~/stochastic-sph-eq`, so a second worktree
+`~/stochastic-sph-eq2` at `cc8e292`; `test/testhmc.jl` PASS (δt² ratios 4.02, 4.01; acceptance 1.00).  `hmc_dyn` array job
+**61295240** (104 tasks), `hmc_eq` array job **61295241** (72 tasks), both from `~/stochastic-sph-eq2`, 8 h limit.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
