@@ -397,6 +397,32 @@ $t\approx15$--$19$; $23$--$27$ at $v_0=0.8$ by $t\approx40$) until a site has no
 neutral; with thermal fluctuations the undamped lattice-scale modes collect energy.  With the stochastic step
 every grid run so far has been stable.
 
+\paragraph{7. A Poisson start.}  Does the deficit come from starting on a perfect lattice?  The boost sets with the
+default particle scheme started instead from a Poisson arrangement (\texttt{SR\_POSITIONS=poisson}: independent
+uniform positions, $s_a$ and $\bm m_a$ rescaled so that the smoothed densities are uniform, then the exact
+equilibrium draw; \texttt{nersc/campaign\_poisson.txt}, job 61247550, 16 runs per $v_0$, $t=300$).  The draws are exact: a
+Metropolis chain on each particle with the exact single-particle distribution as its target, the Gaussian
+only as the proposal.  $C_{AA}(\bm k,0)/\chi_{AA}$ along the flow in time windows:
+\begin{center}
+\begin{tabular}{llccccc}
+\hline
+ & & $t<5$ & $5$--$20$ & $20$--$50$ & $50$--$100$ & $100$--$300$ \\ \hline
+$v_0=0.8$, $C_{EE}$, $kh=0.52$ & Poisson & $4.9(8)$ & $3.3(5)$ & $1.96(24)$ & $1.01(14)$ & $0.93(11)$ \\
+ & lattice & $0.94(29)$ & $0.75(15)$ & $0.68(16)$ & $0.83(13)$ & $0.78(10)$ \\
+$v_0=0.8$, $C_{EE}$, $kh=0.79$ & Poisson & $7.6(16)$ & $3.9(9)$ & $1.74(27)$ & $0.97(9)$ & $0.86(7)$ \\
+ & lattice & $1.07(24)$ & $1.06(21)$ & $0.77(13)$ & $0.85(11)$ & $0.93(7)$ \\
+$v_0=0.6$, $C_{EE}$, $kh=0.52$, $0.79$ & Poisson & $3.0$, $5.1$ & $1.8$, $2.1$ & $1.15$, $1.25$ & $0.99$, $0.90$ & $0.88(5)$, $0.87(5)$ \\
+\hline
+\end{tabular}
+\end{center}
+The Poisson start is far from equilibrium: the random positions leave pressure inhomogeneities that launch
+sound, and the fluctuations are $2$--$7$ times $\chi$ at first.  They relax over $t\approx50$--$100$ (the longest wave,
+$kh=0.26$, is still relaxing at $t=300$).  Once relaxed, the deficit along the flow is there as with the lattice start,
+$0.86$--$0.93$ at $kh=0.52$--$0.79$: it is a property of the steady state of the particle scheme, not of the lattice start.
+(The averages over whole runs are dominated by the transient, since the burn-in is $t=5$, and are not used.  The
+kinetic energy of the fluctuations over the second half, $17.4$ at $v_0=0.8$, is nearer the predicted $17.6$ than with
+the lattice start, $19.3$.)  A Poisson start needs a burn-in of $t\gtrsim100$.
+
 In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
 Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.
