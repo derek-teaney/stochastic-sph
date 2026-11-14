@@ -561,6 +561,28 @@ Poisson start leaves it varying by $22\%$ from particle to particle, a frozen-in
 in the energy fluctuations.  The lattice start, with a uniform entropy per particle, is the cleaner one (unless the
 $s_a$ are drawn from their own equilibrium distribution).
 
+\paragraph{9. The slow shear decay of grid + one kernel, settled.}  Campaign \texttt{ck\_stats} (\texttt{nersc/campaign\_ck\_stats.txt},
+branch \texttt{common-default}, job 61283666, 37 minutes on 4 nodes): the grid with the one-kernel step at $v_0=0.3$ and
+$0.6$, $t=1000$, 64 runs each, against \texttt{grid\_stats} (\texttt{gridstep.tex}; the grid with the present viscous step) at equal
+statistics.  Shear damping along the flow, $\Gamma/\Gamma_{\rm hydro}$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & \multicolumn{2}{c}{$v_0=0.3$} & \multicolumn{2}{c}{$v_0=0.6$} \\
+ & $kh=0.26$ & $0.52$ & $0.26$ & $0.52$ \\ \hline
+grid + one kernel, 16 runs, $t=300$ (test 5) & $0.77(12)$ & $0.98(5)$ & $0.57(10)$ & $0.96(8)$ \\
+grid + one kernel, 64 runs, $t=1000$ & $0.99(3)$ & $0.95(2)$ & $0.97(3)$ & $0.97(2)$ \\
+grid + present step, 64 runs, $t=1000$ & $0.95(4)$ & $1.00(1)$ & $0.96(4)$ & $0.99(2)$ \\
+\hline
+\end{tabular}
+\end{center}
+(burn-in $t=5$ for the one kernel, $t=100$ for the present step; with $t=100$ the one-kernel values move by at most $0.01$.)
+Across the flow, $0.96$--$1.03$.  The low values of the 16-run set were statistical: with 64 runs the shear
+correlator follows hydrodynamics at both speeds (\Fig{fig:cksshear}), apart from the phase lag of the grid's
+dispersion, and the one-kernel step and the present step agree within the errors.  The equal-time values
+agree too: $C_{EE}/\chi$ along the flow at $kh=0.52$ is $1.06(1)$, $1.06(2)$ (one kernel) and $1.06(1)$, $1.07(2)$ (present), the
+long-wave excess of \texttt{gridstep.tex}.
+
 In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
 Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.
@@ -605,6 +627,13 @@ parts, one row per $v_0$; dashed hydrodynamics.}
 \includegraphics[width=\textwidth]{figs/boost_fit_CKG.png}
 \caption{Boost benchmark, grid ideal step with the one-kernel viscous step: advection speed and shear damping at $kh=0.26$.}
 \label{fig:ckgfit}
+\end{figure}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/boost_shear_CKSTATS.png}
+\caption{Grid + one-kernel step, 64 runs to $t=1000$: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$ for $v_0=0.3$, $0.6$;
+dashed hydrodynamics.  Compare \Fig{fig:ckgshear} (16 runs, $t=300$).}
+\label{fig:cksshear}
 \end{figure}
 
 \end{document}
