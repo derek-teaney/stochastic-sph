@@ -403,6 +403,46 @@ $S(\bm k)=|N_{\bm k}|^2/N$ (the HMC chain records only $kh\le1$).}
 \end{figure}
 
 %=============================================================================
+\section{The generalized leapfrog as the ideal step}
+\label{sec:glf}
+
+The leapfrog of hybrid Monte Carlo is also available as the ideal step of the dynamics, \texttt{SPH\_IDEAL=generalized}
+(\texttt{SimParams.ideal = :generalized}; the implicit half steps iterated to \texttt{SPH\_GLF\_TOL}, default $10^{-10}$).  The
+present drift--kick--drift evaluates the force at $\bm m^n$ instead of $\bm m^{n+1/2}$; since the energy $e_a$ depends on both the
+momentum and the volume, $H$ is not separable, and that step is first order and neither symplectic nor reversible.
+
+\paragraph{Where the energy drift comes from.}  Single runs at $s_a=54$ ($h/a=2$, $L=0.6$) to $t=200$ heat steadily, with
+\st
+\frac{\Delta H}{H}\Big|_{t=200}=+3.7\%\ (\Delta t),\qquad +1.9\%\ (\Delta t/2),
+\stp
+the same with the one-kernel and the present viscous step: an error first order in $\Delta t$.  Each step alone, to $t=50$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & $\Delta H/H$ at $t=50$, $\Delta t$ & $\Delta t/2$ & ratio & late drift rate, $\Delta t$ \\ \hline
+full, drift--kick--drift & $+8.6\times10^{-3}$ & $+5.1\times10^{-3}$ & $1.7$ & $+1.9\times10^{-4}$ \\
+ideal alone, drift--kick--drift & $+9.2\times10^{-3}$ & $+4.0\times10^{-3}$ & $2.3$ & $+2.1\times10^{-4}$ \\
+ideal alone, generalized & $+1.7\times10^{-5}$ & $+3.9\times10^{-6}$ & $4.4$ & $+1.8\times10^{-8}$ \\
+stochastic alone & $-3\times10^{-10}$ & $-8\times10^{-10}$ & -- & $\sim10^{-11}$ \\
+full, generalized & $-3.6\times10^{-4}$ & $-3.0\times10^{-4}$ & -- & $+3\times10^{-6}$ \\
+\hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item The drift is made by the drift--kick--drift ideal step: alone it gains energy at the rate of the full dynamics, first
+  order in $\Delta t$.  The stochastic step conserves $H$ to $10^{-10}$.
+\item The generalized leapfrog is second order (ratio $4.4$) and its drift is $10^4$ times smaller.  In the full dynamics the late
+  drift falls from $1.9\times10^{-4}$ to about $3\times10^{-6}$ per unit time at the same $\Delta t$; the remaining offset, the same at both
+  $\Delta t$, is an early transient.
+\item The ideal step costs $2.6$ times more, the full step about $1.7$ times.
+\item With the ideal step alone the kinetic energy of the fluctuations falls to $0.81$ of equilibrium with the generalized
+  leapfrog ($1.03$ with drift--kick--drift): the flow of energy into the cold lattice (\Sect{sec:hmcvsdyn}), no longer masked
+  by the spurious heating.
+\end{itemize}
+For long single runs, which accumulate statistics in time rather than over realizations, the generalized leapfrog turns a
+heating of about $20\%$ per $1000$ time units at $s_a=54$ into a negligible one.  It is an option, not yet the default.
+
+%=============================================================================
 \section{Implementation plan}
 \label{sec:plan}
 

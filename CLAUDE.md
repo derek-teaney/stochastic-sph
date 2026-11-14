@@ -74,8 +74,16 @@ You may be running on a Perlmutter login node.  Rules:
 
 ## Current questions (see docs/fullruns.tex, docs/plan.tex)
 
-- Stability limit: runs with entropy per particle ~54 (thermal velocity 0.14) melt the
-  lattice and blow up after t ≈ 45; at ~541 (velocity 0.043) they only heat slowly.
-  Find the limit versus thermal velocity, η/s, h/a, and the energy fix `SR_HFIX=1`.
+- Long single runs (the owner wants runs that go for hours, ideally forever, rather than many
+  short realizations): not yet tested.  The blow-up at entropy per particle ~54 (t ≈ 45) belonged
+  to the old smoothed Hamiltonian and is no longer relevant.  With the n-scheme (default) the
+  issue is a slow drift of H at low entropy per particle (energy2: cooling, ΔH/H −31% by
+  t = 200 at s_a ≈ 54; made by the residual moves, not reduced by Δt at s_a = 541; campaign
+  `cl` stable to s_a ≈ 4 with the Δt criterion).  Found 2026-11-14 (docs/equilibrium_positions.tex,
+  "The generalized leapfrog"): at s_a = 54 the drift is first order in Δt and made by the
+  drift–kick–drift ideal step (H is not separable); the generalized leapfrog, `SPH_IDEAL=generalized`,
+  removes it (drift 1.9e-4 → ~3e-6 per unit time, full step ≈ 1.7× the cost).  Use it for long runs.
+- The equilibrium of the particle positions (docs/equilibrium_positions.tex, branch
+  `equilibrium`): g(r), ψ6, S(k) from the lattice; hybrid Monte Carlo as the reference.
 - Equilibrium correlators: transverse ⟨M_T(t+τ,k) M_T*(t,k)⟩ against e^{−νk²τ}, and the
   longitudinal (sound) correlator, in boxes large enough to resolve kh ≪ 1.

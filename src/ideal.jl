@@ -222,6 +222,7 @@ end
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
                          cl::CellList2D, dt::Float64, eos::AbstractEOS,
                          dotm::Vector{SVector{2,Float64}})
+    params.ideal === :generalized && return generalized_step!(particles, params, cl, dt, eos, dotm)   # hmc.jl
     # Störmer–Verlet / position Verlet (DKD) — 2nd-order symplectic:
     #
     #   x^{n+1/2} = x^n      + (dt/2) v(x^n,       m^n      )

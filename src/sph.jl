@@ -59,7 +59,9 @@ end
 # ideal: the ideal step.  :particle (default) is the Hamiltonian leapfrog of the moving particles
 #   (ideal.jl); :grid is the step on the fixed lattice — kick, drift and return (gridstep.tex,
 #   grid.jl): the particles stay on the sites of the hexagonal lattice, which needs lattice = :hex,
-#   hamiltonian = :energy and volume = :number.  Default from SPH_IDEAL, else :particle.
+#   hamiltonian = :energy and volume = :number.  :generalized is the moving particles with the generalized
+#   leapfrog (hmc.jl: implicit, symplectic and reversible for the non-separable H; equilibrium_positions.tex),
+#   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else :particle.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
@@ -125,7 +127,10 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     volume === :number && @printf("SimParams: volume = number, V_a = 1/n_a (volume_n.tex)\n")
     hψ = bond_h === nothing ? Float64(h) : Float64(bond_h)
     0 < hψ <= h || error("bond_h = $hψ must satisfy 0 < bond_h ≤ h (bond support 2·bond_h ≤ 2h stencil)")
-    ideal in (:particle, :grid) || error("ideal must be :particle or :grid, got $ideal")
+    ideal in (:particle, :grid, :generalized) || error("ideal must be :particle, :grid or :generalized, got $ideal")
+    ideal === :generalized && (hamiltonian === :energy && volume === :number ||
+        error("ideal = :generalized needs hamiltonian = :energy and volume = :number (hmc.jl)"))
+    ideal === :generalized && @printf("SimParams: ideal = generalized, the generalized leapfrog (hmc.jl)\n")
     ideal === :grid && (lattice === :hex && sim_dim == 2 && hamiltonian === :energy && volume === :number ||
         error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
     ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
