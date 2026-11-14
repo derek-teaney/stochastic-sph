@@ -5,7 +5,8 @@
 # trajectory length, so that examples/pair_analysis.jl reads it.
 #   julia -t 4 --project examples/hmc_positions.jl L h/a nupdates nsteps [tag]
 # Environment: SR_S0 (entropy density, default 1e6), SR_SEED0 (seed, default 1), SR_HMC_DTFAC (δt / acoustic step,
-# default 0.5), SR_OUTDIR (default data/hmc), SR_KHMAX (wave vectors of N_k, default 1.5).
+# default 0.5), SR_OUTDIR (default data/hmc), SR_KHMAX (wave vectors of N_k, default 1.5), SR_BOOST (fluid velocity along x,
+# default 0: the rest-frame entropy density is S0, the lab one γS0 and M = w0 γ² v, as in examples/equilibrium.jl).
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
@@ -17,14 +18,17 @@ const SEED   = setting("SR_SEED0", 1)
 const DTFAC  = setting("SR_HMC_DTFAC", 0.5)
 const OUTDIR = setting("SR_OUTDIR", joinpath(@__DIR__, "..", "data", "hmc"))
 const KHMAX  = setting("SR_KHMAX", 1.5)                 # as examples/equilibrium.jl
+const BOOST  = setting("SR_BOOST", 0.0);  const GAMMA = 1 / sqrt(1 - BOOST^2)
 
 eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
-params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
+_, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
+const MX0 = (ps0[1].e + ps0[1].p) * GAMMA^2 * BOOST            # the momentum density of the boosted state
+params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(MX0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
 start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))       # the present start, at the lattice
 tg = HMCTarget(start.β0, start.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal);  τ = NSTEPS * dt
-@printf("HMC: N = %d, s_a = %.4g, T = %.5g, δt = %.3e, %d steps per trajectory (τ = %.3g), %d updates\n",
-        params.N, S0 * params.vol, start.T, dt, NSTEPS, τ, NUPD)
+@printf("HMC: N = %d, s_a = %.4g, T = %.5g, v = %.3g, δt = %.3e, %d steps per trajectory (τ = %.3g), %d updates\n",
+        params.N, GAMMA * S0 * params.vol, start.T, BOOST, dt, NSTEPS, τ, NUPD)
 
 ks = box_wavevectors(params, KHMAX)
 rec = Recorder(ks);  prec = ParticleRecorder(ps, params; ks, cl)
@@ -40,7 +44,7 @@ for n in 1:NUPD
                 n, sum(acc) / n, sum(hb) / n, sum(abs, dH) / n, sum(its) / n, prec.psi6[end], prec.psi6loc[end], Ht[end], time() - t0)
 end
 mkpath(OUTDIR)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = S0 * params.vol, T0 = start.T,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = GAMMA * S0 * params.vol, T0 = start.T, boost = BOOST,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, dt = dt, tau = τ, acceptance = sum(acc) / NUPD,
         heatbath = sum(hb) / NUPD, seed = SEED)
 write_equilibrium_h5(joinpath(OUTDIR, "equilibrium_$(TAG)_r$(SEED).h5"), meta, rec, Ht, zeros(length(Ht)); prec,

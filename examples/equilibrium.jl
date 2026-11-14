@@ -48,8 +48,15 @@ const JITTER = setting("SR_JITTER", 0.0)
 # SR_POSITIONS=poisson: the particles start at N independent uniform positions in the box (a Poisson
 # arrangement) instead of on the hexagonal lattice (default lattice); then, as for the jitter, the s_a and m_a
 # are rescaled so that the smoothed densities are uniform.  Not with SPH_IDEAL=grid (the grid is the lattice).
+# SR_POSITIONS=hmc: the positions are first brought to equilibrium by hybrid Monte Carlo from the lattice (src/hmc.jl,
+# docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 40) with
+# trajectories of length SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC (default
+# 0.5) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.
 const POSITIONS = setting("SR_POSITIONS", :lattice)
-POSITIONS in (:lattice, :poisson) || error("SR_POSITIONS must be lattice or poisson")
+POSITIONS in (:lattice, :poisson, :hmc) || error("SR_POSITIONS must be lattice, poisson or hmc")
+const HMC_N     = setting("SR_HMC_N", 40)
+const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
+const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.5)
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
@@ -149,7 +156,22 @@ function one_realization(seed)
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
-        start = initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))
+        hmcinfo = NamedTuple()
+        if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run
+            params.ideal === :grid && error("SR_POSITIONS=hmc is not possible with SPH_IDEAL=grid")
+            r0 = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6))
+            tg = HMCTarget(r0.β0, r0.β, params.vol, eos)
+            dtH = HMC_DTFAC * compute_dt(ps, params, eos; mode = :ideal)
+            nH = max(1, round(Int, (HMC_TAU > 0 ? HMC_TAU : LBOX * sqrt(3)) / dtH))
+            hrng = Xoshiro(1000seed + 7);  nacc = 0;  th = time()
+            for n in 1:HMC_N
+                u = hmc_update!(ps, params, cl, eos, tg, hrng; nsteps = nH, dt = dtH);  nacc += u.accepted
+            end
+            @printf("seed %d: hybrid Monte Carlo, %d updates of %d steps (τ = %.3g), acceptance %.2f, %.0f s\n",
+                    seed, HMC_N, nH, nH * dtH, nacc / HMC_N, time() - th)
+            hmcinfo = (hmc_updates = HMC_N, hmc_steps = nH, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = nacc / HMC_N)
+        end
+        start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3)), hmcinfo)
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
         GRID == (params.ideal === :grid) || error("equilibrium.jl: SPH_IDEAL and SimParams.ideal disagree")
@@ -227,7 +249,7 @@ function one_realization(seed)
             GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
                    record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
-            if JITTER > 0 || POSITIONS === :poisson                         # unequal volumes: the mean flow is V_a M̄,
+            if JITTER > 0 || POSITIONS in (:poisson, :hmc)                  # unequal volumes: the mean flow is V_a M̄,
                 Md = sum(q.m for q in ps) / sum(q.s / q.S_smooth for q in ps)    # M̄ the mean momentum density
                 push!(KE, sum((d = q.m - (q.s / q.S_smooth) * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
             else

@@ -4,7 +4,41 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
-## Next session at NERSC — also: campaign `hmc_eq` (written 2026-11-14, on the laptop)
+## Next session at NERSC — start now: campaigns `hmc_dyn` and `hmc_eq` (written 2026-11-14, on the laptop)
+
+New on `equilibrium`: `SR_POSITIONS=hmc` in examples/equilibrium.jl (hybrid Monte Carlo from the lattice at the β^μ of the
+run, at rest or boosted, then the present start), `SR_BOOST` in examples/hmc_positions.jl, the generalized-leapfrog ideal
+step `SPH_IDEAL=generalized` (docs/equilibrium_positions.tex).  Checked on the laptop at v = 0.8: HMC acceptance 0.95–0.97,
+a liquid; the HMC-started generalized-leapfrog run clean (ΔH/H 1e-5 over t = 5).  The owner asked to start the v = 0 runs now,
+with a first boosted set at v = 0.8 alongside; a first look, statistics to be increased afterwards.  The sets form a 2×2 of
+ideal step × start at each velocity, so that the effect of each change can be seen separately (owner, 2026-11-14).
+
+Worktree: update the run worktree to the pushed tip of `equilibrium` if no task of `pairs_low` is pending; otherwise make
+`~/stochastic-sph-eq2` at the tip and use it below.  Smoke test (login node): `julia --project=nersc test/testhmc.jl`.
+```bash
+R=$HOME/stochastic-sph-eq; cd $SCRATCH/sph
+# hmc_dyn: 104 tasks, ≈ 2.2 node-hours (the t = 2000 runs ≈ 6 h each on 2 threads; they checkpoint, rerun to resume)
+sbatch --array=1-104 -A m3722 -t 08:00:00 --export=ALL,SR_REPO=$R $R/nersc/array.sh $R/nersc/campaign_hmc_dyn.txt hmc_dyn
+# hmc_eq: 72 tasks (64 at rest, 8 boosted at v = 0.8), ≈ 1.4 node-hours
+sbatch --array=1-72 -A m3722 -t 08:00:00 --export=ALL,SR_REPO=$R $R/nersc/array.sh $R/nersc/campaign_hmc_eq.txt hmc_eq
+```
+Record both job IDs here.  First look (plotting environment), when the short sets are done:
+```bash
+D=$SCRATCH/sph/hmc_dyn;  E=$SCRATCH/sph/hmc_eq
+ln -s $SCRATCH/sph/commonkernel/ck_v0 $D/ck_v0;  ln -s $SCRATCH/sph/commonkernel/ck_v0.8 $D/ck_v0.8   # the DKD + lattice cell
+BOOST_GROUP=HD julia --project=$HOME/stochastic-sph examples/boost_analysis.jl $D          # C_EE, shear damping: HMC vs lattice start
+SR_FIGDIR=$D/figs julia --project=$HOME/stochastic-sph examples/pair_analysis.jl $D/hd_hmc_v0 $D/hd_lat_v0 $D/hd_hmc_v0.8 $D/hd_long_s541
+SR_FIGDIR=$E/figs12 julia --project=$HOME/stochastic-sph examples/hmc_analysis.jl $E/hq12_s54 $E/hq12_s135 $E/hq12_s541 $E/hq12_s541_b08
+```
+The questions, for a short section of docs/equilibrium_positions.tex: (1) does S(k) of `hd_long_*` approach the HMC value
+of `hq12_*` (examples/hmc_analysis.jl gives it per band of kh); (2) do the HMC-started runs keep S(k) at the HMC value, and
+how do C_EE(k,0)/χ and the shear damping compare across the 2×2 of ideal step (generalized leapfrog, GLF, or drift–kick–drift,
+DKD) and start (HMC or lattice) — `hd_hmc_*`, `hd_lat_*`, `hd_dkdhmc_*` and `ck_*` — at v = 0 and 0.8; which of the two changes
+removes the C_EE deficit along the flow; (3) at v = 0.8, g(r)
+along and across the flow and S(k) from `hd_hmc_v0.8` against `hq12_s541_b08`, and C_EE along the flow (the deficit of
+boost.tex).  Commit the figures and the section on `equilibrium`, push, and report the jobs, cost and outcome here.
+
+## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
 "Hybrid Monte Carlo in the same box" and Fig. Skk; single chains on the laptop were too noisy: one mode of |N_k|² is

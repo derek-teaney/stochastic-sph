@@ -1,0 +1,20 @@
+# Campaign `hmc_dyn` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the dynamics with the generalized-leapfrog
+# ideal step (SPH_IDEAL=generalized) and equilibrium positions from hybrid Monte Carlo (SR_POSITIONS=hmc: 40 updates, τ = L/c_s),
+# L = 1.2, h/a = 2, η/s = 0.2, default one-kernel viscous step.  A first look; statistics to be increased after it.
+# 104 tasks, ≈ 2.2 node-hours (A 0.7, B 0.6, C 0.9).
+# A. Long single runs from the lattice: does S(k) of the dynamics reach the HMC value?  t = 2000 at s_a = 541, 1000 at 135;
+#    recorded every 80 steps (tasks 1-8).
+hd_long_s541    4  SR_S0=1e6   SPH_IDEAL=generalized SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 1.2 2 2000 1 80 hd_long_s541
+hd_long_s135    4  SR_S0=2.5e5 SPH_IDEAL=generalized SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 1.2 2 1000 1 80 hd_long_s135
+# B. The v = 0 set of the boost benchmark (boost.tex, s_a = 541, t = 300), started from HMC and, for comparison, from the
+#    lattice, both with the generalized leapfrog: does the HMC start remove the burn-in and the C_EE deficit? (tasks 9-40)
+hd_hmc_v0      16  SPH_IDEAL=generalized SR_POSITIONS=hmc SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 hd_hmc_v0
+hd_lat_v0      16  SPH_IDEAL=generalized SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0                    -- examples/equilibrium.jl 1.2 2 300 1 4 hd_lat_v0
+#    The missing cell of the 2×2 (ideal step × start): drift–kick–drift from HMC (tasks 41-56).  The cell drift–kick–drift
+#    from the lattice is the existing ck_v0 / ck_v0.8 of campaign commonkernel (same settings, 16 runs each).
+hd_dkdhmc_v0   16  SR_POSITIONS=hmc SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0                         -- examples/equilibrium.jl 1.2 2 300 1 4 hd_dkdhmc_v0
+# C. The same at v = 0.8 (boost.tex settings): generalized leapfrog from HMC and from the lattice, drift–kick–drift from HMC
+#    (tasks 57-104).
+hd_hmc_v0.8    16  SPH_IDEAL=generalized SR_POSITIONS=hmc SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0  -- examples/equilibrium.jl 1.2 2 300 1 4 hd_hmc_v0.8
+hd_lat_v0.8    16  SPH_IDEAL=generalized SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0                    -- examples/equilibrium.jl 1.2 2 300 1 4 hd_lat_v0.8
+hd_dkdhmc_v0.8 16  SR_POSITIONS=hmc SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0                         -- examples/equilibrium.jl 1.2 2 300 1 4 hd_dkdhmc_v0.8

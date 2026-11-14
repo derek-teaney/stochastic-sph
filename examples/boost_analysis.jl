@@ -39,6 +39,11 @@ const SETS = GROUP == "L24" ?
              GROUP == "CKG" ?                     # commonkernel.tex: grid ideal step + one-kernel viscous step
     [("v=0", ["ckg_v0"], 0.0, "C0"), ("v=0.3", ["ckg_v0.3"], 0.3, "C2"), ("v=0.6", ["ckg_v0.6"], 0.6, "C1"),
      ("v=0.8", ["ckg_v0.8"], 0.8, "C3")] :
+             GROUP == "HD" ?                      # equilibrium_positions.tex: generalized leapfrog, HMC vs lattice start, $SCRATCH/sph/hmc_dyn
+    [("GLF, HMC start v=0", ["hd_hmc_v0"], 0.0, "C0"), ("GLF, lattice v=0", ["hd_lat_v0"], 0.0, "C2"),
+     ("DKD, HMC start v=0", ["hd_dkdhmc_v0"], 0.0, "C4"), ("DKD, lattice v=0", ["ck_v0"], 0.0, "C7"),
+     ("GLF, HMC start v=0.8", ["hd_hmc_v0.8"], 0.8, "C3"), ("GLF, lattice v=0.8", ["hd_lat_v0.8"], 0.8, "C1"),
+     ("DKD, HMC start v=0.8", ["hd_dkdhmc_v0.8"], 0.8, "C5"), ("DKD, lattice v=0.8", ["ck_v0.8"], 0.8, "C8")] :
              GROUP == "CKSTATS" ?                 # commonkernel.tex: grid + one kernel, high statistics, $SCRATCH/sph/ck_stats
     [("v=0.3", ["cks_v0.3"], 0.3, "C2"), ("v=0.6", ["cks_v0.6"], 0.6, "C1")] :
              GROUP == "POI" ?                     # particles from a Poisson start, $SCRATCH/sph/poisson
