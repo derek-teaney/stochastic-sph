@@ -22,6 +22,15 @@ branch `common-default` (off `commonkernel`; not yet in `main`).  Runs that must
    `grid_stats`; analysis: `BOOST_GROUP=CKSTATS julia examples/boost_analysis.jl $SCRATCH/sph/ck_stats`.
 4. When 2 passes and 3 settles the question, `common-default` is merged into `main` (the owner decides).
 
+**Done (2026-11-14, NERSC):** worktree `~/stochastic-sph-ck` at `89bc470`.  Test suite job **61283664**: unit, physics,
+load pass; the regression against `main` differs exactly as listed in the commit message (energy/2D runs), the smoothed
+runs bit-identical; the unit-output diffs are the banner, one more setting in the run record (`SR_POSITIONS`, from
+`commonkernel`), the separating trajectories (checkpoint, eqstart, stochastic_guard) and roundoff in testdissipative.
+Campaign `ck_stats` job **61283666** (4 nodes, 37 min, 128/128): the shear along the flow at v = 0.3, 0.6 is at the
+hydrodynamic rate (0.95-0.99 ± 0.02-0.03), equal to `grid_stats` within errors; the 16-run low values were statistics
+(commonkernel.tex, paragraph 9).  Lesson: three large `boost_analysis` runs at once on the login node — one was killed
+silently (memory); run them one or two at a time.
+
 ## Earlier: start here (written 2026-11-12, on the laptop)
 
 The code was reorganized on the laptop and merged into `main` (see "The code after the
