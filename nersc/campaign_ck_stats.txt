@@ -1,0 +1,7 @@
+# Campaign `ck_stats` (2026-11-14, branch common-default, docs/commonkernel.tex): the open question of the one-kernel
+# step with the grid ideal step — the slow late-time decay of the shear correlator along the flow at v = 0.3, 0.6
+# (Fig. ckgshear; not in the viscous dissipation, test 6(i)).  The sets of grid_stats (t = 1000, 64 runs per v,
+# L = 1.2) with SPH_DISSIPATION=common, to compare with grid_stats (the present viscous step) at equal statistics.
+# Seeds offset by 2000.  Tasks 1-128; about 2.3 node-hours (grid_stats: 256 such runs in 4.6 node-hours).
+cks_v0.3   64  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.3 SR_DTFAC=0.8  SR_KHMAX=1.0 SR_SEEDOFFSET=2000  -- examples/equilibrium.jl 1.2 2 1000 1 4 cks_v0.3
+cks_v0.6   64  SPH_DISSIPATION=common SPH_IDEAL=grid SR_BOOST=0.6 SR_DTFAC=0.66 SR_KHMAX=1.0 SR_SEEDOFFSET=2000  -- examples/equilibrium.jl 1.2 2 1000 1 4 cks_v0.6

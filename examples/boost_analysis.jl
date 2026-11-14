@@ -39,6 +39,8 @@ const SETS = GROUP == "L24" ?
              GROUP == "CKG" ?                     # commonkernel.tex: grid ideal step + one-kernel viscous step
     [("v=0", ["ckg_v0"], 0.0, "C0"), ("v=0.3", ["ckg_v0.3"], 0.3, "C2"), ("v=0.6", ["ckg_v0.6"], 0.6, "C1"),
      ("v=0.8", ["ckg_v0.8"], 0.8, "C3")] :
+             GROUP == "CKSTATS" ?                 # commonkernel.tex: grid + one kernel, high statistics, $SCRATCH/sph/ck_stats
+    [("v=0.3", ["cks_v0.3"], 0.3, "C2"), ("v=0.6", ["cks_v0.6"], 0.6, "C1")] :
              GROUP == "POI" ?                     # particles from a Poisson start, $SCRATCH/sph/poisson
     [("v=0", ["po_v0"], 0.0, "C0"), ("v=0.3", ["po_v0.3"], 0.3, "C2"), ("v=0.6", ["po_v0.6"], 0.6, "C1"),
      ("v=0.8", ["po_v0.8"], 0.8, "C3")] :

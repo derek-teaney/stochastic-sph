@@ -16,6 +16,10 @@ the `.tex`).  Owner: D. Teaney.
   viscous step), `stochastic.jl`, `grid.jl` (the ideal step on the fixed lattice, its lattice FFT and
   bare propagator; `SPH_IDEAL=grid`, `docs/gridstep.tex`), `measure.jl`, …  Superseded code (two-level strain form, the
   old particle sweep) in `src/legacy/`.
+- **The viscous step** (since 2026-11-14, branch `common-default`): the default is the one-kernel step,
+  `SPH_DISSIPATION=common` (`docs/commonkernel.tex`), wherever it applies (2D, energy Hamiltonian);
+  `SPH_DISSIPATION=particle` gives the previous default (needed to reproduce runs before that date).
+  `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
 - `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.

@@ -4,7 +4,25 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
-## Next session at NERSC — start here (written 2026-11-12, on the laptop)
+## Next session at NERSC — start here (written 2026-11-14, on the laptop)
+
+**The default viscous step changes to the one-kernel step** (`SPH_DISSIPATION=common`, docs/commonkernel.tex) on
+branch `common-default` (off `commonkernel`; not yet in `main`).  Runs that must reproduce earlier ones set
+`SPH_DISSIPATION=particle`.  To do, from a run checkout that nobody edits (see Lessons):
+1. `git fetch`; make a worktree detached at the tip of `origin/common-default`, e.g.
+   `git -C ~/stochastic-sph worktree add --detach ~/stochastic-sph-ck origin/common-default`; precompile there.
+2. **Test suite**, debug job: `sbatch -A m3722 -q debug -C cpu -N 1 -t 00:30:00
+   --export=ALL,SR_REPO=$HOME/stochastic-sph-ck $HOME/stochastic-sph-ck/nersc/unittests.sh` from `$SCRATCH/sph`.
+   Expected: unit, physics and load pass.  The regression against `main` is expected to differ for the default
+   (energy, 2D) runs only; on the laptop the suite against `commonkernel` gave the list in the commit message of
+   the default change.
+3. **Campaign `ck_stats`** (`nersc/campaign_ck_stats.txt`, 128 tasks, about 2.3 node-hours): grid + one kernel at
+   v = 0.3, 0.6, t = 1000, 64 runs each, to settle the slow late-time shear decay of docs/commonkernel.tex
+   (Fig. ckgshear) against `grid_stats` at equal statistics.  Submit with `nersc/node.sh` or `array.sh` as for
+   `grid_stats`; analysis: `BOOST_GROUP=CKSTATS julia examples/boost_analysis.jl $SCRATCH/sph/ck_stats`.
+4. When 2 passes and 3 settles the question, `common-default` is merged into `main` (the owner decides).
+
+## Earlier: start here (written 2026-11-12, on the laptop)
 
 The code was reorganized on the laptop and merged into `main` (see "The code after the
 cleanup" below).  Before any new campaign:

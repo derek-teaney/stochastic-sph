@@ -34,13 +34,14 @@ end
 
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
 #   distance, ψ_ab = −W′(r_ab)/r_ab (bond moment n_a 𝟙), and the comoving metric put in by hand
-#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  :particle (default; formerly :changerep, still accepted)
-#   is the bond form in the particle
+#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  It is the
+#   default since 2026-11-14 wherever it applies (2D with the energy Hamiltonian).  :particle (the default in 1D
+#   and with SPH_HAMILTONIAN=smoothed; formerly :changerep, still accepted) is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
 #   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
 #   (sph2.tex), superseded: it and its stochastic sweep (particle_sweep!, which never
 #   worked) are in src/legacy/, loaded by src/legacy/load.jl after src/load.jl.
-#   Default from the environment variable SPH_DISSIPATION (else :particle).
+#   Default from the environment variable SPH_DISSIPATION, else default_dissipation(sim_dim).
 # Default scheme (2026-11-10): hamiltonian = :energy with volume = :number, the n-scheme
 #   (volume_n.tex, number_tests.tex).  The old schemes are kept: SPH_HAMILTONIAN=smoothed,
 #   SPH_VOLUME=entropy.  With SPH_DISSIPATION=two_level the default Hamiltonian is :smoothed
@@ -64,11 +65,15 @@ end
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
 # The Hamiltonian when none is given: SPH_HAMILTONIAN, else :energy (:smoothed with the
 # two-level form, which needs it).  Drivers that need the scheme before SimParams use this too.
-default_hamiltonian(dissipation = setting("SPH_DISSIPATION", :particle)) =
+# The viscous step when none is given (2026-11-14): the one-kernel step :common where it applies (2D, energy
+# Hamiltonian; commonkernel.tex), else :particle.  SPH_DISSIPATION=particle gives the earlier default back.
+default_dissipation(sim_dim = 2) =
+    sim_dim == 2 && setting("SPH_HAMILTONIAN", :energy) === :energy ? :common : :particle
+default_hamiltonian(dissipation = setting("SPH_DISSIPATION", default_dissipation())) =
     setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
 
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
-                   dissipation=setting("SPH_DISSIPATION", :particle), bond_h=nothing,
+                   dissipation=setting("SPH_DISSIPATION", default_dissipation(sim_dim)), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
                    ideal=setting("SPH_IDEAL", :particle))
