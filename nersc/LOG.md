@@ -4,6 +4,33 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Next session at NERSC — also: campaign `pairs_low` (written 2026-11-14, on the laptop)
+
+Do **not** stop `pairs` if it is running, and do not delete its output or any figure: this is a second campaign.
+The owner wants lower entropy per particle, but s_a ≥ 30 for now, by two routes that reach the same s_a: the fixed
+kernel h/a = 2 at lower S0 (s_a = 135, 60, 34), and the continuum route of campaign `cl` (S0 = 1e6, h/a = 4, 6, 8 →
+s_a = 135, 60, 34).  `nersc/campaign_pairs_low.txt`, 72 tasks, L = 0.6, estimate ≈ 1.1 node-hours (cost per step
+∝ (h/a)^4, from `cl`).  From the same run worktree as `pairs` (update it to the pushed tip of `equilibrium` first if no
+`pairs` task is still pending; otherwise make a second worktree, e.g. `~/stochastic-sph-eq2`):
+```bash
+R=$HOME/stochastic-sph-eq; cd $SCRATCH/sph
+# tasks 1-56: h/a = 2 (three sets) and h/a = 4, one array task each, 2 threads
+sbatch --array=1-56 -A m3722 -t 04:00:00 --export=ALL,SR_REPO=$R $R/nersc/array.sh $R/nersc/campaign_pairs_low.txt pairs_low
+# tasks 57-72: h/a = 6 and 8, packed, 16 threads each (8 at a time on one node)
+sbatch -A m3722 -q regular -C cpu -N 1 -t 04:00:00 --export=ALL,SR_REPO=$R,THREADS=16 \
+       $R/nersc/node.sh $R/nersc/campaign_pairs_low.txt pairs_low 57 72
+```
+Record the job IDs here.  A task that times out leaves a `.chk`; rerun the same command to resume.  Analysis, two
+figures (the combined figure takes up to four sets):
+```bash
+P=$SCRATCH/sph/pairs_low
+SR_FIGDIR=$P/figs_ha2 julia --project=$HOME/stochastic-sph examples/pair_analysis.jl $P/pl_ha2_s135 $P/pl_ha2_s60 $P/pl_ha2_s34
+SR_FIGDIR=$P/figs_cl  julia --project=$HOME/stochastic-sph examples/pair_analysis.jl $P/pl_ha4_s135 $P/pl_ha6_s60 $P/pl_ha8_s34
+```
+Copy the two `equilibrium_g_vs_t.png` to `docs/figs/equilibrium_g_vs_t_ha2.png` and `..._cl.png`, add a short paragraph
+and table to docs/equilibrium_positions.tex (melting time, ψ6, first peak of g, S(k) at the lowest kh against 4/s_a; same
+s_a by the two routes side by side), commit on `equilibrium`, push, and report the jobs, cost and outcome here.
+
 ## Next session at NERSC — start here: campaign `pairs` (written 2026-11-14, on the laptop)
 
 **Branch `equilibrium`** (off `common-default`): the pair correlation of the particle positions as a standard

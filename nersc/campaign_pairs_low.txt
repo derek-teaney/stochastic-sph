@@ -1,0 +1,14 @@
+# Campaign `pairs_low` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the pair correlation g(r,t), ψ6(t)
+# and S(k,t) of the positions from the hexagonal lattice toward lower entropy per particle, s_a ≥ 30, by the two routes:
+#   fixed kernel, h/a = 2, lower S0:            s_a = 135, 60, 34      (tasks 1-48, 16 runs each, t = 100)
+#   continuum route, S0 = 1e6, higher h/a (cl):  h/a = 4, 6, 8 → s_a = 135, 60, 34
+#                                                (h/a = 4: tasks 49-56, t = 100; h/a = 6, 8: tasks 57-72, t = 50)
+# so that the same s_a is reached with two kernels.  L = 0.6 throughout (as campaign cl), at rest, default one-kernel
+# viscous step, η/s = 0.2.  Cost per step ∝ (h/a)^4 (cl); estimate ≈ 1.1 node-hours (h/a = 2: 0.03, 4: 0.09, 6: 0.23,
+# 8: 0.7).  Submit tasks 1-56 as an array (-c 2) and tasks 57-72 with node.sh, THREADS = 16 (nersc/LOG.md).
+pl_ha2_s135   16  SR_S0=2.5e5  SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 2 100 1 4 pl_ha2_s135
+pl_ha2_s60    16  SR_S0=1.11e5 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 2 100 1 4 pl_ha2_s60
+pl_ha2_s34    16  SR_S0=6.3e4  SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 2 100 1 4 pl_ha2_s34
+pl_ha4_s135    8  SR_S0=1e6    SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 4 100 1 4 pl_ha4_s135
+pl_ha6_s60     8  SR_S0=1e6    SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 6 50 1 4 pl_ha6_s60
+pl_ha8_s34     8  SR_S0=1e6    SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.5   -- examples/equilibrium.jl 0.6 8 50 1 4 pl_ha8_s34
