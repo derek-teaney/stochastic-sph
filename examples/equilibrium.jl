@@ -162,7 +162,7 @@ function one_realization(seed)
         NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos, stoch_opts(params); rng, rngs)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
               dotm = zeros(SVector{2,Float64}, N), rec = Recorder(box_wavevectors(params, KHMAX); energies = RECORD_E, x0, L = params.L),
-              prec = ParticleRecorder(ps, params),
+              prec = ParticleRecorder(ps, params; ks = box_wavevectors(params, KHMAX), cl),   # + pair observables
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
@@ -223,7 +223,7 @@ function one_realization(seed)
                     st.gCn[] += 1
                 end
             end
-            u = record!(prec, ps, n * dt)                                 # pair separation, Bragg peak
+            u = record!(prec, ps, n * dt; cl)                             # pair separation, Bragg peak, g(r), ψ6, N_k
             GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
                    record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
             push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current

@@ -1,0 +1,10 @@
+# Campaign `pairs` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex, stage 1): the pair correlation
+# g(r,t), ψ6(t) and S(k,t) of the particle positions from the hexagonal lattice, full dynamics (ideal + stochastic,
+# default one-kernel viscous step), at rest, L = 1.2, h/a = 2, η/s = 0.2, t = 200, across the solid-liquid boundary:
+# S0 = 1e5, 1e6, 1e7, 1e8 (s_a = 54, 541, 5413, 54000; δv = 0.14, 0.043, 0.014, 0.0043).  16 runs each, tasks 1-64.
+# Expected cost ~0.5 node-hours (boost benchmark: 160 such runs to t = 300 in 1.3 node-hours).  The s_a = 54 runs may
+# blow up after t ≈ 45 (CLAUDE.md, stability); their record up to then is what is wanted.
+pr_s54      16  SR_S0=1e5 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 200 1 4 pr_s54
+pr_s541     16  SR_S0=1e6 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 200 1 4 pr_s541
+pr_s5413    16  SR_S0=1e7 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 200 1 4 pr_s5413
+pr_s54000   16  SR_S0=1e8 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 200 1 4 pr_s54000

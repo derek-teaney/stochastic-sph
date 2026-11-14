@@ -4,7 +4,33 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
-## Next session at NERSC — start here (written 2026-11-14, on the laptop)
+## Next session at NERSC — start here: campaign `pairs` (written 2026-11-14, on the laptop)
+
+**Branch `equilibrium`** (off `common-default`): the pair correlation of the particle positions as a standard
+measurement (docs/equilibrium_positions.tex, stage 1).  Every run of `examples/equilibrium.jl` now also records g(r),
+g along/across x, ψ6 (global, local) and N_k (datasets `part_g*`, `part_psi6*`, `part_Nk*` in the .h5).  Numerics
+unchanged (test suite on the laptop: all pass; regression against common-default bit-identical in every old dataset).
+1. `git -C ~/stochastic-sph fetch`; a fresh worktree detached at the pushed tip, nobody edits it:
+   `git -C ~/stochastic-sph worktree add --detach ~/stochastic-sph-eq origin/equilibrium`; precompile there
+   (`julia --project=nersc -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'`).
+2. Quick check, login node, seconds: `julia --project=nersc test/testpairs.jl` (PASS).
+3. **Submit campaign `pairs`** (`nersc/campaign_pairs.txt`, 64 tasks, ~0.5 node-hours; within the budget rule):
+   ```bash
+   R=$HOME/stochastic-sph-eq; cd $SCRATCH/sph
+   sbatch --array=1-$($R/nersc/ntasks.sh $R/nersc/campaign_pairs.txt) -A m3722 -t 04:00:00 \
+          --export=ALL,SR_REPO=$R $R/nersc/array.sh $R/nersc/campaign_pairs.txt pairs
+   ```
+   (or packed: `sbatch -A m3722 -q regular -C cpu -N 1 -t 02:00:00 --export=ALL,SR_REPO=$R,THREADS=2 $R/nersc/node.sh
+   $R/nersc/campaign_pairs.txt pairs`).  Record the job ID here.  The s_a = 54 runs (`pr_s54`) may blow up after
+   t ≈ 45; that is expected and their record up to then is what is wanted.
+4. **Analysis** when done (plotting environment):
+   `SR_FIGDIR=$SCRATCH/sph/pairs/figs julia --project=$HOME/stochastic-sph examples/pair_analysis.jl
+   $SCRATCH/sph/pairs/pr_s54 $SCRATCH/sph/pairs/pr_s541 $SCRATCH/sph/pairs/pr_s5413 $SCRATCH/sph/pairs/pr_s54000`.
+   Copy `equilibrium_g_vs_t.png` to `docs/figs/` (it replaces the single-run figure of the note), update the table and
+   text of Sect. "First look" in docs/equilibrium_positions.tex with the averaged numbers (melting time, ψ6, first
+   peak, S(k) against 4/s_a), commit on `equilibrium` and push.  Report the job, cost and outcome in this log.
+
+## Earlier: start here, common-default (written 2026-11-14, on the laptop)
 
 **The default viscous step changes to the one-kernel step** (`SPH_DISSIPATION=common`, docs/commonkernel.tex) on
 branch `common-default` (off `commonkernel`; not yet in `main`).  Runs that must reproduce earlier ones set
