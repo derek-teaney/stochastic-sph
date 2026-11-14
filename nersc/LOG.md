@@ -31,6 +31,9 @@ Copy the two `equilibrium_g_vs_t.png` to `docs/figs/equilibrium_g_vs_t_ha2.png` 
 and table to docs/equilibrium_positions.tex (melting time, ψ6, first peak of g, S(k) at the lowest kh against 4/s_a; same
 s_a by the two routes side by side), commit on `equilibrium`, push, and report the jobs, cost and outcome here.
 
+**Submitted (2026-11-14, NERSC):** worktree `~/stochastic-sph-eq` updated to `96ee6f7` (no `pairs` task pending).  Tasks 1-56
+array job **61291002**; tasks 57-72 packed job **61291004** (1 node, THREADS=16, 4 h limit).
+
 ## Next session at NERSC — start here: campaign `pairs` (written 2026-11-14, on the laptop)
 
 **Branch `equilibrium`** (off `common-default`): the pair correlation of the particle positions as a standard
