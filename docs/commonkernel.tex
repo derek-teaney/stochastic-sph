@@ -423,6 +423,34 @@ $0.86$--$0.93$ at $kh=0.52$--$0.79$: it is a property of the steady state of the
 kinetic energy of the fluctuations over the second half, $17.4$ at $v_0=0.8$, is nearer the predicted $17.6$ than with
 the lattice start, $19.3$.)  A Poisson start needs a burn-in of $t\gtrsim100$.
 
+\paragraph{8. A burn-in of the full correlation time.}  The analyses above discard $t<5$.  The slowest relaxation in
+these boxes is the shear wave along the flow at $kh=0.26$, $\gamma^3/\nu k^2\approx77$ at $v_0=0.8$ ($1/\nu k^2\approx17$ at rest), and the
+Poisson transient takes $t\approx50$--$100$.  Re-analysed with a burn-in of $t=100$ (\texttt{BOOST\_BURN=100 examples/boost\_analysis.jl};
+no new runs), $kh=0.52$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & $v_0=0$ & $0.3$ & $0.6$ & $0.8$ \\ \hline
+\multicolumn{5}{l}{$C_{EE}(\bm k,0)/\chi$, $\bm k\parallel\bm v$} \\
+particles, lattice start (burn-in 5) & $0.99(3)$ & $0.91(3)$ & $0.86(4)$ & $0.84(4)$ \\
+particles, lattice start (burn-in 100) & $0.99(3)$ & $0.91(3)$ & $0.86(4)$ & $0.83(6)$ \\
+particles, Poisson start (burn-in 100) & $1.12(6)$ & $0.92(3)$ & $0.88(5)$ & $0.93(11)$ \\
+grid (burn-in 100) & $1.06(3)$ & $1.01(3)$ & $1.11(9)$ & $0.98(11)$ \\
+\multicolumn{5}{l}{shear along the flow, $\Gamma/\Gamma_{\rm hydro}$} \\
+particles, lattice start (burn-in 100) & $0.97(7)$ & $1.07(7)$ & $1.10(9)$ & $1.40(10)$ \\
+grid (burn-in 100) & $1.03(6)$ & $0.92(6)$ & $0.94(9)$ & $1.16(9)$ \\
+\hline
+\end{tabular}
+\end{center}
+For the lattice start the burn-in changes nothing: the equal-time deficit and the excess damping along the
+flow are properties of the steady state, not of the start.  The grid is unchanged too, with no deficit.  The
+Poisson start, after $t=100$, has the same deficit along the flow, but it does not fully relax: the energy is too
+high at rest ($1.12$--$1.15$) and across the flow at $v_0=0.8$ ($C_{EE}/\chi=1.89$; the shear fit there fails).  The likely reason
+is that the entropy per particle is a passively advected quantity in the n-scheme, with no diffusion: the
+Poisson start leaves it varying by $22\%$ from particle to particle, a frozen-in pattern that never relaxes and shows
+in the energy fluctuations.  The lattice start, with a uniform entropy per particle, is the cleaner one (unless the
+$s_a$ are drawn from their own equilibrium distribution).
+
 In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
 Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.

@@ -50,8 +50,10 @@ const SETS = GROUP == "L24" ?
      ("v=0 ideal", ["b_nv_v0E"], 0.0, "C4"), ("v=0.8 ideal", ["b_nv_v0.8"], 0.8, "C5")] :
     [("v=0", ["b_v0"], 0.0, "C0"), ("v=0.3", ["b_v0.3"], 0.3, "C2"), ("v=0.6", ["b_v0.6"], 0.6, "C1"),
      ("v=0.8", ["b_v0.8", "b_v0.8_long"], 0.8, "C3"), ("v=0.8, Δt/2", ["b_v0.8_dt2"], 0.8, "C4")]
-const SUFFIX = GROUP == "L12" ? "" : "_" * GROUP
-const T0BURN = 5.0;  const DTS = 0.05;  const TAUMAX = 100.0
+const T0BURN = parse(Float64, get(ENV, "BOOST_BURN", "5.0"))   # burn-in (BOOST_BURN): at least the slowest relaxation time
+const DTS = 0.05;  const TAUMAX = 100.0
+# with a burn-in other than 5 the figures get the suffix _burn<t>
+const SUFFIX = (GROUP == "L12" ? "" : "_" * GROUP) * (T0BURN == 5.0 ? "" : "_burn$(round(Int, T0BURN))")
 const CS2 = 1 / 3
 mean_(v) = sum(v) / length(v)
 
