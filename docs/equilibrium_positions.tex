@@ -300,38 +300,42 @@ At $h/a=2$, $L=1.2$, at $\delta v=0.043$ and $0.14$ (production), $0.014$ (liqui
 
 Stage 1 of \Sect{sec:plan} records $g(r)$, $\psi_6$ and $S(\bm k)$ in every run of the equilibrium driver.  All runs here use the
 one-kernel viscous step (\texttt{SPH\_DISSIPATION=common}, the default on this branch) and the particle ideal step.
-\Fig{fig:gvt} shows one run at each of four entropies per particle, $L=0.6$ ($N=672$), $h/a=2$, $\eta/s=0.2$, at rest, with the
-full dynamics from the hexagonal lattice (the present start: exact energies and momenta at the lattice positions).  The
+\Fig{fig:gvt} shows the campaign \texttt{pairs} (\texttt{nersc/campaign\_pairs.txt}, job 61289130): 16 runs at each of four
+entropies per particle, $L=1.2$ ($N=2688$), $h/a=2$, $\eta/s=0.2$, at rest, $t=200$, with the full dynamics (default one-kernel
+viscous step) from the hexagonal lattice (the present start: exact energies and momenta at the lattice positions).  The
 time is the physical time of the run; the time step is $8.66\times10^{-3}$, and sound crosses one particle spacing in
 \st
 \frac a{c_s}\approx0.043 .
 \stp
 \begin{center}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \hline
-$s_a$ ($\delta v$) & melted by & global $\psi_6$ & local $\psi_6$ & $S(\bm k)$, $kh=0.5$--$1.5$ \\ \hline
-$54$ ($0.14$) & $t\approx0.05$ & $0.02$ & $0.37$ & $\sim10^{-1}$ \\
-$541$ ($0.043$, production) & $t\approx0.2$ & $0.02$ & $0.37$ & $\sim10^{-2}$ \\
-$5413$ ($0.014$) & $t\approx2$ & $0.02$ & $0.41$ & $\sim10^{-3}$ \\
-$54000$ ($0.0043$) & solid at $t=5$ & $0.80$ & $0.84$ & $\sim10^{-4}$ \\
+$s_a$ ($\delta v$) & melted by & global $\psi_6$ & local $\psi_6$ & $S(\bm k)$, $kh=0.5$--$1.5$ & $S/(4/s_a)$ \\ \hline
+$54$ ($0.14$) & $t\approx0.07$ & $0.009$ & $0.365$ & $0.176(3)$ & $2.4$ \\
+$541$ ($0.043$, production) & $t\approx0.21$ & $0.009$ & $0.367$ & $0.0250(5)$ & $3.4$ \\
+$5413$ ($0.014$) & $t\approx1.5$ & $0.013$ & $0.415$ & $1.56(4)\times10^{-3}$ & $2.1$ \\
+$54000$ ($0.0043$) & solid to $t=200$ & $0.821$ & $0.857$ & $1.06(3)\times10^{-4}$ & $1.4$ \\
 \hline
 \end{tabular}
 \end{center}
 \begin{itemize}
 \item \emph{The solid--liquid boundary} lies between $s_a\approx5\times10^3$ and $5\times10^4$ at $h/a=2$, where \texttt{frozen.tex} placed it.
   Both production entropies are well inside the liquid, and closer to the boundary the lattice takes longer to melt.
-\item \emph{The long-wavelength density fluctuations} fall by a factor of about $10$ per decade of $s_a$, $1.5$--$2$ times above
-  the estimate $S\sim4/s_a$ of \Sect{sec:liquid}: an incompressible particle liquid.
+\item \emph{The long-wavelength density fluctuations} fall by a factor of about $10$ per decade of $s_a$, $2$--$3.4$ times above
+  the estimate $S\sim4/s_a$ of \Sect{sec:liquid} in the liquid at $t>100$ ($1.4$ times in the solid): an incompressible particle
+  liquid.  In the liquid they are still growing at $t=200$ (\Sect{sec:hmcvsdyn}).
 \item \emph{Little local order in the liquid.}  The local $\psi_6$ of the liquids is at its value for Poisson positions
   ($0.365$); at the production entropies $g(r)$ has only a weak first peak, and particles come well within $a$ of each other.
   Local structure appears only near melting.
 \end{itemize}
-Single runs in a small box; campaign \texttt{pairs} (16 runs each, $L=1.2$, $t=200$) will replace the figure.  Whether the
-relaxed state is the equilibrium of \Eq{Px} is the question for hybrid Monte Carlo.
+Melting time: the first time the mean global $\psi_6$ falls below $0.1$; $\psi_6$ and $S(\bm k)$ averaged over $t>100$ and the 16 runs ($S$ over the 18
+box modes with $0.5<kh<1.5$; standard error over the runs).  The single runs at $L=0.6$ of the first look gave the same
+picture.  The $s_a=54$ runs did not blow up: all reached $t=200$ ($\Delta H/H\approx4\times10^{-2}$, some proposals rejected for $|v|\ge1$).
+Whether the relaxed state is the equilibrium of \Eq{Px} is the question for hybrid Monte Carlo (\Sect{sec:hmcvsdyn}).
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_g_vs_t.png}
-\caption{The pair correlation from the hexagonal lattice, full dynamics, $L=0.6$, $h/a=2$, $\eta/s=0.2$, one run per entropy.
+\caption{The pair correlation from the hexagonal lattice, full dynamics, $L=1.2$, $h/a=2$, $\eta/s=0.2$, 16 runs per entropy (campaign \texttt{pairs}).
 Panels 1--4: $g(r)$ at a sequence of times (grey: the lattice at $t=0$).  Panels 5, 6: global and local $\psi_6$ against time
 (dotted: the local value for Poisson positions).}
 \label{fig:gvt}
@@ -370,6 +374,25 @@ changes it, slowly.  Hybrid Monte Carlo redraws the $s_a$ at every update.  The 
 campaign \texttt{pairs} ($t=200$, $L=1.2$) will show whether $|N_{\bm k}|^2$ of the dynamics climbs to the equilibrium value or
 stays low.  If it stays low, the dynamics carries a long-wavelength non-equilibrium in the arrangement of the particles, to be
 compared with the equal-time deficit of $C_{EE}$ along the flow (\texttt{commonkernel.tex}).
+
+\paragraph{What campaign \texttt{pairs} shows.}  $S(\bm k)$ of the positions at $kh=0.52$ (two modes), 16 runs, in units of $4/s_a$, in time windows:
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+$s_a$ & $t=0.5$--$2$ & $2$--$5$ & $5$--$20$ & $20$--$50$ & $50$--$100$ & $100$--$200$ \\ \hline
+$54$ & $1.28(14)$ & $1.50(16)$ & $2.03(16)$ & $3.00(26)$ & $2.50(19)$ & $2.90(19)$ \\
+$541$ & $1.42(20)$ & $1.45(16)$ & $1.82(18)$ & $2.30(23)$ & $3.26(35)$ & $3.91(44)$ \\
+$5413$ & $1.25(27)$ & $1.23(23)$ & $1.37(16)$ & $1.42(14)$ & $1.57(14)$ & $1.92(18)$ \\
+$54000$ (solid) & $1.43(31)$ & $1.38(33)$ & $1.45(30)$ & $1.36(19)$ & $1.42(17)$ & $1.43(18)$ \\
+\hline
+\end{tabular}
+\end{center}
+(the same at $kh=0.79$).  In the liquids the long-wavelength number fluctuations climb, slowly: by a factor of $2.8$ over
+$t=200$ at $s_a=541$ and $1.5$ at $5413$, still rising at the end; only at $s_a=54$ do they level off, by $t\approx20$--$50$.  In the
+solid they stay flat.  The low values of the dynamics against hybrid Monte Carlo at $t\le5$ are thus mostly a slow
+relaxation, not yet complete at $t=200$ for $s_a\ge541$ --- as the tentative reading above expects, if the sharing of a
+long-wavelength fluctuation between the number of particles and the entropy per particle changes only through the
+stochastic step.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_hmc_vs_dynamics.png}

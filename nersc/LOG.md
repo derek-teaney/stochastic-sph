@@ -57,6 +57,12 @@ unchanged (test suite on the laptop: all pass; regression against common-default
    text of Sect. "First look" in docs/equilibrium_positions.tex with the averaged numbers (melting time, ψ6, first
    peak, S(k) against 4/s_a), commit on `equilibrium` and push.  Report the job, cost and outcome in this log.
 
+**Done (2026-11-14, NERSC):** worktree `~/stochastic-sph-eq` at `f682251`; `test/testpairs.jl` PASS.  Campaign `pairs` job
+**61289130** (1 node, THREADS=2, 15 min, 0.25 node-hours, 64/64 complete; the s_a = 54 runs reached t = 200, ΔH/H ≈ 4e-2).
+Melting (global ψ6 < 0.1) by t ≈ 0.07, 0.21, 1.5 at s_a = 54, 541, 5413; s_a = 54000 stays solid (ψ6 0.82).  Liquid local
+ψ6 = the Poisson value; S(k), kh 0.5-1.5, t > 100 = 2.4, 3.4, 2.1 × 4/s_a (solid 1.4).  In the liquids S(k) at kh = 0.52
+is still climbing at t = 200 (×2.8 at s_a = 541): the low dynamics/HMC ratio is a slow relaxation (equilibrium_positions.tex).
+
 ## Earlier: start here, common-default (written 2026-11-14, on the laptop)
 
 **The default viscous step changes to the one-kernel step** (`SPH_DISSIPATION=common`, docs/commonkernel.tex) on
