@@ -241,21 +241,131 @@ non-negative and zero for linear fields.  Two consequences:
 \item \emph{Deterministic step:} with $f\neq1$ the orthogonality \Eq{orthog} no longer removes the derivative of the
   residual through the fit; it adds $-\sum_bc_{ab}f_{ab}\,\ell_a\delta_{ab}\beta\,\bm r_{ab}^T$ to $E_a$ \Eq{E}.
 \end{itemize}
-Both variants are options: \texttt{SPH\_DISSIPATION=common} (with $f_{ab}$) and \texttt{common\_lab} ($f_{ab}=1$).
+The scheme is \texttt{SPH\_DISSIPATION=common}, with $f_{ab}$.  The variant without it, \texttt{common\_lab} ($f_{ab}=1$), is
+consistent as $kh\to0$ but does not keep the comoving metric at the bond scale (tests 2 and 3 below); it was removed from the code
+on 2026-11-14, and its columns below are kept as the record.
+
+%=============================================================================
+\section{Detailed balance with state-dependent coefficients}
+\label{sec:hastings}
+
+\paragraph{The point.}  The stochastic step should leave the distribution $e^{\mathbb S}$ (at fixed $H$) invariant.  The Metropolis
+test guarantees this when the proposal is symmetric: the probability to propose $\bm m\to\bm m'$ equals that of $\bm m'\to\bm m$.  The
+proposal of a stress move is a Gaussian whose covariance depends on the state: the metric $\ell_a$, the projector, $T_a$ and
+$\eta_a$ are all functions of the momentum $\bm m_a$ (at the fixed $e_a$, $V_a$ of the step).  The code builds them once, from the state at the
+start of the step, and freezes them through the sweeps.  Within a step the proposal is then symmetric and the test is exact.  But the
+next step rebuilds them, so the move $\bm m\to\bm m'$ is made with the coefficients of $\bm m$ and the move back with those of $\bm m'$: the two
+proposal probabilities differ at order $\Delta t$, and $e^{\mathbb S}$ is the stationary distribution only up to corrections of that order.
+In the language of a Langevin equation, frozen coefficients are multiplicative noise without the drift from the state dependence
+of the Onsager matrix.
+
+\paragraph{The Hastings correction.}  For a proposal that is not symmetric, accepting with
+\st
+P=\min\Big(1,\ e^{\Delta\mathbb S}\,\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big)
+\label{hastings}
+\stp
+keeps $e^{\mathbb S}$ exactly, provided the reverse move can be proposed at all.
+
+\paragraph{The stress move.}  Star $a$ draws, as in \Eq{B},
+\st
+\xi_a=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\sum_{k=1}^3z_kB_k,\qquad z_k\sim N(0,1),
+\stp
+and gives $\xi_a\bm A_{ab}$ to each bond.  $\xi_a$ is Gaussian in the three-dimensional space of symmetric matrices, with covariance
+\st
+C_a(\bm m_a)=\frac{2\Delta t\,T_a}{V_a}\sum_kB_k\otimes B_k .
+\stp
+If the faces $\bm A_{ab}$ do not change in the move, the reverse move is the same star with $-\xi_a$, and
+\st
+\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=\sqrt{\frac{\det C_a(\bm m_a)}{\det C_a(\bm m_a')}}\;
+\exp\Big[-\tfrac12\,\xi_a{:}\big(C_a^{-1}(\bm m_a')-C_a^{-1}(\bm m_a)\big){:}\xi_a\Big] ,
+\label{qratio}
+\stp
+with $C_a(\bm m_a')$ rebuilt at the momentum of $a$ after the move.  Only particle $a$ enters: the reverse move belongs to the same star.  The
+logarithm of \Eq{qratio} is of order $\sqrt{\Delta t}$ with a mean of order $\Delta t$; that mean is the missing drift.  The cost is one $3\times3$
+covariance, its determinant and its inverse per proposal, with no loop over the neighbours.
+
+\paragraph{The faces must be fixed.}  The reverse move needs a stress $\xi'$ with
+\st
+\xi'\,\bm A'_{ab}=-\xi_a\,\bm A_{ab}\qquad\text{for every bond } b ,
+\stp
+two equations per bond for three unknowns, which has a solution only if $\bm A'_{ab}=\bm A_{ab}$.
+\begin{itemize}
+\item \emph{Present scheme:} the faces \Eq{Aold} are built with $\psi(\rho_{ab})$ and $\ell_a^{-1}$ at the velocity of $a$, so they change with $\bm m_a$.
+  The reverse move does not exist, $q(\bm m'\to\bm m)=0$, and no Hastings correction is possible.  Freezing the faces over the step is the
+  only option, and with it the lag.
+\item \emph{One kernel:} the faces \Eq{wnew} are round in the lab and depend only on the positions and the volumes, which are fixed in
+  the step.  Only $C_a$ changes, and \Eq{qratio} is exact.
+\end{itemize}
+
+\paragraph{The residual move.}  Each bond of star $a$ draws an independent two-dimensional Gaussian,
+\st
+\mathfrak p_{ab}\sim N(0,\Sigma_{ab}),\qquad \Sigma_{ab}=\frac{2\Delta t}{\lambda}\,c_{ab}\,\ell_a ,
+\stp
+with $c_{ab}$ the residual coefficient (it carries $T_a$, $\eta_a$ and, with one kernel, $f_{ab}$).  The virial of the draws,
+$\sum_c\mathfrak p_{ac}\bm r_{ac}^T$, is then subtracted, so that the residual traction $\vec p_{ab}$ has no virial: it carries no stress and, in
+particular, no torque.  The subtraction is what couples the bonds.  It is needed: without it the draws add a random stress to the
+stress move, i.e.\ extra resolved viscosity with the fixed shear-to-bulk ratio of the bond form, and their antisymmetric part damps
+rigid rotation.  Removing only the torque keeps the first of these.
+
+The subtraction is simplest to analyse as a \emph{conditioning}: draw $\mathfrak p$ from $N(0,\Sigma)$ conditioned on zero virial.  For a
+Gaussian this is the projection
+\st
+\vec p_{ab}=\mathfrak p_{ab}-c_{ab}\Big(\sum_c\mathfrak p_{ac}\,\bm r_{ac}^T\Big)R_a^{-1}\bm r_{ab},\qquad R_a=\sum_bc_{ab}\,\bm r_{ab}\bm r_{ab}^T ,
+\label{condition}
+\stp
+which has zero virial by construction.  The present subtraction (\Sect{sec:stoch}) is
+\st
+\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_c\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} .
+\stp
+With $c_{ab}\propto w_{ab}$ (the present scheme, or one kernel at rest) $R_a\propto\ell_a$ resp.\ $\one$, and \Eq{condition} is the present
+subtraction exactly; with $f_{ab}\neq1$ it differs by the weights.
+
+The density of a conditioned Gaussian is known in closed form.  With $U$ the four linear constraints (zero virial), it is the Gaussian
+density of the residual tractions divided by the density of the virial at zero,
+\st
+q\propto\frac{N(\vec p;\Sigma)}{N(0;U^T\Sigma U)},\qquad
+U^T\Sigma U=\frac{2\Delta t}{\lambda}\,\ell_a\otimes R_a ,
+\stp
+where the constant Jacobian depends only on the positions and cancels.  $\Sigma$ is block-diagonal over the bonds and $U^T\Sigma U$ is a Kronecker
+product, so with one kernel (fixed bond vectors, and $\Sigma$ depending on the state only through particle $a$)
+\st
+\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}
+=\Big(\prod_b\frac{c_{ab}}{c'_{ab}}\Big)\Big(\frac{\det\ell_a}{\det\ell'_a}\Big)^{n/2-1}\frac{\det R'_a}{\det R_a}\;
+\exp\Big[-\frac{\lambda}{4\Delta t}\sum_b\vec p_{ab}\cdot\Big(\frac{\ell_a'^{-1}}{c'_{ab}}-\frac{\ell_a^{-1}}{c_{ab}}\Big)\vec p_{ab}\Big] ,
+\label{qresid}
+\stp
+$n$ the number of bonds, primes for the coefficients at the momentum of $a$ after the move.  No pseudo-determinant is needed: one sum over
+the bonds and two $2\times2$ determinants.  For the present scheme the bond vectors of the subtraction are fixed too, but the faces of the
+stress move are not, so only the residual move could be corrected there.
+
+\paragraph{What it takes.}  With one kernel both moves can be made exact, and the coefficients then need not be frozen at all:
+\begin{itemize}
+\item the coefficients of star $a$ ($\ell_a$, the projector, $T_a$, $\eta_a$, $f_{ab}$) are computed from the current momentum of $a$ at each proposal,
+  and again at the proposed one; the inversion of the equation of state at the proposed state is already done for $S_a$;
+\item the residual move uses the conditioning \Eq{condition};
+\item the logarithm of \Eq{qratio} or \Eq{qresid} is added to $\Delta\mathbb S$ in the single vote; with a factorized vote it may be split among the
+  factors, since each factor $\min(1,x)$ against its reverse $\min(1,1/x)$ gives $x$;
+\item the cold residual ($\lambda\neq1$) is not in detailed balance anyway, and needs no correction.
+\end{itemize}
+In the present scheme only the residual move could be corrected, which does not make the step exact.
+
+\paragraph{Is it needed?}  Not at the time steps used so far: test 4 below samples the moving equilibrium, fluctuation KE$/2VwT$
+$=17.66$ against $17.6$, with either scheme.  The correction becomes relevant if a smaller error is needed at a given $\Delta t$, or a
+larger $\Delta t$ is wanted.  It is a reason to prefer the one-kernel step, which allows it; it is not implemented.
 
 %=============================================================================
 \section{Implementation}
 \label{sec:impl}
 
 \begin{itemize}
-\item \texttt{SimParams.dissipation = :common} or \texttt{:common\_lab}, set by \texttt{SPH\_DISSIPATION} (recorded in \texttt{[sim]} and
+\item \texttt{SimParams.dissipation = :common}, set by \texttt{SPH\_DISSIPATION} (recorded in \texttt{[sim]} and
   \texttt{[settings]} of the run record); 2D, with \texttt{hamiltonian = :energy}.  The default stays \texttt{:particle}.
 \item Weights (\texttt{src/viscous.jl}): $\psi_{ab}=-W'(r_{ab};h)/r_{ab}$ of \texttt{params.kernel} at the lab distance; $\Lambda_a$ with the flat
   metric; $n_a=\frac12\tr M_a$.
 \item Stochastic step (\texttt{build\_stars}): these weights, $\bm A_{ab}=V_aw_{ab}\bm r_{ab}$, and $c_{ab}f_{ab}$; the rest unchanged.
 \item Deterministic step (\texttt{\_bond\_dissipation!}): \Eq{Knew} with \Eq{fab}, the tractions \Eq{tresid} (times $f_{ab}$) and the
   mean-field term \Eq{E} plus the residual term above.
-\item The present scheme is untouched (every change is behind \texttt{dissipation} $\in\{$\texttt{:common}, \texttt{:common\_lab}$\}$).
+\item The present scheme is untouched (every change is behind \texttt{dissipation = :common}).
 \end{itemize}
 
 %=============================================================================

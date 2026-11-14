@@ -37,7 +37,7 @@ for jit in (0.0, 0.3)
 end
 
 println("2. moving fluid, v0 = 0.8: K of one mode / continuum target")
-for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), diss in (:particle, :common_lab, :common)
+for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), diss in (:particle, :common)
     rs = Float64[]
     for (L, nk) in ((1.2, 1), (1.2, 2), (1.2, 4))
         params, ps, cl, eos = setup(diss, 0.8; L)
@@ -54,6 +54,6 @@ for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), diss 
         push!(rs, K / Ktarget)
     end
     @printf("  %-5s k ∥ %s  %-8s  K/K_target at kh = 0.26, 0.52, 1.05:  %s\n", kind, dir, diss, join([@sprintf("%.4f", r) for r in rs], "  "))
-    diss === :common_lab || check(abs(rs[1] - 1) < 0.03, "$kind k∥$dir $diss: K → target at small kh ($(round(rs[1], digits = 4)))")
+    check(abs(rs[1] - 1) < 0.03, "$kind k∥$dir $diss: K → target at small kh ($(round(rs[1], digits = 4)))")
 end
 println(ok ? "testcommonkernel: PASS" : "testcommonkernel: FAIL");  ok || exit(1)

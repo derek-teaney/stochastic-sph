@@ -1,0 +1,582 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx,dsfont}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\one}{\mathds{1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{One comoving kernel for the ideal and the viscous step}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+\texttt{commonkernel.tex} makes the two steps share one kernel by moving the viscous step to the lab.
+Here we go the other way: the viscous step is kept as it is, and the ideal step measures its density with
+the same comoving kernel.  The density depends on the positions and on the particle's own velocity only
+through rotation invariants, so the Hamiltonian is invariant under translations and rotations.  Taking all its
+derivatives, including those through the velocity, gives equations of motion that conserve energy, momentum
+and angular momentum.  The particles then drift at the density-frame velocity corrected by the momentum of the
+kernel's gradient stress, as the density frame requires.  This note defines the step and lists what must be
+checked.  Nothing here has been run.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Notation}
+\label{sec:notation}
+
+As in \texttt{commonkernel.tex}: $\bm r_{ab}=\bm x_b-\bm x_a$, $V_a$ the particle volume, $s_a$ its entropy,
+$\bm m_a$ its momentum, and $e_a(s_a,\bm m_a,V_a)$ its energy.  The velocity, pressure and comoving metric are
+\st
+\bm v_a=\frac{\partial e_a}{\partial\bm m_a}\Big|_{s,V},\qquad
+p_a=-\frac{\partial e_a}{\partial V_a}\Big|_{s,\bm m},\qquad
+\ell_a=\one-\bm v_a\bm v_a^T,\qquad \ell_a^{-1}=\one+\gamma_a^2\bm v_a\bm v_a^T .
+\stp
+The comoving distance of the bond $ab$, seen from $a$, is
+\st
+\rho_{ab}^2=\bm r_{ab}\cdot\ell_a^{-1}\bm r_{ab}=r_{ab}^2+\gamma_a^2(\bm v_a\cdot\bm r_{ab})^2 .
+\stp
+$W(\rho;h)$ is the SPH kernel and
+\st
+\psi(\rho)=-\frac{W'(\rho)}{\rho}
+\stp
+its bond weight.
+
+%=============================================================================
+\section{The density}
+\label{sec:density}
+
+Particle $a$ measures its number density with its own comoving kernel,
+\st
+\boxed{\;
+n_a=N_a\big(\{\bm r_{ab}\},\bm v_a\big)\equiv\gamma_a\sum_bW(\rho_{ab}),\qquad
+V_a=\frac1{n_a},\qquad H=\sum_ae_a(s_a,\bm m_a,V_a) .\;}
+\label{H}
+\stp
+The sum includes $b=a$.  The factor $\gamma_a$ normalizes the kernel,
+\st
+\int d^2r\;\gamma_aW(\rho)=1 ,
+\stp
+so for smooth fields $n_a$ is the \emph{lab} density, as the density-frame energy requires.  Since $\bm v_a$ depends on $V_a$,
+\Eq{H} is a scalar equation for $n_a$ per particle, solved by iteration (one or two passes from the previous step).
+
+There is no moment correction in the density: \Sect{sec:closure} shows that it would not improve the gradient.  The correction
+$\Lambda_a$ stays in the viscous step.
+
+\paragraph{Invariances.}  Under a translation of all positions nothing changes.  Under a rotation
+\st
+\bm x_a\to R\bm x_a,\qquad \bm m_a\to R\bm m_a ,
+\stp
+$e_a$ depends on $|\bm m_a|$, so $\bm v_a\to R\bm v_a$ and $\ell_a\to R\ell_aR^T$, and $\rho_{ab}$ is invariant.  $H$ is invariant under
+both, and its equations of motion conserve
+\st
+H,\qquad \bm P=\sum_a\bm m_a,\qquad L=\sum_a\bm x_a\times\bm m_a .
+\stp
+
+%=============================================================================
+\section{The equations of motion}
+\label{sec:eom}
+
+\paragraph{The gradient.}  Differentiating \Eq{H},
+\st
+\bm D_{ab}\equiv-\frac{\partial N_a}{\partial\bm r_{ab}}=\gamma_a\,\psi(\rho_{ab})\,\ell_a^{-1}\bm r_{ab} .
+\label{D}
+\stp
+At rest this is the present kernel gradient.  The bond weight enters the ideal step only here.
+
+\paragraph{The velocity derivative.}  From
+\st
+\frac{\partial\gamma_a}{\partial v^k}=\gamma_a^3\,v_k,\qquad
+\frac{\partial\rho_{ab}^2}{\partial v^k}=2\gamma_a^2\,\big(\ell_a^{-1}\bm r_{ab}\big)_k\,(\bm r_{ab}\cdot\bm v_a) ,
+\stp
+the derivative of the density with respect to the velocity is
+\st
+\frac{\partial n_a}{\partial v^k}\Big|_{\bm r}=-\gamma_a^2\Big[\sum_bD_{ab\,k}\,(\bm r_{ab}\cdot\bm v_a)-n_a\,v_{a\,k}\Big] .
+\label{dndv}
+\stp
+The bracket is the closure defect of the gradient, \Eq{closure}, acting on the velocity.  For a uniform density it vanishes, because
+the kernel is normalized at every velocity.
+
+\paragraph{The momentum of the kernel stress.}  With
+\st
+P_a\equiv f_a\,p_aV_a^2
+\stp
+($f_a$ from \Eq{fa} below, $f_a=1$ at rest), define the covector
+\st
+\boxed{\;
+\Theta^0_{a\,k}\equiv-\frac{P_a}{V_a}\,\frac{\partial n_a}{\partial v^k}
+=\frac{P_a}{V_a}\,\gamma_a^2\Big[\sum_bD_{ab\,k}\,(\bm r_{ab}\cdot\bm v_a)-n_a\,v_{a\,k}\Big] .\;}
+\label{Theta0}
+\stp
+It has the index of a momentum density.  \Sect{sec:densityframe} shows that in the continuum it is
+\st
+\Theta^0_k=\Theta_{kl}\,v^l,\qquad \Theta_{kl}=\sigma^2\,\frac{p}{n}\,\partial_k\partial_ln ,
+\stp
+the lab momentum density of the gradient stress of the kernel, which is purely spatial in the kernel's rest frame.
+
+\paragraph{The variation of $n_a$.}  The velocity depends on the momentum and on the volume,
+\st
+\delta\bm v_a=\frac{\partial\bm v_a}{\partial\bm m_a}\,\delta\bm m_a+\frac{\partial\bm v_a}{\partial V_a}\,\delta V_a,\qquad
+\delta V_a=-V_a^2\,\delta n_a ,
+\stp
+so
+\st
+\delta n_a=f_a\Big[\sum_b\bm D_{ab}\cdot(\delta\bm x_a-\delta\bm x_b)+\frac{\partial n_a}{\partial\bm v_a}\cdot\frac{\partial\bm v_a}{\partial\bm m_a}\,\delta\bm m_a\Big],\qquad
+f_a=\Big[1+V_a^2\,\frac{\partial n_a}{\partial\bm v_a}\cdot\frac{\partial\bm v_a}{\partial V_a}\Big]^{-1} .
+\label{fa}
+\stp
+
+\paragraph{Hamilton's equations.}  With
+\st
+\delta e_a=\bm v_a\cdot\delta\bm m_a+p_aV_a^2\,\delta n_a
+\stp
+at fixed $s_a$, and
+\st
+\frac{\partial\bm v_a}{\partial\bm m_a}=\frac1{V_a}\,\frac{\partial\bm v}{\partial\bm M},\qquad \bm M=\frac{\bm m}{V},
+\stp
+\st
+\boxed{\;
+\dot{\bm x}_a=\bm v_a-\frac{\partial\bm v}{\partial\bm M}\,\bm\Theta^0_a,\qquad
+\dot{\bm m}_a=-\sum_{b\neq a}\Big[P_a\,\bm D_{ab}-P_b\,\bm D_{ba}\Big],\qquad
+\dot s_a=0 .\;}
+\label{eom}
+\stp
+The force has the present pair form, with $\bm D_{ab}\neq-\bm D_{ba}$ when the two metrics differ; momentum is conserved pair by pair.
+The particle drifts at the density-frame velocity, minus the inverse susceptibility acting on the momentum of the kernel stress.
+
+\paragraph{Angular momentum.}  In 2D write
+\st
+\bm a\times\bm b=\epsilon_{ij}a^ib^j,\qquad (\epsilon\bm a)_i=\epsilon_{ij}a^j,\qquad \bm a\cdot\epsilon\bm b=\bm a\times\bm b .
+\stp
+Two identities follow from an infinitesimal rotation $R=\one+\theta\epsilon$.
+\begin{itemize}
+\item $N_a$ is invariant when all bonds and the velocity are rotated.  At first order in $\theta$,
+  \st
+  \sum_b\bm D_{ab}\times\bm r_{ab}=\frac{\partial n_a}{\partial\bm v_a}\times\bm v_a .
+  \label{wardN}
+  \stp
+\item $e_a$ depends on $|\bm m_a|$ only, so the velocity is along the momentum and rotates with it:
+  \st
+  \bm v_a\times\bm m_a=0,\qquad \frac{\partial\bm v_a}{\partial\bm m_a}\,\epsilon\bm m_a=\epsilon\bm v_a .
+  \label{wardv}
+  \stp
+\end{itemize}
+The rate of change of the angular momentum is
+\st
+\dot L=\sum_a\big(\dot{\bm x}_a\times\bm m_a+\bm x_a\times\dot{\bm m}_a\big) .
+\stp
+In the force term, relabel $a\leftrightarrow b$ in the $P_b$ part of \Eq{eom} and use \Eq{wardN}:
+\st
+\sum_a\bm x_a\times\dot{\bm m}_a=\sum_aP_a\sum_b\bm r_{ab}\times\bm D_{ab}
+=-\sum_aP_a\,\frac{\partial n_a}{\partial\bm v_a}\times\bm v_a
+=\sum_aV_a\,\bm\Theta^0_a\times\bm v_a .
+\stp
+In the drift term use \Eq{wardv} and the symmetry of the velocity derivative:
+\st
+\sum_a\dot{\bm x}_a\times\bm m_a=-\sum_aV_a\Big(\frac{\partial\bm v_a}{\partial\bm m_a}\bm\Theta^0_a\Big)\cdot\epsilon\bm m_a
+=-\sum_aV_a\,\bm\Theta^0_a\cdot\epsilon\bm v_a
+=-\sum_aV_a\,\bm\Theta^0_a\times\bm v_a .
+\stp
+The two cancel star by star, and
+\st
+\dot L=0 .
+\stp
+The non-central pair forces put the torque
+\st
+V_a\,\bm\Theta^0_a\times\bm v_a
+\stp
+on the star of particle $a$, and the drift correction carries exactly the opposite angular momentum.  With the metric frozen, the
+drift correction is absent but the torque is not.
+
+In a periodic box there is no rotation symmetry and $L$ is not conserved globally; what survives is the torque balance star by star,
+and the clean test is an isolated rotating patch.
+
+%=============================================================================
+\section{The closure}
+\label{sec:closure}
+
+Deform the whole star of $a$ linearly, at fixed velocity,
+\st
+\bm r_{ab}\to A\,\bm r_{ab} .
+\stp
+Since $\bm D_{ab}$ is minus the derivative of $N_a$ with respect to $\bm r_{ab}$, its first moment is exactly
+\st
+\sum_b\bm D_{ab}\,\bm r_{ab}^T=-\frac{\partial N_a\big(\{A\bm r_{ab}\},\bm v_a\big)}{\partial A}\Big|_{A=\one} .
+\label{closure}
+\stp
+For smooth fields the density scales as $1/\det A$, and with
+\st
+\int d^2r\;\psi(\rho)\,\bm r\bm r^T=\frac{\ell_a}{\gamma_a}
+\stp
+the first moment is
+\st
+\sum_b\bm D_{ab}\,\bm r_{ab}^T\simeq n_a\,\one .
+\stp
+On a disordered star this is not exact.  The moment correction of the viscous step, put into the density, does not fix it: the
+terms from the correction's own dependence on the bonds are as large as the error it removes.  On a jittered lattice (Wendland C2,
+$h/a=2$, jitter $0.15a$), with the correction re-solved in each finite difference, the closure divided by $n_a$ is
+\begin{center}
+\begin{tabular}{lcc}
+velocity & this density & with $\Lambda_a$ in the density\\ \hline
+$0$ & diag$(0.947,\,1.027)$ & diag$(0.959,\,1.032)$\\
+$(0.5,\,0.2)$ & diag$(0.920,\,1.024)$ & diag$(0.927,\,1.029)$\\
+$(0.8,\,0)$ & diag$(0.910,\,1.050)$ & diag$(0.885,\,1.052)$
+\end{tabular}
+\end{center}
+with off-diagonal entries below $0.05$.  This is one star; over five jittered stars the diagonal entries range from $0.80$ to $1.11$, at
+every velocity.  In the viscous step the closure
+\st
+\sum_b\bm A_{ab}\,\bm r_{ab}^T=V_a\,\one
+\stp
+is exact because the faces are built directly.  A Hamiltonian gradient is the derivative of a density, so its closure is a property of
+that density; exact closure would need a density that scales exactly as $1/\det A$ under the deformation.  The closure error of
+\Eq{D} is that of ordinary SPH, now comoving.  The present ideal step has no sampling correction either: its density and force use
+the plain kernel and its gradient (\texttt{smooth\_entropy\_energy!}, \texttt{hamiltonian\_force\_energy!}), and at rest \Eq{D} is that gradient.
+So nothing is lost relative to the present step.
+
+%=============================================================================
+\section{Integration}
+\label{sec:integration}
+
+$H$ is already non-separable ($e_a$ depends on the momentum and on the volume), and the present drift--kick--drift
+(\texttt{leapfrog\_step!}) applies unchanged with the rates \Eq{eom}.  It conserves $\bm P$ exactly.  The present scheme conserves $L$
+exactly in each substep (central forces, drift along the momentum); here the drift and the kick each change $L$.  With
+\st
+X(\bm x,\bm m)\equiv\sum_aV_a\,\bm\Theta^0_a\times\bm v_a ,
+\stp
+a drift of $\delta t$ at fixed momenta changes $L$ by exactly $-\delta t\,X$, and a kick by exactly $+\delta t\,X$, so one step changes it by
+\st
+\Delta L=\Delta t\Big[-\tfrac12X(\bm x^n,\bm m^n)+X(\bm x^{n+1/2},\bm m^n)-\tfrac12X(\bm x^{n+1/2},\bm m^{n+1})\Big] .
+\stp
+If the kick were evaluated at $\bm m^{n+1/2}$ this would be a second difference, of order $\Delta t^3$.  The present kick uses $\bm m^n$, and
+since the pressure depends on the momentum the bracket is of order $\Delta t$: $\Delta L$ is of order $\Delta t^2$ per step.  The same holds for
+$H$ in the present step.  To be measured; an implicit midpoint step would conserve $L$ exactly.
+
+%=============================================================================
+\section{The continuum limit and the density frame}
+\label{sec:densityframe}
+
+\paragraph{The smoothed density.}  For smooth fields, expanding the density to second order about $\bm x_a$,
+\st
+n_a\simeq n+\tfrac12\sigma^2\,\ell_a^{ij}\,\partial_i\partial_jn,\qquad
+\sigma^2=\tfrac12\int d^2u\;W(u)\,u^2 ,
+\stp
+since the second moment of the normalized comoving kernel is $\sigma^2\ell_a$.  For the Wendland kernels
+\st
+\frac{\sigma^2}{h^2}=\frac5{18}\ (\text{C2}),\qquad \frac7{33}\ (\text{C4}),\qquad \frac6{35}\ (\text{C6}).
+\stp
+The Hamiltonian therefore gains a reversible gradient term
+\st
+H\simeq H_0+\sum_aV_a\,\tfrac12\,\ell_a^{ij}\,\Theta_{ij},\qquad
+\Theta_{ij}\equiv\sigma^2\,\frac{p}{n}\,\partial_i\partial_jn ,
+\stp
+a stress of order $h^2\nabla\nabla$ (Korteweg-like) that depends on the momentum through $\ell_a$.
+
+\paragraph{Indices.}  The indices sit where they are born: $\Theta_{ij}$ is lower (two derivatives), $\ell^{ij}$ is upper,
+\st
+\ell^{ij}=e^i_\mu e^j_\nu\,\eta^{\mu\nu}=\delta^{ij}-v^iv^j
+\stp
+(the comoving inverse metric of \texttt{theory.tex}), $v^i$ is upper, and the momentum density $M_k$ is lower.  With
+\st
+\frac{\partial\ell^{ij}}{\partial v^k}=-\delta^i_kv^j-v^i\delta^j_k ,
+\stp
+\Eq{dndv} and \Eq{Theta0} become
+\st
+\frac{\partial n_a}{\partial v^k}=-\sigma^2\,\partial_k\partial_jn\;v^j,\qquad
+\Theta^0_k=\Theta_{kj}\,v^j ,
+\stp
+and the drift is
+\st
+\dot x^i-v^i=-\frac{\partial v^i}{\partial M_k}\,\Theta_{kj}\,v^j .
+\label{dx}
+\stp
+No metric is used: the free index is raised by the inverse susceptibility.
+
+\paragraph{The inverse susceptibility.}  The derivative is at fixed $s_a$ and $V_a$, i.e.\ at fixed entropy density $S$.  With
+\st
+v^i=\frac{M^i}{E+\mathcal P},\qquad \frac{\partial E}{\partial M_k}\Big|_S=v^k ,
+\stp
+\st
+\frac{\partial v^i}{\partial M_k}\Big|_S=\frac{G^{ik}}{E+\mathcal P},\qquad
+G^{ik}=\underbrace{\delta^{ik}-v^iv^k}_{h^{ik}}\;-\;v^i\,\frac{\partial\mathcal P}{\partial M_k}\Big|_S
+=h^{ik}+\frac{c_s^2}{\gamma^2}\,\frac{v^iv^k}{1-c_s^2v^2},\qquad
+E+\mathcal P=\gamma^2TS .
+\label{G}
+\stp
+The comoving metric comes from the momentum and the energy; the second term is the pressure response,
+\st
+\frac{\partial\mathcal P}{\partial M_k}\Big|_S=\frac{\partial\mathcal P}{\partial M_k}\Big|_E+v^k\frac{\partial\mathcal P}{\partial E}\Big|_{\bm M}
+=-\frac{2c_s^2\,v^k}{1-c_s^2v^2}+\frac{c_s^2(1+v^2)\,v^k}{1-c_s^2v^2}
+=-\frac{c_s^2}{\gamma^2}\,\frac{v^k}{1-c_s^2v^2},
+\stp
+where the two derivatives are the $(0k)$ (times two) and $(00)$ components of the pressure derivatives in \texttt{theory.tex},
+eq.~(pressure\_derivs).  (Checked against a numerical Jacobian at fixed $S$.)
+
+The sign is that of a boost at fixed entropy.  With $s$, $T$ and $w=Ts$ the rest-frame entropy density, temperature and enthalpy, fixed
+$S=\gamma s$ means
+\st
+\frac{ds}{s}=-\frac{d\gamma}{\gamma}=-\gamma^2\,\bm v\cdot d\bm v ,
+\stp
+so the fluid cools and its pressure drops:
+\st
+d\mathcal P=s\,dT=c_s^2\,w\,\frac{ds}{s}=-c_s^2\,w\gamma^2\,\bm v\cdot d\bm v=-c_s^2\,v_i\,G^{ik}\,dM_k ,\qquad
+v_iG^{ik}=\frac{v^k}{\gamma^2(1-c_s^2v^2)} .
+\stp
+Of the two pieces, the derivative at fixed $E$ is negative (more momentum leaves less internal energy) and the second is positive
+(keeping $S$ fixed costs energy); the first wins by a factor $2/(1+v^2)$.
+
+\paragraph{The momentum of the kernel stress.}  $\Theta$ is a stress defined in the rest frame of the kernel, so it has no temporal
+components there,
+\st
+\Theta_{\mu\nu}u^\nu=0 .
+\stp
+In the lab, with $u^\nu=\gamma(1,\bm v)$, this gives it the momentum density
+\st
+\Theta_{k0}=-\Theta_{kl}\,v^l ,\qquad \Theta^0{}_k=\Theta_{kl}\,v^l ,
+\stp
+which is $\bm\Theta^0_a$ of \Eq{Theta0}.  The density frame allows no correction to $T^{0k}$, so this momentum is absorbed by a frame
+change (\texttt{theory.tex}),
+\st
+\delta\beta_\rho=-\chi^{-1}_{\rho\nu}\,\underline\Pi^{0\nu} ,
+\stp
+and the density-frame velocity, read off the momentum, differs from the velocity of the rest frame of the stress by \Eq{dx}.  So the
+particles, which carry the entropy, move with the rest frame in which the stress is purely spatial (the Landau velocity of $\Theta$),
+and the velocity of the equation of state is the density-frame velocity.  (Up to $\Theta^{00}=\Theta^{jk}v_jv_k$, which shifts $E$ and is of
+second order in $v$; to be checked with the momentum flux.)
+
+\paragraph{The entropy flux.}  In the density frame (\texttt{vischydro/theory.tex}, Sect.~2) the densities $T^{00}$, $T^{0i}$ are ideal
+and every correction sits in the spatial fluxes: a stress $\Pi^{ij}$ in $T^{ij}$ comes with the entropy flux
+\st
+J_S^j=Sv^j-\beta_i\Pi^{ij},\qquad \beta_i=\delta_{ik}\frac{v^k}{T} .
+\stp
+In the particle scheme the entropy is carried at the drift velocity, so with \Eq{dx} and \Eq{G}
+\st
+S\big(\dot x^i-v^i\big)=-\frac1T\,\frac{G^{ik}}{\gamma^2}\,\Theta_{kj}\,v^j ,
+\stp
+which is $-\beta_j\Pi^{ji}$ with
+\st
+\Pi^{ij}v_j=\frac{G^{ik}}{\gamma^2}\,\Theta_{kj}\,v^j .
+\stp
+At small $v$ this is $\Pi^{ij}\simeq\delta^{ik}\delta^{jl}\Theta_{kl}$.  At finite $v$ the entropy flux fixes only the contraction with $v$; the full
+stress must be read off the momentum flux of $H$.  This is the mechanism of the frame-change matrix $\kappa^{ij}_{\mu\nu}$ of
+\texttt{theory.tex}: a rest-frame stress written in lab densities acquires the advective factor
+\st
+e^i_\mu=\delta^i_\mu-v^i\delta^0_\mu
+\stp
+and the pressure response.  Here the stress is reversible and of order $h^2\nabla\nabla$, not viscous, and the Hamiltonian supplies its
+density-frame form through the drift.
+
+\paragraph{To check analytically:} the momentum flux of $H$ to order $h^2$, which gives the full stress; whether it equals
+$\kappa^{ij}_{\mu\nu}$ applied to the rest-frame stress built from $\Theta$; and that its contraction with $v$ reproduces the entropy flux
+above.
+
+%=============================================================================
+\section{The viscous and stochastic steps}
+\label{sec:viscous}
+
+Unchanged: the faces
+\st
+\bm A_{ab}=V_a\,w_{ab}\,\ell_a^{-1}\bm r_{ab}
+\stp
+with the $\Lambda_a$-corrected weights of \texttt{stochastic.tex}, the fit, the stress move, the residual move and the vote.  For Wendland
+C2 with $h_\psi=h$ the bond weight is the present one; for C4 and C6 it becomes the bond weight of those kernels.  Both steps then use the
+same $\psi(\rho)$ and the same metric.  Up to normalization and the correction, the face is the gradient of the ideal step,
+\st
+\bm A_{ab}\simeq V_aV_b\,\bm D_{ab} .
+\stp
+
+%=============================================================================
+\section{The cost: fewer neighbours along the flow}
+\label{sec:cost}
+
+The ellipse $\rho<2h$ has area $\pi(2h)^2/\gamma_a$.  At a fixed lab spacing it holds $1/\gamma_a$ of the neighbours at rest, and its width
+along the flow is $2h/\gamma_a$: an effective resolution
+\st
+\Big(\frac ha\Big)_{\rm along}=\frac{h/a}{\gamma}
+\stp
+($1.2$ at $h/a=2$, $v=0.8$).  The viscous step already pays this; the ideal step would pay it too.
+
+%=============================================================================
+\section{The fixed lattice}
+\label{sec:grid}
+
+On the lattice of \texttt{gridstep.tex} the kick and the drift come from the same $H$, so the drift displacement is the drift velocity
+of \Eq{eom} times the time step.  The momentum of the kernel stress is nonzero where the velocity or the density varies from site to
+site.  The return is unchanged.
+
+%=============================================================================
+\section{Implementation plan}
+\label{sec:plan}
+
+\paragraph{Scope.}  A new ideal step, selected by \texttt{SPH\_IDEAL=comoving} (\texttt{SimParams.ideal = :comoving}), for the number-volume
+energy Hamiltonian in 2D (\texttt{hamiltonian = :energy}, \texttt{volume = :number}), as the grid option is restricted now.  The default
+\texttt{:particle} is untouched and stays bit-identical.  The viscous and stochastic steps are not edited.
+
+\paragraph{The particle record.}  \texttt{Particle} keeps its fields.  \texttt{dotx} and \texttt{Teff} are left from the two-level
+Hamiltonian, where they were the smoothed $\partial H/\partial\bm m_a$ and $\partial H/\partial s_a$; in the number-volume Hamiltonian
+\texttt{update\_velocities\_energy!} sets them to $\bm v_a$ and $T_a$.  The viscous and stochastic steps read \texttt{dotx} as the
+velocity of the comoving metric and form $\beta_a=\texttt{dotx}/\texttt{Teff}$; both must stay the density-frame $\bm v_a$ and $T_a$.  So
+the drift velocity of \Eq{eom} is computed and used inside the ideal step only, in a scratch array, and never written to
+\texttt{dotx}.
+
+\paragraph{The density, shared.}  The viscous and stochastic steps call \texttt{smooth\_to\_particles!}, which has no equation of state.
+For \texttt{:comoving} it evaluates \Eq{H} in one pass with the velocity stored from the last solve,
+\st
+n_a=\gamma_a\sum_bW(\rho_{ab}),\qquad \rho_{ab}^2=r_{ab}^2+\gamma_a^2(\bm v_a\cdot\bm r_{ab})^2,\qquad \bm v_a=\texttt{v\_over\_S}\cdot\texttt{S\_smooth},
+\stp
+and sets \texttt{S\_smooth} $=s_an_a$, \texttt{M\_smooth} $=\bm m_an_a$ as now.  The ideal step ends on a converged state, so at fixed positions this
+pass returns the same density, and the dissipative steps see the volumes of the Hamiltonian.
+
+\paragraph{The fixed point.}  In the ideal step the density and the velocity are made consistent per particle,
+\st
+n_a^{(k+1)}=N_a\Big(\{\bm r_{ab}\},\ \bm v\big(s_a,\bm m_a,1/n_a^{(k)}\big)\Big) ,
+\stp
+alternating the pass above with \texttt{update\_thermodynamics!} until
+\st
+\max_a\big|n_a^{(k+1)}-n_a^{(k)}\big|/n_a<10^{-13} .
+\stp
+The contraction factor is $1/f_a-1$, of order $\Theta^0$, so two or three passes are expected; the count is reported.
+
+\paragraph{The derivatives of the equation of state.}  The drift and $f_a$ need, at fixed $s_a$,
+\st
+\frac{\partial\bm v}{\partial\bm M}\Big|_S=\frac{G}{E+\mathcal P}\quad\text{(\Eq{G})},\qquad
+\frac{\partial\bm v_a}{\partial V_a}\Big|_{s,\bm m}=-\frac1{V_a}\Big[\frac{\partial\bm v}{\partial\bm M}\Big|_S\bm M+\frac{\partial\bm v}{\partial S}\Big|_{\bm M}S\Big] .
+\stp
+The first exists (\texttt{inverse\_susceptibility}, up to the factor $T$); the second is new.  Both are written analytically for the conformal
+equation of state and tested against finite differences of \texttt{solve\_eos!}.
+
+\paragraph{The sums.}  One loop over the neighbours per particle gives, at the converged velocity,
+\st
+n_a,\qquad
+\bm Q_a\equiv\sum_b\bm D_{ab}\,(\bm r_{ab}\cdot\bm v_a),\qquad
+\frac{\partial n_a}{\partial\bm v_a}=-\gamma_a^2\big(\bm Q_a-n_a\bm v_a\big),
+\stp
+and from them
+\st
+f_a=\Big[1+V_a^2\,\frac{\partial n_a}{\partial\bm v_a}\cdot\frac{\partial\bm v_a}{\partial V_a}\Big]^{-1},\qquad
+P_a=f_a\,p_aV_a^2,\qquad
+\bm\Theta^0_a=-\frac{P_a}{V_a}\,\frac{\partial n_a}{\partial\bm v_a},\qquad
+\dot{\bm x}_a=\bm v_a-\frac{\partial\bm v}{\partial\bm M}\,\bm\Theta^0_a .
+\stp
+A second loop gives the force,
+\st
+\dot{\bm m}_a=-\sum_b\big[P_a\,\bm D_{ab}-P_b\,\bm D_{ba}\big],\qquad
+\bm D_{ab}=\gamma_a\,\psi(\rho_{ab})\,\ell_a^{-1}\bm r_{ab},\qquad
+\bm D_{ba}=-\gamma_b\,\psi(\rho_{ba})\,\ell_b^{-1}\bm r_{ab} ,
+\stp
+with $P_b$ from the first loop.
+
+\paragraph{The integrator.}  The drift--kick--drift of \texttt{leapfrog\_step!}, with \texttt{leapfrog\_step!} dispatching to the new step
+when \texttt{params.ideal === :comoving}, so that every caller (\texttt{generic\_step!}, \texttt{stability.jl}, \texttt{equilibrium.jl})
+gets it without edits.
+
+\paragraph{The hand-off to the dissipative steps.}  This is the one place where ``the dissipative steps are unchanged'' is not exact.
+The stochastic step holds $e_a$ and $V_a$ fixed and changes $\bm m_a$.  With the comoving kernel the volume depends on the momentum, so when the
+next step recomputes it at the new velocity the Hamiltonian changes by
+\st
+\delta H\simeq\sum_ap_aV_a^2\,\frac{\partial n_a}{\partial\bm v_a}\cdot\delta\bm v_a=-\sum_aV_a\,\bm\Theta^0_a\cdot\delta\bm v_a ,
+\stp
+of random sign and of order $\Theta^0$.  It is the work of the kernel stress.  With
+\st
+\delta\bm v_a=\frac1{V_a}\frac{\partial\bm v}{\partial\bm M}\,\delta\bm m_a ,
+\stp
+it reads
+\st
+\delta H\simeq\sum_a\big(\dot{\bm x}_a-\bm v_a\big)\cdot\delta\bm m_a :
+\stp
+the dissipative steps move momentum as if each particle moved at the density-frame velocity, while the velocity conjugate to the
+momentum in $H$ is the drift velocity.  This is the GENERIC degeneracy condition, which needs $\partial H/\partial\bm m_a$ in the
+dissipative bracket.
+
+\paragraph{The fix in the accept/reject.}  The volume of particle $a$ depends on its own momentum only, with
+\st
+p_a\,\frac{\partial V_a}{\partial\bm m_a}=-p_aV_a^2\,f_a\,\frac{\partial n_a}{\partial\bm v_a}\cdot\frac{\partial\bm v_a}{\partial\bm m_a}
+=\frac{\partial\bm v}{\partial\bm M}\,\bm\Theta^0_a=-\big(\dot{\bm x}_a-\bm v_a\big) .
+\stp
+Freeze this vector at the start of the stochastic step, as the gradient energy is frozen now (\texttt{gradient\_freeze},
+\texttt{changerep.tex}, Appendix~A), and let the volume follow the momentum linearly in the entropy of the accept/reject:
+\st
+\boxed{\;
+S_a\Big(e_a,\ \bm m_a',\ V_a-\frac{\dot{\bm x}_a-\bm v_a}{p_a}\cdot\big(\bm m_a'-\bm m_a\big)\Big) .\;}
+\label{Sfix}
+\stp
+To first order the entropy change of a move is then
+\st
+\delta S_a=-\frac{\bm v_a}{T_a}\cdot\delta\bm m_a+\frac{p_a}{T_a}\,\delta V_a=-\frac{\dot{\bm x}_a}{T_a}\cdot\delta\bm m_a ,
+\stp
+the drift velocity in place of the density-frame velocity: the dissipative bracket uses $\partial H/\partial\bm m_a$, and the work vanishes.
+The target $\exp\sum_aS_a$ is a fixed function of the momenta during the sweep, so the Metropolis step is exact for it.  The energy
+error at the hand-off is of second order,
+\st
+\delta H\simeq\tfrac12\sum_ap_a\,\delta\bm m_a\cdot\frac{\partial^2V_a}{\partial\bm m_a\partial\bm m_a}\,\delta\bm m_a ,
+\stp
+of order $\Delta t$ per step and of the size of the curvature of the kernel stress.  Cost: one frozen vector per particle and one shifted
+volume in each entropy evaluation.  The back map is \Eq{Sfix} at the accepted momenta.  The deterministic paths that use
+$\beta_a=\texttt{dotx}/\texttt{Teff}$ would take $\dot{\bm x}_a/T_a$ instead.
+
+\paragraph{Files.}
+\begin{itemize}
+\item \texttt{src/sph.jl}: accept \texttt{ideal = :comoving} with its restrictions.
+\item \texttt{src/comoving.jl} (new, loaded by \texttt{src/load.jl}): the density pass, the fixed point, the two loops, the EOS derivatives,
+  \texttt{comoving\_leapfrog\_step!}.
+\item \texttt{src/ideal.jl}: the branch in \texttt{smooth\_entropy\_energy!} and the dispatch in \texttt{leapfrog\_step!}.
+\item \texttt{src/stochastic.jl}, only for \texttt{:comoving}: \texttt{stochastic\_frozen} also freezes the reference momenta and the
+  vectors of \Eq{Sfix},
+  \st
+  \bm m_a^0=\bm m_a,\qquad \bm g_a=-\frac{\dot{\bm x}_a-\bm v_a}{p_a} ,
+  \stp
+  from the drift loop of the ideal step; every entropy evaluation (\texttt{ask\_star!}, the residual sweep, the back map) takes the volume
+  \st
+  V_a(\bm m)=V_a+\bm g_a\cdot\big(\bm m-\bm m_a^0\big)
+  \stp
+  in place of the frozen $V_a$.  The reference is the momentum at the start of the step, not the current one, so the target is one fixed
+  function of the momenta through all the sweeps.  For the other options $\bm g_a=0$ and nothing changes.
+\item \texttt{test/testcomoving.jl}: the tests below; \texttt{test/run.sh all} with the default bit-identical to \texttt{main}.
+\end{itemize}
+
+\paragraph{Tests.}
+\begin{enumerate}
+\item The EOS derivatives against finite differences of \texttt{solve\_eos!}.
+\item $\bm D_{ab}$ and the velocity derivative against finite differences of $N_a$ (done in Python for C2; repeat in Julia for C2, C4, C6).
+\item Hamilton's equations: the drift and the force against finite differences of $H$, with the fixed point re-solved, on a jittered
+  moving state.
+\item The torque identity \Eq{wardN} per star, and $\sum_a\dot{\bm m}_a=0$ to roundoff.
+\item $\Delta H$ over a run at $\Delta t$ and $\Delta t/2$; the uniform moving fluid stays uniform.
+\item The hand-off error $\delta H$ per stochastic step, with and without \Eq{Sfix}, in an equilibrium ensemble: first order without,
+  second order (scaling as $\Delta t$) with.
+\end{enumerate}
+
+\paragraph{Cost.}  Each density evaluation becomes two or three passes with an EOS solve each, and the drift needs the second loop's
+data, so the ideal step costs roughly twice the present one.  The dissipative steps are unchanged.
+
+%=============================================================================
+\section{Checks}
+\label{sec:checks}
+
+Ideal step alone, against the present step with the same kernel and $h/a$:
+\begin{enumerate}
+\item \emph{Derivatives}: \Eq{D} and \Eq{dndv} against finite differences of $N_a$ on jittered stars at $v=0$, $0.3$, $0.8$.
+\item \emph{At rest}, uniform fluid on the lattice: identical to the present step.
+\item \emph{Uniform moving fluid}, $v_0=0.3$, $0.8$, on the lattice and jittered: the closure \Eq{closure} against $n_a\one$; the size of
+  $\bm\Theta^0_a$ and of the drift correction; the state stays uniform.
+\item \emph{Conservation}: $\bm P$ to roundoff; $\Delta H$ and $\Delta L$ per step and over the run, against the present step, in a moving
+  fluid, a rotating patch, and an equilibrium ensemble.
+\item \emph{Sound along and across the flow}: speed and Doppler shift against \texttt{boost.tex}, and against the present step.
+\end{enumerate}
+With the viscous or stochastic step: the boost benchmark (\texttt{boost.tex}) and the equal-time correlators of a moving fluid, against
+\texttt{commonkernel.tex} (\texttt{SPH\_DISSIPATION=common}) and the present scheme.
+
+\end{document}

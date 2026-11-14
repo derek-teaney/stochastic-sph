@@ -1,7 +1,6 @@
 # commonkernel_waves.jl — the viscous step alone (positions fixed, no ideal step), deterministic
 # (docs/commonkernel.tex, test 3): one mode δm_a = ε e sin(k·x_a) on a uniform fluid at rest or moving with v0
-# along x, evolved with viscous_step_energy! for dissipation = :particle (the present step), :common_lab and
-# :common.  The entropy deficit D = Σ_a [S_a(e_a, m̄) − S_a(e_a, m_a)] obeys dD/dt = −2K, so the mode decays
+# along x, evolved with viscous_step_energy! for dissipation = :particle (the present step) and :common.  The entropy deficit D = Σ_a [S_a(e_a, m̄) − S_a(e_a, m_a)] obeys dD/dt = −2K, so the mode decays
 # at Γ = K/D.  Reported: the fitted Γ of the mode amplitude against K/D of the same scheme at t = 0 (the step
 # itself) and against K_target/D, K_target the continuum V T [η tr(ℓYℓY) + ½ ζ_eff θ²] (hydrodynamics).
 #   julia -t 64 --project=nersc examples/commonkernel_waves.jl [out]   → <out>/commonkernel_waves.toml, table
@@ -55,9 +54,9 @@ function run_case(diss, v0, kind, dir, nk)
     end
 end
 
-cases = [(diss, v0, kind, dir, nk) for diss in (:particle, :common_lab, :common), v0 in (0.0, 0.8),
+cases = [(diss, v0, kind, dir, nk) for diss in (:particle, :common), v0 in (0.0, 0.8),
          (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), nk in (1, 2, 4)]
-SMOKE && (cases = cases[[1, 30, 70]])
+SMOKE && (cases = cases[[1, 20, 47]])
 res = Vector{Any}(undef, length(cases))
 for diss in unique(c[1] for c in cases)               # one scheme at a time; its cases in parallel
     ENV["SPH_DISSIPATION"] = string(diss)

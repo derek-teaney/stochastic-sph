@@ -19,7 +19,7 @@ function dissipative_force!(dotm::Vector{SVector{2,Float64}},
                              eos::AbstractEOS)
     if params.dissipation === :bond
         bond_dissipative_force!(dotm, particles, params, cl, eos)
-    elseif params.dissipation in (:particle, :common, :common_lab)
+    elseif params.dissipation in (:particle, :common)
         β = zeros(SVector{2,Float64}, length(particles))
         bond_dissipative_force!(dotm, particles, params, cl, eos, pointwise_beta!(β, particles, eos))
     else    # :two_level, in src/legacy/two_level.jl
@@ -124,9 +124,9 @@ function common_bond_weight(params::SimParams)
     return r -> r > 0 ? -kernel_gradW(SVector(r, 0.0), r, h, K)[1] / r : 0.0
 end
 const FLAT2 = SMatrix{2,2,Float64}(I)
-is_common(params::SimParams) = params.dissipation in (:common, :common_lab)
-# the factor of the residual of bond r in the metric ℓ: (r̂·ℓ r̂)² for :common, 1 for :common_lab
-resid_factor(params::SimParams, ℓ, r) = params.dissipation === :common ? (dot(r, ℓ * r) / dot(r, r))^2 : 1.0
+is_common(params::SimParams) = params.dissipation === :common
+# the factor of the residual of bond r in the metric ℓ, (r̂·ℓ r̂)² (commonkernel.tex, eq. fab)
+resid_factor(params::SimParams, ℓ, r) = (dot(r, ℓ * r) / dot(r, r))^2
 
 function bond_weights_1d(nb, particles, ℓi, hψ)
     ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
@@ -230,8 +230,8 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         if common
             # commonkernel.tex, eq. Knew: K_a = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ² + η Σ_b w_ab δ_ab·ℓ δ_ab],
             # Y = sym G − θ P,  δ_ab = Δb_ab − G r_ab.  Residual: tractions t_ab = −2 V_a T_a η w_ab f_ab ℓ δ_ab,
-            # f_ab = (r̂·ℓ r̂)² (:common) or 1 (:common_lab); through the fit E_a = ∂K_a/∂G_a: the resolved part
-            # and, when f ≠ 1, −Σ_b c_ab ℓ δ_ab r_abᵀ (zero for f = 1 by eq. orthog).
+            # f_ab = (r̂·ℓ r̂)²; through the fit E_a = ∂K_a/∂G_a: the resolved part
+            # and, since f ≠ 1, −Σ_b c_ab ℓ δ_ab r_abᵀ (zero for f = 1 by eq. orthog).
             ζeff = ζ + 2η * (1 / 2 - 1 / d)
             Y    = (G + G') / 2 - θa * P
             Ka   = Va * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θa^2)
