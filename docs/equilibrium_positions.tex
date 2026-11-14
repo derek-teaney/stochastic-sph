@@ -298,7 +298,8 @@ At $h/a=2$, $L=1.2$, at $\delta v=0.043$ and $0.14$ (production), $0.014$ (liqui
 \section{First look: the pair correlation from the lattice}
 \label{sec:firstlook}
 
-Stage 1 of \Sect{sec:plan} records $g(r)$, $\psi_6$ and $S(\bm k)$ in every run of the equilibrium driver.
+Stage 1 of \Sect{sec:plan} records $g(r)$, $\psi_6$ and $S(\bm k)$ in every run of the equilibrium driver.  All runs here use the
+one-kernel viscous step (\texttt{SPH\_DISSIPATION=common}, the default on this branch) and the particle ideal step.
 \Fig{fig:gvt} shows one run at each of four entropies per particle, $L=0.6$ ($N=672$), $h/a=2$, $\eta/s=0.2$, at rest, with the
 full dynamics from the hexagonal lattice (the present start: exact energies and momenta at the lattice positions).  The
 time is the physical time of the run; the time step is $8.66\times10^{-3}$, and sound crosses one particle spacing in
@@ -334,6 +335,48 @@ relaxed state is the equilibrium of \Eq{Px} is the question for hybrid Monte Car
 Panels 1--4: $g(r)$ at a sequence of times (grey: the lattice at $t=0$).  Panels 5, 6: global and local $\psi_6$ against time
 (dotted: the local value for Poisson positions).}
 \label{fig:gvt}
+\end{figure}
+
+%=============================================================================
+\section{Hybrid Monte Carlo against the dynamics}
+\label{sec:hmcvsdyn}
+
+Stage 2 of \Sect{sec:plan} is implemented (\texttt{src/hmc.jl}, \texttt{test/testhmc.jl}, \texttt{examples/hmc\_positions.jl}).  On a box
+of $N=168$ particles, a trajectory of ten steps followed by the trajectory with the momenta reversed returns to the start to
+$10^{-13}$, and the energy error of a trajectory of fixed length falls as $\delta t^2$ (ratios $4.02$, $4.01$).  At $L=0.6$
+($N=672$), with $\delta t$ half the acoustic step and ten steps per trajectory, the acceptance is $0.95$--$1.0$, the heat-bath
+chains accept $58\%$ of their moves, and $600$ updates take about $20$ seconds.
+
+\Fig{fig:hmcvsdyn} compares one chain of $600$ updates from the lattice (the second half averaged) with the late times of the
+runs of \Fig{fig:gvt}, at the same $\beta^\mu$.  Hybrid Monte Carlo has no viscous step: its target \Eq{joint} involves only the
+Hamiltonian and the equation of state, so the choice of viscous kernel enters only the dynamics.
+\begin{itemize}
+\item \emph{Short range: the two agree.}  $g(r)$ lies on top of the dynamics at all three entropies, and so does the local bond
+  order:
+  \st
+  \psi_6^{\rm local}:\quad 0.367\ \text{vs}\ 0.361\ (s_a=541),\qquad 0.418\ \text{vs}\ 0.415\ (5413),\qquad 0.869\ \text{vs}\ 0.849\ (54000)
+  \stp
+  (HMC first).  The dynamics reaches the equilibrium local structure quickly.
+\item \emph{Long wavelengths: they do not.}  The fluctuations of the number density of the positions at $kh=0.52$ and $0.74$ are
+  lower in the dynamics, at every entropy,
+  \st
+  \frac{|N_{\bm k}|^2_{\rm dyn}}{|N_{\bm k}|^2_{\rm HMC}}=0.07\text{--}0.42 ,
+  \stp
+  while those of the entropy density $|S_{\bm k}|^2$ scatter about the same values (ratios $0.5$--$2.6$, single noisy runs).
+\end{itemize}
+A tentative reading.  The ideal step holds each $s_a$ fixed, so the way a long-wavelength fluctuation of the entropy density is
+shared between the number of particles and the entropy per particle is frozen in from the start, and only the stochastic step
+changes it, slowly.  Hybrid Monte Carlo redraws the $s_a$ at every update.  The dynamics runs reach only $t\le5$ in a small box;
+campaign \texttt{pairs} ($t=200$, $L=1.2$) will show whether $|N_{\bm k}|^2$ of the dynamics climbs to the equilibrium value or
+stays low.  If it stays low, the dynamics carries a long-wavelength non-equilibrium in the arrangement of the particles, to be
+compared with the equal-time deficit of $C_{EE}$ along the flow (\texttt{commonkernel.tex}).
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/equilibrium_hmc_vs_dynamics.png}
+\caption{Late times of the full dynamics from the lattice (one run, the second half of $t\le2$ or $5$) against hybrid Monte
+Carlo (one chain, updates $301$--$600$), $L=0.6$, $h/a=2$.  Top: $g(r)$.  Bottom: the structure factor of the positions,
+$S(\bm k)=|N_{\bm k}|^2/N$ (the HMC chain records only $kh\le1$).}
+\label{fig:hmcvsdyn}
 \end{figure}
 
 %=============================================================================
