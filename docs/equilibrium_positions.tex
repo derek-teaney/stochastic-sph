@@ -260,15 +260,82 @@ $\beta^\mu$.
 \section{The pair correlation as a standard measurement}
 \label{sec:measurements}
 
-Recorded with the equilibrium runs, as time series:
+All the observables below are recorded, as time series, in every run of the equilibrium driver and of the hybrid Monte
+Carlo driver (\texttt{ParticleRecorder} in \texttt{src/measure.jl}).  $N$ particles in a periodic box of area $A$ have the mean
+number density
+\st
+n_0=\frac NA ,
+\stp
+and $\bm r_{ab}=\bm x_b-\bm x_a$ is taken by the minimum image.
+
+\paragraph{The pair correlation function.}  $n_0\,g(\bm r)\,d^2r$ is the mean number of other particles in the area $d^2r$ at the
+displacement $\bm r$ from a given particle:
+\st
+g(\bm r)=\frac1{Nn_0}\Big\langle\sum_a\sum_{b\neq a}\delta^2(\bm r-\bm r_{ab})\Big\rangle .
+\stp
+For uncorrelated (Poisson) positions $g=1$; on a lattice it is a set of $\delta$ functions on the shells.  We record its
+average over angles, the radial pair correlation $g(r)$, binned: with $n_k$ the number of ordered pairs $(a,b)$ whose distance
+lies in the shell $(k-1)\,\delta r<r_{ab}<k\,\delta r$,
+\st
+g(r_k)=\frac{n_k}{Nn_0\,\pi\big[(k\delta r)^2-((k-1)\delta r)^2\big]},\qquad \delta r=\frac a{20},\qquad r_k<2h .
+\stp
+The range $2h$ is that of the neighbour lists.  For a moving fluid the same is recorded in two angular sectors: $g_\parallel(r)$
+from the bonds within $45^\circ$ of the flow ($|x_{ab}|>|y_{ab}|$, the flow along $x$) and $g_\perp(r)$ from the others, each normalized by
+half the shell area, so that both are $1$ for Poisson positions.
+
+\paragraph{The structure factor.}  The Fourier component of the number density of the positions,
+\st
+N_{\bm k}=\sum_ae^{-i\bm k\cdot\bm x_a},
+\stp
+is recorded at the box wavevectors of the correlators ($kh\le1.5$), and
+\st
+S(\bm k)=\frac1N\avg{|N_{\bm k}|^2} .
+\stp
+Expanding the square, the terms $a=b$ give $1$ and the others the Fourier transform of $g$:
+\st
+S(\bm k)=1+\frac1N\Big\langle\sum_a\sum_{b\neq a}e^{-i\bm k\cdot\bm r_{ab}}\Big\rangle
+=1+n_0\int d^2r\;\big[g(\bm r)-1\big]\,e^{-i\bm k\cdot\bm r},\qquad \bm k\neq0 ,
+\label{Sg}
+\stp
+where the $-1$ may be added because $\int d^2r\,e^{-i\bm k\cdot\bm r}=0$ over the box for $\bm k\neq0$.  For Poisson positions $S=1$.  At small $k$
+the integral covers the whole box, so $S$ there is set by $g$ at distances $\sim1/k$, far beyond the $2h$ at which $g$ is
+recorded; $S(\bm k)$ is therefore measured directly from $N_{\bm k}$, not from $g$.  When $S$ is small, \Eq{Sg} is a near
+cancellation,
+\st
+n_0\int d^2r\;\big[g(\bm r)-1\big]\simeq-1+S\approx-1 :
+\stp
+the depletion around each particle almost exactly accounts for the particle itself.  A change of $S$ from $0.01$ to $0.05$ is then
+a change of $g$ of order $10^{-4}$ spread over the box, invisible in $g(r)$ (\Sect{sec:hmcvsdyn}).
+
+\paragraph{The bond order.}  For each particle $a$ take its six nearest neighbours $b$, with $\theta_{ab}$ the angle of $\bm r_{ab}$ to the $x$ axis,
+and form the complex number
+\st
+q_a=\frac16\sum_{b=1}^6e^{6i\theta_{ab}} .
+\stp
+In a perfect hexagonal neighbourhood the six bonds are $60^\circ$ apart, every $e^{6i\theta_{ab}}$ has the same phase, and $|q_a|=1$;
+the phase of $q_a$, six times the angle of one bond, records how that hexagon is oriented.  For random neighbours $q_a$ is the
+mean of six random unit phasors, of modulus about $1/\sqrt6$.  Two real numbers in $[0,1]$ are recorded and plotted:
+\st
+\psi_6^{\rm local}=\frac1N\sum_a|q_a|,\qquad \psi_6^{\rm global}=\Big|\frac1N\sum_aq_a\Big| .
+\stp
 \begin{itemize}
-\item $g(r)$ from the minimum-image pair distances up to $3h$, from the neighbour lists (cheap);
-\item $g(r,\theta)$ in bins of the angle to the flow, for the anisotropy of a moving fluid;
-\item $S(\bm k)$ of the positions at the wavevectors of the correlators and at the first Bragg peaks (the latter are in
-  \texttt{ParticleRecorder} already);
-\item the bond order $\psi_6=\avg{\frac1{n_b}\sum_be^{6i\theta_{ab}}}$ over nearest neighbours;
-\item the pair separation $D^2(r,t)$ and the mean square displacement, as in \texttt{frozen.tex}.
+\item $\psi_6^{\rm local}$, the mean of the moduli, asks whether each neighbourhood is hexagonal, whatever its orientation.  It
+  is $1$ on the lattice and, for Poisson positions,
+  \st
+  \psi_6^{\rm local}\simeq\frac{\sqrt{6\pi}}{12}\approx0.36
+  \stp
+  (the mean modulus of a sum of six random unit phasors, divided by six; $0.365$ measured).
+\item $\psi_6^{\rm global}$, the modulus of the mean, asks whether all the hexagons point the same way: long-range orientational
+  order.  It is $1$ for a crystal, and when the orientations are random the $N$ phases cancel and it falls to order
+  $N^{-1/2}$ ($0.01$--$0.02$ for our boxes).
 \end{itemize}
+A crystal has both near $1$; a liquid without local structure has $\psi_6^{\rm global}\approx0$ and $\psi_6^{\rm local}$ at the Poisson
+value; a liquid with local hexagonal packing has $\psi_6^{\rm global}\approx0$ and $\psi_6^{\rm local}$ above it.  (In two dimensions a hexatic
+phase, with orientational but no translational order, would show $\psi_6^{\rm global}$ well above $N^{-1/2}$ without Bragg peaks in
+$S(\bm k)$.)
+
+\paragraph{Particle motion.}  The pair separation $D^2(r,t)$ of neighbours and the mean square displacement, as in
+\texttt{frozen.tex}, and the Bragg peak of the starting lattice.
 
 %=============================================================================
 \section{Runs, when the note is agreed}
@@ -393,6 +460,51 @@ solid they stay flat.  The low values of the dynamics against hybrid Monte Carlo
 relaxation, not yet complete at $t=200$ for $s_a\ge541$ --- as the tentative reading above expects, if the sharing of a
 long-wavelength fluctuation between the number of particles and the entropy per particle changes only through the
 stochastic step.
+
+\paragraph{Hybrid Monte Carlo in the same box.}  To compare at the same wavevectors, hybrid Monte Carlo was run at $L=1.2$
+(one chain each) with short trajectories, as before ($\tau=10\,\delta t=0.087$, $800$ updates), and with long ones,
+\st
+\tau=1.73\approx\frac L{c_s}=2.1 ,
+\stp
+the time sound takes to cross the box ($150$ updates; $\delta t$ halved at $s_a=54$; acceptance $0.93$ at $s_a=541$, $0.43$ at $54$).
+\Fig{fig:Skrelax} shows $S(\bm k)$ at $kh=0.52$ against time for the dynamics (the table above) and against the cumulative
+trajectory time for hybrid Monte Carlo.  The equilibrium values, in units of $4/s_a$ (updates after the first $20$ with long, the
+first $400$ with short trajectories; errors from eight blocks):
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & $kh=0.52$ & $0.74$ & $0.79$ & $1.04$ \\ \hline
+$s_a=54$, $\tau=1.73$ & $3.4(4)$ & $3.2(4)$ & $3.0(2)$ & $2.0(3)$ \\
+$s_a=54$, $\tau=0.087$ & $2.9(7)$ & $4.0(6)$ & $4.5(5)$ & $2.0(2)$ \\
+$s_a=541$, $\tau=1.73$ & $13.5(2.6)$ & $6.6(9)$ & $6.0(6)$ & $3.6(4)$ \\
+$s_a=541$, $\tau=0.087$ & $15.8(1.8)$ & $5.6(7)$ & $6.2(5)$ & $3.1(2)$ \\
+\hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item \emph{The two trajectory lengths agree} within the errors, except at $kh=0.79$ for $s_a=54$ ($2.6\sigma$).  With long trajectories the
+  equilibrium value is reached within the first ten updates; with short ones it takes several hundred at $s_a=541$: the
+  momenta are redrawn before a density wave can cross the box, so the long modes move only by diffusion, slowly when the
+  thermal velocity is small.
+\item \emph{At $s_a=54$ the dynamics reaches equilibrium.}  Its plateau, $2.9(2)$ at $kh=0.52$ for $t=100$--$200$, agrees with $3.4(4)$ and
+  $2.9(7)$.  The larger thermal velocity ($\delta v=0.14$) lets the number fluctuations relax by $t\approx20$--$50$.
+\item \emph{At $s_a=541$ the dynamics is far from it at $t=200$:} $3.9(4)$ against about $14$ at $kh=0.52$, still rising.
+\item \emph{The equilibrium itself depends on $k$ at $s_a=541$}, roughly as $1/k^2$:
+  \st
+  \frac{S(\bm k)}{4/s_a}\,(kh)^2\approx3.7,\quad3.6,\quad3.9\qquad(kh=0.52,\ 0.79,\ 1.04),
+  \stp
+  while at $s_a=54$ it is nearly flat.  A tentative description of both is a part $\propto1/s_a$ and a part independent of $s_a$ that
+  grows as $1/k^2$, about $0.027/(kh)^2$: a long-wavelength number fluctuation at fixed entropy and energy density is invisible
+  to hydrodynamics and is penalized only by the kernel.  Single chains and four wavevectors; to be checked.
+\end{itemize}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/equilibrium_Sk_relaxation.png}
+\caption{$S(\bm k)/(4/s_a)$ at $kh=0.52$, $L=1.2$, $h/a=2$.  Black: the dynamics from the lattice (campaign \texttt{pairs}, 16 runs,
+time windows).  Coloured: hybrid Monte Carlo (one chain each) against the cumulative trajectory time, block averages, with
+trajectories of $0.087$ (orange) and $1.73$ (green).  Left $s_a=54$, right $s_a=541$.}
+\label{fig:Skrelax}
+\end{figure}
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_hmc_vs_dynamics.png}
