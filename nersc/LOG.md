@@ -94,6 +94,14 @@ s_a by the two routes side by side), commit on `equilibrium`, push, and report t
 
 **Submitted (2026-11-14, NERSC):** worktree `~/stochastic-sph-eq` updated to `96ee6f7` (no `pairs` task pending).  Tasks 1-56
 array job **61291002**; tasks 57-72 packed job **61291004** (1 node, THREADS=16, 4 h limit).
+**Done:** 72/72 complete (array ≈ 0.06 node-hours, packed node 2 h 20 min ≈ 2.33 node-hours; total ≈ 2.4, above the 1.1
+estimate because the h/a = 6, 8 runs cost ∝ (h/a)^4).  All six sets liquid (local ψ6 = Poisson; g nearly flat, a 1-3% peak at
+r ≈ h); at h/a = 4-8 melted by the first record.  S(k), kh = 0.52, × s_a/4: h/a = 2: 2.5, 3.3, 2.2 (s_a = 135, 60, 34);
+continuum route: 6.5 ± 2.3, 4.5 ± 0.9, 2.4 ± 0.4 — the two routes agree within errors.  equilibrium_positions.tex, "First look".
+**Done:** 72/72 complete (array tasks ≈ 0.5 h each; packed node 2 h 20 min).  All liquids, melted within t ≈ 0.1 (the
+continuum route before the first record); local ψ6 = Poisson.  g(0) ≈ 0.4-0.6 at h/a = 2, g ≈ 1 at all r on the continuum
+route.  S(kh = 0.52) = 2.5, 3.3, 2.2 × 4/s_a (h/a = 2, s_a = 135, 60, 34) against 6.5, 4.5, 2.7 (h/a = 4, 6, 8).  Two figures
+and a table in docs/equilibrium_positions.tex ("Toward lower entropy per particle").
 
 ## Next session at NERSC — start here: campaign `pairs` (written 2026-11-14, on the laptop)
 
