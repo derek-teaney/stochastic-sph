@@ -38,6 +38,10 @@ removes the C_EE deficit along the flow; (3) at v = 0.8, g(r)
 along and across the flow and S(k) from `hd_hmc_v0.8` against `hq12_s541_b08`, and C_EE along the flow (the deficit of
 boost.tex).  Commit the figures and the section on `equilibrium`, push, and report the jobs, cost and outcome here.
 
+**Submitted (2026-11-14, NERSC):** `pairs_low` was still running from `~/stochastic-sph-eq`, so a second worktree
+`~/stochastic-sph-eq2` at `cc8e292`; `test/testhmc.jl` PASS (δt² ratios 4.02, 4.01; acceptance 1.00).  `hmc_dyn` array job
+**61295240** (104 tasks), `hmc_eq` array job **61295241** (72 tasks), both from `~/stochastic-sph-eq2`, 8 h limit.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
@@ -90,6 +94,10 @@ s_a by the two routes side by side), commit on `equilibrium`, push, and report t
 
 **Submitted (2026-11-14, NERSC):** worktree `~/stochastic-sph-eq` updated to `96ee6f7` (no `pairs` task pending).  Tasks 1-56
 array job **61291002**; tasks 57-72 packed job **61291004** (1 node, THREADS=16, 4 h limit).
+**Done:** 72/72 complete (array tasks ≈ 0.5 h each; packed node 2 h 20 min; total ≈ 2.4 node-hours, above the 1.1 estimate: the h/a = 6, 8 runs cost ∝ (h/a)^4).  All liquids, melted within t ≈ 0.1 (the
+continuum route before the first record); local ψ6 = Poisson.  g(0) ≈ 0.4-0.6 at h/a = 2, g ≈ 1 at all r on the continuum
+route.  S(kh = 0.52) = 2.5, 3.3, 2.2 × 4/s_a (h/a = 2, s_a = 135, 60, 34) against 6.5, 4.5, 2.7 (h/a = 4, 6, 8).  Two figures
+and a table in docs/equilibrium_positions.tex ("Toward lower entropy per particle").
 
 ## Next session at NERSC — start here: campaign `pairs` (written 2026-11-14, on the laptop)
 

@@ -411,6 +411,46 @@ Panels 1--4: $g(r)$ at a sequence of times (grey: the lattice at $t=0$).  Panels
 \end{figure}
 
 %=============================================================================
+\subsection{Toward lower entropy per particle}
+\label{sec:pairslow}
+
+Campaign \texttt{pairs\_low} (\texttt{nersc/campaign\_pairs\_low.txt}, jobs 61291002, 61291004; $L=0.6$, at rest, from the lattice) lowers $s_a$
+to $135$, $60$, $34$ by two routes that reach the same $s_a$: the fixed kernel ($h/a=2$, lower $S_0$; 16 runs, $t=100$) and the continuum
+route of campaign \texttt{cl} ($S_0=10^6$, $h/a=4$, $6$, $8$; 8 runs, $t=100$, $50$, $50$).  $\psi_6$ and $S$ over the second half of each run;
+$S$ at the lowest box mode, $kh=0.52$, with the standard error over the runs:
+\begin{center}
+\begin{tabular}{llccccc}
+\hline
+$s_a$ & route & melted by & local $\psi_6$ & first peak of $g$ & $S(kh=0.52)$ & $S/(4/s_a)$ \\ \hline
+$135$ & $h/a=2$ & $t\approx0.10$ & $0.365$ & $1.05$ at $0.91h$ & $0.074(9)$ & $2.5$ \\
+      & $h/a=4$ & before the first record & $0.366$ & $1.03$ at $0.92h$ & $0.19(7)$ & $6.5$ \\
+$60$  & $h/a=2$ & $t\approx0.07$ & $0.365$ & $1.06$ at $0.86h$ & $0.22(3)$ & $3.3$ \\
+      & $h/a=6$ & before the first record & $0.366$ & $1.01$ & $0.30(6)$ & $4.5$ \\
+$34$  & $h/a=2$ & $t\approx0.06$ & $0.365$ & $1.03$ & $0.26(3)$ & $2.2$ \\
+      & $h/a=8$ & before the first record & $0.366$ & $1.01$ & $0.32(4)$ & $2.7$ \\
+\hline
+\end{tabular}
+\end{center}
+(Figs.~\ref{fig:gvtha2}, \ref{fig:gvtcl}.)  All are liquids, with the local $\psi_6$ of Poisson positions, and melt within $t\approx0.1$ ---
+on the continuum route before the first record.  The structure differs between the routes.  At $h/a=2$ the particles
+overlap strongly, $g(0)\approx0.4$--$0.6$, with a weak first peak at about $0.9h$.  On the continuum route $g(r)\approx1$ within a few
+percent at every $r$: on the scale of $a$ the particles are nearly uncorrelated, and what structure there is lies at the
+scale of $h$.  The long-wavelength number fluctuations stay a few times $4/s_a$ by both routes; the continuum route comes out
+higher ($2.7$--$6.5$ against $2.2$--$3.3$), with fewer and shorter runs and larger errors.  No run failed: all 72 reached their
+end time.
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/equilibrium_g_vs_t_ha2.png}
+\caption{Campaign \texttt{pairs\_low}, the fixed kernel ($h/a=2$, $s_a=135$, $60$, $34$; $L=0.6$, 16 runs each): $g(r)$ at a sequence of times (grey: the
+lattice), and the global and local $\psi_6$ against time (dotted: the local value for Poisson positions).}
+\label{fig:gvtha2}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/equilibrium_g_vs_t_cl.png}
+\caption{Campaign \texttt{pairs\_low}, the continuum route ($S_0=10^6$; $h/a=4$, $6$, $8$, i.e.\ $s_a=135$, $60$, $34$; $L=0.6$, 8 runs each); as \Fig{fig:gvtha2}.}
+\label{fig:gvtcl}
+\end{figure}
+
 \section{Hybrid Monte Carlo against the dynamics}
 \label{sec:hmcvsdyn}
 
