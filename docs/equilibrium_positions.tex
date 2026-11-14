@@ -163,7 +163,9 @@ mismatch changes single-particle distributions at relative order $1/s_a$.  The p
 the stochastic step.  We take the stochastic step's measure as the physical one: it is the Einstein formula, flat in the
 conserved densities, and it defines the susceptibilities the correlators are compared with.  The open question is then
 only how far the free dynamics drifts from it through the ideal step.  A clean test is to run each step alone from the
-same state and compare the distributions of $T_a$ and $\bm m_a$.
+same state and compare the distributions of $T_a$ and $\bm m_a$.  Appendix~\ref{app:gibbs} revisits the choice: with a
+Hamiltonian, isentropic ideal step only the Liouville measure can be shared by both steps, and the stochastic step can be
+made to preserve it by one logarithm.
 
 \paragraph{What the factor is.}  $T_a$ is the Jacobian between the two parametrizations of a particle's internal state,
 \st
@@ -678,5 +680,56 @@ Tests (\texttt{test/testhmc.jl}):
 \paragraph{Stage 3: the runs of \Sect{sec:runs}} at NERSC, with a node-hour estimate before submitting.
 
 \paragraph{Branch.}  \texttt{equilibrium}, off \texttt{common-default}; stage 1 can go to \texttt{main} on its own.
+
+%=============================================================================
+\appendix
+\section{The measure: Gibbs and Boltzmann entropy}
+\label{app:gibbs}
+
+\paragraph{Two definitions of a particle's entropy.}  Let a fluid particle (a cell) have $\Omega(e)$ microstates of energy below $e$,
+and $\omega(e)=\Omega'(e)$ per unit energy.  Two entropies are in use:
+\st
+S_{\rm Gibbs}=\ln\Omega,\qquad S_{\rm Boltzmann}=\ln\omega .
+\stp
+With the Gibbs temperature $T_G=(\partial S_{\rm Gibbs}/\partial e)^{-1}$ they differ by a logarithm,
+\st
+S_{\rm Boltzmann}=S_{\rm Gibbs}-\ln T_G ,
+\stp
+a term that does not grow with the size of the cell: negligible for large cells, of relative order $1/s_a$ for small ones.  The
+number of states in an interval is
+\st
+\omega\,de=e^{S_{\rm Boltzmann}}\,de=e^{S_{\rm Gibbs}}\,dS_{\rm Gibbs} ,
+\stp
+so the measure flat in the conserved energy (the Einstein formula; the constant $\Delta\Psi$ of G.~Ba\c{s}ar's note) goes with the
+Boltzmann entropy, and the measure flat in the entropy with the Gibbs one.  Which is the right one for small systems is a
+known debate (Dunkel and Hilbert, Nature Physics \textbf{10}, 67 (2014), and the replies).  For it: the Gibbs entropy is the
+adiabatic invariant of Hamiltonian dynamics (the phase-space volume, Hertz), and it gives exact equipartition with $T_G$.
+
+\paragraph{Our scheme fixes the choice.}  The ideal step is Hamiltonian in $(\bm x_a,\bm m_a)$ at fixed $s_a$: it conserves the
+Liouville measure and treats $s_a$ as an adiabatic invariant, i.e.\ as the Gibbs entropy.  The measures it preserves are
+\st
+e^{\sum_as_a}\,f(\{s_a\})\,g(H,\bm P)\prod_ad\bm x_a\,d\bm m_a\,ds_a ,
+\stp
+and the Einstein weight, which carries $\prod_aT_a$, is not among them, since $T_a$ changes along the flow at fixed $s_a$.  So the
+two steps can share a measure only if the stochastic step preserves the Liouville one.
+
+\paragraph{The correction: one logarithm.}  A stochastic move holds $e_a$ and $V_a$ fixed and changes $\bm m_a$.  On that surface the
+Liouville measure induces, with $T_a=\partial e_a/\partial s_a|_{\bm m,V}$ the bare temperature,
+\st
+e^{s_a}\,ds_a\,d\bm m_a\ \to\ \frac{e^{S_a(e_a,\bm m_a)}}{T_a}\,d\bm m_a=e^{S_a-\ln T_a}\,d\bm m_a .
+\stp
+The stochastic step then uses, in place of $S_a$,
+\st
+\tilde S_a(e_a,\bm m_a)=S_a(e_a,\bm m_a)-\ln T_a(e_a,\bm m_a),\qquad
+e^{\Delta\tilde{\mathbb S}}=e^{\Delta\mathbb S}\prod_a\frac{T_a}{T_a'} ,
+\stp
+the same correction in the heat bath of hybrid Monte Carlo, and the trajectories of hybrid Monte Carlo are accepted without
+the factor $\prod_aT_a'/T_a$ of \Sect{sec:sampler}.  The inversion of the equation of state that gives $S_a$ gives $T_a$ as well, so the
+cost is nil.  The ideal step, the stochastic step and the sampler then share one measure, $e^{\sum_as_a}\prod d\bm x\,d\bm m\,ds$, at every $s_a$.
+
+\paragraph{Status.}  Not implemented.  The hydrodynamic susceptibilities are unaffected at leading order; the single-particle
+distributions (the spread of $s_a$, $\avg{\ln T_a}$, the kinetic energy) change at relative order $1/s_a$: $0.2\%$ at $s_a=541$, a few
+per cent at $s_a\approx20$--$50$.  If small $s_a$ becomes important, the test is runs from a sampled state at $s_a\approx30$, with and
+without the correction, watching whether those distributions stay at their sampled values.
 
 \end{document}
