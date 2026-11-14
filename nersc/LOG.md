@@ -4,6 +4,29 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Next session at NERSC — also: campaign `hmc_eq` (written 2026-11-14, on the laptop)
+
+The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
+"Hybrid Monte Carlo in the same box" and Fig. Skk; single chains on the laptop were too noisy: one mode of |N_k|² is
+exponentially distributed and the chains are autocorrelated).  `nersc/campaign_hmc_eq.txt`, 64 tasks, ≈ 1.3 node-hours.
+Run from a worktree at the pushed tip of `equilibrium` that nobody edits (e.g. update `~/stochastic-sph-eq` if no task of
+`pairs_low` is pending, otherwise make `~/stochastic-sph-eq2`).  Smoke test first (login node, seconds):
+`julia --project=nersc test/testhmc.jl` (PASS).
+```bash
+R=$HOME/stochastic-sph-eq; cd $SCRATCH/sph
+sbatch --array=1-64 -A m3722 -t 08:00:00 --export=ALL,SR_REPO=$R $R/nersc/array.sh $R/nersc/campaign_hmc_eq.txt hmc_eq
+```
+Record the job ID here.  Analysis (plotting environment), one figure per box:
+```bash
+P=$SCRATCH/sph/hmc_eq
+SR_FIGDIR=$P/figs12 julia --project=$HOME/stochastic-sph examples/hmc_analysis.jl $P/hq12_s54 $P/hq12_s135 $P/hq12_s541
+SR_FIGDIR=$P/figs24 julia --project=$HOME/stochastic-sph examples/hmc_analysis.jl $P/hq24_s54 $P/hq24_s541
+```
+It prints S(k)/(4/s_a) per band of kh with the error from the spread between chains and τ_int.  Replace Fig. Skk
+(`docs/figs/equilibrium_Sk_vs_k.png`) by `figs12/hmc_Sk_vs_k.png` with the L = 2.4 sets added, update the table and bullets
+of "Hybrid Monte Carlo in the same box" (in particular the small-k plateau and its s_a dependence: S(k→0) ≈ 0.25 at
+s_a = 54 and 0.11 at 541 from single chains), compare with the dynamics of `pairs` and `pairs_low`, commit, push, report here.
+
 ## Next session at NERSC — also: campaign `pairs_low` (written 2026-11-14, on the laptop)
 
 Do **not** stop `pairs` if it is running, and do not delete its output or any figure: this is a second campaign.

@@ -422,14 +422,14 @@ chains accept $58\%$ of their moves, and $600$ updates take about $20$ seconds.
 runs of \Fig{fig:gvt}, at the same $\beta^\mu$.  Hybrid Monte Carlo has no viscous step: its target \Eq{joint} involves only the
 Hamiltonian and the equation of state, so the choice of viscous kernel enters only the dynamics.
 \begin{itemize}
-\item \emph{Short range: the two agree.}  $g(r)$ lies on top of the dynamics at all three entropies, and so does the local bond
+\item \emph{Short range: the two agree.}  $g(r)$ lies on top of the dynamics at all four entropies, and so does the local bond
   order:
   \st
-  \psi_6^{\rm local}:\quad 0.367\ \text{vs}\ 0.361\ (s_a=541),\qquad 0.418\ \text{vs}\ 0.415\ (5413),\qquad 0.869\ \text{vs}\ 0.849\ (54000)
+  \psi_6^{\rm local}:\quad 0.366\ \text{vs}\ 0.367\ (s_a=54),\quad 0.367\ \text{vs}\ 0.361\ (541),\quad 0.418\ \text{vs}\ 0.415\ (5413),\quad 0.869\ \text{vs}\ 0.849\ (54000)
   \stp
   (HMC first).  The dynamics reaches the equilibrium local structure quickly.
-\item \emph{Long wavelengths: they do not.}  The fluctuations of the number density of the positions at $kh=0.52$ and $0.74$ are
-  lower in the dynamics, at every entropy,
+\item \emph{Long wavelengths: at these early times they do not.}  The fluctuations of the number density of the positions at
+  $kh=0.52$ and $0.74$ are lower in the dynamics at $t\le5$, at every entropy,
   \st
   \frac{|N_{\bm k}|^2_{\rm dyn}}{|N_{\bm k}|^2_{\rm HMC}}=0.07\text{--}0.42 ,
   \stp
@@ -486,31 +486,46 @@ $s_a=541$, $\tau=0.087$ & $15.8(1.8)$ & $5.6(7)$ & $6.2(5)$ & $3.1(2)$ \\
   equilibrium value is reached within the first ten updates; with short ones it takes several hundred at $s_a=541$: the
   momenta are redrawn before a density wave can cross the box, so the long modes move only by diffusion, slowly when the
   thermal velocity is small.
-\item \emph{At $s_a=54$ the dynamics reaches equilibrium.}  Its plateau, $2.9(2)$ at $kh=0.52$ for $t=100$--$200$, agrees with $3.4(4)$ and
-  $2.9(7)$.  The larger thermal velocity ($\delta v=0.14$) lets the number fluctuations relax by $t\approx20$--$50$.
-\item \emph{At $s_a=541$ the dynamics is far from it at $t=200$:} $3.9(4)$ against about $14$ at $kh=0.52$, still rising.
-\item \emph{The equilibrium itself depends on $k$ at $s_a=541$}, roughly as $1/k^2$:
+\item \emph{At $s_a=54$ the dynamics reaches equilibrium.}  Its plateau, $2.9(2)$ at $kh=0.52$ for $t=100$--$200$, agrees with the
+  combined equilibrium value $3.3(3)$.  The larger thermal velocity ($\delta v=0.14$) lets the number fluctuations relax by $t\approx20$--$50$.
+\item \emph{At $s_a=541$ the dynamics is far from it at $t=200$:} $3.9(4)$ against $15.1(1.5)$ at $kh=0.52$, still rising.
+\item \emph{The equilibrium depends on $k$} (\Fig{fig:Skk}, all box modes with $kh\le1.5$).  At both entropies $S(\bm k)$ falls from a
+  plateau at small $k$ to smaller values at $kh\gtrsim1$:
   \st
-  \frac{S(\bm k)}{4/s_a}\,(kh)^2\approx3.7,\quad3.6,\quad3.9\qquad(kh=0.52,\ 0.79,\ 1.04),
+  \frac{S}{4/s_a}\approx3.3\ \to\ 2\qquad(s_a=54),\qquad \frac{S}{4/s_a}\approx14\ \to\ 2.5\qquad(s_a=541),
   \stp
-  while at $s_a=54$ it is nearly flat.  A tentative description of both is a part $\propto1/s_a$ and a part independent of $s_a$ that
-  grows as $1/k^2$, about $0.027/(kh)^2$: a long-wavelength number fluctuation at fixed entropy and energy density is invisible
-  to hydrodynamics and is penalized only by the kernel.  Single chains and four wavevectors; to be checked.
+  from $kh\lesssim0.5$ to $kh\approx1.4$.  The plateau does not scale as $1/s_a$: in absolute terms $S(\bm k\to0)\approx0.25$ at $s_a=54$ and
+  $0.11$ at $541$, a factor $2.3$ for a factor $10$ in $s_a$.  (An earlier reading of a $1/k^2$ growth, from three wavevectors between
+  $kh=0.52$ and $1.04$, was the crossover to this plateau.)  Single chains; the campaign below will tighten it.
 \end{itemize}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/equilibrium_Sk_vs_k.png}
+\caption{The equilibrium structure factor of the positions, $S(\bm k)/(4/s_a)$, against $kh$ for every box mode with $kh\le1.5$, from
+hybrid Monte Carlo at $L=1.2$, $h/a=2$ (two chains, long and short trajectories, combined per mode with inverse-variance
+weights).  Black: the dynamics from the lattice at $t=100$--$200$ (campaign \texttt{pairs}, 16 runs, $kh=0.52$).  Left $s_a=54$, right
+$s_a=541$.}
+\label{fig:Skk}
+\end{figure}
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_Sk_relaxation.png}
 \caption{$S(\bm k)/(4/s_a)$ at $kh=0.52$, $L=1.2$, $h/a=2$.  Black: the dynamics from the lattice (campaign \texttt{pairs}, 16 runs,
 time windows).  Coloured: hybrid Monte Carlo (one chain each) against the cumulative trajectory time, block averages, with
-trajectories of $0.087$ (orange) and $1.73$ (green).  Left $s_a=54$, right $s_a=541$.}
+trajectories of $0.087$ (orange) and $1.73$ (green).  Red band: the best estimate of the equilibrium, the two chains after
+their burn-in combined with inverse-variance weights, $3.3\pm0.3$ ($s_a=54$) and $15.1\pm1.5$ ($s_a=541$).  The individual blocks of a
+chain jump because $|N_{\bm k}|^2$ of one mode is exponentially distributed (its standard deviation equals its mean), only two modes
+have $kh=0.52$, and successive updates are correlated (integrated autocorrelation time about $2$ updates at $s_a=54$ and $4$ at
+$541$ with long trajectories, much longer with short ones): each block holds only a few independent samples.  Left $s_a=54$,
+right $s_a=541$.}
 \label{fig:Skrelax}
 \end{figure}
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_hmc_vs_dynamics.png}
-\caption{Late times of the full dynamics from the lattice (one run, the second half of $t\le2$ or $5$) against hybrid Monte
-Carlo (one chain, updates $301$--$600$), $L=0.6$, $h/a=2$.  Top: $g(r)$.  Bottom: the structure factor of the positions,
-$S(\bm k)=|N_{\bm k}|^2/N$ (the HMC chain records only $kh\le1$).}
+\caption{$g(r)$ at late times of the full dynamics from the lattice (one run, the second half of $t\le2$ or $5$) against hybrid
+Monte Carlo (one chain, updates $301$--$600$), $L=0.6$, $h/a=2$, at four entropies per particle.  The structure factor, which at
+these times had not relaxed, is in \Fig{fig:Skk}.}
 \label{fig:hmcvsdyn}
 \end{figure}
 
