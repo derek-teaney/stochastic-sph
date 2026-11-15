@@ -4,6 +4,55 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Next session at NERSC — campaign `moment` (written 2026-11-15 on the laptop; branch `inverse-moment`)
+
+**What we are trying to do.**  The owner wants a cleaner viscous step, `SPH_DISSIPATION=moment` (docs/inverse_moment.tex; read
+Sects. I–V and "Stage 1").  It is the common scheme without the per-star weight correction Λ_a: the faces carry the inverse bond
+moment, A_ab = V_a w_ab 𝓜_a⁻¹ r_ab, which closes for any star; the residual is the least-squares residual with the weights c_ab; the
+residual move is a Gaussian conditioned on zero virial.  Motivation: Λ_a falls back in 7% of the stars at s_a = 16 (faces that do
+not close, small torques), and only with fixed faces can the Hastings correction (stage 2, not implemented) remove the measured bias
+of the stochastic step at low s_a.  The owner expects `moment` to do as well as `common` and, if it does, to make it the default.
+**We must not make anything worse**: this campaign is the check.  The default stays `common`; nothing here changes other runs.
+
+**Done on the laptop** (docs/inverse_moment.tex, "Stage 1"): test/testmoment.jl passes (identical to common at rest on the lattice
+to 4e-16; closure and zero virial to roundoff on jittered and Poisson stars; momentum conserved; K/K_target at v0 = 0.8 within 0.2%
+of common); the stochastic step alone samples the exact distribution with frozen coefficients (examples/hastings_baseline.jl,
+SPH_MEASURE=einstein) and has the same bias as common when they are rebuilt; the deterministic comparison examples/moment_det.jl
+(viscous step alone moving and on disordered positions, full deterministic waves) — results and figure docs/figs/moment_det.png in
+the note.
+
+**To run** (worktree at the pushed tip of `inverse-moment`; NOT the `hbya` worktree while its tasks run).  Smoke test on the login
+node: `julia --project=nersc test/testmoment.jl` (≈ 1 min).  Then, from `$SCRATCH/sph`:
+```bash
+R=$HOME/stochastic-sph-mo        # git worktree add ~/stochastic-sph-mo inverse-moment  (or update it to the tip)
+# 96 tasks × 4 cores, packed on 4 debug nodes, < 30 min (≈ 2 node-hours); or the same with bash inside
+# salloc -A m3722 -q interactive -C cpu -N 4 -t 01:00:00
+sbatch -A m3722 -q debug -C cpu -N 4 -t 00:30:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_moment.txt moment
+# the deterministic comparison at L = 1.2 with more threads (one debug node), as on the laptop:
+# (it plots at the end, so it needs the plotting environment, $HOME/stochastic-sph, as for the analysis below)
+sbatch -A m3722 -q debug -C cpu -N 1 -t 00:30:00 --wrap "module load julia/1.12.1; export JULIA_DEPOT_PATH=/global/common/software/m3722/$USER/julia_depot; cd $R && MD_OUT=$SCRATCH/sph/moment/det SR_FIGDIR=$SCRATCH/sph/moment/det julia -t 64 --project=$HOME/stochastic-sph examples/moment_det.jl"
+```
+If a full run (t = 100, L = 0.6) does not finish in 30 min, rerun the same node.sh command: the tasks resume from their .chk.
+Record the job IDs here.
+
+**Analysis** (the plotting environment `$HOME/stochastic-sph`, which has PyPlot; the scripts are taken from $R):
+```bash
+D=$SCRATCH/sph/moment
+BOOST_GROUP=MOA julia --project=$HOME/stochastic-sph $R/examples/boost_analysis.jl $D    # stochastic step alone: common vs moment
+BOOST_GROUP=MO  julia --project=$HOME/stochastic-sph $R/examples/boost_analysis.jl $D    # full step: C_MM, C_EE, shear damping
+```
+Compare, common against moment, line by line (each pair shares its seeds, so the noise is correlated):
+1. acceptances of the stress and residual moves (the run records / logs);
+2. stochastic step alone: ⟨δm²⟩ and the equal-time spectrum, at v = 0 and 0.8;
+3. full step: equal-time C_MM/χ, C_EE/χ against kh, the shear damping Γ/Γ_hyd at kh = 0.52 and 1.05, the sound;
+4. ΔH/H and the guards.
+Pass: no difference beyond the statistics, except possibly through the residual at v = 0.8 (f_ab ≠ 1).  Write a short results
+paragraph, tables and figures into docs/inverse_moment.tex as a **new last section, "Stage 1: results from NERSC"** (the laptop session
+keeps editing the other sections of that note; stay inside this section so that the two do not conflict), figures in docs/figs/
+with the prefix `moment_nersc_`; commit on `inverse-moment`, pull --rebase, push.  The owner wants many plots: the deterministic set
+and the boost-style stochastic comparison (the MO/MOA figures), common and moment side by side.
+Do not change the default; the owner decides after reading.
+
 ## 2026-11-15 (laptop): new defaults — read before the next campaign
 
 `equilibrium` was merged into `main` (tag `notes-2026-11-15`, defaults unchanged).  Then, on `new-defaults`: the defaults are the

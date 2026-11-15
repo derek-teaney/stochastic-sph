@@ -1,0 +1,24 @@
+# Campaign `moment` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 1"): the viscous step with inverse-moment
+# faces and the conditioned residual (SPH_DISSIPATION=moment) against the common scheme (SPH_DISSIPATION=common), with the current
+# defaults (generalized leapfrog, Liouville measure, HMC start: 200 updates, TAUJIT 0.5, δt factor 0.35).  L = 0.6 (N = 672), h/a = 2,
+# η/s = 0.2, s_a = 135 (SR_S0 = 2.5e5, as hbya).  Each c/m pair shares its seeds (same SR_SEEDOFFSET), so that the differences are
+# measured on correlated noise.  No Hastings factor (stage 2).
+#
+# Run packed on debug nodes (128 tasks of 4 cores = 4 nodes, < 30 min), from $SCRATCH/sph:
+#   sbatch -A m3722 -q debug -C cpu -N 4 -t 00:30:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_moment.txt moment
+# or inside an interactive allocation (salloc -A m3722 -q interactive -C cpu -N 4 -t 01:00:00), the same node.sh command with bash.
+#
+# 1. The stochastic step alone (positions frozen, SR_NOHAM=1), t = 50: acceptances, ⟨δm²⟩, the spectrum.  Tasks 1-32.
+mo_alone_c_v0     8  SPH_DISSIPATION=common SR_NOHAM=1 SR_S0=2.5e5 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=100              -- examples/equilibrium.jl 0.6 2 50 1 4 mo_alone_c_v0
+mo_alone_m_v0     8  SPH_DISSIPATION=moment SR_NOHAM=1 SR_S0=2.5e5 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=100              -- examples/equilibrium.jl 0.6 2 50 1 4 mo_alone_m_v0
+mo_alone_c_v0.8   8  SPH_DISSIPATION=common SR_NOHAM=1 SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=200              -- examples/equilibrium.jl 0.6 2 50 1 4 mo_alone_c_v0.8
+mo_alone_m_v0.8   8  SPH_DISSIPATION=moment SR_NOHAM=1 SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=200              -- examples/equilibrium.jl 0.6 2 50 1 4 mo_alone_m_v0.8
+# 2. The full step, equilibrium correlators (C_MM, C_EE, shear damping at kh = 0.52, 1.05), t = 100.  Tasks 33-96.
+mo_full_c_v0     16  SPH_DISSIPATION=common SR_S0=2.5e5 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=300                         -- examples/equilibrium.jl 0.6 2 100 1 4 mo_full_c_v0
+mo_full_m_v0     16  SPH_DISSIPATION=moment SR_S0=2.5e5 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=300                         -- examples/equilibrium.jl 0.6 2 100 1 4 mo_full_m_v0
+mo_full_c_v0.8   16  SPH_DISSIPATION=common SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=400                         -- examples/equilibrium.jl 0.6 2 100 1 4 mo_full_c_v0.8
+mo_full_m_v0.8   16  SPH_DISSIPATION=moment SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=400                         -- examples/equilibrium.jl 0.6 2 100 1 4 mo_full_m_v0.8
+# 3. The deterministic waves (docs/commonkernel.tex, test 3), common and moment, L = 1.2, v0 = 0 and 0.8: not a campaign line (it
+#    wants many threads); one debug node:
+#   sbatch -A m3722 -q debug -C cpu -N 1 -t 00:30:00 --export=ALL,SR_WAVES_SCHEMES=common,moment --wrap \
+#     "cd $R && julia -t 64 --project=nersc examples/commonkernel_waves.jl $SCRATCH/sph/moment/waves"

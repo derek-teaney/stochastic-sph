@@ -1,0 +1,460 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{xcolor}
+\usepackage{algpseudocode}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\pf}{\bm{\mathsf p}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The dissipative step with inverse-moment faces: plan}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The common scheme (\texttt{commonkernel.tex}) corrects the bond weights of every star by a matrix $\Lambda_a$ so that its bond moment
+is isotropic, and subtracts the virial of the residual draws through the faces.  We propose to handle the shape of each star instead
+by inverting its bond moment: the faces carry the inverse moment, and the residual move is a Gaussian conditioned on zero virial.
+$\Lambda_a$ is then not needed, the closure of the faces holds for any star, and the residual is the least-squares residual of the bond
+differences, so the deterministic step needs no extra term.  With fixed faces both moves have closed-form proposal densities, and the
+Hastings correction removes the bias of rebuilding the coefficients, which is up to $14\%$ at $s_a=16$.  This note is the plan; nothing
+is implemented.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The point}
+\label{sec:point}
+
+The common scheme has two weak spots.
+\begin{itemize}
+\item \emph{The correction $\Lambda_a$.}  Each star reshapes its weights, $\psi_{ab}\to\psi_{ab}(1+\bm r_{ab}^T\Lambda_a\bm r_{ab})$, so that its bond
+  moment is exactly $n_a\one$.  This costs a $4\times4$ solve per star, can make weights negative, and then falls back to $\Lambda_a=0$.  In
+  the fallback the faces no longer close, the virial of a stress move is not symmetric, and the move exerts a small torque.  The
+  fallback occurs in $7\%$ of the stars at $s_a=16$ and $h/a=2$ (\Sect{sec:fluct}).
+\item \emph{Detailed balance across steps.}  The coefficients of the stochastic step are rebuilt every step from the smoothed fields, and
+  no Hastings factor is included.  On a frozen lattice this biases the momentum fluctuations by up to $14\%$ at $s_a=16$ and $6\%$ at
+  $s_a=54$, independent of $\Delta t$ (\texttt{commonkernel.tex}, ``Detailed balance with state-dependent coefficients'').
+\end{itemize}
+Both have the same cure.  The shape of a star is handled by inverting its moment, never by reshaping its weights; then the faces and
+the bond vectors are fixed during the step, both proposals are Gaussians with closed-form densities, and the Hastings ratio is
+computable.
+
+%=============================================================================
+\section{The star}
+\label{sec:star}
+
+Take the bond weights of the SPH kernel at the lab distance, as in the common scheme but without $\Lambda_a$,
+\st
+w_{ab}=\frac{V_b\,\psi_{ab}}{n_a},\qquad \psi_{ab}=-\frac{W'(r_{ab};h)}{r_{ab}} ,
+\stp
+with $n_a$ chosen so that the bond moment has trace two,
+\st
+\mathcal M_a=\sum_{b\neq a}w_{ab}\,\bm r_{ab}\bm r_{ab}^T,\qquad \tr\mathcal M_a=2 .
+\label{moment}
+\stp
+On a perfect lattice $\mathcal M_a=\one$; in a disordered star it is not.  ($\mathcal M_a$ is the bond moment, not a momentum.)
+
+\paragraph{The fit and the faces.}  The fitted gradient and the faces both carry the inverse moment,
+\st
+(\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,\mathcal M_a^{-1},\qquad
+\bm A_{ab}=V_a\,w_{ab}\,\mathcal M_a^{-1}\bm r_{ab} .
+\label{faces}
+\stp
+The fit is the one the common scheme already uses.  The faces close for \emph{any} star,
+\st
+\sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\,\mathcal M_a^{-1}\mathcal M_a=V_a\one ,
+\label{closure}
+\stp
+and the fit is the face sum,
+\st
+(\nabla\beta)_a=\frac1{V_a}\sum_{b\neq a}\Delta\beta_{ab}\,\bm A_{ab}^T .
+\stp
+Both are unchanged when all $w_{ab}$ of a star are scaled together, so $n_a$ matters only for the residual coefficients below.  The faces
+depend only on the positions and the volumes, which are fixed during the step.  As in the particle scheme, a face need not be parallel to
+its bond.
+
+%=============================================================================
+\section{The dissipative function}
+\label{sec:K}
+
+\paragraph{What $W$ does and what $\ell$ does.}  The two are kept apart.
+\begin{itemize}
+\item The SPH kernel $W$, in the lab, fixes the \emph{geometry}: the bond weights $w_{ab}$, the moment $\mathcal M_a$, the fit $(\nabla\beta)_a$, the faces
+  $\bm A_{ab}$, the bond vectors and the zero-virial constraint of the residual move.  These depend only on the positions and the volumes.
+  The fit is a lab object: it does not know that the fluid moves.
+\item The comoving metric $\ell_a$, with $T_a$, $\eta_a$ and $\zeta_a$, enters only the \emph{coefficients}, the Onsager matrix, and it does so in both
+  parts of $K$: in the resolved part it contracts both indices of the comoving strain built from the lab fit, and enters the projector
+  and the expansion; in the residual part it sits between the two residuals and in the residual factor $f_{ab}$ of the coefficients
+  $c_{ab}$.
+\end{itemize}
+So $W$ decides which bonds there are and how a gradient is measured from them; $\ell$ decides how a measured gradient, or a measured
+residual, dissipates in the comoving frame.  The residual factor $f_{ab}$ is the one place where $\ell$ looks geometric, since it reweights the
+bonds; that is why it is kept out of the fit and the faces and appears only in $c_{ab}$ and $R_a$ (\Sect{sec:metric}).  In the particle scheme
+$\ell$ also entered the geometry, through the comoving distance in $\psi$ and through $\ell_a^{-1}$ in the faces, and that is what made its faces
+depend on the velocity.
+
+\paragraph{The resolved part} is the target of the common scheme, a function of the fit \Eq{faces}:
+\st
+K_a^{\rm res}=V_aT_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big] .
+\label{Kres}
+\stp
+For the residual we propose the least-squares residual of the bond differences, with the residual coefficients as weights,
+\st
+K_a^{\rm resid}=\frac12\,\min_{X}\sum_{b\neq a}c_{ab}\,\big(\Delta\beta_{ab}-X\bm r_{ab}\big)\cdot\ell_a\big(\Delta\beta_{ab}-X\bm r_{ab}\big),\qquad
+c_{ab}=2\,V_aT_a\eta_a\,w_{ab}\,f_{ab} ,
+\label{Kresid}
+\stp
+with $X$ a $2\times2$ matrix and $f_{ab}=(\hat{\bm r}_{ab}\cdot\ell_a\hat{\bm r}_{ab})^2$ the residual factor.  The minimum is at the fit with weights $c_{ab}$,
+\st
+X_a=\sum_{b\neq a}c_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\,R_a^{-1},\qquad R_a=\sum_{b\neq a}c_{ab}\,\bm r_{ab}\bm r_{ab}^T ,
+\label{Xa}
+\stp
+independent of $\ell_a$.  Write the residual of a bond as
+\st
+\tilde\delta_{ab}\beta=\Delta\beta_{ab}-X_a\bm r_{ab} .
+\stp
+At rest $f_{ab}=1$, so $c_{ab}\propto w_{ab}$ and $X_a=(\nabla\beta)_a$: \Eq{Kresid} is the residual of the common scheme.  In a moving fluid
+the two fits differ, and \Eq{Kresid} is the smaller of the two residuals, since it is minimized over $X$.
+
+\paragraph{Why this form.}  Two reasons.
+\begin{itemize}
+\item It is the mean of the conditioned residual move of \Sect{sec:resid}: that move removes from the draws exactly what a linear
+  field could explain, with the weights $c_{ab}$.
+\item The derivative of $K_a^{\rm resid}$ through $X_a$ vanishes at the minimum.  So the deterministic residual force is a bond
+  traction only,
+  \st
+  \pf_{ab}=-c_{ab}\,\ell_a\,\tilde\delta_{ab}\beta\qquad(\text{momentum }a\text{ gives }b),
+  \stp
+  and the extra term that $f_{ab}\neq1$ adds to the resolved force in the common scheme (\texttt{commonkernel.tex}, ``The residual in a moving
+  fluid'') is gone.
+\end{itemize}
+
+%=============================================================================
+\section{The stress move}
+\label{sec:stress}
+
+Unchanged except for the faces.  Particle $a$ draws a symmetric stress $\xi_a$ and gives each bond the traction
+\st
+\pf_{ab}=\xi_a\,\bm A_{ab} .
+\stp
+By the closure \Eq{closure} its virial is $V_a\xi_a$, which is symmetric, so the move exerts no torque, and to first order
+\st
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}=-V_a\,\xi_a{:}(\nabla\beta)_a .
+\stp
+The proposals have the covariance of $K_a^{\rm res}$,
+\st
+\big\langle\xi_a^{ij}\,\xi_a^{kl}\big\rangle=C_a^{ijkl}=\frac{2\Delta t}{V_a^2}\,
+\frac{\partial^2K_a^{\rm res}}{\partial(\nabla_j\beta_i)_a\,\partial(\nabla_l\beta_k)_a} ,
+\stp
+drawn as in \texttt{commonkernel.tex} with three basis stresses.
+
+%=============================================================================
+\section{The residual move as a conditioning}
+\label{sec:resid}
+
+Particle $a$ draws an independent Gaussian vector on each bond,
+\st
+\mathfrak p_{ab}\sim N\big(0,\Sigma_{ab}\big),\qquad \Sigma_{ab}=2\Delta t\,c_{ab}\,\ell_a ,
+\stp
+and conditions the draws on zero virial.  The virial
+\st
+Y_a=\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T
+\stp
+is a Gaussian $2\times2$ matrix with covariance
+\st
+\big\langle(Y_a)_{ij}(Y_a)_{kl}\big\rangle=2\Delta t\,(\ell_a)_{ik}\,(R_a)_{jl} .
+\stp
+$R_a$ of \Eq{Xa} is the bond moment weighted by the residual coefficients: it says how strongly the bonds along each direction feed the
+virial.  For a Gaussian, conditioning on zero virial is the projection that subtracts from each draw its regression on the virial,
+\st
+\vec p_{ab}=\mathfrak p_{ab}-c_{ab}\,Y_a\,R_a^{-1}\bm r_{ab} .
+\label{condition}
+\stp
+Each bond gives back a share of the virial in proportion to its coefficient and its bond vector, and the virial of the result is zero,
+\st
+\sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T=Y_a-Y_a\,R_a^{-1}R_a=0 ,
+\stp
+for any star.  The tractions $\vec p_{ab}$ carry no stress and no torque.
+
+\paragraph{The mean.}  The entropy change is $\Delta\mathbb S=-\sum_b\Delta\beta_{ab}\cdot\vec p_{ab}$.  The covariance of the conditioned draws is the
+covariance of $\mathfrak p$ minus its part along the virial, and the Metropolis drift is half of it applied to the gradient of
+$\Delta\mathbb S$.  This gives
+\st
+\avg{\vec p_{ab}}=-\Delta t\,c_{ab}\,\ell_a\,\tilde\delta_{ab}\beta ,
+\stp
+$\Delta t$ times the traction of \Eq{Kresid}: the regression in \Eq{condition} and the fit $X_a$ in \Eq{Kresid} are the same least-squares
+problem.
+
+%=============================================================================
+\section{The moment as the sampling metric of the star}
+\label{sec:metric}
+
+\paragraph{Whitened bonds.}  The inverse moment acts on the second index of the fit, which is a covector: the fit maps bond vectors to
+differences of $\beta$.  Define the whitened bond vectors
+\st
+\varrho_{ab}=\mathcal M_a^{-1/2}\,\bm r_{ab},\qquad \sum_{b\neq a}w_{ab}\,\varrho_{ab}\varrho_{ab}^T=\one .
+\stp
+In these variables every star is isotropic, as on a perfect lattice, and
+\st
+(\nabla\beta)_a=\Big(\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\varrho_{ab}^T\Big)\mathcal M_a^{-1/2},\qquad
+\bm A_{ab}=V_a\,w_{ab}\,\mathcal M_a^{-1/2}\varrho_{ab} .
+\stp
+The factors $\mathcal M_a^{-1/2}$ are the change of variables back to the lab.  The resolved part \Eq{Kres} is quadratic in the fit, so it
+carries two powers of $\mathcal M_a^{-1}$, one on each covector index.  This is the role $\ell_a^{-1}$ plays in the faces of the particle scheme:
+$\mathcal M_a$ is the metric with which the star samples the plane, as $\ell_a$ is the metric of the comoving frame.
+
+\paragraph{Two moments, and why.}  The fit and the faces use $\mathcal M_a$, built from $w_{ab}$; the residual and the conditioning use $R_a$,
+built from $c_{ab}\propto w_{ab}f_{ab}$.  In a moving fluid $f_{ab}\neq1$ and the two differ.  The fully symmetric scheme would use one moment:
+one fit with the weights $c_{ab}$, faces proportional to $c_{ab}R_a^{-1}\bm r_{ab}$ (the vectors of the conditioning), and $K$ the exact split of
+the bond form,
+\st
+\frac12\sum_{b\neq a}c_{ab}\,\Delta\beta_{ab}\cdot\ell_a\Delta\beta_{ab}
+=\frac12\tr\big(X_a^T\ell_aX_aR_a\big)+\frac12\sum_{b\neq a}c_{ab}\,\tilde\delta_{ab}\beta\cdot\ell_a\tilde\delta_{ab}\beta ,
+\stp
+since the residuals are orthogonal to the fit in the metric $c_{ab}\ell_a$.  But $f_{ab}$ depends on the velocity, so these faces would change
+with the momenta, the reverse stress move would not exist, and the stress move could not be corrected (\texttt{commonkernel.tex},
+``Detailed balance'').  The split is therefore principled:
+\begin{itemize}
+\item the map from the stress to the tractions must be fixed during a move, so the faces may depend only on the positions: $\mathcal M_a$;
+\item the residual move only conditions on a fixed linear constraint, zero virial, so its covariance may depend on the state and carry
+  $f_{ab}$: $R_a$.
+\end{itemize}
+Without $f_{ab}$, $R_a\propto\mathcal M_a$ and the scheme is fully symmetric; but then the residual loses the comoving metric at the bond scale
+(\texttt{commonkernel.tex}, the variant \texttt{common\_lab}).  The asymmetry is the price of fixed faces together with a comoving residual.
+
+%=============================================================================
+\section{Fluctuations of the moment}
+\label{sec:fluct}
+
+\paragraph{The anisotropy of a star.}  With the trace fixed to two,
+\st
+\mathcal M_a=\one+Q_a,\qquad Q_a=\sum_{b\neq a}w_{ab}\Big(\bm r_{ab}\bm r_{ab}^T-\tfrac12\,r_{ab}^2\one\Big) .
+\stp
+The traceless $Q_a$ has two components: it is the quadrupolar anisotropy of the star, weighted by $w\,r^2$, a local bond-orientational order
+parameter like the local $\psi_6$ we record, with $l=2$ in place of $l=6$.  It vanishes on a perfect lattice.  It is what $\Lambda_a$ removes in the
+common scheme and what the inverse moment absorbs here, and it sets how far the faces \Eq{faces} deviate from $V_aw_{ab}\bm r_{ab}$.
+
+\paragraph{Pair and triplet parts.}  Its size is
+\st
+\tr Q_a^2=\frac12\sum_{b,c\neq a}w_{ab}\,w_{ac}\;r_{ab}^2\,r_{ac}^2\cos2\phi_{bc} ,
+\stp
+with $\phi_{bc}$ the angle between the bonds $ab$ and $ac$.  The terms $b=c$ are the pair part; the terms $b\neq c$ the triplet part.  In a liquid of
+density $n$ with pair correlation $g(r)$ and triplet correlation $g_3$, and with $V_b\simeq1/n$ and $n_a$ replaced by its mean,
+\st
+\begin{aligned}
+\big\langle\tr Q_a^2\big\rangle\simeq\frac1{2\mathcal N^2}\Big[&\frac1n\int d^2r\,g(r)\,\psi(r)^2r^4\\
+&+\int d^2r\,d^2r'\,g_3(\bm r,\bm r')\,\psi(r)\psi(r')\,r^2r'^2\cos2\phi\Big],
+\end{aligned}
+\label{Q2}
+\stp
+with the normalization
+\st
+\mathcal N=\frac12\int d^2r\,g(r)\,\psi(r)\,r^2 .
+\stp
+In an isotropic liquid $\langle Q_a\rangle=0$.  For independent positions the triplet integral vanishes and the pair part, of order one over the
+number of neighbours, is the whole answer; in a correlated liquid the triplet part is negative (neighbours avoid each other, so their bond
+directions spread out) and cancels most of it.  In the superposition approximation $g_3\simeq g(r)\,g(r')\,g(|\bm r-\bm r'|)$, and only
+$g(|\bm r-\bm r'|)-1$ contributes, since $\int d\phi\cos2\phi=0$.
+
+\paragraph{Measurement.}  \texttt{examples/moment\_fluctuations.jl}: the lab weights of the common scheme, $L=0.6$, averaged over particles; the
+lattice, ten Poisson configurations, and hybrid Monte Carlo equilibria (40 updates after 20 of burn-in).  The rms anisotropy is
+$\sqrt{\langle\tr Q^2\rangle/2}$; the last column is the fraction of stars in which the common scheme's $\Lambda_a$ falls back to zero.
+\begin{center}
+\begin{tabular}{llcccc}
+\hline
+$h/a$ & positions & $\langle\tr Q^2\rangle$ & pair part & rms anisotropy & $\Lambda_a$ falls back \\ \hline
+2 & lattice & $0$ & $0.061$ & $0$ & $0$ \\
+2 & Poisson & $0.039$ & $0.065$ & $14\%$ & $27\%$ \\
+2 & HMC, $s_a=16$ & $0.0182$ & $0.063$ & $9.5\%$ & $7.1\%$ \\
+2 & HMC, $s_a=54$ & $0.0084$ & $0.063$ & $6.5\%$ & $0.4\%$ \\
+2 & HMC, $s_a=135$ & $0.0042$ & $0.062$ & $4.6\%$ & $0$ \\
+2 & HMC, $s_a=541$ & $0.0012$ & $0.062$ & $2.5\%$ & $0$ \\
+2 & HMC, $s_a=5000$ & $0.0001$ & $0.061$ & $0.9\%$ & $0$ \\
+3 & Poisson & $0.015$ & $0.028$ & $8.7\%$ & $5.7\%$ \\
+3 & HMC, $s_a=16$ & $0.0072$ & $0.028$ & $6.0\%$ & $0.3\%$ \\
+3 & HMC, $s_a=135$ & $0.0018$ & $0.027$ & $3.0\%$ & $0$ \\
+\hline
+\end{tabular}
+\end{center}
+So:
+\begin{itemize}
+\item the pair part alone is useless: it is nearly the same, about $1/16$ at $h/a=2$, for the lattice, the liquid and Poisson positions; the
+  triplet correlations cancel almost all of it, and the anisotropy is set by the structure of the liquid;
+\item the anisotropy falls with the entropy per particle, roughly as $s_a^{-0.8}$ in the liquid and as $1/s_a$ towards the solid, and with $h/a$;
+\item for Poisson positions the measured triplet part is not zero, because the normalization by $n_a$ correlates the bonds; \Eq{Q2},
+  which fixes $n_a$ at its mean, is therefore only an estimate;
+\item the fallback of $\Lambda_a$ is not rare at low entropy per particle: in $7\%$ of the stars at $s_a=16$ and $h/a=2$ the present default scheme
+  has faces that do not close, and its stress moves exert small torques.  With the inverse moment this cannot happen.
+\end{itemize}
+How $\langle\tr Q^2\rangle$ follows from the measured $g(r)$ and $g_3$ in the superposition approximation is left for later.
+
+%=============================================================================
+\section{Detailed balance}
+\label{sec:hastings}
+
+\paragraph{What changes.}  The coefficients of star $a$ (its $T_a$, $\eta_a$, $\zeta_a$, $\ell_a$, the projector, $f_{ab}$, hence $C_a$, $c_{ab}$ and
+$R_a$) are computed at each proposal from the current state, and again at the proposed state.  They come from the smoothed velocity and
+thermodynamics at $a$, which are sums over the star.  The faces and bond vectors are fixed.  A move of star $a$ is accepted with
+\st
+P=\min\Big(1,\ e^{\Delta\mathbb S}\,\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big) ,
+\label{hastings}
+\stp
+with $\Delta\mathbb S$ the change of the vote entropy ($S_a-\ln T_a$ with the Liouville measure).  The reverse move is the same star with
+$-\xi_a$, or with $-\vec p_{ab}$ on every bond.
+
+\paragraph{The stress move.}  With primes for the coefficients at $\bm m'$,
+\st
+\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=\sqrt{\frac{\det C_a}{\det C'_a}}\;
+\exp\Big[-\tfrac12\,\xi_a{:}\big(C_a'^{-1}-C_a^{-1}\big){:}\xi_a\Big] ,
+\label{qstress}
+\stp
+the determinants and inverses taken in the three-dimensional space of symmetric matrices.
+
+\paragraph{The residual move.}  The density of a conditioned Gaussian is the density of the draws divided by the density of the virial at
+zero.  The draws are independent over the $n$ bonds and the virial covariance is the product $\ell_a\otimes R_a$, so
+\st
+\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}
+=\Big(\prod_{b\neq a}\frac{c_{ab}}{c'_{ab}}\Big)\Big(\frac{\det\ell_a}{\det\ell'_a}\Big)^{n/2-1}\frac{\det R'_a}{\det R_a}\;
+\exp\Big[-\frac{1}{4\Delta t}\sum_{b\neq a}\vec p_{ab}\cdot\Big(\frac{\ell_a'^{-1}}{c'_{ab}}-\frac{\ell_a^{-1}}{c_{ab}}\Big)\vec p_{ab}\Big] .
+\label{qresid}
+\stp
+The first two factors are the normalizations of the bond Gaussians, the third that of the virial, and the exponential the change of the
+quadratic forms.
+
+\paragraph{The cold residual.}  This section is at $\lambda=1$.  To damp the UV modes more strongly, $\mathfrak p_{ab}\to\mathfrak p_{ab}/\sqrt\lambda$ and
+$\Delta\mathbb S\to\lambda\Delta\mathbb S$ as before; that move is not in detailed balance by design and takes no Hastings factor.
+
+%=============================================================================
+\section{Plan}
+\label{sec:plan}
+
+\paragraph{Options.}  Two independent switches, so that each change can be tested on its own:
+\begin{itemize}
+\item \texttt{SPH\_DISSIPATION=moment}: the scheme of \Sect{sec:star}--\Sect{sec:resid}, deterministic and stochastic (no $\Lambda_a$, inverse-moment
+  faces, the residual \Eq{Kresid}, the conditioned residual move).  The common scheme stays the default.
+\item \texttt{SPH\_HASTINGS=1}, with \texttt{moment} only: the coefficients per proposal and the factors \Eq{qstress}, \Eq{qresid}.
+\end{itemize}
+
+\medskip
+\noindent\fbox{\begin{minipage}{0.95\textwidth}
+\textbf{Algorithm: move of star $a$} (\texttt{moment}, with \texttt{SPH\_HASTINGS=1})
+\begin{algorithmic}[1]
+\State \textbf{fixed for the step}: the star, $w_{ab}$, $\mathcal M_a$, the faces $\bm A_{ab}$ \Comment{positions and volumes only}
+\State \textbf{coefficients at the current state}: smoothed velocity and thermodynamics at $a$; $\ell_a$, $T_a$, $\eta_a$, $\zeta_a$, $f_{ab}$
+\If{stress move}
+  \State build $C_a$; draw $\xi_a$; tractions $\xi_a\bm A_{ab}$
+\Else
+  \State build $c_{ab}$ and $R_a$; draw $\mathfrak p_{ab}$; condition on zero virial by \Eq{condition}
+\EndIf
+\State proposed momenta of $a$ and of every $b$ in the star; $\Delta\mathbb S$ at the fixed $e$, $V$
+\State \textbf{coefficients at the proposed state}: the same sums over the star, at the proposed momenta and entropies
+\State $\log P\gets\min\big(0,\ \Delta\mathbb S+\log$ of \Eq{qstress} or \Eq{qresid}$\big)$
+\If{$\log u<\log P$, $u$ uniform} \State accept: update the momenta and entropies of the star \EndIf
+\end{algorithmic}
+\end{minipage}}
+\medskip
+
+\paragraph{Cost.}  Per proposal, two evaluations of the smoothed fields at $a$ (sums over the star) and of the equation of state, one
+$3\times3$ or two $2\times2$ determinants.  The bond loop of the move is already there.  To be measured; the stochastic step is a minor part of
+the full step.
+
+\paragraph{Tests, in order.}
+\begin{enumerate}
+\item \emph{Geometry}: on lattice, jittered and Poisson stars, the closure \Eq{closure} and the zero virial of \Eq{condition} to roundoff; no
+  weight is negative; total momentum and angular momentum conserved by every move.
+\item \emph{At rest on the lattice}: $\mathcal M_a=\one$, so \texttt{moment} without the Hastings factor equals \texttt{common} to roundoff in $K$, the
+  forces and the move statistics.
+\item \emph{Deterministic, moving}: the shear-wave and sound $K$ ratios of \texttt{commonkernel.tex} (test 2) at $v=0.3$--$0.8$.  The residual
+  \Eq{Kresid} is smaller than that of \texttt{common} where $f_{ab}\neq1$; the ratios show whether it matters.
+\item \emph{The equilibrium}: \texttt{examples/hastings\_baseline.jl}, coefficients rebuilt, with and without the Hastings factor, at $s_a=16$
+  and $54$, $v_0=0$ and $0.8$.  Without it the bias should be as in \texttt{common}; with it, $1.000$ within the errors.
+\item \emph{The density of the conditioned proposal}: on one star, a histogram of the projected draws against \Eq{qresid}, and the
+  ratio \Eq{qresid} against a direct evaluation of the two Gaussian densities.
+\item \emph{Benchmarks}: the boost benchmark and the equilibrium correlators at NERSC, \texttt{moment} with Hastings against \texttt{common}.
+\end{enumerate}
+Only after these does \texttt{moment} become a candidate for the default.
+
+\paragraph{Open questions.}
+\begin{itemize}
+\item Which coefficient produces most of the measured bias: $\ell_a$ and $f_{ab}$ through the smoothed velocity, or $T_a$ and $\eta_a$ through the
+  smoothed thermodynamics.  A cheap test before the implementation.
+\item Whether the deterministic step should use \Eq{Kresid} too (proposed), so that it stays the mean of the stochastic step.
+\end{itemize}
+
+%=============================================================================
+\section{Stage 1: the scheme without the Hastings factor}
+\label{sec:stage1}
+
+The first stage implements \texttt{SPH\_DISSIPATION=moment} with the coefficients frozen per step, as in \texttt{common}, and compares the two.
+The Hastings factor is stage 2, only if stage 1 passes.
+
+\paragraph{Code.}  Every change is behind \texttt{dissipation = :moment}; \texttt{common} and \texttt{particle} stay bit-identical.
+\begin{itemize}
+\item \texttt{src/sph.jl}: accept \texttt{:moment}, with the conditions of \texttt{:common} (2D, energy Hamiltonian).
+\item \texttt{src/viscous.jl}: the lab weights without $\Lambda_a$, with $n_a=\frac12\tr\sum_bV_b\psi_{ab}\bm r_{ab}\bm r_{ab}^T$; the resolved part as in
+  \texttt{common} (it already uses the inverse moment); the residual \Eq{Kresid} with the fit $X_a$ of \Eq{Xa}, its tractions, and no extra term
+  through the fit.  The time step as for \texttt{common}.
+\item \texttt{src/stochastic.jl}, \texttt{build\_stars}: the same weights; the faces $\bm A_{ab}=V_aw_{ab}\mathcal M_a^{-1}\bm r_{ab}$; the coefficients $c_{ab}$ as in \texttt{common};
+  and the conditioning vectors
+  \st
+  \bm u_{ab}=c_{ab}\,R_a^{-1}\bm r_{ab} ,
+  \stp
+  stored with the star.  The residual move subtracts $Y_a\bm u_{ab}$ from each draw, \Eq{condition}; the deterministic residual ($\lambda=\infty$)
+  uses $X_a=\sum_b\Delta\beta_{ab}\bm u_{ab}^T$.
+\end{itemize}
+
+\paragraph{Tests on the laptop} (\texttt{test/testmoment.jl}, and the existing suite).
+\begin{enumerate}
+\item \emph{Identity at rest on the lattice}: $\mathcal M_a=\one$ and $f_{ab}=1$, so $K$, the forces and the stars of \texttt{moment} equal those of \texttt{common} to
+  roundoff.
+\item \emph{Geometry on disordered stars} (jittered lattice, Poisson positions): the closure \Eq{closure} and the zero virial of the conditioned
+  tractions to roundoff; no negative weight; $\sum_a\bm F_a=0$; each stochastic move conserves the total momentum.
+\item \emph{One mode in a moving fluid}: $K/K_{\rm target}$ of shear and longitudinal modes at $v_0=0.8$, $kh=0.26$--$1.05$, for both schemes (test 2
+  of \texttt{commonkernel.tex}).  The resolved parts agree; the residual of \texttt{moment} is smaller where $f_{ab}\neq1$.
+\item \emph{The difference on disordered stars}: $K$ and the forces of the two schemes on a jittered lattice at rest, where $\Lambda_a\neq0$.
+\item \emph{The equilibrium of the stochastic step alone}: \texttt{examples/hastings\_baseline.jl} with \texttt{SPH\_DISSIPATION=moment}, coefficients frozen for
+  the run (must be exact), at $v_0=0.8$, where $R_a\not\propto\one$ and the conditioning differs from the subtraction through the faces; and
+  rebuilt every step (the bias, against that of \texttt{common}).
+\item \emph{The suite}: \texttt{test/run.sh all} against \texttt{main}, bit-identical, since the default is unchanged.
+\end{enumerate}
+
+\paragraph{A small campaign at NERSC} (\texttt{nersc/campaign\_moment.txt}), $L=0.6$ ($N=672$, $h/a=2$), the current defaults (generalized leapfrog,
+Liouville measure, HMC start), $s_a=135$ ($S_0=2.5\times10^5$, as \texttt{hbya}).  Each pair of lines runs \texttt{common} and \texttt{moment} with the \emph{same seeds},
+so that the differences are measured on correlated noise.
+\begin{center}
+\begin{tabular}{lll}
+\hline
+lines & what & runs \\ \hline
+\texttt{mo\_alone\_}$\{$\texttt{c,m}$\}$\texttt{\_v}$\{0,0.8\}$ & stochastic step alone (\texttt{SR\_NOHAM=1}), $t=50$ & $8$ each \\
+\texttt{mo\_full\_}$\{$\texttt{c,m}$\}$\texttt{\_v}$\{0,0.8\}$ & full step, equilibrium correlators, $t=100$ & $16$ each \\
+\texttt{mo\_waves\_}$\{$\texttt{c,m}$\}$ & \texttt{examples/commonkernel\_waves.jl}, deterministic decay & $1$ each \\
+\hline
+\end{tabular}
+\end{center}
+About $100$ tasks of $4$ cores: one packed job of $4$ nodes on the debug queue (\texttt{nersc/node.sh}, $30$ minutes), or an interactive
+allocation; about $2$ node-hours.  To be compared: acceptances, $\langle\delta m^2\rangle/C$ and the spectrum of the stochastic step alone; the
+equal-time correlators $C_{MM}$, $C_{EE}$ and the shear damping at $kh=0.52$ and $1.05$ of the full runs; the decay rates of the waves.
+Earlier \texttt{common} runs on tape (\texttt{ck\_alone}, \texttt{ck\_v*}) used the earlier defaults and $L=1.2$, and serve only as a loose check.
+
+\paragraph{Pass.}  \texttt{moment} passes stage 1 if tests 1, 2, 5 (frozen) and 6 pass, if the $K$ ratios of test 3 are as good as those of \texttt{common},
+and if the campaign shows no difference beyond the statistics in the stochastic and full runs, other than through the residual where
+$f_{ab}\neq1$.
+
+
+\end{document}

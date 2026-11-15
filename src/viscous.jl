@@ -19,7 +19,7 @@ function dissipative_force!(dotm::Vector{SVector{2,Float64}},
                              eos::AbstractEOS)
     if params.dissipation === :bond
         bond_dissipative_force!(dotm, particles, params, cl, eos)
-    elseif params.dissipation in (:particle, :common)
+    elseif params.dissipation in (:particle, :common, :moment)
         β = zeros(SVector{2,Float64}, length(particles))
         bond_dissipative_force!(dotm, particles, params, cl, eos, pointwise_beta!(β, particles, eos))
     else    # :two_level, in src/legacy/two_level.jl
@@ -125,6 +125,20 @@ function common_bond_weight(params::SimParams)
 end
 const FLAT2 = SMatrix{2,2,Float64}(I)
 is_common(params::SimParams) = params.dissipation === :common
+is_moment(params::SimParams) = params.dissipation === :moment
+lab_weights(params::SimParams) = params.dissipation in (:common, :moment)      # one kernel, bond weights at the lab distance
+# The lab weights without the correction Λ_a (dissipation = :moment, inverse_moment.tex): ψ_ab = ψfun(r_ab), and n_a with
+# tr Σ_b V_b ψ_ab r_ab r_abᵀ = 2 n_a, so that the normalized moment 𝓜_a = Σ_b w_ab r rᵀ has trace 2 (𝟙 on a perfect lattice).
+function bond_weights_lab(nb, particles, ψfun;
+                          ψ0 = Vector{Float64}(undef, length(nb)), Vb = Vector{Float64}(undef, length(nb)))
+    resize!(ψ0, length(nb));  resize!(Vb, length(nb))
+    tr2 = 0.0
+    for (k, (b, r, rr)) in enumerate(nb)
+        ψ0[k] = ψfun(rr);  Vb[k] = particles[b].s / particles[b].S_smooth
+        tr2 += Vb[k] * ψ0[k] * rr^2
+    end
+    return ψ0, tr2 / 2
+end
 # the factor of the residual of bond r in the metric ℓ, (r̂·ℓ r̂)² (commonkernel.tex, eq. fab)
 resid_factor(params::SimParams, ℓ, r) = (dot(r, ℓ * r) / dot(r, r))^2
 
@@ -196,8 +210,9 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, oneD ? d : 2)
 
         # weights ψ_ab (moment-corrected) and n_a
-        common = is_common(params)
+        common = lab_weights(params);  moment = is_moment(params)
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
+                  moment ? bond_weights_lab(nb, particles, common_bond_weight(params)) :
                   common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
         n_a > 0 || continue
@@ -236,15 +251,27 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
             Y    = (G + G') / 2 - θa * P
             Ka   = Va * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θa^2)
             Eres = zero(SMatrix{2,2,Float64})
+            # :moment (inverse_moment.tex, eq. Kresid): the residual of the least-squares fit X_a with the weights c_ab,
+            # X_a = Σ_b c_ab Δb rᵀ R_a⁻¹, R_a = Σ_b c_ab r rᵀ; its derivative through X_a vanishes, so no term in E_a.
+            X = G
+            if moment
+                R = zero(SMatrix{2,2,Float64});  Xt = zero(SMatrix{2,2,Float64})
+                for (k, (b, r, rr)) in enumerate(nb)
+                    ψ = ψs[k];  ψ == 0 && continue
+                    c = cbond * (particles[b].s / particles[b].S_smooth) * ψ * resid_factor(params, ℓ, r)
+                    R += c * (r * r');  Xt += c * ((bv[b] - bv[a]) * r')
+                end
+                X = Xt * inv(R)
+            end
             for (k, (b, r, rr)) in enumerate(nb)
                 ψ = ψs[k];  ψ == 0 && continue
                 c = cbond * (particles[b].s / particles[b].S_smooth) * ψ * resid_factor(params, ℓ, r)
-                δ = (bv[b] - bv[a]) - G * r
+                δ = (bv[b] - bv[a]) - X * r
                 t = -c * (ℓ * δ)
                 Ka   -= 0.5 * dot(δ, t)
                 g[b] -= t
                 g[a] += t
-                Eres += t * r'                              # −Σ_b c_ab ℓ δ_ab r_abᵀ
+                moment || (Eres += t * r')                  # −Σ_b c_ab ℓ δ_ab r_abᵀ (:common only)
             end
             LYL  = ℓ * Y * ℓ
             E    = 2 * Va * Ta * η * (LYL - (sum(P .* LYL) / Pℓ) * ℓ) + (Va * Ta * ζeff * θa / Pℓ) * ℓ + Eres

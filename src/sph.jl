@@ -36,7 +36,10 @@ end
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
 #   distance, ψ_ab = −W′(r_ab)/r_ab (bond moment n_a 𝟙), and the comoving metric put in by hand
 #   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  It is the
-#   default since 2026-11-14 wherever it applies (2D with the energy Hamiltonian).  :particle (the default in 1D
+#   default since 2026-11-14 wherever it applies (2D with the energy Hamiltonian).  :moment (inverse_moment.tex, stage 1;
+#   2D, hamiltonian = :energy) is :common without the correction Λ_a of the weights: the faces carry the inverse bond moment,
+#   A_ab = V_a w_ab 𝓜_a⁻¹ r_ab, the residual is the least-squares residual with the weights c_ab, and the residual move is
+#   conditioned on zero virial.  :particle (the default in 1D
 #   and with SPH_HAMILTONIAN=smoothed; formerly :changerep, still accepted) is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
 #   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
@@ -127,10 +130,11 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
     dissipation === :common_lab && error("dissipation = :common_lab was removed (commonkernel.tex: the residual must carry the comoving metric); use :common")
-    dissipation in (:particle, :bond, :two_level, :common) ||
-        error("dissipation must be :particle, :bond, :two_level or :common, got $dissipation")
-    dissipation === :common && (sim_dim == 2 && hamiltonian === :energy ||
-        error("dissipation = :common needs a 2D simulation and hamiltonian = :energy (commonkernel.tex)"))
+    dissipation in (:particle, :bond, :two_level, :common, :moment) ||
+        error("dissipation must be :particle, :bond, :two_level, :common or :moment, got $dissipation")
+    dissipation in (:common, :moment) && (sim_dim == 2 && hamiltonian === :energy ||
+        error("dissipation = :$dissipation needs a 2D simulation and hamiltonian = :energy (commonkernel.tex)"))
+    dissipation === :moment && @printf("SimParams: dissipation = moment, inverse-moment faces and the conditioned residual (inverse_moment.tex)\n")
     dissipation === :common && @printf("SimParams: dissipation = common, one kernel for the ideal and the viscous step (commonkernel.tex)\n")
     hamiltonian in (:smoothed, :energy) ||
         error("hamiltonian must be :smoothed or :energy, got $hamiltonian")

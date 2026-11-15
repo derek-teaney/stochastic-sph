@@ -49,6 +49,8 @@ struct Star
     ℓ  :: SMatrix{2,2,Float64,4}        # comoving metric ℓ_a = 𝟙 − v vᵀ
     ℓh :: SMatrix{2,2,Float64,4}        # ℓ_a^{1/2}
     ℓi :: SMatrix{2,2,Float64,4}        # ℓ_a⁻¹
+    U  :: Vector{SVector{2,Float64}}    # :moment only (else empty): the conditioning vectors u_ab = c_ab R_a⁻¹ r_ab,
+                                        # R_a = Σ_b c_ab r rᵀ (inverse_moment.tex, eq. condition)
 end
 
 # Storage kept between steps so that the per-particle arrays are reused (pass the same
@@ -87,8 +89,10 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         # fluid"); 1D: rest frame.
         va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
         ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
-        common = is_common(params)                       # one kernel (commonkernel.tex): lab weights
+        common = lab_weights(params)                     # one kernel (commonkernel.tex): lab weights
+        moment = is_moment(params)                       # no Λ_a, inverse-moment faces (inverse_moment.tex)
         ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
+                  moment ? bond_weights_lab(nb, particles, common_bond_weight(params); ψ0 = ψ0b, Vb = Vbb) :
                   common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb,
                                                  ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
@@ -115,11 +119,11 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         if cache !== nothing && isassigned(stars, a)
             o = stars[a]
             bs = resize!(o.nb, nk);  rs = resize!(o.r, nk);  ws = resize!(o.w, nk)
-            cs = resize!(o.c, nk);  As = resize!(o.A, nk)
+            cs = resize!(o.c, nk);  As = resize!(o.A, nk);  Us = resize!(o.U, moment ? nk : 0)
         else
             bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
             ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
-            As = Vector{SVector{2,Float64}}(undef, nk)
+            As = Vector{SVector{2,Float64}}(undef, nk);  Us = Vector{SVector{2,Float64}}(undef, moment ? nk : 0)
         end
         j = 0
         for (k, (b, r, rr)) in enumerate(nb)
@@ -129,7 +133,17 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
             As[j] = common ? V[a] * wab * r : V[a] * wab * (ℓi * r)     # faces: Σ_b A_ab r_abᵀ = V_a 𝟙 either way
         end
-        stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi)
+        if moment                                        # faces V_a w_ab 𝓜_a⁻¹ r_ab;  u_ab = c_ab R_a⁻¹ r_ab
+            Mm = zero(SMatrix{2,2,Float64});  R = zero(SMatrix{2,2,Float64})
+            for k in 1:nk
+                Mm += ws[k] * (rs[k] * rs[k]');  R += cs[k] * (rs[k] * rs[k]')
+            end
+            Mi = inv(Mm);  Ri = inv(R)
+            for k in 1:nk
+                As[k] = Mi * As[k];  Us[k] = cs[k] * (Ri * rs[k])
+            end
+        end
+        stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi, Us)
     end
     end
     return stars
@@ -193,8 +207,14 @@ function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
             y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
             δ[k] = y;  Y += y * st.r[k]'
         end
-        for k in eachindex(st.nb)
-            δ[k] -= (Y * st.A[k]) / st.V              # y − (Y/V_a) A_ab
+        if isempty(st.U)
+            for k in eachindex(st.nb)
+                δ[k] -= (Y * st.A[k]) / st.V          # y − (Y/V_a) A_ab
+            end
+        else
+            for k in eachindex(st.nb)
+                δ[k] -= Y * st.U[k]                   # :moment, conditioned on zero virial: y − Y R_a⁻¹ r_ab c_ab
+            end
         end
     end
 end
@@ -350,7 +370,9 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
         for k in eachindex(st.nb)
             G += st.w[k] * ((β[st.nb[k]] - β[a]) * st.r[k]')
         end
-        G = G * st.ℓi                                  # G_a = Σ w Δβ rᵀ ℓ⁻¹
+        G = isempty(st.U) ? G * st.ℓi :                # G_a = Σ w Δβ rᵀ ℓ⁻¹
+            sum((β[st.nb[k]] - β[a]) * st.U[k]' for k in eachindex(st.nb); init = zero(SMatrix{2,2,Float64}))   # :moment: X_a
+
         for k in eachindex(st.nb)
             δab = β[st.nb[k]] - β[a] - G * st.r[k]
             oneD && (δab = SVector(δab[1], 0.0))
