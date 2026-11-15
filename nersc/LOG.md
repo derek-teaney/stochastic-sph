@@ -4,6 +4,10 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-15 (NERSC): campaign `hastings` submitted** as written: job **61364382** (8 regular nodes, node.sh THREADS=4, -t 01:30:00),
+from a fresh worktree ~/stochastic-sph-hs at 927e035 (testhastings.jl PASS there).  Output $SCRATCH/sph/hastings.  moment_b (61361958)
+still running from ~/stochastic-sph-mo-run.
+
 ## Next session at NERSC — campaign `hastings` (written 2026-11-15, night, on the laptop; branch `inverse-moment`)
 
 **Question** (owner): is the Hastings correction needed in practice?  The stochastic step alone is biased at low s_a (up to +17% in
