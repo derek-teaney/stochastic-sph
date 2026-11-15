@@ -4,6 +4,20 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-15 (NERSC): campaign `hastings` done** (61364382, 8 nodes, 18 min ≈ 2.4 node-hours).  docs/inverse_moment.tex, new last section
+"Stage 2: results from NERSC" (figures hastings_nersc_*).  Answer: at rest the correction is needed — without it the full dynamics is ≈ 5%
+(s_a = 54) and ≈ 20% (s_a = 16) above HMC of the same model in ⟨|M_L|²⟩, ⟨|M_T|²⟩, ⟨|E|²⟩; with it 1.00 ± 0.01–0.02.  At v0 = 0.8 no bias
+visible in either (errors 2–5%).
+**Two things for the laptop:**
+1. **Crash without the correction at s_a = 16** (20 of 256 tasks: hs16_nh_v0 15/16, hs16_nh_alone_v0 4/8, hs16_nh_v0.8 1/16):
+   `DomainError with -6.66e-16: sqrt` in `sqrt_comoving` (src/stochastic.jl:34) called from `build_stars` (:109) — a particle at |v| = 1
+   to roundoff.  Needs `sqrt(max(1 - v2, 0))` or a guard in build_stars; the same seeds would stop again, so not rerun.
+   (logs: $SCRATCH/sph/hastings/slurm/61364382_{3..16,129..136}.out)
+2. **The residual log ratio has enormous tails**: typical windows fine (median rms 1.6–4.7), but windows with rms > 100: 0.4% at s_a = 54
+   rest, 2% at 16/0.8, and 83% at s_a = 16, v0 = 0 (median rms 1.7e3, max ~1e18) — near-singular residual covariances; the spectra still
+   agree with HMC there, but the residual move is then decided by q'/q.  Worth a regularization?
+Also: at s_a = 16, v0 = 0.8 the advected shear is far from hydro in both versions (Γ/Γ_hyd ≈ 3, Ω/k = 0.82): the dynamics, not Hastings.
+
 **2026-11-15 (NERSC): moment_a and moment_b done.**  moment_a (61361957, 8 min): 64 runs per scheme at v0 = 0.8, L = 0.6 — the kh = 0.52
 difference along the flow is 1.0σ (a fluctuation).  moment_b (61361958, 42 min, ≈ 2.8 node-hours): L = 1.2, 32 runs per set — common and
 moment agree within the errors at kh = 0.26, 0.52, 0.79, at rest and at v0 = 0.8.  docs/inverse_moment.tex, Stage 1 NERSC section,
