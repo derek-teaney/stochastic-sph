@@ -1,5 +1,6 @@
 \documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
 \usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{algpseudocode}
 \usepackage{dsfont}
@@ -13,6 +14,7 @@
 \def\stp{\end{equation}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
 \def\tr{\operatorname{tr}}
 \let\oldparagraph\paragraph
 \renewcommand{\paragraph}{\par\bigskip\oldparagraph}
@@ -456,5 +458,72 @@ Earlier \texttt{common} runs on tape (\texttt{ck\_alone}, \texttt{ck\_v*}) used 
 and if the campaign shows no difference beyond the statistics in the stochastic and full runs, other than through the residual where
 $f_{ab}\neq1$.
 
+
+%=============================================================================
+\section{Stage 1: results on the laptop}
+\label{sec:laptop}
+
+\paragraph{Unit tests} (\texttt{test/testmoment.jl}).
+\begin{itemize}
+\item At rest on the lattice \texttt{moment} equals \texttt{common}: $K$ and the forces to $4\times10^{-16}$, the faces and the coefficients of every star to
+  $10^{-14}$, and the conditioning vectors equal the faces divided by $V_a$, so the two residual moves coincide.
+\item On a jittered lattice ($0.3a$, $v_0=0.8$) and on random positions: the closure \Eq{closure} to $10^{-15}$, the virial of the conditioned
+  tractions to $10^{-16}$, all weights positive, $\sum_a\bm F_a=0$ and the momentum of a stochastic step conserved to roundoff.
+\end{itemize}
+
+\paragraph{The stochastic step alone.}  The script \texttt{examples/hastings\_baseline.jl}, with \texttt{SPH\_DISSIPATION=moment} and
+\texttt{SPH\_MEASURE=einstein}, on the frozen lattice at $s_a=16$ and $54$, $v_0=0$ and $0.8$, $\Delta t=\frac12$ and $\frac18$ of the viscous step.  With the coefficients frozen for the run, $\langle\delta m_x^2\rangle/C_{xx}$ and
+$\langle\delta m_y^2\rangle/C_{yy}$ are $1.000$ within $0.4\%$ in fifteen of the sixteen values ($1.009\pm0.004$ in one, $2.5\sigma$), and
+$\langle\ln T_a\rangle$ is exact.  This includes $v_0=0.8$, where
+$R_a\not\propto\one$ and the conditioned residual differs from the subtraction through the faces: the conditioned move is a valid symmetric
+proposal.  With the coefficients rebuilt every step the bias is that of \texttt{common} (for instance $1.086$ against $1.088$ at $s_a=16$, $v_0=0$,
+$\Delta t=\frac12$), as expected without the Hastings factor.
+
+\paragraph{Deterministic tests} (\texttt{examples/moment\_det.jl}, \texttt{examples/moment\_det\_plot.jl}; \Fig{fig:det}).  Three sets, each for both
+schemes:
+\begin{itemize}
+\item[A.] the viscous step alone (positions fixed) on the lattice moving with $v_0=0.8$, $L=1.2$: $K/K_{\rm target}$ of shear and longitudinal modes
+  along and across the flow, and the fitted decay rate of the two pure modes (shear along the flow, longitudinal across it; the
+  other two are not pure modes of a step that holds each particle's energy);
+\item[B.] the viscous step alone on disordered positions at rest: a jittered lattice ($0.3a$) and random positions;
+\item[C.] the full deterministic step at rest on the lattice (the physics tests): the shear wave and the damped sound wave, $\eta/s=0.02$,
+  $h/a=3$.
+\end{itemize}
+In every case the entropy produced equals $2\int K\,dt$ to $10^{-4}$ and $\Delta H/H\lesssim10^{-13}$.  The decay rates against hydrodynamics,
+$\Gamma/\Gamma_{\rm hydro}$, at $kh=0.26$, $0.52$, $1.05$ (C: $0.35$, $0.70$, $1.40$):
+\begin{center}
+\begin{tabular}{llcc}
+\hline
+set & mode & \texttt{common} & \texttt{moment} \\ \hline
+A, $v_0=0.8$ & shear, $\bm k\parallel\bm v$ & $0.999$, $0.997$, $0.992$ & $0.999$, $0.997$, $0.990$ \\
+A, $v_0=0.8$ & long., $\bm k\perp\bm v$ & $1.002$, $1.009$, $1.023$ & $1.002$, $1.009$, $1.023$ \\
+B, jitter $0.3a$ & shear & $1.005$, $1.032$, $1.119$ & $1.005$, $1.031$, $1.118$ \\
+B, jitter $0.3a$ & long. & $0.998$, $1.005$, $1.030$ & $0.998$, $1.005$, $1.024$ \\
+B, random & shear & $0.869$, $0.872$, $0.944$ & $0.848$, $0.866$, $0.958$ \\
+B, random & long. & $0.826$, $0.791$, $0.852$ & $0.856$, $0.854$, $0.885$ \\
+C & shear wave & $1.034$, $1.085$, $1.212$ & $1.034$, $1.085$, $1.212$ \\
+C & sound wave & $1.008$, $1.025$, $1.063$ & $1.008$, $1.025$, $1.063$ \\
+\hline
+\end{tabular}
+\end{center}
+And $K/K_{\rm target}$ of the four modes in set A agree within $0.2\%$ (\Fig{fig:det}, top row).  So:
+\begin{itemize}
+\item on the lattice, at rest or moving, and on the jittered lattice the two schemes agree within $0.2\%$, except the longitudinal mode
+  at $kh=1.05$ on the jittered lattice, where \texttt{moment} is $0.6\%$ closer to hydrodynamics;
+\item on random positions both schemes are $5$--$20\%$ off hydrodynamics (the decay is not a single exponential there, and $K$ of the
+  mode differs from the continuum by up to $75\%$ at $kh=0.26$); \texttt{moment} is closer in four cases of six and farther in two;
+\item the full deterministic step on the lattice is identical to four digits.
+\end{itemize}
+Nothing is made worse.  The disordered case that matters in practice is the liquid of the stochastic runs; it is tested by the
+campaign at NERSC.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/moment_det.png}
+\caption{Deterministic tests, \texttt{common} (left), \texttt{moment} (middle) and their ratio (right).  Rows: $K/K_{\rm target}$ of four modes of the
+viscous step alone on the lattice at $v_0=0.8$; the decay rates of its two pure modes; the viscous step alone on disordered positions at rest;
+the full deterministic step on the lattice at rest.}
+\label{fig:det}
+\end{figure}
 
 \end{document}
