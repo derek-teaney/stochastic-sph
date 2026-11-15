@@ -88,6 +88,9 @@ ha4 moved (owner: pack onto whole nodes) to `node.sh` on 4 regular nodes, THREAD
 **61346451**, -t 09:00:00, ≈ 28 node-hours billed (the longest task, C4 at v = 0.8, ≈ 7 h at 4 threads).  Cancelling array 61343000 also
 killed its 6 tasks that had just started (minutes in): check for running tasks right before cancelling an array.  Task logs of the
 packed job: `$SCRATCH/sph/hbya/slurm/61346451_<task>.out`.
+h/a = 2 complete (128/128, mean 2.2 h per task at -c 2).  ha3 in shared was slow (13 running, 108 pending): the pending tasks 21–128 were
+cancelled (`scancel 61342999_[21-128]`, none started) and packed on 4 regular nodes, THREADS=4, job **61349267** (-t 05:00:00).  Packed
+ha4 rates: C4 v = 0.8 ≈ 55 min HMC + 15 s per unit time → ≈ 4 h; C4 v = 0 ≈ 2.4 h.
 Also cancelled at the owner's request: the held GPU jobs 58984xxx of the m2 campaign (other project, m4662_g / m3722_g).
 
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
