@@ -569,10 +569,9 @@ shear $\Gamma/\Gamma_{\rm hydro}$, $kh=1.05$, along / across & $1.10(3)$ / $1.02
 \end{tabular}
 \end{center}
 The equal-time correlators agree within the errors at every $kh$ (both show $C_{EE}/\chi$ rising to $1.14$--$1.18$ at $kh=1.57$, the
-finite-$kh$ correction).  One difference stands out: at $v_0=0.8$, $kh=0.52$ (the fundamental mode of the $L=0.6$ box) the shear damping along
-the flow is $1.49(17)$ for common and $0.86(14)$ for moment, $2.9\sigma$ apart; at $kh=1.05$ they agree.  The stochastic trajectories
-decorrelate quickly, so the shared seeds do not correlate the two sets much; one $2.9\sigma$ difference among about 16 comparisons is a
-flag, not yet a result --- to be checked with more runs or a larger box.
+finite-$kh$ correction).  The largest fluctuation is the shear damping along the flow at $v_0=0.8$, $kh=0.52$ (the fundamental mode of the $L=0.6$ box, the
+noisiest fit): $1.49(17)$ for common and $0.86(14)$ for moment (\Fig{fig:nersc_fit}; the correlators in \Fig{fig:nersc_shear8} differ only
+modestly).  One such $2.9\sigma$ difference among about 16 comparisons is what chance gives; at $kh=1.05$ the two agree.
 
 \paragraph{Deterministic viscous step alone, $v_0=0.8$} (\texttt{examples/moment\_det.jl} set A, rerun as a debug job with the fix below): the
 fitted decay rates of common and moment agree to four digits in all twelve cases, with $\Delta S=2\int K\,dt$ to $10^{-4}$ and $\Delta H/H\sim10^{-13}$.
@@ -581,8 +580,9 @@ energy, $D=\sum_a[S_a(e_a,\bar{\bm m})-S_a(e_a,\bm m_a)]$, is negative: $K/D$ is
 negative, so these cases had never run (they appeared as zeros).  With $|K/D|$ setting the run length they run, are stable, and decay at
 $0.35$--$1.27\,|K/D|$ --- not a single exponential at that rate; only the two pure modes give clean rates, as the laptop results above already use.
 
-\paragraph{Verdict.}  No difference between common and moment beyond the statistics, except the $2.9\sigma$ flag at $v_0=0.8$, $kh=0.52$.
-The default stays \texttt{common}; the owner decides.
+\paragraph{Verdict.}  No difference between common and moment beyond the statistics: acceptances, guards, kinetic energy, equal-time
+correlators, shear and sound at rest and at $v_0=0.8$, along and across the flow, the stochastic step alone and the deterministic viscous step.
+The default stays \texttt{common} until the owner decides.
 
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MO.png}
