@@ -62,6 +62,12 @@ function draw_particle(ē, m̄, V, β0, β, eos, L, Hn, rng; nmh = 30, widen = 2
     logq(x) = -0.5 * dot(x, Hn * x) / widen
     Lw = sqrt(widen) * L
     x = Lw * SVector(randn(rng), randn(rng), randn(rng));  wx = logp(x) - logq(x);  nacc = 0
+    # a start beyond the light cone (|v| ≥ 1: weight 0) is drawn again; at low s_a in a fast flow the widened Gaussian reaches it
+    # often enough that all nmh proposals can miss.  No extra draws when the first start is physical (bit-identical otherwise).
+    tries = 0
+    while !isfinite(wx) && tries < 10_000
+        x = Lw * SVector(randn(rng), randn(rng), randn(rng));  wx = logp(x) - logq(x);  tries += 1
+    end
     for _ in 1:nmh
         y = Lw * SVector(randn(rng), randn(rng), randn(rng));  wy = logp(y) - logq(y)
         if log(rand(rng)) < wy - wx
@@ -167,8 +173,21 @@ function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int
         X[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
     end
     if exact_totals
-        d = sum(X) - SVector(E, M[1], M[2]);  Vtot = sum(V)
-        X .= [X[a] - (V[a] / Vtot) * d for a in 1:N]
+        # The shift to the exact totals can push a particle across the light cone (low s_a in a fast flow): such particles are drawn
+        # again and the shift is redone.  When none is pushed (as in every run before 2026-11-15) this is the shift as before.
+        X0 = copy(X);  Vtot = sum(V)
+        for attempt in 1:1000
+            d = sum(X0) - SVector(E, M[1], M[2])
+            X .= [X0[a] - (V[a] / Vtot) * d for a in 1:N]
+            bad = [a for a in 1:N if !isfinite(particle_entropy(X[a][1], SVector(X[a][2], X[a][3]), V[a], eos))]
+            isempty(bad) && break
+            attempt == 1000 && error("draw_configuration: cannot reach the exact totals with physical states")
+            for a in bad
+                p = mom(V[a])
+                x, na = draw_particle(p.ē, p.m̄, V[a], β0, β, eos, p.L, p.Hn, rng; nmh, liouville)
+                X0[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
+            end
+        end
     end
     return X, nacc / (N * nmh)
 end

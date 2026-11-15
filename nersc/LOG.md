@@ -4,7 +4,36 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
-## From the laptop (2026-11-15, night): SPH_HASTINGS is available — do not run it yet
+## Next session at NERSC — campaign `hastings` (written 2026-11-15, night, on the laptop; branch `inverse-moment`)
+
+**Question** (owner): is the Hastings correction needed in practice?  The stochastic step alone is biased at low s_a (up to +17% in
+the momentum fluctuations at s_a = 16) and the correction removes that exactly (docs/inverse_moment.tex, Stage 2 results).  But in the
+full dynamics the ideal step also moves energy and positions, so the size of the bias there is not known.  The reference is HMC of the
+same model and measure (your remark), not χ.
+
+**Campaign** `nersc/campaign_hastings.txt`: L = 0.6, h/a = 2, current defaults, s_a = 16 and 54, v0 = 0 and 0.8; per (s_a, v0): the
+full step without (`hs<sa>_nh_v<v>`) and with (`hs<sa>_h_v<v>`) the correction, 16 runs each, shared seeds, t = 100; the stochastic
+step alone, 8 runs each; HMC chains `hq<sa>_v<v>`, 16 each, 300 updates (hmc_positions.jl now has SR_HMC_TAUJIT, nsteps = 0 for
+τ = L/c_s, SR_RECORD_E).  256 tasks of 4 cores, packed on 8 nodes, ≈ 8–12 node-hours (within the 20 node-hour rule):
+```bash
+R=$HOME/stochastic-sph-mo      # update this worktree to the pushed tip of inverse-moment (moment_b must be finished, else a new one)
+julia --project=nersc $R/test/testhastings.jl      # smoke test (login node, ≈ 1 min)
+cd $SCRATCH/sph
+sbatch -A m3722 -q regular -C cpu -N 8 -t 01:30:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_hastings.txt hastings
+```
+(or an interactive allocation, `salloc -A m3722 -q interactive -C cpu -N 8 -t 01:30:00`, then the node.sh line with bash).  Unfinished
+tasks resume from .chk with the same command.  Note: the equilibrium start at s_a = 16, v0 = 0.8 could draw a particle beyond the light
+cone and stopped with "unphysical draw" before this commit (src/measure.jl now redraws such particles; unchanged otherwise).
+
+**Analysis** (plotting environment):
+```bash
+julia --project=$HOME/stochastic-sph $R/examples/hastings_analysis.jl $SCRATCH/sph/hastings     # spectra / HMC, table and figure
+BOOST_GROUP=... (as for MO) for the shear damping if wanted; the h5 of the hs*_h_* runs carry hast_lq_{stress,resid}_{mean,rms}
+```
+Report in docs/inverse_moment.tex as a new last section "Stage 2: results from NERSC": the spectra ⟨|M_L|²⟩, ⟨|M_T|²⟩, ⟨|E|²⟩ of nh and h
+against HMC per kh band; the acceptances; the log ratios; the shear damping nh vs h.  The answer to the owner's question in one line.
+
+## Earlier (2026-11-15, night): SPH_HASTINGS available — superseded by the campaign above
 
 `SPH_HASTINGS=1` (with `SPH_DISSIPATION=moment`) adds the Hastings correction to the stochastic step (docs/inverse_moment.tex,
 "Stage 2" and its results).  Tested on the laptop: test/testhastings.jl (the ratios against direct densities), and the stochastic step

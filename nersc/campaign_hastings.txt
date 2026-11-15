@@ -1,0 +1,35 @@
+# Campaign `hastings` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 2"): the dynamics with the viscous step `moment`,
+# without and with the Hastings correction (SPH_HASTINGS=1), against hybrid Monte Carlo of the same model and measure (the owner: compare to
+# HMC, not to the susceptibility).  Current defaults (generalized leapfrog, Liouville measure, HMC start), L = 0.6 (N = 672), h/a = 2,
+# η/s = 0.2, at low entropy per particle where the bias of the stochastic step is large: s_a = 16 (SR_S0 = 2.956e4) and 54 (9.977e4),
+# v0 = 0 and 0.8.  Each nh/h pair shares its seeds (SR_SEEDOFFSET).
+#
+# 256 tasks of 4 cores.  Packed on 8 nodes (all at once), from $SCRATCH/sph, either in the regular queue or inside an interactive
+# allocation (salloc -A m3722 -q interactive -C cpu -N 8 -t 01:30:00), ≈ 8-12 node-hours:
+#   sbatch -A m3722 -q regular -C cpu -N 8 -t 01:30:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_hastings.txt hastings
+# Unfinished tasks resume from their .chk when the same command is run again.  Analysis (plotting environment):
+#   julia --project=$HOME/stochastic-sph $R/examples/hastings_analysis.jl $SCRATCH/sph/hastings
+#
+# 1. The full step, t = 100: equal-time spectra against HMC; the shear damping (boost_analysis); the log ratios hast_lq_* (tasks 1-128).
+hs16_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_nh_v0
+hs16_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_h_v0
+hs16_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_nh_v0.8
+hs16_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_h_v0.8
+hs54_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_nh_v0
+hs54_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_h_v0
+hs54_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_nh_v0.8
+hs54_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_h_v0.8
+# 2. The stochastic step alone (positions of the HMC start kept, SR_NOHAM=1), t = 50 (tasks 129-192).
+hs16_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_nh_alone_v0
+hs16_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_h_alone_v0
+hs16_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_nh_alone_v0.8
+hs16_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_h_alone_v0.8
+hs54_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1100  -- examples/equilibrium.jl 0.6 2 50 1 4 hs54_nh_alone_v0
+hs54_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1100  -- examples/equilibrium.jl 0.6 2 50 1 4 hs54_h_alone_v0
+hs54_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1200 -- examples/equilibrium.jl 0.6 2 50 1 4 hs54_nh_alone_v0.8
+hs54_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1200 -- examples/equilibrium.jl 0.6 2 50 1 4 hs54_h_alone_v0.8
+# 3. The reference: hybrid Monte Carlo chains, 300 updates, τ = L/c_s with random lengths in [τ/2, τ], δt factor 0.35 (tasks 193-256).
+hq16_v0      16  SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_v0
+hq16_v0.8    16  SR_S0=2.956e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_v0.8
+hq54_v0      16  SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_v0
+hq54_v0.8    16  SR_S0=9.977e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_v0.8
