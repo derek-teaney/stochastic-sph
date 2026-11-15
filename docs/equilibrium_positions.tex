@@ -976,6 +976,34 @@ hydrodynamics.}
 \label{fig:hl2soundperp}
 \end{figure}
 
+\section{Conclusions so far}
+\label{sec:conclusions}
+
+\begin{enumerate}
+\item \emph{The positions are a liquid} at the production entropies ($s_a\lesssim5\times10^3$ at $h/a=2$): the lattice melts within $t\lesssim1$, the local bond
+  order is that of Poisson positions, and $g(r)$ has only a weak first peak, set by the kernel.  The equilibrium number fluctuations at long
+  wavelength are large, $S(\bm k)/(4/s_a)\approx20$ at $kh=0.3$ for $s_a=541$, and rise toward small $k$ (\Sect{sec:hmcdyn}, \texttt{hmc\_eq}).
+\item \emph{The dynamics relaxes these fluctuations very slowly from the lattice} ($t\sim10^3$ at $s_a=541$, \Fig{fig:longhmc}).  From the lattice the
+  long runs (Einstein measure) level off $6$--$30\%$ below the HMC equilibrium of the same measure, $3$--$4\sigma$ at $s_a=135$.  From an equilibrium HMC
+  start with the Liouville measure the dynamics holds $S(\bm k)$ at the HMC value from $t=0$ to $300$ (\Sect{sec:hl2}).  The second is what one
+  expects if the dynamics preserves the Liouville measure (\Sect{sec:measure}); a direct test is the Einstein dynamics from an Einstein HMC
+  start, not yet run.
+\item \emph{Start in equilibrium.}  The HMC start must be in equilibrium at the longest wavelengths: a fixed trajectory equal to a period of a box
+  sound mode freezes that mode, so the trajectory lengths are randomised (\texttt{SR\_HMC\_TAUJIT}), and $\approx100$--$200$ updates are needed at
+  $kh\approx0.3$.  A lattice start also carries $10\%$ too much kinetic energy of the fluctuations at $v_0=0.8$ to $t=300$.
+\item \emph{The ideal step should be the generalized leapfrog.}  The drift--kick--drift step is first order and not symplectic for this
+  non-separable Hamiltonian: it heats ($\Delta H/H\sim10^{-3}$ at $t=300$) and it makes the deficit of $C_{EE}$ along the flow at $v_0=0.8$, $0.88(2)$
+  from any start.  The generalized leapfrog removes both ($1.02$--$1.08$; $\Delta H/H\sim5\times10^{-6}$) for $1.7$ times the cost.
+\item \emph{The regulator is not Lorentz invariant.}  At rest the shear mode is damped $\approx10\%$ faster than hydrodynamics at $h/a=2$; at $v_0=0.8$ the
+  excess is the same across the flow and $\gamma^2$ times larger along it, as for a dissipation fixed in the lab, and the pair correlation is
+  isotropic in the lab instead of contracted along the flow.  Raising $h/a$ should shrink the excess; a comoving kernel would remove the
+  frame dependence.  Campaign \texttt{hbya} (\texttt{docs/hbya.tex}) measures the first.
+\item \emph{The hydrodynamics can only be as good as the HMC equilibrium.}  Its equal-time momentum correlator is flat in $k$ but $8.5/s_a$
+  above the continuum susceptibility ($6\%$ at $s_a=135$); $C_{EE}$ is $1.00$--$1.04$ of $\chi_{EE}$ for $kh=0.26$--$0.79$.
+\end{enumerate}
+\emph{The setup to use}: the generalized leapfrog, the Liouville measure, an HMC start with random trajectory lengths and $\gtrsim200$ updates,
+$s_a\gtrsim135$; and enough runs that the errors along the flow are known ($\approx64$ per set at $h/a=2$).
+
 \section{Implementation plan}
 \label{sec:plan}
 

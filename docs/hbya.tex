@@ -1,0 +1,77 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx,dsfont}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\title{The kernel and the number of particles per kernel, $h/a$: campaign \texttt{hbya}}
+\date{\today}
+\maketitle
+
+\section{Goals}
+
+The $2\times2$ of \texttt{equilibrium\_positions.tex} (campaign \texttt{hmc\_liou2}: generalized leapfrog (GLF), Liouville measure, an equilibrium
+HMC start, $h/a=2$, $s_a=541$) left three effects of the regulator:
+\begin{enumerate}
+\item \emph{Excess shear damping at rest.}  Every cell damps the shear mode faster than hydrodynamics,
+  \st
+  \frac{\Gamma}{\Gamma_{\rm hydro}}=1+\delta,\qquad \delta\approx0.10\quad (kh=0.26,\ 0.52),
+  \stp
+  with no sign of $\delta$ falling between $kh=0.26$ and $0.52$: more like a renormalisation of the viscosity at $h/a=2$ than a $(kh)^2$
+  correction.
+\item \emph{The regulator is not Lorentz invariant.}  At $v_0=0.8$ the excess is $\delta$ across the flow and $\gamma^2\delta$ along it, as for an
+  extra dissipation fixed in the lab frame, and the pair correlation $g(r,\theta)$ is isotropic in the lab ($g_2,g_4,g_6\sim10^{-4}$) instead of
+  contracted along the flow.
+\item \emph{Finite entropy per particle.}  The HMC equilibrium has $C_{MM}/\chi_{MM}\approx1+8.5/s_a$, flat in $k$.  The hydrodynamics starts from
+  the HMC equilibrium and can only be as good as it.
+\end{enumerate}
+The kernel is isotropic in the lab, so (2) remains at every $h/a$; but its size is set by $\delta$.  The questions for this campaign:
+\begin{itemize}
+\item Does $\delta$ fall as $h/a$ grows, and how fast?  Does it depend on the kernel (Wendland C2, C4, C6)?
+\item Does the law $1+\gamma^2\delta$ along and $1+\delta$ across the flow hold at each $h/a$ and kernel?
+\item Do the sound modes (frequency and damping) and the equal-time correlators $C_{AA}(\bm k,0)/\chi_{AA}$ improve with $h/a$?
+\end{itemize}
+
+\section{Design}
+
+\paragraph{Fixed entropy per particle, fixed spacing.}  The spacing $a$ and the entropy per particle $s_a$ are held fixed and $h$ is raised:
+\st
+a=0.025,\qquad h=(h/a)\,a,\qquad s_a=S_0\,\frac{\sqrt3}{2}a^2=135\quad(S_0=2.5\times10^5),\qquad L=1.2 .
+\stp
+The number of particles is then fixed ($N=2688$) and the temperature too ($T=57.2$); only the number of neighbours grows, as $(h/a)^2$.  The
+modes of the box are $kh=2\pi n h/L$: $kh=0.26n$ at $h/a=2$, $0.39n$ at $3$, $0.52n$ at $4$.  The common mode is $kh=0.52$; at $h/a=3$ it lies
+between $0.39$ and $0.79$.  The alternative, fixed $h$ and smaller $a$ (as \texttt{examples/equilibrium.jl} did before the option
+\texttt{SR\_H}), costs $(h/a)^{4.7}$ instead of $(h/a)^3$ and changes $T$.
+
+\paragraph{Entropy per particle.}  $s_a=135$ rather than the default $541$: the run is cheaper by $T\propto s_a^{1/3}$ (the damping times scale
+with $T$), and the finite-$s_a$ offset of the initial state, $8.5/s_a\approx6\%$, is known and the same at every $h/a$.  At $s_a=54$ it would
+be $16\%$, and HMC needs a much smaller step.
+
+\paragraph{Method.}  GLF ideal step (\texttt{SPH\_IDEAL=generalized}), one-kernel viscous step, Liouville measure, $\eta/s=0.2$; HMC start of 200
+updates with random trajectory lengths in $[L/2c_s,L/c_s]$ (\texttt{SR\_HMC\_TAUJIT=0.5}, step factor $0.35$); $v_0=0$ and $0.8$; independent seeds
+per set.  The run length is set to the same number of shear damping times at $kh=0.52$ for every $h/a$: $t\propto h^2$.
+
+\paragraph{Measurements.}  As in \texttt{equilibrium\_positions.tex}, \texttt{examples/boost\_analysis.jl}: the shear damping $\Gamma/\Gamma_{\rm hydro}$
+(fits of the shear mode) along and across the flow, the sound modes ($C_{xx}$, $C_{EE}$ along and $C_{yy}$ across the flow) against hydrodynamics, the
+equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, $g(r,\theta)$ (\texttt{examples/g\_theta.jl}), and $C_{MM}/\chi$ of the initial state.
+
+\section{Runs}
+
+To be filled in after the timing test (debug job 61342810).
+
+\section{Results}
+
+To come.
+
+\end{document}

@@ -17,6 +17,9 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
+# SR_H: the kernel scale h (default 0.05).  The spacing is a = h/HA, so h/a can be raised at fixed a (and fixed N in the box L)
+# by raising SR_H with HA (docs/hbya.tex); with SR_S0 fixed the entropy per particle s_a = S0·a²·√3/2 is then fixed too.
+const HKER  = setting("SR_H", 0.05)
 const TEND  = parse(Float64, ARGS[3])
 const NREAL = parse(Int, ARGS[4])
 const RECN  = length(ARGS) > 4 ? parse(Int, ARGS[5]) : 2          # record every RECN steps
@@ -135,11 +138,11 @@ function one_realization(seed)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
         # rest-frame state at S0: its enthalpy w0 sets the momentum density of the boosted state
-        _, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+        _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
                                 L=LBOX, lattice=:hex, seed=1000seed + 4)
         w0 = ps0[1].e + ps0[1].p;  Trel0 = ps0[1].T * ps0[1].γ
         Mx0 = w0 * GAMMA^2 * BOOST
-        params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(Mx0, 0.0);
+        params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
         if POSITIONS === :poisson
             params.ideal === :grid && error("SR_POSITIONS=poisson is not possible with SPH_IDEAL=grid")
