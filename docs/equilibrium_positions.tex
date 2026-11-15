@@ -635,31 +635,41 @@ heating of about $20\%$ per $1000$ time units at $s_a=54$ into a negligible one.
 Campaign \texttt{hmc\_dyn} (\texttt{nersc/campaign\_hmc\_dyn.txt}, job 61295240) is a $2\times2$ of ideal step --- the generalized leapfrog (GLF) or
 drift--kick--drift (DKD) --- and start --- hybrid Monte Carlo (HMC) or the lattice --- at $v_0=0$ and $0.8$: $L=1.2$, $s_a=541$, $\eta/s=0.2$,
 $t=300$, 16 runs each, the one-kernel viscous step throughout.  The DKD + lattice cell is the commonkernel benchmark
-(\texttt{ck\_v0}, \texttt{ck\_v0.8}).  First look, with the sets complete so far (GLF + HMC start at $v_0=0.8$: 6 of 16 runs).  At $v_0=0.8$:
-\begin{center}
+(\texttt{ck\_v0}, \texttt{ck\_v0.8}).  All 16 runs of every cell are in.  Errors are jackknife over the runs (\Fig{fig:hdstatic}).  At $v_0=0.8$:
+\begin{center}\small
 \begin{tabular}{lcccc}
 \hline
  & DKD, lattice & DKD, HMC & GLF, lattice & GLF, HMC \\ \hline
-$C_{EE}(\bm k,0)/\chi$, $\bm k\parallel\bm v$, $kh=0.52$ & $0.77(6)$ & $1.01(10)$ & $1.00(8)$ & $1.04(21)$ \\
-$C_{EE}/\chi$, $\bm k\perp\bm v$, $kh=0.52$ & $0.97(2)$ & $0.98(2)$ & $1.04(2)$ & $0.94(4)$ \\
-shear along the flow, $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ & $1.42(13)$ & $0.99(6)$ & $1.07(10)$ & $0.92(21)$ \\
-shear across the flow, $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ & $1.02(7)$ & $0.93(8)$ & $1.03(6)$ & $1.03(9)$ \\
-fluctuation KE$/2VwT$ (predicted $17.6$) & $19.2$ & $17.4$ & $19.3$ & $17.5$ \\
-$\Delta H/H$ at $t=300$ & $3\times10^{-4}$ & $3\times10^{-4}$ & $6\times10^{-6}$ & $5\times10^{-6}$ \\
+$C_{EE}/\chi$, $\bm k\parallel\bm v$, $kh=0.26$ & $1.02(15)$ & $1.00(14)$ & $1.14(17)$ & $0.77(10)$ \\
+\phantom{$C_{EE}/\chi$, $\bm k\parallel\bm v$,} $kh=0.52$ & $0.77(6)$ & $1.01(10)$ & $1.00(8)$ & $1.07(11)$ \\
+\phantom{$C_{EE}/\chi$, $\bm k\parallel\bm v$,} $kh=0.79$ & $0.92(5)$ & $0.86(4)$ & $1.09(6)$ & $0.91(6)$ \\
+$\chi^2$ of the three against $1$ & $20$ & $11$ & $3$ & $8$ \\
+$C_{EE}/\chi$, $\bm k\perp\bm v$, $kh=0.26$--$0.79$ & $0.97$--$1.01$ & $0.98$--$1.06$ & $0.98$--$1.04$ & $1.00$--$1.02$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $\bm k\parallel\bm v$, $kh=0.26$ & $1.53(24)$ & $1.30(34)$ & $0.99(33)$ & $0.92(15)$ \\
+\phantom{shear $\Gamma/\Gamma_{\rm hydro}$, $\bm k\parallel\bm v$,} $kh=0.52$ & $1.42(13)$ & $0.99(6)$ & $1.07(10)$ & $1.24(13)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $\bm k\perp\bm v$, $kh=0.52$ & $1.02(7)$ & $0.93(8)$ & $1.03(6)$ & $0.89(5)$ \\
+KE$/2VwT$ (predicted $17.6$) & $19.2$ & $17.4$ & $19.3$ & $17.6$ \\
+$\Delta H/H$ at $t=300$ & $3\times10^{-4}$ & $3\times10^{-4}$ & $6\times10^{-6}$ & $7\times10^{-6}$ \\
 \hline
 \end{tabular}
 \end{center}
-At $v_0=0$ all four cells agree: $C/\chi=0.97$--$1.04$ at $kh=0.52$, shear damping $1.02$--$1.14$, KE $0.99$--$1.00$, and $\Delta H/H$ $4\times10^{-6}$ (GLF)
-against $9\times10^{-4}$ (DKD) (\Fig{fig:hdstatic}).
+The errors across the flow are $0.02$--$0.05$.
 \begin{itemize}
-\item \emph{The deficit of $C_{EE}$ along the flow (\texttt{boost.tex}, \texttt{commonkernel.tex}) and the excess shear damping along the flow
-  belong to one cell only, DKD with the lattice start.}  Either change removes both: the HMC start with DKD, or the generalized
-  leapfrog from the lattice (\Fig{fig:hdshear}).
-\item \emph{The kinetic energy of the fluctuations} at $v_0=0.8$ follows the start, not the step: $17.4$--$17.5$ from HMC, near the
+\item \emph{At $v_0=0$ the four cells agree.}  For $C_{EE}$, the 24 values (4 cells, 3 $k$, 2 directions) lie in $0.88$--$1.07$, at most
+  $2.4\sigma$ from $1$ (at $kh=0.26$).  Shear damping is $1.02$--$1.14$ at $kh=0.52$, and KE $0.99$--$1.00$.  This is the scatter to expect
+  from 16 runs.
+\item \emph{Along the flow at $v_0=0.8$ the errors are $2$--$3$ times larger, and three of the four cells fall low somewhere.}  DKD + lattice
+  ($0.77(6)$ at $kh=0.52$, $4\sigma$) is the worst, but DKD + HMC is $3\sigma$ low at $kh=0.79$ and GLF + HMC is $2\sigma$ low at $kh=0.26$.  Only GLF +
+  lattice is consistent with $1$ at all three, and it lies high.  \emph{Neither the HMC start nor the generalized leapfrog alone clearly removes
+  the deficit}; 16 runs cannot decide between the cells.
+\item \emph{The excess shear damping along the flow} is clearest in DKD + lattice ($1.53(24)$, $1.42(13)$).  The other cells are within
+  $2\sigma$ of $1$ at both $k$; GLF + HMC is $1.24(13)$ at $kh=0.52$.
+\item \emph{The kinetic energy of the fluctuations} at $v_0=0.8$ follows the start, not the step.  It is $17.4$--$17.6$ from HMC, at the
   prediction $17.6$, against $19.2$--$19.3$ from the lattice.
-\item \emph{The energy} is conserved $60$--$230$ times better with the generalized leapfrog, at rest and moving.
+\item \emph{The energy} is conserved $45$--$230$ times better with the generalized leapfrog, at rest and moving.
 \end{itemize}
-The GLF + HMC cell at $v_0=0.8$ is still running; its errors will shrink.
+Deciding the deficit along the flow needs more runs per cell: the errors there fall as $1/\sqrt{\rm runs}$, so a $2\sigma$ effect of
+$0.15$ needs about $4\times$ the runs to show at $4\sigma$.
 
 \paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; first 37 of 72 chains: $L=1.2$, $s_a=135$ (13
 chains) and $541$ (16), and $s_a=541$ boosted to $v_0=0.8$ (8; $s_a=902$ in the lab), \Fig{fig:hmceqfirst}).  $S(\bm k)/(4/s_a)$ per band of $kh$,
@@ -708,7 +718,7 @@ $t$ for four bands of $kh$; dashed, the HMC equilibrium of \texttt{hmc\_eq} at t
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_static_HD.png}
 \caption{Campaign \texttt{hmc\_dyn}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per cell of the $2\times2$ (GLF or DKD, HMC or lattice start) at
-$v_0=0$ and $0.8$; filled $\bm k\parallel\bm v$, open $\bm k\perp\bm v$.  GLF + HMC at $v_0=0.8$: 6 runs so far.}
+$v_0=0$ and $0.8$, 16 runs each, jackknife errors; filled $\bm k\parallel\bm v$, open $\bm k\perp\bm v$ (shifted slightly in $kh$ for clarity).}
 \label{fig:hdstatic}
 \end{figure}
 \begin{figure}[p]

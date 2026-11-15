@@ -194,16 +194,17 @@ for (row, run) in enumerate(runs)
         ax = axg[row, a]
         for (dir, mk) in ((:par, "o"), (:perp, "s"))
             js = sort([j for (d, j) in keys(r.C) if d === dir])
-            kh = [norm(r.C[(dir, j)].k) * r.h for j in js];  y = [real(r.C[(dir, j)].C[a, a, 1]) / χ[a, a] for j in js]
-            ax.plot(kh, y, mk * "-", color = r.col, mfc = dir === :perp ? "none" : r.col,
-                    label = dir === :par ? "k ∥ v" : "k ⊥ v")
+            kh = [norm(r.C[(dir, j)].k) * r.h for j in js] .+ (dir === :perp ? 0.008 : 0.0)
+            ye = [jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, j)].Cs) for j in js]     # mean ± jackknife error over runs
+            ax.errorbar(kh, first.(ye), last.(ye), fmt = mk * "-", color = r.col, mfc = dir === :perp ? "none" : r.col, capsize = 2,
+                        label = dir === :par ? "k ∥ v" : "k ⊥ v")
         end
-        ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.7, 1.3)
+        ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.5, 1.5)
         row == length(runs) && ax.set_xlabel("kh")
         ax.set_title("$(r.lab):  C_$(names[a])$(names[a])(k,0) / χ", fontsize = 10)
         a == 1 && ax.legend(fontsize = 8)
     end
-    for j in 1:2
+    for j in sort([j for (d, j) in keys(r.C) if d === :par])
         eq(dir, a) = jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, j)].Cs)
         @printf("  %-15s kh=%.2f  k∥: %s   k⊥: %s\n", r.lab, norm(r.C[(:par, j)].k) * r.h,
                 join([@sprintf("%s %.3f±%.3f", names[a], eq(:par, a)...) for a in 1:3], "  "),
