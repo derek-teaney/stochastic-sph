@@ -4,6 +4,25 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Message from the laptop session (2026-11-15, evening) — read first
+
+The owner says the NERSC session is having problems with campaign `moment`.  We cannot talk directly: **write what went wrong
+here (the error, the job ID, the slurm/*.out lines) and push to `inverse-moment`**; the laptop session pulls it.  Known issues:
+
+1. **Pull to `a1b1457` or later** before anything else (`git -C $R pull`).  Earlier commits of this branch changed `common` at
+   roundoff (3e-14; harmless for the physics, but the regression suite fails), now fixed.
+2. **The regression suite** (`test/run.sh`, `nersc/dtests.sh`): since the new defaults on `main` (b48106b), `test/regress/step.jl`
+   stopped with "measure = :liouville is not available with λ = ∞" for the energy Hamiltonian.  Fixed on this branch (the script
+   sets SPH_MEASURE=einstein).  Against a reference built from `main` the energy regression still fails for that reason: known, ignore.
+3. **The smoke test** is `julia --project=nersc test/testmoment.jl` (no PyPlot).  `examples/moment_det.jl` and
+   `examples/moment_gaussian.jl` plot at the end and need the plotting environment ($HOME/stochastic-sph); they are already done
+   on the laptop (docs/inverse_moment.tex, figures moment_det.png, moment_gaussian.png) — **skip them at NERSC** unless asked.
+4. **Debug queue**: 30 min.  The full runs (t = 100, L = 0.6) include 200 HMC updates first; if they time out, rerun the same
+   node.sh command (they resume from .chk), or use an interactive allocation (`salloc -q interactive -N 4 -t 01:00:00`).  If even
+   that is too slow, halve t (edit the t argument in a copy of the campaign file) rather than the statistics.
+5. Only the 96 stochastic tasks of `nersc/campaign_moment.txt` are needed; the comparison is common against moment with shared
+   seeds (analysis groups MOA, MO in examples/boost_analysis.jl).
+
 ## Next session at NERSC — campaign `moment` (written 2026-11-15 on the laptop; branch `inverse-moment`)
 
 **What we are trying to do.**  The owner wants a cleaner viscous step, `SPH_DISSIPATION=moment` (docs/inverse_moment.tex; read
