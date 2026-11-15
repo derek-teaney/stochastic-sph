@@ -672,6 +672,22 @@ The errors across the flow are $0.02$--$0.05$.
 Deciding the deficit along the flow needs more runs per cell: the errors there fall as $1/\sqrt{\rm runs}$, so a $2\sigma$ effect of
 $0.15$ needs about $4\times$ the runs to show at $4\sigma$.
 
+\paragraph{Two checks on these numbers.}  \emph{(i) The errors.}  At $v_0=0$ the box is square and the fluid at rest, so $C(k\hat x,0)$ and
+$C(k\hat y,0)$ have the same expectation: the difference of the two, in units of its error, should be a unit normal variable.  Over the
+four cells and three $k$ it is not for the sound mode: $\sum z^2/n=2.0$ for $C_{EE}$ (and the same for the longitudinal momentum, the same
+mode), $0.97$ for the transverse momentum, against $\approx1.15$ expected with 16 runs.  The jackknife errors of the equal-time sound
+correlators are therefore too small, by about $1.3$--$1.4$; those of the shear correlator are right.
+\emph{(ii) The HMC start was not an equilibrium start at long wavelengths.}  Its trajectories had the default length $\tau=L/c_s$, exactly
+one period of the fundamental sound mode of the box, $kh=0.26$: a trajectory of one period brings that mode back to where it started, so
+from the lattice it hardly moves.  At the start of the dynamics $S(\bm k)/(4/s_a)$ at $kh=0.26$ was $\approx3$, against $\approx20$ in
+equilibrium, and it was still rising at $t=300$.  A test (HMC chains from the lattice, 60 updates; job 61309290) shows the resonance
+directly: with $\tau=L/c_s$ the $kh=0.26$ mode stays at $4$, with $\tau=L/2c_s$ the $kh=0.52$ mode (one full period) stays at $3$, and with
+$\tau=1.73$ both relax.  The two HMC cells also shared their seeds, hence their starting configurations, so their deviations are
+correlated (both high along and low across at $kh=0.26$ at rest).  The hex lattice is not symmetric under a $90^\circ$ rotation, and a
+start that remembers it need not give equal $C(k\hat x)$ and $C(k\hat y)$.  The HMC cells above are thus a partially relaxed lattice,
+not equilibrium, at $kh\lesssim0.5$.  Campaign \texttt{hmc\_liou2} (job 61309610) repeats the $2\times2$ with the Liouville measure, an HMC start of
+200 updates with random trajectory lengths in $[L/2c_s,L/c_s]$ (\texttt{SR\_HMC\_TAUJIT}), independent seeds, and 64 runs per cell.
+
 \paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; first 37 of 72 chains: $L=1.2$, $s_a=135$ (13
 chains) and $541$ (16), and $s_a=541$ boosted to $v_0=0.8$ (8; $s_a=902$ in the lab), \Fig{fig:hmceqfirst}).  $S(\bm k)/(4/s_a)$ per band of $kh$,
 with the error from the spread of the chains and $\tau_{\rm int}$:
@@ -717,16 +733,41 @@ $t$ for four bands of $kh$; dashed, the HMC equilibrium of \texttt{hmc\_eq} at t
 \end{figure}
 
 \begin{figure}[p]
-\includegraphics[width=\textwidth]{figs/boost_static_HD.png}
-\caption{Campaign \texttt{hmc\_dyn}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per cell of the $2\times2$ (GLF or DKD, HMC or lattice start) at
-$v_0=0$ and $0.8$, 16 runs each, jackknife errors; filled $\bm k\parallel\bm v$, open $\bm k\perp\bm v$ (shifted slightly in $kh$ for clarity).}
+\includegraphics[width=\textwidth]{figs/boost_equaltime_HD.png}
+\caption{Campaign \texttt{hmc\_dyn}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$ for $A=E$, $M_x$, $M_y$ (rows), at $v_0=0$ and $0.8$ with $\bm k$
+along and across $x$ (columns); the four methods overlaid (shifted slightly in $kh$), 16 runs each, jackknife errors.}
 \label{fig:hdstatic}
 \end{figure}
 \begin{figure}[p]
-\includegraphics[width=\textwidth]{figs/boost_shear_HD.png}
-\caption{Campaign \texttt{hmc\_dyn}: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$, real (left) and imaginary (right) parts, one row per cell; dashed hydrodynamics.}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_HD.png}
+\caption{Campaign \texttt{hmc\_dyn}, $v_0=0.8$: the advected shear mode, $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, one panel per method; dashed hydrodynamics.}
 \label{fig:hdshear}
 \end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_HD.png}
+\caption{As \Fig{fig:hdshear}: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_HD.png}
+\caption{As \Fig{fig:hdshear}: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_HD.png}
+\caption{As \Fig{fig:hdshear}: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$.  From the lattice the phase lags hydrodynamics slightly; from HMC it does not.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_HD.png}
+\caption{As \Fig{fig:hdshear}: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_HD.png}
+\caption{Campaign \texttt{hmc\_dyn}, $v_0=0$: the shear mode, $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, one panel per method; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_HD.png}
+\caption{Campaign \texttt{hmc\_dyn}, $v_0=0$: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.26$.}
+\end{figure}
+
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_Sk_hmc_eq_first.png}
 \caption{Campaign \texttt{hmc\_eq}, the first 37 chains: the equilibrium $S(\bm k)/(4/s_a)$ against $kh$ (left) and $g(r)$ (right), $L=1.2$.}
