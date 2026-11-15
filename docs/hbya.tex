@@ -90,6 +90,7 @@ The errors expected from \texttt{hmc\_liou2} (64 runs, $\pm0.02$ on $\delta$ at 
 $v_0=0.8$ with 16 runs.
 
 \section{Results}
+\label{sec:results}
 
 \subsection{$h/a=2$ (complete: 128 runs, mean $2.2$ h each)}
 
@@ -213,20 +214,94 @@ momentum over the kernel.
 \caption{$h/a=4$: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$; as \Fig{fig:et2}.}
 \label{fig:et4}
 \end{figure}
-\begin{figure}[p]
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_HB4.png}
-\caption{$h/a=4$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, one panel per kernel; dashed hydrodynamics.}
-\label{fig:shear4}
-\end{figure}
-\begin{figure}[p]
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_HB4.png}
-\caption{$h/a=4$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.52$, one panel per kernel; dashed hydrodynamics.}
-\label{fig:sound4}
-\end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/hbya_g_theta_ha4.png}
 \caption{$h/a=4$: $g(r,\theta)$ at $r=0.75a$ and $1.15a$; as \Fig{fig:gtheta2}.}
 \label{fig:gtheta4}
 \end{figure}
+
+\section{The correlators, kernel by kernel}
+\label{sec:corr}
+
+The standard boost-test figures (as in \texttt{boost.tex} and \texttt{equilibrium\_positions.tex}), one figure per correlator, one panel per kernel; dashed
+hydrodynamics.  At rest C2, C4, C6 (32 runs each), at $v_0=0.8$ C2 and C4 (16 runs each); the smallest box wavevector of each $h/a$ ($kh=0.26$ at $h/a=2$, $0.52$ at
+$h/a=4$).  The fitted rates are in the tables of \Sect{sec:results} and in \Fig{fig:summary}.
+
+\paragraph{$h/a=2$} (Figs.~\ref{fig:c2_shear0}--\ref{fig:c2_shearperp}).
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_HB2.png}
+\caption{$h/a=2$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$; C2, C4, C6 (panels).}
+\label{fig:c2_shear0}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_HB2.png}
+\caption{$h/a=2$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.26$; C2, C4, C6.}
+\label{fig:c2_sound0}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_HB2.png}
+\caption{$h/a=2$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$; C2 (left), C4 (right).}
+\label{fig:c2_shear8}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_HB2.png}
+\caption{$h/a=2$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; C2, C4.}
+\label{fig:c2_soundpar}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_HB2.png}
+\caption{$h/a=2$, $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$; C2, C4.}
+\label{fig:c2_EE}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_HB2.png}
+\caption{$h/a=2$, $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$; C2, C4.}
+\label{fig:c2_soundperp}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_HB2.png}
+\caption{$h/a=2$, $v_0=0.8$: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound); C2, C4.}
+\label{fig:c2_shearperp}
+\end{figure}
+\clearpage
+\paragraph{$h/a=4$} (Figs.~\ref{fig:c4_shear0}--\ref{fig:c4_shearperp}).
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_HB4.png}
+\caption{$h/a=4$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$; C2, C4, C6 (panels).}
+\label{fig:c4_shear0}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_HB4.png}
+\caption{$h/a=4$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.52$; C2, C4, C6.}
+\label{fig:c4_sound0}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_HB4.png}
+\caption{$h/a=4$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$; C2 (left), C4 (right).}
+\label{fig:c4_shear8}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_HB4.png}
+\caption{$h/a=4$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; C2, C4.}
+\label{fig:c4_soundpar}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_HB4.png}
+\caption{$h/a=4$, $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$; C2, C4.}
+\label{fig:c4_EE}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_HB4.png}
+\caption{$h/a=4$, $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$; C2, C4.}
+\label{fig:c4_soundperp}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_HB4.png}
+\caption{$h/a=4$, $v_0=0.8$: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound); C2, C4.}
+\label{fig:c4_shearperp}
+\end{figure}
+\clearpage
 
 \end{document}
