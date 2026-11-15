@@ -48,22 +48,26 @@ const KERNEL = setting("SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = setting("SR_JITTER", 0.0)
+# SR_POSITIONS: where the particles start.  Default (since 2026-11-15) hmc, except with SPH_IDEAL=grid (the grid is the
+# lattice), where it is lattice.  SR_POSITIONS=lattice: on the hexagonal lattice (the default before 2026-11-15; for tests,
+# and at large s_a).
 # SR_POSITIONS=poisson: the particles start at N independent uniform positions in the box (a Poisson
-# arrangement) instead of on the hexagonal lattice (default lattice); then, as for the jitter, the s_a and m_a
+# arrangement) instead of on the hexagonal lattice; then, as for the jitter, the s_a and m_a
 # are rescaled so that the smoothed densities are uniform.  Not with SPH_IDEAL=grid (the grid is the lattice).
 # SR_POSITIONS=hmc: the positions are first brought to equilibrium by hybrid Monte Carlo from the lattice (src/hmc.jl,
-# docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 40) with
-# trajectories of length SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC (default
-# 0.5) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.
-const POSITIONS = setting("SR_POSITIONS", :lattice)
+# docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 200) with
+# trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC
+# (default 0.35) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.  The
+# defaults are those of campaign hbya (2026-11-15); before, 40 updates, δt factor 0.5 and a fixed τ.
+const POSITIONS = setting("SR_POSITIONS", setting("SPH_IDEAL", :generalized) === :grid ? :lattice : :hmc)
 POSITIONS in (:lattice, :poisson, :hmc) || error("SR_POSITIONS must be lattice, poisson or hmc")
-const HMC_N     = setting("SR_HMC_N", 40)
+const HMC_N     = setting("SR_HMC_N", 200)
 const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
-const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.5)
-# SR_HMC_TAUJIT=j: each update's trajectory has a random length, uniform in [(1−j)τ, τ] (default 0: fixed τ).  A fixed τ equal
+const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.35)
+# SR_HMC_TAUJIT=j: each update's trajectory has a random length, uniform in [(1−j)τ, τ] (default 0.5; 0 is a fixed τ).  A fixed τ equal
 # to a period of a box sound mode leaves that mode where it started: τ = L/c_s freezes kh = 2πh/L (S(k) stays near its lattice
 # value), τ = L/2c_s the next one (campaign hmc_tau_test, 2026-11-14).  Random lengths remove these resonances.
-const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
+const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
@@ -82,7 +86,7 @@ const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step t
 # all N lattice modes, Σ_records δU_k δU_k† / N with U = (ε, M_x, M_y) the site densities (src/grid.jl, GridFFT),
 # summed after t = 5: grid_Ck_re, grid_Ck_im (3×3×N_x×N_y), grid_Cn (the number of records), grid_kmin (2×N_x×N_y).
 setting("SR_GRID", false) && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
-const GRID   = setting("SPH_IDEAL", :particle) === :grid      # as SimParams decides (params.ideal)
+const GRID   = setting("SPH_IDEAL", :generalized) === :grid    # as SimParams decides (params.ideal)
 
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at

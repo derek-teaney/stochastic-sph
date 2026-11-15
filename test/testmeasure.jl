@@ -1,6 +1,6 @@
 # testmeasure.jl — the integration measure (SimParams.measure, SPH_MEASURE; docs/equilibrium_positions.tex, Appendix A):
 #   1. the vote entropy of measure = :liouville is S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (finite differences);
-#   2. the default is :einstein;
+#   2. the defaults: :liouville and the generalized leapfrog in 2D with the energy Hamiltonian, else :einstein and :particle;
 #   3. the equilibrium start with :liouville weights the states by an extra 1/T_a, so its particles are cooler on average
 #      (⟨ln T_a⟩ lower), by an amount of relative order 1/s_a;
 #   4. a stochastic step with :liouville runs and leaves the true entropies S_a(e_a, m_a) in the particles.
@@ -20,7 +20,12 @@ check(vote_entropy(e, m, V, eos, false) == S, "einstein: the entropy itself")
 
 println("2. default")
 p0, _, _, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 3e4, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex))
-check(p0.measure === :einstein, "SimParams.measure defaults to :einstein")
+check(p0.measure === :liouville, "SimParams.measure defaults to :liouville in 2D with the energy Hamiltonian (since 2026-11-15)")
+check(p0.ideal === :generalized, "SimParams.ideal defaults to :generalized in 2D with the energy Hamiltonian (since 2026-11-15)")
+p1 = withenv("SPH_HAMILTONIAN" => "smoothed") do
+    quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 3e4, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex))[1]
+end
+check(p1.measure === :einstein && p1.ideal === :particle, "with the smoothed Hamiltonian: :einstein and :particle")
 
 println("3. the equilibrium start at s_a ≈ 16")
 lnT = Dict{Symbol,Float64}()

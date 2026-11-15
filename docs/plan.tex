@@ -265,6 +265,14 @@ number of threads; this is the check that each step preserves.
 \section{Status}
 \label{sec:status}
 
+\paragraph{2026-11-15.}  New defaults (branch \texttt{new-defaults}): the generalized leapfrog, the Liouville measure and the
+hybrid Monte Carlo start of the positions (\texttt{CLAUDE.md}).  Open: the stochastic step is not in detailed balance across
+steps, because its coefficients are rebuilt every step without a Hastings factor.  On a frozen lattice the momentum
+fluctuations are biased by up to $14\%$ at $s_a=16$ and $6\%$ at $s_a=54$, independent of $\Delta t$
+(\texttt{commonkernel.tex}, ``Detailed balance with state-dependent coefficients'').  The fix is to be planned in a new note.
+
+\paragraph{Earlier.}
+
 On the branch \texttt{nextstage}:
 \begin{itemize}
 \item \emph{Superluminal guard}: done (\texttt{test/teststochastic\_guard.jl}).  A

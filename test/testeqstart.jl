@@ -92,13 +92,14 @@ for v in (0.0, 0.3)
     @printf("  v = %.1f: N = %d, acceptance %.3f, T_rel = %.4g, v = (%.4f, %.4f)\n", v, N, r.acc, r.T * sqrt(1 / (1 - dot(r.v, r.v))), r.v...)
     check(abs(sum(r.e) / E0 - 1) < 1e-12, "Σ e_a = E exactly")
     check(norm(sum(m) - M0) < 1e-10 * norm(sum(abs.(p.m) for p in ps)), "Σ m_a = M exactly")
-    avg = sum(particle_moments(V_, r.β0, r.β, eos).mean for V_ in r.V)
+    liou = params.measure === :liouville                     # the measure of the start (SimParams default)
+    avg = sum(particle_moments(V_, r.β0, r.β, eos; liouville = liou).mean for V_ in r.V)
     @printf("    background speed %.6f;  v = β/β⁰ of the most probable state %.6f (differs at O(1/s_a))\n", vbg[1], r.v[1])
     check(abs(avg[1] / E0 - 1) < 1e-10 && norm(SVector(avg[2], avg[3]) - M0) < 1e-10 * E0,
           "the averages at β reproduce the totals: Σ⟨e_a⟩ = E, Σ⟨m_a⟩ = M")
     check(r.acc > 0.4, "acceptance > 0.4 (30 independence steps: unmixed chains ~ 0.6^30)")
     # spread over particles against the single-particle covariance
-    C = particle_moments(r.V[1], r.β0, r.β, eos).cov            # exact single-particle covariance
+    C = particle_moments(r.V[1], r.β0, r.β, eos; liouville = liou).cov            # exact single-particle covariance
     X = [SVector(r.e[a], m[a][1], m[a][2]) for a in 1:N];  μ = mean(X)
     Cs = sum((x - μ) * (x - μ)' for x in X) / (N - 1)
     @printf("    spread over particles / C: e %.3f, m_x %.3f, m_y %.3f  (statistical ± %.3f)\n",

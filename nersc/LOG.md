@@ -4,6 +4,16 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## 2026-11-15 (laptop): new defaults — read before the next campaign
+
+`equilibrium` was merged into `main` (tag `notes-2026-11-15`, defaults unchanged).  Then, on `new-defaults`: the defaults are the
+generalized leapfrog (`SPH_IDEAL=generalized`), the Liouville measure (`SPH_MEASURE=liouville`) and, in examples/equilibrium.jl,
+the HMC start (`SR_POSITIONS=hmc`, `SR_HMC_N=200`, `SR_HMC_TAUJIT=0.5`, `SR_HMC_DTFAC=0.35`), i.e. the settings of `hbya`.
+Campaign files that spell these out are unaffected; old campaigns relying on the old defaults must now set
+`SPH_IDEAL=particle SPH_MEASURE=einstein SR_POSITIONS=lattice` to be reproduced.  Running jobs are unaffected (fixed worktree);
+do not update the `hbya` worktree until its tasks are done.  Also measured: the stochastic step alone is biased at low s_a
+(+6% in the momentum fluctuations at s_a = 54, +14% at 16; docs/commonkernel.tex) — keep in mind when comparing dynamics to HMC.
+
 ## Next session at NERSC — start now: campaigns `hmc_dyn` and `hmc_eq` (written 2026-11-14, on the laptop)
 
 New on `equilibrium`: `SR_POSITIONS=hmc` in examples/equilibrium.jl (hybrid Monte Carlo from the lattice at the β^μ of the

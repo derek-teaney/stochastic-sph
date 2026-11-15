@@ -20,6 +20,13 @@ the `.tex`).  Owner: D. Teaney.
   `SPH_DISSIPATION=common` (`docs/commonkernel.tex`), wherever it applies (2D, energy Hamiltonian);
   `SPH_DISSIPATION=particle` gives the previous default (needed to reproduce runs before that date).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
+- **The ideal step, the measure and the equilibrium start** (since 2026-11-15, branch `new-defaults`): the defaults
+  are the generalized leapfrog (`SPH_IDEAL=generalized`, `src/hmc.jl`), the Liouville measure (`SPH_MEASURE=liouville`,
+  S_a − ln T_a in the votes; docs/equilibrium_positions.tex, Appendix A), both in 2D with the energy Hamiltonian, and in
+  `examples/equilibrium.jl` the hybrid Monte Carlo start of the positions (`SR_POSITIONS=hmc`, 200 updates,
+  `SR_HMC_TAUJIT=0.5`, `SR_HMC_DTFAC=0.35`).  To reproduce runs before that date: `SPH_IDEAL=particle SPH_MEASURE=einstein
+  SR_POSITIONS=lattice` (and the HMC settings 40, 0, 0.5 if `SR_POSITIONS=hmc` was set).  `SR_POSITIONS=lattice` remains
+  for tests and large s_a; `SPH_IDEAL=grid` starts on the lattice.
 - `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
   step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.
   Plotting scripts next to them.
@@ -82,7 +89,13 @@ You may be running on a Perlmutter login node.  Rules:
   `cl` stable to s_a ≈ 4 with the Δt criterion).  Found 2026-11-14 (docs/equilibrium_positions.tex,
   "The generalized leapfrog"): at s_a = 54 the drift is first order in Δt and made by the
   drift–kick–drift ideal step (H is not separable); the generalized leapfrog, `SPH_IDEAL=generalized`,
-  removes it (drift 1.9e-4 → ~3e-6 per unit time, full step ≈ 1.7× the cost).  Use it for long runs.
+  removes it (drift 1.9e-4 → ~3e-6 per unit time, full step ≈ 1.7× the cost); it is the default since 2026-11-15.
+- Detailed balance across steps (docs/commonkernel.tex, "Detailed balance with state-dependent coefficients"; measured
+  2026-11-15 with examples/hastings_baseline.jl): the coefficients of the stochastic step are rebuilt every step from the
+  smoothed fields, with no Hastings factor.  On a frozen lattice this biases the momentum fluctuations by up to +14% at
+  s_a = 16 and +6% at s_a = 54 (not reduced by Δt); frozen coefficients give the exact distribution.  Open; the fix
+  (inverse-moment faces, the residual as a conditioning, the Hastings ratio) is to be written up in a new note on its own
+  branch before any code.
 - The equilibrium of the particle positions (docs/equilibrium_positions.tex, branch
   `equilibrium`): g(r), ψ6, S(k) from the lattice; hybrid Monte Carlo as the reference.
 - Equilibrium correlators: transverse ⟨M_T(t+τ,k) M_T*(t,k)⟩ against e^{−νk²τ}, and the

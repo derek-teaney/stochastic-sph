@@ -29,8 +29,8 @@ mutable struct SimParams{K<:AbstractKernel}
     bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
-    ideal       :: Symbol          # :particle (default) or :grid — see below
-    measure     :: Symbol          # :einstein (default) or :liouville — see below
+    ideal       :: Symbol          # :generalized (default in 2D), :particle or :grid — see below
+    measure     :: Symbol          # :liouville (default in 2D) or :einstein — see below
 end
 
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
@@ -57,17 +57,21 @@ end
 #   of the weights s, so the back map of the stochastic step at fixed positions conserves
 #   H exactly (volume_n.tex).  Stored as S_smooth = s_a n_a, so V_a = s_a/S_smooth either
 #   way.  Default from SPH_VOLUME, else :number with :energy (:entropy with :smoothed).
-# ideal: the ideal step.  :particle (default) is the Hamiltonian leapfrog of the moving particles
+# ideal: the ideal step.  :particle is the drift–kick–drift Hamiltonian leapfrog of the moving particles
 #   (ideal.jl); :grid is the step on the fixed lattice — kick, drift and return (gridstep.tex,
 #   grid.jl): the particles stay on the sites of the hexagonal lattice, which needs lattice = :hex,
 #   hamiltonian = :energy and volume = :number.  :generalized is the moving particles with the generalized
 #   leapfrog (hmc.jl: implicit, symplectic and reversible for the non-separable H; equilibrium_positions.tex),
-#   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else :particle.
+#   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else
+#   default_ideal: :generalized where it applies (2D, hamiltonian = :energy, volume = :number; since 2026-11-15), else :particle.
+#   SPH_IDEAL=particle gives the earlier default (needed to reproduce runs before that date).
 # measure: the integration measure of the stochastic step and of hybrid Monte Carlo (equilibrium_positions.tex, Appendix A).
-#   :einstein (default) is flat in the conserved energy and momentum (the Einstein formula; the particle entropy read as
+#   :einstein is flat in the conserved energy and momentum (the Einstein formula; the particle entropy read as
 #   the Boltzmann entropy).  :liouville is flat in the entropy, the measure the Hamiltonian ideal step preserves (s_a the
 #   adiabatic invariant, the Gibbs entropy): the votes, the heat bath and the equilibrium start use S_a − ln T_a; the hybrid
-#   Monte Carlo acceptance drops Σ ln T_a.  Needs hamiltonian = :energy.  Default from SPH_MEASURE, else :einstein.
+#   Monte Carlo acceptance drops Σ ln T_a.  Needs hamiltonian = :energy.  Default from SPH_MEASURE, else default_measure:
+#   :liouville in 2D with hamiltonian = :energy (since 2026-11-15), else :einstein.  SPH_MEASURE=einstein gives the earlier
+#   default.  :liouville cannot be used with the deterministic residual (λ = ∞) or the gradient back map.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
@@ -77,6 +81,11 @@ end
 # Hamiltonian; commonkernel.tex), else :particle.  SPH_DISSIPATION=particle gives the earlier default back.
 default_dissipation(sim_dim = 2) =
     sim_dim == 2 && setting("SPH_HAMILTONIAN", :energy) === :energy ? :common : :particle
+# The ideal step and the measure when none is given (2026-11-15): the generalized leapfrog and the Liouville measure where
+# they apply (2D, energy Hamiltonian, and for the leapfrog the n-scheme), else :particle and :einstein.
+default_ideal(sim_dim, hamiltonian, volume) =
+    sim_dim == 2 && hamiltonian === :energy && volume === :number ? :generalized : :particle
+default_measure(sim_dim, hamiltonian) = sim_dim == 2 && hamiltonian === :energy ? :liouville : :einstein
 default_hamiltonian(dissipation = setting("SPH_DISSIPATION", default_dissipation())) =
     setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
 
@@ -84,7 +93,8 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
                    dissipation=setting("SPH_DISSIPATION", default_dissipation(sim_dim)), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
-                   ideal=setting("SPH_IDEAL", :particle), measure=setting("SPH_MEASURE", :einstein))
+                   ideal=setting("SPH_IDEAL", default_ideal(sim_dim, hamiltonian, volume)),
+                   measure=setting("SPH_MEASURE", default_measure(sim_dim, hamiltonian)))
     dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
