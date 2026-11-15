@@ -632,6 +632,9 @@ heating of about $20\%$ per $1000$ time units at $s_a=54$ into a negligible one.
 \section{First look: HMC start and the generalized leapfrog (campaigns \texttt{hmc\_dyn}, \texttt{hmc\_eq})}
 \label{sec:hmcdyn}
 
+\emph{Superseded in part by \Sect{sec:hl2}}: the HMC start of this section was not in equilibrium at $kh\lesssim0.5$.  With an equilibrium
+start and 64 runs per cell, the deficit along the flow belongs to the drift--kick--drift step, not to the start.
+
 Campaign \texttt{hmc\_dyn} (\texttt{nersc/campaign\_hmc\_dyn.txt}, job 61295240) is a $2\times2$ of ideal step --- the generalized leapfrog (GLF) or
 drift--kick--drift (DKD) --- and start --- hybrid Monte Carlo (HMC) or the lattice --- at $v_0=0$ and $0.8$: $L=1.2$, $s_a=541$, $\eta/s=0.2$,
 $t=300$, 16 runs each, the one-kernel viscous step throughout.  The DKD + lattice cell is the commonkernel benchmark
@@ -810,6 +813,81 @@ along and across $x$ (columns); the four methods overlaid (shifted slightly in $
 \includegraphics[width=\textwidth]{figs/equilibrium_Sk_hmc_eq_first.png}
 \caption{Campaign \texttt{hmc\_eq}, the $L=1.2$ sets (burn-in 100 updates): the equilibrium $S(\bm k)/(4/s_a)$ against $kh$ (left) and $g(r)$ (right), $L=1.2$.}
 \label{fig:hmceqfirst}
+\end{figure}
+
+\section{The $2\times2$ with the Liouville measure and an equilibrium HMC start (campaign \texttt{hmc\_liou2})}
+\label{sec:hl2}
+
+Campaign \texttt{hmc\_liou2} (\texttt{nersc/campaign\_hmc\_liou2.txt}, job 61309610, 512 runs, about 11.5 node-hours) repeats the $2\times2$ of
+\Sect{sec:hmcdyn} with three changes:
+\begin{itemize}
+\item the Liouville measure (\texttt{SPH\_MEASURE=liouville}) throughout;
+\item an HMC start that is in equilibrium: 200 updates with a random trajectory length in $[L/2c_s,L/c_s]$ (\texttt{SR\_HMC\_TAUJIT=0.5});
+\item 64 runs per cell, with independent seeds.
+\end{itemize}
+Otherwise the settings are as in \texttt{hmc\_dyn}: $L=1.2$, $s_a=541$, $\eta/s=0.2$, $t=300$.
+
+\paragraph{The start.}  At rest, $S(\bm k)/(4/s_a)$ of the HMC start at $kh=0.26$ is $21(3)$ along $x$ and $21(2)$ along $y$, against
+$20.3(15)$ in the HMC chains of \texttt{hmc\_eq}, and the dynamics keeps it: $21.8(28)$ and $21.5(23)$ over $t=100$--$300$.  At $kh=0.52$ it is
+$11$ throughout (equilibrium $10.6$).  From the lattice the same modes reach only $3$ and $4.5$ by $t=300$.
+
+\paragraph{The errors.}  At rest $C(k\hat x,0)$ and $C(k\hat y,0)$ now agree: over the four cells and three $k$, $\sum z^2/n=0.62$ for the
+sound mode and $0.63$ for the transverse mode (expected $\approx1$).  The jackknife errors are therefore sound, if anything slightly large;
+the failure of this test in \Sect{sec:hmcdyn} came from the starts.
+
+\paragraph{Results.}  $C_{EE}(\bm k,0)/\chi$, the weighted mean over $kh=0.26$, $0.52$, $0.79$ (64 runs per cell, jackknife errors), and the
+shear damping:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & DKD, lattice & DKD, HMC & GLF, lattice & GLF, HMC \\ \hline
+$C_{EE}/\chi$, $v_0=0$, along $x$ & $1.018(7)$ & $1.019(6)$ & $1.020(5)$ & $1.036(6)$ \\
+$C_{EE}/\chi$, $v_0=0.8$, $\bm k\parallel\bm v$ & $\mathbf{0.877(21)}$ & $\mathbf{0.881(22)}$ & $1.015(24)$ & $1.079(29)$ \\
+$C_{EE}/\chi$, $v_0=0.8$, $\bm k\perp\bm v$ & $0.995(6)$ & $1.008(6)$ & $0.997(6)$ & $1.009(7)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $v_0=0$, $kh=0.52$ & $1.09(3)$ & $1.13(2)$ & $1.11(3)$ & $1.11(3)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $v_0=0.8$, $\bm k\parallel\bm v$, $kh=0.52$ & $1.26(6)$ & $1.33(7)$ & $1.25(6)$ & $1.28(7)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $v_0=0.8$, $\bm k\perp\bm v$, $kh=0.52$ & $1.13(3)$ & $1.10(4)$ & $1.06(4)$ & $1.10(4)$ \\
+KE$/2VwT$, $v_0=0.8$ (predicted $17.6$) & $19.45$ & $17.62$ & $19.47$ & $17.68$ \\
+$\Delta H/H$, $v_0=0.8$, $t=300$ & $3\times10^{-4}$ & $3\times10^{-4}$ & $6\times10^{-6}$ & $5\times10^{-6}$ \\
+\hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item \emph{The deficit of $C_{EE}$ along the flow is made by the drift--kick--drift ideal step.}  It is the same from the lattice and from an
+  equilibrium HMC start, $0.88(2)$, about $14\%$ below the value at rest and $5$--$6\sigma$ below $1$.  With the generalized leapfrog it is gone:
+  $1.02(2)$ from the lattice and $1.08(3)$ from HMC.  Across the flow every cell gives $1.00$--$1.01$.
+\item \emph{At rest} every cell gives $1.02$--$1.04$, rising slightly with $kh$ ($1.00$ at $kh=0.26$, $1.03$--$1.04$ at $0.79$), for $E$ only.
+  The momentum correlators are $1.00$.
+\item \emph{The shear damping} does not depend on the method.  At rest it is $1.1$ at $kh=0.52$ in every cell.  Along the flow at $v_0=0.8$ it is
+  $1.25$--$1.33$, about $15\%$ above the value at rest, in all four cells.  The large excess of DKD from the lattice in \texttt{hmc\_dyn}
+  ($1.42(13)$) was a fluctuation of 16 runs on top of this common excess.
+\item \emph{The kinetic energy of the fluctuations} at $v_0=0.8$ is set by the start.  From HMC it is $17.6$--$17.7$, as predicted.  From the
+  lattice it is $19.5$, $10\%$ high, and it stays high to $t=300$ with either ideal step.
+\item \emph{The energy} is conserved $50$--$175$ times better with the generalized leapfrog.
+\end{itemize}
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_equaltime_HL2.png}
+\caption{Campaign \texttt{hmc\_liou2}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ for $A=E$, $M_x$, $M_y$ (rows), at $v_0=0$ and $0.8$ with $\bm k$ along and
+across $x$ (columns), 64 runs per cell, jackknife errors.  Colours at $v_0=0$ as in the legend; at $v_0=0.8$ red GLF + HMC, orange GLF +
+lattice, brown DKD + HMC, olive DKD + lattice.}
+\label{fig:hl2static}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_HL2.png}
+\caption{Campaign \texttt{hmc\_liou2}, $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$ at $kh=0.26$, one panel per method; dashed hydrodynamics.}
+\label{fig:hl2EE}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_HL2.png}
+\caption{Campaign \texttt{hmc\_liou2}, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, one panel per method; dashed
+hydrodynamics.}
+\label{fig:hl2shear}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_HL2.png}
+\caption{Campaign \texttt{hmc\_liou2}, $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$ at $kh=0.26$.}
+\label{fig:hl2soundperp}
 \end{figure}
 
 \section{Implementation plan}

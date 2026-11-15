@@ -68,6 +68,13 @@ kh ≲ 0.3 (S settles after ~100 updates): rerun with HMC_BURN=100.
 τ ∈ [L/2c_s, L/c_s], 200 updates.  `nersc/campaign_hmc_liou2.txt`, array job **61309610** (512 tasks, ≈ 11.5 node-hours), worktree
 `~/stochastic-sph-eq4` at `3a84f31`.  hmc_liou (61308476) has the old resonant start; kept running.
 
+**2026-11-14 night: hmc_liou2 done** (512/512; analysis in debug job 61326832, `$SCRATCH/sph/hmc_liou2/analysis/hl2.txt`, `BOOST_GROUP=HL2`;
+note the scratchpad /tmp is not visible from compute nodes — write analysis output to $SCRATCH).  The HMC start is in equilibrium (S at
+kh 0.26 = 21 at t = 0 and through t = 300; HMC 20.3); the k_x/k_y test at rest passes (Σz²/n 0.62).  At v0 = 0.8 the C_EE deficit along
+the flow is the DKD step's: 0.88(2) from lattice and from HMC; GLF 1.02(2) (lattice), 1.08(3) (HMC).  Shear damping along the flow 1.25–1.33
+at kh 0.52 in all four cells (1.1 at rest).  KE from the lattice 19.5 (10% high) with either step; from HMC 17.6–17.7.
+docs/equilibrium_positions.tex, Sect. "The 2×2 with the Liouville measure".
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
