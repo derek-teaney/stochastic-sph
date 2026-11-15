@@ -333,11 +333,17 @@ for run in runs
     fit[run] = out
 end
 fig, axs = subplots(1, 2, figsize = (13, 4.8))
-vs = [res[r].v for r in fitruns]
-axs[1].errorbar(vs, [fit[r][1].Ω / fit[r][1].k for r in fitruns], yerr = [fit[r][1].dΩ / fit[r][1].k for r in fitruns], fmt = "o", ms = 8, label = "measured, k ∥ v");  axs[1].plot([0, 0.85], [0, 0.85], "k:", label = "Ω/k = v")
+fmethod(run) = replace(run, r" v=[0-9.]+" => "")                       # one colour per method (comparison groups), shifted in v
+fmeths = unique(fmethod.(fitruns))
+for (mi, m) in enumerate(fmeths)
+    rr = [r for r in fitruns if fmethod(r) == m];  vs = [res[r].v for r in rr] .+ 0.012 * (mi - (length(fmeths) + 1) / 2)
+    lab(s) = length(fmeths) > 1 ? "$m: $s" : s;  col = length(fmeths) > 1 ? "C$(mi-1)" : "C0"
+    axs[1].errorbar(vs, [fit[r][1].Ω / fit[r][1].k for r in rr], yerr = [fit[r][1].dΩ / fit[r][1].k for r in rr], fmt = "o", ms = 8, color = col, label = lab("k ∥ v"))
+    axs[2].errorbar(vs, [fit[r][1].Γ / fit[r][1].Γth for r in rr], yerr = [fit[r][1].dΓ / fit[r][1].Γth for r in rr], fmt = "o", ms = 8, color = col, capsize = 2, label = lab("k ∥ v, against νk²/γ³"))
+    axs[2].errorbar(vs .+ 0.004, [fit[r][2].Γ / fit[r][2].Γth for r in rr], yerr = [fit[r][2].dΓ / fit[r][2].Γth for r in rr], fmt = "s", ms = 8, color = col, mfc = "none", capsize = 2, label = lab("k ⊥ v, against νk²/γ"))
+end
+axs[1].plot([0, 0.85], [0, 0.85], "k:", label = "Ω/k = v")
 axs[1].set_xlabel("v");  axs[1].set_ylabel("advection speed Ω/k of the shear mode");  axs[1].legend(fontsize = 8)
-axs[2].errorbar(vs, [fit[r][1].Γ / fit[r][1].Γth for r in fitruns], yerr = [fit[r][1].dΓ / fit[r][1].Γth for r in fitruns], fmt = "o", ms = 8, label = "k ∥ v, against νk²/γ³")
-axs[2].errorbar(vs .+ 0.01, [fit[r][2].Γ / fit[r][2].Γth for r in fitruns], yerr = [fit[r][2].dΓ / fit[r][2].Γth for r in fitruns], fmt = "s", ms = 8, mfc = "none", label = "k ⊥ v, against νk²/γ")
-axs[2].axhline(1, color = "k", lw = 0.5);  axs[2].set_xlabel("v");  axs[2].set_ylabel("Γ / hydrodynamics");  axs[2].legend(fontsize = 8)
+axs[2].axhline(1, color = "k", lw = 0.5);  axs[2].set_xlabel("v");  axs[2].set_ylabel("Γ / hydrodynamics (smallest k)");  axs[2].legend(fontsize = 8)
 tight_layout();  savefig(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
 println("figures written to $FIGD")

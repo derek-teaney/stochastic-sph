@@ -556,7 +556,7 @@ schemes, alone and in the full step.  No guard fired in any run.
 moment $0.988$ at rest; $17.130$, $17.141$ at $v_0=0.8$.  The equal-time $C_{MM}/\chi$ agree within the errors of 8 runs ($\pm0.04$--$0.13$;
 \Fig{fig:nersc_moa}).  The shear damping at rest: common $0.79$--$0.98$, moment $0.94$--$1.11$, errors $\pm0.08$--$0.24$ (differences $0.5$--$1.1\sigma$).
 
-\paragraph{The full step} ($t=100$, 16 runs per set; \Fig{fig:nersc_mo}).
+\paragraph{The full step} ($t=100$, 16 runs per set; Figs.~\ref{fig:nersc_mo}--\ref{fig:nersc_shear8} and the correlator figures after them, common and moment side by side).
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
@@ -585,28 +585,53 @@ $0.35$--$1.27\,|K/D|$ --- not a single exponential at that rate; only the two pu
 The default stays \texttt{common}; the owner decides.
 
 \begin{figure}[p]
-\includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MOA.png}
-\caption{Campaign \texttt{moment}, the stochastic step alone: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment (key at the top), $v_0=0$ and $0.8$,
-8 runs each.  $E$ does not change in this step, so its rows show the initial state, the same for both.}
-\label{fig:nersc_moa}
-\end{figure}
-\begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MO.png}
-\caption{Campaign \texttt{moment}, the full step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment, 16 runs each.}
+\caption{Campaign \texttt{moment}, the full step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ for $A=E$, $M_x$, $M_y$ (rows), at $v_0=0$ and $0.8$ with $\bm k$ along and across $x$ (columns); common and moment overlaid (key at the top), 16 runs each, jackknife errors.}
 \label{fig:nersc_mo}
 \end{figure}
 \begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_fit_MO.png}
+\caption{The full step: the fitted advection speed $\Omega/k$ (left) and damping $\Gamma/\Gamma_{\rm hydro}$ (right) of the shear mode at $kh=0.52$ against $v_0$; common blue, moment orange; filled $\bm k\parallel\bm v$ (against $\nu k^2/\gamma^3$), open $\bm k\perp\bm v$ (against $\nu k^2/\gamma$).}
+\label{fig:nersc_fit}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_shear_v0.0_MO.png}
+\caption{The full step at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right); dashed hydrodynamics.}
+\label{fig:nersc_shear0}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_soundpar_v0.0_MO.png}
+\caption{The full step at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right); dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_shear_v0.8_MO.png}
-\caption{Campaign \texttt{moment}, the full step at $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common and moment
-(panels); dashed hydrodynamics.}
+\caption{The full step at $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right); dashed hydrodynamics.  The fits give $\Gamma/\Gamma_{\rm hydro}=1.49(17)$ and $0.86(14)$.}
+\label{fig:nersc_shear8}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_soundpar_v0.8_MO.png}
-\caption{As above: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$.}
+\caption{The full step at $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$, common (left) and moment (right).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_EEpar_v0.8_MO.png}
+\caption{The full step at $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$, common (left) and moment (right).}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_soundperp_v0.8_MO.png}
-\caption{As above: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$.}
+\caption{The full step at $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$, common (left) and moment (right).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_shearperp_v0.8_MO.png}
+\caption{The full step at $v_0=0.8$: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound), common (left) and moment (right).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MOA.png}
+\caption{Campaign \texttt{moment}, the stochastic step alone (positions frozen): equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment, 8 runs each.  $E$ does not change in this step, so its rows show the initial state, the same for both.}
+\label{fig:nersc_moa}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_shear_v0.0_MOA.png}
+\caption{The stochastic step alone at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right).  (At $v_0=0.8$ there is no advection without the ideal step, so the moving correlators of this set are not shown.)}
 \end{figure}
 
 \end{document}
