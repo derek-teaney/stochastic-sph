@@ -871,6 +871,57 @@ $\Delta H/H$, $v_0=0.8$, $t=300$ & $3\times10^{-4}$ & $3\times10^{-4}$ & $6\time
 \item \emph{The energy} is conserved $50$--$175$ times better with the generalized leapfrog.
 \end{itemize}
 
+\paragraph{The shear damping along and across the flow.}  At rest every cell damps the shear mode about $10\%$ faster than
+hydrodynamics ($\Gamma/\Gamma_{\rm hydro}=1.08$--$1.13$ at $kh=0.52$).  At $v_0=0.8$ the excess is the same across the flow and about
+$\gamma^2=2.78$ times larger along it.  This is what an extra dissipation fixed in the lab frame would do.  Hydrodynamics damps the advected shear mode at
+\st
+\Gamma_\parallel=\frac{\nu k^2}{\gamma^3}\quad(\bm k\parallel\bm v),\qquad \Gamma_\perp=\frac{\nu k^2}{\gamma}\quad(\bm k\perp\bm v).
+\stp
+An extra lab-frame damping $\delta\,\nu k^2/\gamma$ in both directions, with $\delta=\Gamma/\Gamma_{\rm hydro}-1$ at rest, then gives
+\st
+\left.\frac{\Gamma_\parallel}{\Gamma_{\rm hydro}}\right|_{v_0}=1+\gamma^2\delta,\qquad \left.\frac{\Gamma_\perp}{\Gamma_{\rm hydro}}\right|_{v_0}=1+\delta.
+\stp
+At $kh=0.52$ the measured values (64 runs per cell) agree with this:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+$kh=0.52$ & DKD, lattice & DKD, HMC & GLF, lattice & GLF, HMC \\ \hline
+at rest, $1+\delta$ & $1.08(2)$ & $1.12(2)$ & $1.10(2)$ & $1.13(2)$ \\
+along, measured & $1.26(6)$ & $1.33(7)$ & $1.25(6)$ & $1.28(7)$ \\
+along, $1+\gamma^2\delta$ & $1.22(6)$ & $1.32(5)$ & $1.26(6)$ & $1.35(6)$ \\
+across, measured & $1.13(3)$ & $1.10(4)$ & $1.06(4)$ & $1.10(4)$ \\
+\hline
+\end{tabular}
+\end{center}
+At $kh=0.26$ the errors are three times larger ($\pm0.15$), and the measured values along the flow lie $1$--$2\sigma$ below $1+\gamma^2\delta$
+in three of the four cells.  The excess at rest is not smaller at $kh=0.26$ than at $0.52$ ($1.03$--$1.20$ against $1.08$--$1.13$): it behaves more
+like a renormalisation of the viscosity at $h/a=2$ than like a $(kh)^2$ correction.  Whether it vanishes as $h/a\to\infty$ needs runs at
+larger $h/a$.
+
+\paragraph{The pair correlation at $v_0=0.8$.}  \Fig{fig:gtheta} shows $g(r,\theta)=g(r)+2\sum_{n=2,4,6}g_n(r)\cos n\theta$, $\theta$ the angle of the
+bond to the flow, at $r=0.75a$ (the edge of the correlation hole) and $r=1.15a$ (the first maximum), time-averaged over $t>5$, 64 runs per cell.
+At both radii, in all four cells, $g_2$, $g_4$, $g_6$ are of order $10^{-4}$, zero within the errors: the arrangement of the particles is
+isotropic in the lab.  A structure isotropic in the fluid rest frame would be contracted along the flow at equal lab time:
+\st
+g_{\rm lab}(r,\theta)\simeq g_0\!\left(r\sqrt{\frac{\gamma^2\cos^2\theta+\sin^2\theta}{\gamma}}\right),
+\stp
+with $g_0$ the $g(r)$ at rest and the factor $\gamma^{-1/2}$ from the rest-frame spacing $\sqrt\gamma\,a$.  At $r=0.75a$ this would vary from
+$0.96$ along the flow to $0.56$ across it, against the flat $0.75$ measured.
+
+\emph{Both observations say the same thing: the regulator is not Lorentz invariant.}  The kernel is isotropic in the lab, so the arrangement
+of the particles is set in the lab frame, not in the rest frame of the fluid.  The extra numerical dissipation is likewise fixed in the lab, which
+along the flow shows up as $\gamma^2$ times the excess at rest.  A comoving regulator, a kernel isotropic in the rest frame of the fluid and so
+contracted along $\bm v$ in the lab (\texttt{commonkernel\_comove.tex}), should make both covariant: $g$ contracted as above, and the excess
+damping the same multiple of $\Gamma_{\rm hydro}$ along and across.
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/equilibrium_g_theta_hl2.png}
+\caption{Campaign \texttt{hmc\_liou2}: $g(r,\theta)$ against the angle of the bond to the flow at $r=0.75a$ (left) and $1.15a$ (right), from the harmonics
+$n=2,4,6$; at rest (GLF + HMC) and at $v_0=0.8$ (all four cells), 64 runs each, bands the error of the mean.  Dashed: a structure isotropic in the
+rest frame, contracted to the lab.  \texttt{examples/g\_theta.jl}.}
+\label{fig:gtheta}
+\end{figure}
+
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_equaltime_HL2.png}
 \caption{Campaign \texttt{hmc\_liou2}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ for $A=E$, $M_x$, $M_y$ (rows), at $v_0=0$ and $0.8$ with $\bm k$ along and
