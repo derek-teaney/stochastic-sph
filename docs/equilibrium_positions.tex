@@ -658,10 +658,11 @@ The errors across the flow are $0.02$--$0.05$.
 \item \emph{At $v_0=0$ the four cells agree.}  For $C_{EE}$, the 24 values (4 cells, 3 $k$, 2 directions) lie in $0.88$--$1.07$, at most
   $2.4\sigma$ from $1$ (at $kh=0.26$).  Shear damping is $1.02$--$1.14$ at $kh=0.52$, and KE $0.99$--$1.00$.  This is the scatter to expect
   from 16 runs.
-\item \emph{Along the flow at $v_0=0.8$ the errors are $2$--$3$ times larger, and three of the four cells fall low somewhere.}  DKD + lattice
-  ($0.77(6)$ at $kh=0.52$, $4\sigma$) is the worst, but DKD + HMC is $3\sigma$ low at $kh=0.79$ and GLF + HMC is $2\sigma$ low at $kh=0.26$.  Only GLF +
-  lattice is consistent with $1$ at all three, and it lies high.  \emph{Neither the HMC start nor the generalized leapfrog alone clearly removes
-  the deficit}; 16 runs cannot decide between the cells.
+\item \emph{Along the flow at $v_0=0.8$ every change improves on DKD + lattice.}  The $4\sigma$ dip of DKD + lattice at $kh=0.52$ ($0.77(6)$)
+  is gone in the other three cells, and $\chi^2$ over the three $k$ falls from $20$ to $11$ (DKD + HMC), $8$ (GLF + HMC) and $3$ (GLF + lattice).
+  The weighted means over the three $k$ are $0.87(4)$, $0.89(4)$, $0.91(5)$ and $1.06(5)$ in that order.  The improvement is clearest with the
+  generalized leapfrog.  The errors along the flow are $2$--$3$ times those across it, and single points remain $2$--$3\sigma$ low (DKD + HMC
+  $0.86(4)$ at $kh=0.79$, GLF + HMC $0.77(10)$ at $kh=0.26$).  So 16 runs show an improvement, but not that the deficit is gone in every cell.
 \item \emph{The excess shear damping along the flow} is clearest in DKD + lattice ($1.53(24)$, $1.42(13)$).  The other cells are within
   $2\sigma$ of $1$ at both $k$; GLF + HMC is $1.24(13)$ at $kh=0.52$.
 \item \emph{The kinetic energy of the fluctuations} at $v_0=0.8$ follows the start, not the step.  It is $17.4$--$17.6$ from HMC, at the
