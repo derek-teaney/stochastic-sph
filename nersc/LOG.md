@@ -103,6 +103,9 @@ cancelled (`scancel 61342999_[21-128]`, none started) and packed on 4 regular no
 ha4 rates: C4 v = 0.8 ≈ 55 min HMC + 15 s per unit time → ≈ 4 h; C4 v = 0 ≈ 2.4 h.
 Also cancelled at the owner's request: the held GPU jobs 58984xxx of the m2 campaign (other project, m4662_g / m3722_g).
 
+**2026-11-15: hq24_s54 rerun (61330757) done**, 8/8 in 11.3–12.5 h, but HMC acceptance 0.16 (δt factor 0.1 is too large for N = 10752):
+≈ 13 accepted moves per chain.  kh ≥ 0.5 agree with L = 1.2; kh ≤ 0.3 not converged.  In equilibrium_positions.tex with that caveat.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
