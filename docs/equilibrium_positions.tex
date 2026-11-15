@@ -688,6 +688,41 @@ start that remembers it need not give equal $C(k\hat x)$ and $C(k\hat y)$.  The 
 not equilibrium, at $kh\lesssim0.5$.  Campaign \texttt{hmc\_liou2} (job 61309610) repeats the $2\times2$ with the Liouville measure, an HMC start of
 200 updates with random trajectory lengths in $[L/2c_s,L/c_s]$ (\texttt{SR\_HMC\_TAUJIT}), independent seeds, and 64 runs per cell.
 
+\paragraph{The Liouville measure, first look} (campaign \texttt{hmc\_liou}, job 61308476: GLF + HMC start with \texttt{SPH\_MEASURE=liouville}, 16 runs at
+$v_0=0$ and $0.8$, the same seeds as the GLF + HMC cell of \texttt{hmc\_dyn}; \Fig{fig:hlstatic}, \Fig{fig:hlshear}).  Its HMC start has the same
+resonant trajectory length as \texttt{hmc\_dyn}, so this is a comparison of the two measures from the same kind of (not fully
+equilibrated) start; \texttt{hmc\_liou2} is the clean test.
+\begin{center}
+\resizebox{\textwidth}{!}{\begin{tabular}{lcccc}
+\hline
+ & Einstein, $v_0=0$ & Liouville, $v_0=0$ & Einstein, $v_0=0.8$ & Liouville, $v_0=0.8$ \\ \hline
+$C_{EE}/\chi$, $\bm k\parallel\hat x$, $kh=0.26$, $0.52$, $0.79$ & $1.07$, $1.02$, $1.02$ & $0.98$, $1.03$, $1.04$ & $0.77(10)$, $1.07(11)$, $0.91(6)$ & $1.30(28)$, $1.09(11)$, $0.91(5)$ \\
+$C_{EE}/\chi$, $\bm k\parallel\hat y$, same & $0.88$, $1.03$, $1.04$ & $0.99$, $0.98$, $1.01$ & $1.00$, $1.02$, $1.00$ & $0.94$, $0.98$, $1.05$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $\bm k\parallel\hat x$, $kh=0.26$, $0.52$ & $1.03(11)$, $1.12(4)$ & $1.12(10)$, $1.16(6)$ & $0.92(15)$, $1.24(13)$ & $1.90(35)$, $1.49(16)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $\bm k\parallel\hat y$, $kh=0.26$, $0.52$ & $1.23(15)$, $1.06(4)$ & $1.07(15)$, $1.06(4)$ & $1.30(15)$, $0.89(5)$ & $1.10(15)$, $1.07(6)$ \\
+KE$/2VwT$ (predicted $1$; $17.6$) & $0.994$ & $0.997$ & $17.55$ & $17.66$ \\
+\hline
+\end{tabular}}
+\end{center}
+At rest the Liouville runs agree along $x$ and $y$ (at $kh=0.26$: $0.98$ against $0.99$, where the Einstein runs gave $1.07$ against $0.88$).
+At $v_0=0.8$ the equal-time correlators agree between the measures within the (large) errors along the flow.  The shear damping along
+the flow, however, is high with the Liouville measure, $1.90(35)$ and $1.49(16)$ against $0.92(15)$ and $1.24(13)$: $2.6\sigma$ and $1.2\sigma$ apart,
+and as high as DKD from the lattice ($1.53$, $1.42$).  Across the flow the two agree.  With 16 runs and a start that is not in equilibrium
+at $kh\lesssim0.5$ this is a hint, to be checked with \texttt{hmc\_liou2} (64 runs per cell).
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_equaltime_HL.png}
+\caption{Campaign \texttt{hmc\_liou}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, GLF + HMC start with the Einstein (\texttt{hmc\_dyn}) and the Liouville measure,
+16 runs each, jackknife errors; as \Fig{fig:hdstatic}.}
+\label{fig:hlstatic}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_HL.png}
+\caption{Campaign \texttt{hmc\_liou}, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, Einstein (left) and Liouville (right);
+dashed hydrodynamics.}
+\label{fig:hlshear}
+\end{figure}
+
 \paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; the $L=1.2$ sets complete, 16 chains each at
 $s_a=54$, $135$, $541$, and 8 at $s_a=541$ boosted to $v_0=0.8$ ($s_a=902$ in the lab); the $L=2.4$ sets running; \Fig{fig:hmceqfirst}).
 $S(\bm k)/(4/s_a)$ per band of $kh$, after a burn-in of 100 updates, with the error from the spread of the chains and $\tau_{\rm int}$:
