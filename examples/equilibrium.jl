@@ -88,6 +88,11 @@ const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step t
 setting("SR_GRID", false) && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
 const GRID   = setting("SPH_IDEAL", :generalized) === :grid    # as SimParams decides (params.ideal)
 
+# With SPH_HASTINGS (inverse_moment.tex, stage 2): the log ratios of the proposals, recorded as hast_lq_{stress,resid}_{mean,rms}.
+# Without it nothing is written, so the output of the other runs is unchanged.
+hastings_series(st, on) = on ? (hast_lq_stress_mean = st.lqs_mean, hast_lq_stress_rms = st.lqs_rms,
+                                 hast_lq_resid_mean = st.lqr_mean, hast_lq_resid_rms = st.lqr_rms) : (;)
+
 # Checkpoints: every CHKMIN minutes of wall time the full state goes to <base>.chk and
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
 # start, the run resumes from it (bit-identically), so a task that hit its time limit is
@@ -212,6 +217,9 @@ function one_realization(seed)
     opts = stoch_opts(params)
     haskey(st, :sspr) || (st = merge(st, (sspr = Float64[], Vspr = Float64[])))   # older checkpoints
     haskey(st, :acc_s) || (st = merge(st, (acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[])))
+    # with SPH_HASTINGS: the mean and rms of the log ratio ln q′/q of the stress and residual proposals, per record window
+    haskey(st, :lqs_mean) || (st = merge(st, (lqs_mean = Float64[], lqs_rms = Float64[], lqr_mean = Float64[], lqr_rms = Float64[])))
+    HAST = stoch_opts(params).hastings;  lqwin = zeros(4)
     sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax = st.sspr, st.Vspr, st.acc_s, st.acc_r, st.grej_s, st.grej_r, st.vmax
     haskey(st, :mon) || (st = merge(st, (mon = StepMonitor(params.N),)))
     mon = st.mon;  REP = max(1, nsteps ÷ 20)          # a log line every 5% of the run
@@ -242,6 +250,7 @@ function one_realization(seed)
             a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos, opts; rng, rngs, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
             win .+= (a.stress, a.resid, a.gstress, a.gresid)
+            HAST && (lqwin .+= (a.lq_stress[1], a.lq_stress[2]^2, a.lq_resid[1], a.lq_resid[2]^2))
             observe_step!(mon, a)
         end
         if n % RECN == 0
@@ -275,6 +284,10 @@ function one_realization(seed)
             # fluid can have; for the conformal EOS exactly |v| ≥ 1); the largest particle speed
             push!(acc_s, win[1] / RECN);  push!(acc_r, win[2] / RECN)
             push!(grej_s, win[3] / RECN);  push!(grej_r, win[4] / RECN);  win .= 0
+            if HAST
+                push!(st.lqs_mean, lqwin[1] / RECN);  push!(st.lqs_rms, sqrt(lqwin[2] / RECN))
+                push!(st.lqr_mean, lqwin[3] / RECN);  push!(st.lqr_rms, sqrt(lqwin[4] / RECN));  lqwin .= 0
+            end
             push!(vmax, maximum(norm(q.v_over_S * q.S_smooth) for q in ps))
             observe_particles!(mon, ps)
         end
@@ -283,7 +296,7 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF)))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
@@ -291,7 +304,7 @@ function one_realization(seed)
     end
     wall = st.wall + time() - t0
     ndone = gfail ? (st.gstats.steps) : nsteps
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF)))
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
     runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
     rm(chk; force = true)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",

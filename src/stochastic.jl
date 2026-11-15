@@ -505,6 +505,7 @@ end
 # One checkerboard sweep with the Hastings correction (as color_sweep!).
 function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool, params)
     nacc = Threads.Atomic{Int}(0);  d = params.d
+    lsum = Threads.Atomic{Float64}(0.0);  lsq = Threads.Atomic{Float64}(0.0);  lnum = Threads.Atomic{Int}(0)   # ln q′/q of the proposals
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]
         order = [shuffle(rng, cells[ix, iy]) for (ix, iy) in cg]
@@ -516,11 +517,14 @@ function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos,
                 c = star_coef(e[a], m[a], V[a], eos, d);  c === nothing && continue
                 lq = kind === :stress ? propose_stress_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, rngs[a]) :
                                         propose_resid_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, params, rngs[a])
+                if isfinite(lq)
+                    Threads.atomic_add!(lsum, lq);  Threads.atomic_add!(lsq, lq^2);  Threads.atomic_add!(lnum, 1)
+                end
                 ask_star_hastings!(m, Sc, e, V, a, st, δ, lq, eos, rngs[a], Snew, liouville) && Threads.atomic_add!(nacc, 1)
             end
         end
     end
-    return nacc[]
+    return nacc[], lsum[], lsq[], lnum[]
 end
 
 # ── Gradient-corrected change of representation ─────────────────────────────
@@ -661,6 +665,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
     acc = Dict(:stress => NaN, :resid => NaN)
     grj = Dict(:stress => 0.0, :resid => 0.0)          # fraction of proposals rejected by the guard
+    lqs = Dict(:stress => (NaN, NaN), :resid => (NaN, NaN))   # with hastings: mean and rms of ln q′/q over the proposals
     for kind in kinds
         if kind === :resid && isinf(λ)
             resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
@@ -670,10 +675,14 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                         zero(SVector{2,Float64})
             cells = shifted_cells(particles, cl, u)
             g0 = GUARD_REJECTED[]
-            acc[kind] = hastings ?
-                color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params) / N :
-                color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
-                             eos, rngs, rng, vote, liouville) / N
+            if hastings
+                nh, ls, lq2, ln = color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params)
+                acc[kind] = nh / N
+                ln > 0 && (lqs[kind] = (ls / ln, sqrt(lq2 / ln)))
+            else
+                acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
+                                         eos, rngs, rng, vote, liouville) / N
+            end
             grj[kind] = (GUARD_REJECTED[] - g0) / N
         end
     end
@@ -683,5 +692,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     end
     # acceptances, and the fractions of proposals rejected by the guard (a state no fluid can
     # have; for the conformal EOS exactly |v| ≥ 1), for the stress and the residual sweep
-    return (stress = acc[:stress], resid = acc[:resid], gstress = grj[:stress], gresid = grj[:resid])
+    # with hastings also the mean and rms of the log ratio ln q′/q of the proposals of each sweep (NaN without)
+    return (stress = acc[:stress], resid = acc[:resid], gstress = grj[:stress], gresid = grj[:resid],
+            lq_stress = lqs[:stress], lq_resid = lqs[:resid])
 end

@@ -4,6 +4,15 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## From the laptop (2026-11-15, night): SPH_HASTINGS is available — do not run it yet
+
+`SPH_HASTINGS=1` (with `SPH_DISSIPATION=moment`) adds the Hastings correction to the stochastic step (docs/inverse_moment.tex,
+"Stage 2" and its results).  Tested on the laptop: test/testhastings.jl (the ratios against direct densities), and the stochastic step
+alone samples the exact distribution with Einstein and with Liouville, s_a = 16 and 54, v0 = 0 and 0.8, where without it the bias is up
+to 17%.  Price: the residual acceptance falls (0.68 → 0.22 at s_a = 16, v0 = 0.8, Δt/2).  Recorded per window in the h5:
+hast_lq_{stress,resid}_{mean,rms}.  A campaign with the HMC reference at s_a = 16 and 54 (the owner's request: compare to HMC of the
+same model and measure, as you also suggested) will be written on the laptop; wait for it.
+
 ## Remarks for the Hastings work (NERSC session, 2026-11-15, evening)
 
 The owner is starting on the Hastings correction (stage 2).  Two remarks from today's runs:
