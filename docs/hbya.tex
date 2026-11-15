@@ -91,6 +91,55 @@ $v_0=0.8$ with 16 runs.
 
 \section{Results}
 
-To come.
+\subsection{$h/a=2$ (complete: 128 runs, mean $2.2$ h each)}
+
+\paragraph{Shear damping at rest}, $\Gamma/\Gamma_{\rm hydro}=1+\delta$, the weighted mean of $\bm k$ along $x$ and $y$ (32 runs per kernel):
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+ & C2 & C4 & C6 \\ \hline
+$kh=0.26$ & $1.07(6)$ & $1.12(5)$ & $1.12(6)$ \\
+$kh=0.52$ & $1.105(28)$ & $1.094(31)$ & $1.077(24)$ \\
+\hline
+\end{tabular}
+\end{center}
+$\delta\approx0.1$ for all three kernels, and the same as at $s_a=541$ (\texttt{hmc\_liou2}: $1.08$--$1.13$): at $h/a=2$ it depends neither on
+the kernel nor on the entropy per particle.
+
+\paragraph{At $v_0=0.8$} (16 runs per kernel), $kh=0.52$:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & along, measured & along, $1+\gamma^2\delta$ & across, measured & across, $1+\delta$ \\ \hline
+C2 & $1.34(10)$ & $1.29(8)$ & $1.15(8)$ & $1.105(28)$ \\
+C4 & $1.33(15)$ & $1.26(9)$ & $1.18(7)$ & $1.094(31)$ \\
+\hline
+\end{tabular}
+\end{center}
+The law $1+\gamma^2\delta$ along and $1+\delta$ across the flow holds again.  The kinetic energy of the fluctuations is $17.45$ (C2) and
+$17.56$ (C4), predicted $17.6$.  $\Delta H/H\approx6\times10^{-5}$ at $t=190$, ten times its value at $s_a=541$.
+
+\paragraph{The pair correlation} at $v_0=0.8$ is isotropic in the lab for both kernels: $g_2$, $g_4$, $g_6\lesssim10^{-3}$ at $r=0.75a$ and $1.15a$
+(\Fig{fig:gtheta2}).  At this $s_a$ the first maximum of $g$ is gone ($g(1.15a)=0.94$ at rest, against $1.03$ at $s_a=541$).
+
+\paragraph{Equal-time correlators} (\Fig{fig:et2}).  At rest $C_{AA}/\chi_{AA}=1.00$--$1.05$ for every kernel.  Along the flow at $v_0=0.8$ the
+errors of 16 runs are $\pm0.06$--$0.2$; single points lie up to $2\sigma$ from $1$ in both directions (C2 $0.79(12)$ at $kh=0.26$, C4 $0.85(6)$ at $0.52$).
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/boost_equaltime_HB2.png}
+\caption{$h/a=2$, $s_a=135$: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ for $A=E$, $M_x$, $M_y$ (rows), at $v_0=0$ and $0.8$, $\bm k$ along and across $x$
+(columns); one colour per kernel at both velocities (key at the top); 32 runs per kernel at rest, 16 at $v_0=0.8$; jackknife errors.}
+\label{fig:et2}
+\end{figure}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figs/hbya_g_theta_ha2.png}
+\caption{$h/a=2$, $s_a=135$: $g(r,\theta)$ against the angle of the bond to the flow at $r=0.75a$ and $1.15a$, C2 at rest, C2 and C4 at $v_0=0.8$; dashed, a
+structure isotropic in the rest frame contracted to the lab.  \texttt{examples/g\_theta.jl}.}
+\label{fig:gtheta2}
+\end{figure}
+
+\subsection{$h/a=3$, $4$}
+
+Running.
 
 \end{document}
