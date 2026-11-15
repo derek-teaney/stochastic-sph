@@ -840,6 +840,37 @@ $11$ throughout (equilibrium $10.6$).  From the lattice the same modes reach onl
 sound mode and $0.63$ for the transverse mode (expected $\approx1$).  The jackknife errors are therefore sound, if anything slightly large;
 the failure of this test in \Sect{sec:hmcdyn} came from the starts.
 
+\paragraph{The HMC equilibrium against the susceptibilities.}  The initial state of the hydrodynamic correlators is the HMC
+equilibrium, so the hydrodynamics can only be as good as the HMC.  How well does it reproduce the thermodynamic susceptibilities, $C_{AA}(\bm k)
+=\langle|A_{\bm k}|^2\rangle/NV$ against $\chi_{AA}$?
+\begin{itemize}
+\item \emph{Momentum.}  At rest the energy of a particle depends on $|\bm m_a|$ only, so the momenta of different particles are uncorrelated and
+  \st
+  C_{MM}(\bm k)=\frac{1}{NV}\sum_a\langle m_a^2\rangle_{\rm one\ component}
+  \stp
+  is independent of $\bm k$ and the same for the longitudinal and the transverse component, whatever the positions do.  Its value is the
+  continuum $\chi_{MM}=wT$ only to leading order in $1/s_a$.  The HMC chains of \texttt{hmc\_eq} (Einstein measure, burn-in 100 updates, 16
+  chains each; errors $0.01$--$0.02$) bear this out:
+  \begin{center}
+  \begin{tabular}{lcccc}
+  \hline
+  $C_{MM}/\chi_{MM}$, longitudinal / transverse & $kh=0.3$ & $0.5$ & $1.0$ & $1.5$ \\ \hline
+  $s_a=54$ & $1.15$ / $1.16$ & $1.17$ / $1.14$ & $1.16$ / $1.16$ & $1.16$ / $1.18$ \\
+  $s_a=135$ & $1.08$ / $1.06$ & $1.06$ / $1.07$ & $1.07$ / $1.05$ & $1.06$ / $1.04$ \\
+  $s_a=541$ & $1.02$ / $0.99$ & $1.02$ / $1.02$ & $1.03$ / $1.02$ & $1.01$ / $1.02$ \\
+  \hline
+  \end{tabular}
+  \end{center}
+  The values are flat in $k$, with an excess $\approx8.5/s_a$ over $\chi$ ($0.16\times54\approx0.06\times135\approx0.02\times541\approx9$).  It is
+  $6\%$ at $s_a=135$ and $16\%$ at $54$: at low entropy per particle the initial conditions of the hydrodynamics are off by this much.
+\item \emph{Energy.}  $C_{EE}(\bm k)$ need equal $\chi_{EE}$ only as $k\to0$: $E_{\bm k}$ is made of the particle energies, spread over the
+  kernel, and has corrections at finite $kh$.  The HMC starts of \texttt{hmc\_liou2} (one snapshot each of 128 starts per velocity) give
+  $C_{AA}/\chi_{AA}=1$ for $E$, $M_x$, $M_y$ within their errors of $8$--$11\%$ (the error of 128 single samples of an exponentially
+  distributed $|A_{\bm k}|^2$).  The GLF + HMC dynamics at rest, which keeps the HMC equilibrium, gives the finer answer: $C_{EE}/\chi=1.00$, $1.02$,
+  $1.04$ at $kh=0.26$, $0.52$, $0.79$ (64 runs), consistent with a small $(kh)^2$ correction.
+\end{itemize}
+\texttt{examples/hmc\_susceptibility.jl}.
+
 \paragraph{Results.}  $C_{EE}(\bm k,0)/\chi$, the weighted mean over $kh=0.26$, $0.52$, $0.79$ (64 runs per cell, jackknife errors), and the
 shear damping:
 \begin{center}
