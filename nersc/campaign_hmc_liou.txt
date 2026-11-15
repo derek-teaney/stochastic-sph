@@ -1,0 +1,6 @@
+# Campaign `hmc_liou` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the GLF + HMC cell of `hmc_dyn` (hd_hmc_v0,
+# hd_hmc_v0.8) with the Liouville measure, SPH_MEASURE=liouville (Appendix A: the stochastic votes, the HMC heat bath and the
+# equilibrium start weight states by S_a − ln T_a).  Same settings and seeds otherwise (array.sh sets SR_SEED0 per task).  Does the measure change C_AA/χ along the
+# flow at v = 0.8, or S(k)?  32 tasks, ≈ 0.75 node-hours (1-2 h each on 2 threads).
+hl_hmc_v0      16  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0   -- examples/equilibrium.jl 1.2 2 300 1 4 hl_hmc_v0
+hl_hmc_v0.8    16  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0  -- examples/equilibrium.jl 1.2 2 300 1 4 hl_hmc_v0.8
