@@ -738,12 +738,17 @@ $s_a=135$ & $8.3(3)$ & $6.6(2)$ & $3.29(7)$ & $2.32(4)$ \\
 $s_a=541$ & $20.3(15)$ & $10.6(4)$ & $3.90(11)$ & $2.54(4)$ \\
 $s_a=541$, $v_0=0.8$ & $30(3)$ & $12.0(10)$ & $4.4(2)$ & $2.53(9)$ \\
 $s_a=541$, $L=2.4$ (8 chains) & $15.8(24)$ & $10.6(8)$ & $3.93(10)$ & $2.47(4)$ \\
+$s_a=54$, $L=2.4$ (8 chains, acceptance $0.16$) & $3.5(4)$ & $3.9(5)$ & $2.49(11)$ & $2.11(13)$ \\
 \hline
 \end{tabular}
 \end{center}
 At $L=2.4$ (150 updates) the bands $kh\ge0.5$ agree with $L=1.2$.  At $kh=0.1$--$0.2$, the new modes of the larger box, $S$ is $18$--$28$
 with large errors, and at $kh=0.1$ it still depends on the burn-in ($24.6$ after 50 updates, $17.9$ after 100): 150 updates are too few
-there.  The $L=2.4$ chains at $s_a=54$ ran out of time (8 h) and are rerunning with 16 h (job 61330757).
+there.  The $L=2.4$ chains at $s_a=54$ (rerun with 16 h, job 61330757; 11--12.5 h each) accepted only $16\%$ of their updates: at fixed
+$\delta t$ the energy error of a trajectory grows with the number of particles, four times larger than at $L=1.2$.  With 80 updates each chain
+made about 13 accepted moves.  For $kh\ge0.5$ they agree with $L=1.2$ ($3.9$, $2.5$, $2.1$ against $3.85$, $2.44$, $2.06$); at $kh\le0.3$
+($3.5(4)$ against $4.7(3)$ at $L=1.2$; $4$--$5$ with large errors at $kh=0.1$--$0.2$) they are not converged and should not be used.  A
+usable run at $L=2.4$, $s_a=54$ needs a smaller $\delta t$ and more updates.
 The burn-in matters at small $k$: from the lattice, $S$ at $kh=0.3$ settles only after $\approx100$ updates (the default of 20 used before gave
 $19.3$ at $s_a=541$).  The equilibrium $S(\bm k)$ rises toward small $k$, more steeply the higher the entropy per particle: between $kh=1.5$
 and $0.3$ by a factor $2.3$ at $s_a=54$ and $8$ at $s_a=541$.  The boosted chains used the fixed trajectory $\tau=L/c_s$; at rest that
