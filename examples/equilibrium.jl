@@ -57,6 +57,10 @@ POSITIONS in (:lattice, :poisson, :hmc) || error("SR_POSITIONS must be lattice, 
 const HMC_N     = setting("SR_HMC_N", 40)
 const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
 const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.5)
+# SR_HMC_TAUJIT=j: each update's trajectory has a random length, uniform in [(1−j)τ, τ] (default 0: fixed τ).  A fixed τ equal
+# to a period of a box sound mode leaves that mode where it started: τ = L/c_s freezes kh = 2πh/L (S(k) stays near its lattice
+# value), τ = L/2c_s the next one (campaign hmc_tau_test, 2026-11-14).  Random lengths remove these resonances.
+const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
@@ -165,11 +169,12 @@ function one_realization(seed)
             nH = max(1, round(Int, (HMC_TAU > 0 ? HMC_TAU : LBOX * sqrt(3)) / dtH))
             hrng = Xoshiro(1000seed + 7);  nacc = 0;  th = time()
             for n in 1:HMC_N
-                u = hmc_update!(ps, params, cl, eos, tg, hrng; nsteps = nH, dt = dtH);  nacc += u.accepted
+                nHn = HMC_TAUJIT > 0 ? max(1, round(Int, nH * (1 - HMC_TAUJIT * rand(hrng)))) : nH
+                u = hmc_update!(ps, params, cl, eos, tg, hrng; nsteps = nHn, dt = dtH);  nacc += u.accepted
             end
             @printf("seed %d: hybrid Monte Carlo, %d updates of %d steps (τ = %.3g), acceptance %.2f, %.0f s\n",
                     seed, HMC_N, nH, nH * dtH, nacc / HMC_N, time() - th)
-            hmcinfo = (hmc_updates = HMC_N, hmc_steps = nH, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = nacc / HMC_N)
+            hmcinfo = (hmc_updates = HMC_N, hmc_steps = nH, hmc_taujit = HMC_TAUJIT, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = nacc / HMC_N)
         end
         start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3)), hmcinfo)
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)

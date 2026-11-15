@@ -44,6 +44,9 @@ const SETS = GROUP == "L24" ?
      ("DKD, HMC start v=0", ["hd_dkdhmc_v0"], 0.0, "C4"), ("DKD, lattice v=0", ["ck_v0"], 0.0, "C7"),
      ("GLF, HMC start v=0.8", ["hd_hmc_v0.8"], 0.8, "C3"), ("GLF, lattice v=0.8", ["hd_lat_v0.8"], 0.8, "C1"),
      ("DKD, HMC start v=0.8", ["hd_dkdhmc_v0.8"], 0.8, "C5"), ("DKD, lattice v=0.8", ["ck_v0.8"], 0.8, "C8")] :
+             GROUP == "HL" ?                      # equilibrium_positions.tex: GLF + HMC start, Liouville vs Einstein measure, $SCRATCH/sph/hmc_dyn (hl_* linked from hmc_liou)
+    [("Einstein v=0", ["hd_hmc_v0"], 0.0, "C0"), ("Liouville v=0", ["hl_hmc_v0"], 0.0, "C2"),
+     ("Einstein v=0.8", ["hd_hmc_v0.8"], 0.8, "C3"), ("Liouville v=0.8", ["hl_hmc_v0.8"], 0.8, "C1")] :
              GROUP == "CKSTATS" ?                 # commonkernel.tex: grid + one kernel, high statistics, $SCRATCH/sph/ck_stats
     [("v=0.3", ["cks_v0.3"], 0.3, "C2"), ("v=0.6", ["cks_v0.6"], 0.6, "C1")] :
              GROUP == "POI" ?                     # particles from a Poisson start, $SCRATCH/sph/poisson
@@ -237,6 +240,46 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
         row == 1 && col == 1 && ax.legend(fontsize = 8, loc = "lower left")
     end
     tight_layout();  savefig(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
+end
+
+# ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
+if GROUP in ("HD", "HL")
+    # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
+    cols = [(v, dir) for v in sort(unique(res[r].v for r in runs)) for dir in (:par, :perp)]
+    fig, axg = subplots(3, length(cols), figsize = (4.2 * length(cols), 9.5), squeeze = false)
+    for (ci, (v, dir)) in enumerate(cols), a in 1:3
+        ax = axg[a, ci];  rv = [r for r in runs if res[r].v == v]
+        for (m, run) in enumerate(rv)
+            r = res[run];  χ = chi(r.Trel, r.v);  js = sort([j for (d, j) in keys(r.C) if d === dir])
+            kh = [norm(r.C[(dir, j)].k) * r.h for j in js] .+ 0.012 * (m - (length(rv) + 1) / 2)
+            ye = [jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, j)].Cs) for j in js]
+            ax.errorbar(kh, first.(ye), last.(ye), fmt = "o-", ms = 4, color = r.col, capsize = 2, lw = 1,
+                        label = replace(run, r" v=[0-9.]+" => ""))
+        end
+        ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.5, 1.5)
+        ax.set_title(@sprintf("v = %.1f, k %s v:  C_%s%s(k,0)/χ", v, dir === :par ? "∥" : "⊥", names[a], names[a]), fontsize = 10)
+        a == 3 && ax.set_xlabel("kh");  a == 1 && ci == 1 && ax.legend(fontsize = 8)
+    end
+    tight_layout();  savefig(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
+    # dynamics: the correlators of boost.tex, one figure each, the methods as panels
+    types = [("shear",    :par,  3, 3, real, "Re C_yy, k ∥ v (advected shear)", 80.0, (0.0, 0.8)),
+             ("soundpar", :par,  2, 2, real, "Re C_xx, k ∥ v (sound along the flow)", 15.0, (0.0, 0.8)),
+             ("EEpar",    :par,  1, 1, real, "Re C_EE, k ∥ v", 15.0, (0.8,)),
+             ("soundperp",:perp, 3, 3, real, "Re C_yy, k ⊥ v (sound across the flow)", 15.0, (0.8,)),
+             ("shearperp",:perp, 2, 2, real, "Re C_xx, k ⊥ v (shear + sound)", 80.0, (0.8,))]
+    for (tag, dir, a, b, part, title, tmax, vs) in types, v in vs
+        rv = [r for r in runs if res[r].v == v];  isempty(rv) && continue
+        nc = min(2, length(rv));  nr = cld(length(rv), nc)
+        fig, axg = subplots(nr, nc, figsize = (7.2 * nc, 3.1 * nr), squeeze = false)
+        for (m, run) in enumerate(rv)
+            ax = axg[(m - 1) ÷ nc + 1, (m - 1) % nc + 1];  r = res[run];  panel!(ax, r, dir, a, b; part, tmax)
+            k = r.C[(dir, 1)].k
+            ax.set_title(r.lab * ":  " * title * @sprintf(",  kh = %.2f", norm(k) * r.h), fontsize = 9)
+            ax.axhline(0, color = "k", lw = 0.5);  ax.set_ylim(-1.1, 1.1);  ax.set_xlabel("τ")
+            m == 1 && ax.legend(fontsize = 8, loc = "lower left")
+        end
+        tight_layout();  savefig(joinpath(FIGD, "boost_" * tag * "_v" * string(v) * SUFFIX * ".png"), dpi = 100);  close()
+    end
 end
 
 # ── fits of the shear modes: C ≈ A e^{−iΩτ − Γτ} on the early part ────────────────────────

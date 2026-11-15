@@ -1,0 +1,15 @@
+# Campaign `hmc_liou2` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the 2×2 of hmc_dyn (GLF or DKD ideal step,
+# HMC or lattice start, v = 0 and 0.8) rerun with the Liouville measure (SPH_MEASURE=liouville) and 64 runs per cell (4× hmc_dyn).
+# The HMC start is fixed: hmc_dyn used trajectories of τ = L/c_s, one period of the box's fundamental sound mode, which leaves that
+# mode (kh = 0.26) near its lattice value (S(k) ≈ 3 against ≈ 20 in equilibrium; campaign hmc_tau_test: τ = L/2c_s freezes kh = 0.52
+# likewise).  Here each update has a random τ, uniform in [L/2c_s, L/c_s] (SR_HMC_TAUJIT=0.5), and there are 200 updates (hmc_eq: S(k)
+# at kh = 0.3 settles after ~100).  Independent seeds per cell (SR_SEEDOFFSET, examples/equilibrium.jl).
+# 512 tasks on 2 threads, ≈ 11 node-hours (HMC cells 1.2-2.4 h, lattice cells 0.6-1.7 h each).
+hl2_glf_hmc_v0    64  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=0    -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_glf_hmc_v0
+hl2_glf_lat_v0    64  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=100                                     -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_glf_lat_v0
+hl2_dkd_hmc_v0    64  SPH_MEASURE=liouville SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=200                 -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_dkd_hmc_v0
+hl2_dkd_lat_v0    64  SPH_MEASURE=liouville SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.0 SR_SEEDOFFSET=300                                                          -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_dkd_lat_v0
+hl2_glf_hmc_v0.8  64  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=400 -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_glf_hmc_v0.8
+hl2_glf_lat_v0.8  64  SPH_MEASURE=liouville SPH_IDEAL=generalized SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=500                                  -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_glf_lat_v0.8
+hl2_dkd_hmc_v0.8  64  SPH_MEASURE=liouville SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=600              -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_dkd_hmc_v0.8
+hl2_dkd_lat_v0.8  64  SPH_MEASURE=liouville SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.0 SR_SEEDOFFSET=700                                                       -- examples/equilibrium.jl 1.2 2 300 1 4 hl2_dkd_lat_v0.8
