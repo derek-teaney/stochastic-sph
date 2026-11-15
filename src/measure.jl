@@ -346,12 +346,15 @@ mutable struct ParticleRecorder
     nbin  :: Int
     ks    :: Vector{SVector{2,Float64}}       # wave vectors of N_k (those of the correlators)
     g     :: Vector{Vector{Float64}}          # g(r); g_par: bonds closer to x (the flow), g_perp: closer to y
-    gpar  :: Vector{Vector{Float64}}
+    gpar  :: Vector{Vector{Float64}}          #   (deprecated: kept for the runs that recorded them; use the harmonics gn)
     gperp :: Vector{Vector{Float64}}
     psi6  :: Vector{Float64}                  # |Σ_a q_a|/N, q_a = (1/6) Σ_{6 nearest} e^{6iθ_ab}: global bond order
     psi6loc :: Vector{Float64}                # Σ_a |q_a|/N: local bond order
     Nk    :: Vector{Vector{ComplexF64}}       # N_k = Σ_a e^{−ik·x_a};  S(k) = |N_k|²/N
     pair0 :: Any                              # the pair observables of the starting positions (t = 0)
+    # angular harmonics of g(r, φ) = g(r) + 2 Σ_n g_n(r) cos nφ, φ the angle of the bond to x (the flow): g_n for n = 2, 4, 6
+    # (odd n vanish: every pair is counted both ways)
+    gn    :: Vector{Matrix{Float64}}          # one nbin × 3 matrix per record, columns n = 2, 4, 6
 end
 
 function ParticleRecorder(particles::Vector{Particle}, params; rs = (1.0, 2.0, 4.0, 8.0),
@@ -373,20 +376,21 @@ function ParticleRecorder(particles::Vector{Particle}, params; rs = (1.0, 2.0, 4
     pr = ParticleRecorder(L, x0, copy(x0), copy(x0), collect(Float64, rs), pairs, bs,
                           Float64[], Vector{Float64}[], Float64[], Float64[], Float64[],
                           params.h, dr, nbin, collect(ks), Vector{Float64}[], Vector{Float64}[], Vector{Float64}[],
-                          Float64[], Float64[], Vector{ComplexF64}[], nothing)
+                          Float64[], Float64[], Vector{ComplexF64}[], nothing, Matrix{Float64}[])
     cl === nothing || (pr.pair0 = pair_observables(pr, particles, cl))
     return pr
 end
 
 # Pair observables of the present positions (docs/equilibrium_positions.tex, stage 1):
 # g(r) from the pairs within 2h of the neighbour list, in bins of dr, normalized by the
-# ideal-gas count N n0 × (shell area), n0 = N/A; g_par and g_perp the same for the bonds at
-# less / more than 45° to x (each normalized by half the shell); the bond order q_a over the
-# six nearest neighbours; N_k at pr.ks.  The cell list must be current.
+# ideal-gas count N n0 × (shell area), n0 = N/A; the harmonics g_n(r) = Σ_pairs cos nφ_ab / (N n0 × shell area), n = 2, 4, 6,
+# φ_ab the angle of the bond to x, so that g(r, φ) = g(r) + 2 Σ g_n(r) cos nφ; g_par and g_perp (deprecated) the same as g for
+# the bonds at less / more than 45° to x (each normalized by half the shell); the bond order q_a over the six nearest
+# neighbours; N_k at pr.ks.  The cell list must be current.
 function pair_observables(pr::ParticleRecorder, particles::Vector{Particle}, cl::CellList2D)
     nl = neighbor_list!(cl, particles, pr.h)
     N = length(particles);  L = pr.L;  n0 = N / (L[1] * L[2]);  dr = pr.dr;  nb = pr.nbin
-    g = zeros(nb);  gp = zeros(nb);  gq = zeros(nb);  q = Vector{ComplexF64}(undef, N)
+    g = zeros(nb);  gp = zeros(nb);  gq = zeros(nb);  gh = zeros(nb, 3);  q = Vector{ComplexF64}(undef, N)
     d = Float64[];  θ = Float64[]
     for a in 1:N
         empty!(d);  empty!(θ)
@@ -394,18 +398,20 @@ function pair_observables(pr::ParticleRecorder, particles::Vector{Particle}, cl:
             b == a && continue
             r = minimum_image(particles[b].x - particles[a].x, L);  rm = norm(r)
             k = floor(Int, rm / dr) + 1
+            φ = atan(r[2], r[1])
             if k <= nb
                 g[k] += 1
                 abs(r[1]) > abs(r[2]) ? (gp[k] += 1) : (gq[k] += 1)
+                gh[k, 1] += cos(2φ);  gh[k, 2] += cos(4φ);  gh[k, 3] += cos(6φ)
             end
-            push!(d, rm);  push!(θ, atan(r[2], r[1]))
+            push!(d, rm);  push!(θ, φ)
         end
         nn = min(6, length(d))
         q[a] = nn == 0 ? 0.0im : sum(cis(6θ[i]) for i in partialsortperm(d, 1:nn)) / nn
     end
     for k in 1:nb
         shell = π * ((k * dr)^2 - ((k - 1) * dr)^2) * N * n0
-        g[k] /= shell;  gp[k] /= shell / 2;  gq[k] /= shell / 2
+        g[k] /= shell;  gp[k] /= shell / 2;  gq[k] /= shell / 2;  gh[k, :] ./= shell
     end
     Nk = zeros(ComplexF64, length(pr.ks))
     Threads.@threads for i in eachindex(pr.ks)
@@ -413,7 +419,7 @@ function pair_observables(pr::ParticleRecorder, particles::Vector{Particle}, cl:
         for pa in particles;  z += cis(-dot(k, pa.x));  end
         Nk[i] = z
     end
-    return (g = g, gpar = gp, gperp = gq, psi6 = abs(sum(q)) / N, psi6loc = sum(abs, q) / N, Nk = Nk)
+    return (g = g, gpar = gp, gperp = gq, gn = gh, psi6 = abs(sum(q)) / N, psi6loc = sum(abs, q) / N, Nk = Nk)
 end
 
 # current displacements (unwrapped, mean drift removed); call update! first
@@ -439,7 +445,7 @@ function record!(pr::ParticleRecorder, particles::Vector{Particle}, t::Float64; 
     if cl !== nothing
         po = pair_observables(pr, particles, cl)
         push!(pr.g, po.g);  push!(pr.gpar, po.gpar);  push!(pr.gperp, po.gperp)
-        push!(pr.psi6, po.psi6);  push!(pr.psi6loc, po.psi6loc);  push!(pr.Nk, po.Nk)
+        push!(pr.psi6, po.psi6);  push!(pr.psi6loc, po.psi6loc);  push!(pr.Nk, po.Nk);  push!(pr.gn, po.gn)
     end
     return u
 end
@@ -541,12 +547,18 @@ function write_equilibrium_h5(path::AbstractString, meta::NamedTuple, rec::Recor
                 f["part_rbins"] = collect(0:prec.nbin) .* prec.dr
                 f["part_g"] = reduce(hcat, prec.g);  f["part_gpar"] = reduce(hcat, prec.gpar);  f["part_gperp"] = reduce(hcat, prec.gperp)
                 f["part_psi6"] = prec.psi6;  f["part_psi6loc"] = prec.psi6loc
+                if !isempty(prec.gn)                  # g_n(r, t): nbin × nt for n = 2, 4, 6
+                    f["part_g2"] = reduce(hcat, [G[:, 1] for G in prec.gn])
+                    f["part_g4"] = reduce(hcat, [G[:, 2] for G in prec.gn])
+                    f["part_g6"] = reduce(hcat, [G[:, 3] for G in prec.gn])
+                end
                 isempty(prec.ks) || (f["part_ks"] = reduce(hcat, Vector.(prec.ks));  f["part_Nk"] = reduce(hcat, prec.Nk))
             end
             if prec.pair0 !== nothing
                 p0 = prec.pair0
                 f["part_g0"] = p0.g;  f["part_gpar0"] = p0.gpar;  f["part_gperp0"] = p0.gperp
                 f["part_psi60"] = p0.psi6;  f["part_psi6loc0"] = p0.psi6loc
+                f["part_g2_0"] = p0.gn[:, 1];  f["part_g4_0"] = p0.gn[:, 2];  f["part_g6_0"] = p0.gn[:, 3]
                 isempty(p0.Nk) || (f["part_Nk0"] = p0.Nk)
             end
         end
@@ -594,7 +606,9 @@ function read_equilibrium(path::AbstractString)
                                       rbins = rd("part_rbins"), g = rd("part_g"), gpar = rd("part_gpar"), gperp = rd("part_gperp"),
                                       psi6 = rd("part_psi6"), psi6loc = rd("part_psi6loc"), ks = rd("part_ks"), Nk = rd("part_Nk"),
                                       g0 = rd("part_g0"), gpar0 = rd("part_gpar0"), gperp0 = rd("part_gperp0"),
-                                      psi60 = rd("part_psi60"), psi6loc0 = rd("part_psi6loc0"), Nk0 = rd("part_Nk0")) : nothing
+                                      psi60 = rd("part_psi60"), psi6loc0 = rd("part_psi6loc0"), Nk0 = rd("part_Nk0"),
+                                      g2 = rd("part_g2"), g4 = rd("part_g4"), g6 = rd("part_g6"),
+                                      g2_0 = rd("part_g2_0"), g4_0 = rd("part_g4_0"), g6_0 = rd("part_g6_0")) : nothing
         return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]), part = part)
     end
 end

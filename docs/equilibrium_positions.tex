@@ -281,9 +281,26 @@ lies in the shell $(k-1)\,\delta r<r_{ab}<k\,\delta r$,
 \st
 g(r_k)=\frac{n_k}{Nn_0\,\pi\big[(k\delta r)^2-((k-1)\delta r)^2\big]},\qquad \delta r=\frac a{20},\qquad r_k<2h .
 \stp
-The range $2h$ is that of the neighbour lists.  For a moving fluid the same is recorded in two angular sectors: $g_\parallel(r)$
-from the bonds within $45^\circ$ of the flow ($|x_{ab}|>|y_{ab}|$, the flow along $x$) and $g_\perp(r)$ from the others, each normalized by
-half the shell area, so that both are $1$ for Poisson positions.
+The range $2h$ is that of the neighbour lists.
+
+\paragraph{The angular harmonics.}  In a moving fluid $g$ depends on the angle $\phi$ between $\bm r$ and the flow (the $x$ axis).  It is
+expanded in a Fourier series,
+\st
+g(r,\phi)=g(r)+2\sum_{n\ge1}g_n(r)\cos n\phi,\qquad g_n(r)=\frac1{2\pi}\int_0^{2\pi}d\phi\;g(r,\phi)\cos n\phi ,
+\stp
+where only even $n$ survive, since every pair is counted in both directions ($\phi$ and $\phi+\pi$), and the terms in $\sin n\phi$
+vanish on average by the reflection symmetry about the flow.  The shell counts give
+\st
+g_n(r_k)=\frac{1}{Nn_0\,\pi\big[(k\delta r)^2-((k-1)\delta r)^2\big]}\sum_{(a,b)\in k}\cos n\phi_{ab} ,
+\stp
+with the normalization of $g(r)$.  $g_2$, $g_4$ and $g_6$ are recorded (\texttt{part\_g2}, \texttt{part\_g4}, \texttt{part\_g6}).  At rest
+$g_2$ and $g_4$ vanish on average; $g_6$ is the hexagonal harmonic, equal to $\pm g$ on the shells of a lattice whose bonds are at
+multiples of $60^\circ$ ($+$) or at $30^\circ+60^\circ k$ ($-$), and zero for Poisson positions.  A flow-induced anisotropy of the arrangement
+appears first in $g_2$.
+
+(Deprecated: the runs before the harmonics recorded only two sectors, $g_\parallel(r)$ from the bonds within $45^\circ$ of the flow and
+$g_\perp(r)$ from the others, each normalized by half the shell area.  They are still recorded, so that old and new runs can be
+compared, but the harmonics replace them.)
 
 \paragraph{The structure factor.}  The Fourier component of the number density of the positions,
 \st
