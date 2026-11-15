@@ -35,7 +35,7 @@ function run_case(diss, v0, kind, dir, nk)
         Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / 3)
         G = B * e * k';  θ = sum(ℓ .* G) / Pℓ;  Y = (G + G') / 2 - θ * P
         Ktar = 0.5 * params.L[1] * params.L[2] * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θ^2)
-        Γs = K0 / D0;  Γt = Ktar / D0
+        Γs = abs(K0 / D0);  Γt = abs(Ktar / D0)          # D0 < 0 for δm along a strong flow: |K/D| sets the run length (moment_det.jl)
         # evolve the viscous step alone
         dt = 0.5 * compute_dt(ps, params, eos; mode = :viscous)
         tend = SMOKE ? 20dt : min(0.7 / Γs, 15.0);  n = ceil(Int, tend / dt);  dt = tend / n
@@ -54,7 +54,8 @@ function run_case(diss, v0, kind, dir, nk)
     end
 end
 
-cases = [(diss, v0, kind, dir, nk) for diss in (:particle, :common), v0 in (0.0, 0.8),
+const SCHEMES = Tuple(Symbol.(split(get(ENV, "SR_WAVES_SCHEMES", "particle,common"), ",")))   # e.g. SR_WAVES_SCHEMES=common,moment
+cases = [(diss, v0, kind, dir, nk) for diss in SCHEMES, v0 in (0.0, 0.8),
          (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), nk in (1, 2, 4)]
 SMOKE && (cases = cases[[1, 20, 47]])
 res = Vector{Any}(undef, length(cases))

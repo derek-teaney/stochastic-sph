@@ -42,7 +42,9 @@ function alone_case(diss, v0, jitter, kind, dir, nk)
     Ta = sum(q.T * q.γ for q in ps) / length(ps);  sr = srel(eos, sum(q.e for q in ps) / length(ps));  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / 3)
     G = B * e * k';  θ = sum(ℓ .* G) / Pℓ;  Y = (G + G') / 2 - θ * P
     Ktar = 0.5 * params.L[1] * params.L[2] * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θ^2)
-    Γs = K0 / D0;  Γt = Ktar / D0
+    # D0 < 0 for a momentum perturbation along a strong flow (v0 = 0.8: long k∥x, shear k∥y): the entropy at fixed lab energy is not
+    # concave in m along v, so K/D is not a rate there; |K/D| sets the run length and the fitted Γ is compared between the schemes.
+    Γs = abs(K0 / D0);  Γt = abs(Ktar / D0)
     dt = 0.5 * compute_dt(ps, params, eos; mode = :viscous)
     tend = SMOKE ? 20dt : min(0.7 / Γs, 15.0);  n = ceil(Int, tend / dt);  dt = tend / n
     amp() = sum(dot(ps[a].m - m0[a], e) * sin(dot(k, ps[a].x)) for a in eachindex(ps))
@@ -56,7 +58,7 @@ function alone_case(diss, v0, jitter, kind, dir, nk)
     dS = sum(q.s for q in ps) - S0;  dH = sum(particle_energy(q, eos) for q in ps) / H0 - 1
     return Dict("set" => v0 == 0 ? "B" : "A", "scheme" => string(diss), "v0" => v0, "jitter" => jitter, "kind" => string(kind),
                 "dir" => string(dir), "kh" => norm(k) * params.h, "Gamma_over_scheme" => Γm / Γs, "Gamma_over_hydro" => Γm / Γt,
-                "K_over_Ktarget" => K0 / Ktar, "dS_over_2Kdt" => dS / (2 * sumK), "dH_over_H" => dH, "steps" => n)
+                "K_over_Ktarget" => K0 / Ktar, "dS_over_2Kdt" => dS / (2 * sumK), "dH_over_H" => dH, "steps" => n, "D0_negative" => D0 < 0, "Gamma" => Γm)
 end
 
 res = Dict{String,Any}[]
