@@ -542,4 +542,71 @@ the full deterministic step on the lattice at rest.}
 \label{fig:det}
 \end{figure}
 
+\section{Stage 1: results from NERSC}
+\label{sec:nersc}
+
+Campaign \texttt{moment} (\texttt{nersc/campaign\_moment.txt}, 96 runs, $L=0.6$, $h/a=2$, $s_a=135$, current defaults; each common/moment pair
+shares its seeds), packed on 4 debug nodes (job 61359856, 8 min), commit \texttt{d1b5ee6} (before the roundoff fix \texttt{a1b1457}, which
+does not affect the comparison).  Analysis: \texttt{examples/boost\_analysis.jl}, groups MOA and MO.
+
+\paragraph{Acceptances and guards.}  Identical to $10^{-3}$: stress $0.960$ / $0.975$, residual $0.711$ / $0.845$ at $v_0=0$ / $0.8$, for both
+schemes, alone and in the full step.  No guard fired in any run.
+
+\paragraph{The stochastic step alone} (positions frozen, $t=50$, 8 runs per set).  The kinetic energy of the fluctuations: common $0.989$,
+moment $0.988$ at rest; $17.130$, $17.141$ at $v_0=0.8$.  The equal-time $C_{MM}/\chi$ agree within the errors of 8 runs ($\pm0.04$--$0.13$;
+\Fig{fig:nersc_moa}).  The shear damping at rest: common $0.79$--$0.98$, moment $0.94$--$1.11$, errors $\pm0.08$--$0.24$ (differences $0.5$--$1.1\sigma$).
+
+\paragraph{The full step} ($t=100$, 16 runs per set; \Fig{fig:nersc_mo}).
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & common, $v_0=0$ & moment, $v_0=0$ & common, $v_0=0.8$ & moment, $v_0=0.8$ \\ \hline
+KE$/2VwT$ (predicted $1$; $17.6$) & $0.993$ & $0.992$ & $17.59$ & $17.49$ \\
+$\Delta H/H$ at $t=100$ & $-3.5\times10^{-5}$ & $+2.9\times10^{-5}$ & $6.6\times10^{-5}$ & $7.7\times10^{-5}$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$, along / across & $1.03(7)$ / $1.03(6)$ & $1.10(3)$ / $1.17(7)$ & $1.49(17)$ / $1.19(8)$ & $0.86(14)$ / $0.98(7)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=1.05$, along / across & $1.10(3)$ / $1.02(3)$ & $1.04(5)$ / $1.07(4)$ & $1.10(5)$ / $1.10(4)$ & $1.13(9)$ / $1.00(5)$ \\
+\hline
+\end{tabular}
+\end{center}
+The equal-time correlators agree within the errors at every $kh$ (both show $C_{EE}/\chi$ rising to $1.14$--$1.18$ at $kh=1.57$, the
+finite-$kh$ correction).  One difference stands out: at $v_0=0.8$, $kh=0.52$ (the fundamental mode of the $L=0.6$ box) the shear damping along
+the flow is $1.49(17)$ for common and $0.86(14)$ for moment, $2.9\sigma$ apart; at $kh=1.05$ they agree.  The stochastic trajectories
+decorrelate quickly, so the shared seeds do not correlate the two sets much; one $2.9\sigma$ difference among about 16 comparisons is a
+flag, not yet a result --- to be checked with more runs or a larger box.
+
+\paragraph{Deterministic viscous step alone, $v_0=0.8$} (\texttt{examples/moment\_det.jl} set A, rerun as a debug job with the fix below): the
+fitted decay rates of common and moment agree to four digits in all twelve cases, with $\Delta S=2\int K\,dt$ to $10^{-4}$ and $\Delta H/H\sim10^{-13}$.
+For a momentum perturbation along the flow (longitudinal with $\bm k\parallel\bm v$, shear with $\bm k\perp\bm v$) the entropy deficit at fixed lab
+energy, $D=\sum_a[S_a(e_a,\bar{\bm m})-S_a(e_a,\bm m_a)]$, is negative: $K/D$ is then not a rate, and in the scripts it made the run length
+negative, so these cases had never run (they appeared as zeros).  With $|K/D|$ setting the run length they run, are stable, and decay at
+$0.35$--$1.27\,|K/D|$ --- not a single exponential at that rate; only the two pure modes give clean rates, as the laptop results above already use.
+
+\paragraph{Verdict.}  No difference between common and moment beyond the statistics, except the $2.9\sigma$ flag at $v_0=0.8$, $kh=0.52$.
+The default stays \texttt{common}; the owner decides.
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MOA.png}
+\caption{Campaign \texttt{moment}, the stochastic step alone: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment (key at the top), $v_0=0$ and $0.8$,
+8 runs each.  $E$ does not change in this step, so its rows show the initial state, the same for both.}
+\label{fig:nersc_moa}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MO.png}
+\caption{Campaign \texttt{moment}, the full step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment, 16 runs each.}
+\label{fig:nersc_mo}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_shear_v0.8_MO.png}
+\caption{Campaign \texttt{moment}, the full step at $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common and moment
+(panels); dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_soundpar_v0.8_MO.png}
+\caption{As above: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_soundperp_v0.8_MO.png}
+\caption{As above: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$.}
+\end{figure}
+
 \end{document}
