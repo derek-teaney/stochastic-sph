@@ -75,6 +75,10 @@ the flow is the DKD step's: 0.88(2) from lattice and from HMC; GLF 1.02(2) (latt
 at kh 0.52 in all four cells (1.1 at rest).  KE from the lattice 19.5 (10% high) with either step; from HMC 17.6–17.7.
 docs/equilibrium_positions.tex, Sect. "The 2×2 with the Liouville measure".
 
+**2026-11-14 late: hmc_eq.**  hq24_s541 done (8 chains): agrees with L = 1.2 at kh ≥ 0.5; kh ≤ 0.2 not settled in 150 updates.
+hq24_s54 (tasks 57–64) all TIMEOUT at 8 h with no output (hmc_positions.jl writes only at the end; ≈ 12.5 h needed on 2 threads,
+scaled from hq12_s54) — resubmitted with -t 16:00:00 as job **61330757** from ~/stochastic-sph-eq2 (cc8e292), ≈ 1.6 node-hours.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,

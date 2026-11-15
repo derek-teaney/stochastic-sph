@@ -727,7 +727,7 @@ dashed hydrodynamics.}
 \end{figure}
 
 \paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; the $L=1.2$ sets complete, 16 chains each at
-$s_a=54$, $135$, $541$, and 8 at $s_a=541$ boosted to $v_0=0.8$ ($s_a=902$ in the lab); the $L=2.4$ sets running; \Fig{fig:hmceqfirst}).
+$s_a=54$, $135$, $541$, and 8 at $s_a=541$ boosted to $v_0=0.8$ ($s_a=902$ in the lab); at $L=2.4$, 8 chains at $s_a=541$; \Fig{fig:hmceqfirst}).
 $S(\bm k)/(4/s_a)$ per band of $kh$, after a burn-in of 100 updates, with the error from the spread of the chains and $\tau_{\rm int}$:
 \begin{center}
 \begin{tabular}{lcccc}
@@ -737,9 +737,13 @@ $s_a=54$ & $4.7(3)$ & $3.85(8)$ & $2.44(9)$ & $2.06(6)$ \\
 $s_a=135$ & $8.3(3)$ & $6.6(2)$ & $3.29(7)$ & $2.32(4)$ \\
 $s_a=541$ & $20.3(15)$ & $10.6(4)$ & $3.90(11)$ & $2.54(4)$ \\
 $s_a=541$, $v_0=0.8$ & $30(3)$ & $12.0(10)$ & $4.4(2)$ & $2.53(9)$ \\
+$s_a=541$, $L=2.4$ (8 chains) & $15.8(24)$ & $10.6(8)$ & $3.93(10)$ & $2.47(4)$ \\
 \hline
 \end{tabular}
 \end{center}
+At $L=2.4$ (150 updates) the bands $kh\ge0.5$ agree with $L=1.2$.  At $kh=0.1$--$0.2$, the new modes of the larger box, $S$ is $18$--$28$
+with large errors, and at $kh=0.1$ it still depends on the burn-in ($24.6$ after 50 updates, $17.9$ after 100): 150 updates are too few
+there.  The $L=2.4$ chains at $s_a=54$ ran out of time (8 h) and are rerunning with 16 h (job 61330757).
 The burn-in matters at small $k$: from the lattice, $S$ at $kh=0.3$ settles only after $\approx100$ updates (the default of 20 used before gave
 $19.3$ at $s_a=541$).  The equilibrium $S(\bm k)$ rises toward small $k$, more steeply the higher the entropy per particle: between $kh=1.5$
 and $0.3$ by a factor $2.3$ at $s_a=54$ and $8$ at $s_a=541$.  The boosted chains used the fixed trajectory $\tau=L/c_s$; at rest that
