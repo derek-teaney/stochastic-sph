@@ -64,6 +64,12 @@ const SETS = GROUP == "L24" ?
              GROUP == "MO" ?                      # inverse_moment.tex, stage 1: common vs moment, full step, L = 0.6, $SCRATCH/sph/moment
     [("common v=0", ["mo_full_c_v0"], 0.0, "C0"), ("moment v=0", ["mo_full_m_v0"], 0.0, "C1"),
      ("common v=0.8", ["mo_full_c_v0.8"], 0.8, "C3"), ("moment v=0.8", ["mo_full_m_v0.8"], 0.8, "C4")] :
+             GROUP == "HS16" ?                    # campaign hastings (inverse_moment.tex, stage 2): moment without/with SPH_HASTINGS, s_a = 16, $SCRATCH/sph/hastings
+    [("no Hastings v=0", ["hs16_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs16_h_v0"], 0.0, "C1"),
+     ("no Hastings v=0.8", ["hs16_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs16_h_v0.8"], 0.8, "C4")] :
+             GROUP == "HS54" ?                    # campaign hastings (inverse_moment.tex, stage 2): moment without/with SPH_HASTINGS, s_a = 54, $SCRATCH/sph/hastings
+    [("no Hastings v=0", ["hs54_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs54_h_v0"], 0.0, "C1"),
+     ("no Hastings v=0.8", ["hs54_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs54_h_v0.8"], 0.8, "C4")] :
              GROUP == "MOA4" ?                    # campaign moment_a: v = 0.8, L = 0.6, 64 runs per scheme, $SCRATCH/sph/moment_a
     [("common v=0.8", ["moa_c_v0.8"], 0.8, "C3"), ("moment v=0.8", ["moa_m_v0.8"], 0.8, "C4")] :
              GROUP == "MOB" ?                     # campaign moment_b: L = 1.2, 32 runs per set, $SCRATCH/sph/moment_b
@@ -268,7 +274,7 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].v for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
