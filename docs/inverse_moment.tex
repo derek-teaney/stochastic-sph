@@ -650,8 +650,26 @@ KE$/2VwT$ (predicted $17.6$) & $17.50$ & $17.47$ \\
 The difference along the flow at $kh=0.52$ is now $1.0\sigma$ ($2.9\sigma$ with 16 runs): a fluctuation.  The equal-time correlators agree at
 every $kh$.
 
+\paragraph{A larger box} (campaign \texttt{moment\_b}, job 61361958, 4 regular nodes, 42 min; $L=1.2$, $N=2688$, 32 runs per set, $kh=0.26$, $0.52$,
+$0.79$; Figs.~\ref{fig:nersc_B_equaltime}--\ref{fig:nersc_B_shearperp}):
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+$L=1.2$, 32 runs & common & moment \\ \hline
+KE$/2VwT$, $v_0=0$ / $0.8$ (predicted $1$ / $17.6$) & $0.994$ / $17.54$ & $0.994$ / $17.50$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$ at rest, $kh=0.26$, along / across & $0.94(12)$ / $1.10(9)$ & $0.95(12)$ / $0.84(11)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$ at rest, $kh=0.52$, along / across & $1.14(5)$ / $1.07(6)$ & $1.15(6)$ / $1.09(4)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $v_0=0.8$, $kh=0.26$, along / across & $1.01(21)$ / $1.09(17)$ & $1.53(34)$ / $1.01(15)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $v_0=0.8$, $kh=0.52$, along / across & $1.28(13)$ / $1.11(6)$ & $1.25(14)$ / $1.05(7)$ \\
+\hline
+\end{tabular}
+\end{center}
+The two schemes agree within the errors at every wavevector, at rest and at $v_0=0.8$, and so do the equal-time correlators (the largest
+difference, $1.3\sigma$, is along the flow at $kh=0.26$, the noisiest fit).
+
 \paragraph{Verdict.}  No difference between common and moment beyond the statistics: acceptances, guards, kinetic energy, equal-time
-correlators, shear and sound at rest and at $v_0=0.8$, along and across the flow, the stochastic step alone and the deterministic viscous step.
+correlators, shear and sound at rest and at $v_0=0.8$, along and across the flow, in the boxes $L=0.6$ (16 and 64 runs) and $1.2$ (32 runs), the
+stochastic step alone and the deterministic viscous step.
 The default stays \texttt{common} until the owner decides.
 
 \begin{figure}[p]
@@ -791,4 +809,43 @@ moment orange; filled along, open across the flow.}
 \end{figure}
 
 %======================================================================
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_equaltime.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set): equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, common and moment overlaid (key at the top).}
+\label{fig:nersc_B_equaltime}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_fit.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set): $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at the smallest $k$ ($kh=0.26$) against $v_0$; common blue, moment orange; filled along, open across the flow.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_shear_v0.0.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, common (left) and moment (right); dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_soundpar_v0.0.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$ at $kh=0.26$, common (left) and moment (right).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_shear_v0.8.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.26$, common (left) and moment (right).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_soundpar_v0.8.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_EEpar_v0.8.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_soundperp_v0.8.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_B_shearperp_v0.8.png}
+\caption{Campaign \texttt{moment\_b} ($L=1.2$, 32 runs per set), $v_0=0.8$: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound).}
+\label{fig:nersc_B_shearperp}
+\end{figure}
+
 \end{document}

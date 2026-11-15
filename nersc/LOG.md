@@ -4,6 +4,11 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-15 (NERSC): moment_a and moment_b done.**  moment_a (61361957, 8 min): 64 runs per scheme at v0 = 0.8, L = 0.6 — the kh = 0.52
+difference along the flow is 1.0σ (a fluctuation).  moment_b (61361958, 42 min, ≈ 2.8 node-hours): L = 1.2, 32 runs per set — common and
+moment agree within the errors at kh = 0.26, 0.52, 0.79, at rest and at v0 = 0.8.  docs/inverse_moment.tex, Stage 1 NERSC section,
+figures moment_nersc_A_*, moment_nersc_B_*.
+
 **2026-11-15 (NERSC): campaign `hastings` submitted** as written: job **61364382** (8 regular nodes, node.sh THREADS=4, -t 01:30:00),
 from a fresh worktree ~/stochastic-sph-hs at 927e035 (testhastings.jl PASS there).  Output $SCRATCH/sph/hastings.  moment_b (61361958)
 still running from ~/stochastic-sph-mo-run.
