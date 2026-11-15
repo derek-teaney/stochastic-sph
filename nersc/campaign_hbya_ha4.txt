@@ -1,0 +1,11 @@
+# Campaign `hbya` (2026-11-15, branch equilibrium, docs/hbya.tex): h/a = 4, kernels C2/C4/C6 (SPH_KERNEL), at fixed spacing a = 0.025
+# (SR_H = 0.1) and fixed entropy per particle s_a = 135 (SR_S0 = 2.5e5), L = 1.2 (N = 2688): GLF ideal step, Liouville measure, equilibrium HMC
+# start (200 updates, random τ in [L/2c_s, L/c_s], δt factor 0.35), η/s = 0.2.  t_end = 760 (the same number of shear damping times at kh = 0.52
+# for every h/a: t ∝ h²).  v = 0: 32 runs per kernel; v = 0.8: 16 runs, C2 and C4.  Independent seeds per line (SR_SEEDOFFSET).
+# Submitted with -c 16 (SR_THREADS = 8 Julia threads).
+
+hb_wc2_ha4_v0         32  SPH_KERNEL=wc2 SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_HMC_DTFAC=0.35 SR_H=0.100 SR_S0=2.5e5 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=20000  -- examples/equilibrium.jl 1.2 4 760 1 4 hb_wc2_ha4_v0
+hb_wc4_ha4_v0         32  SPH_KERNEL=wc4 SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_HMC_DTFAC=0.35 SR_H=0.100 SR_S0=2.5e5 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=21000  -- examples/equilibrium.jl 1.2 4 760 1 4 hb_wc4_ha4_v0
+hb_wc6_ha4_v0         32  SPH_KERNEL=wc6 SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_HMC_DTFAC=0.35 SR_H=0.100 SR_S0=2.5e5 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=22000  -- examples/equilibrium.jl 1.2 4 760 1 4 hb_wc6_ha4_v0
+hb_wc2_ha4_v0.8       16  SPH_KERNEL=wc2 SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_HMC_DTFAC=0.35 SR_H=0.100 SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=23000  -- examples/equilibrium.jl 1.2 4 760 1 4 hb_wc2_ha4_v0.8
+hb_wc4_ha4_v0.8       16  SPH_KERNEL=wc4 SPH_MEASURE=liouville SPH_IDEAL=generalized SR_POSITIONS=hmc SR_HMC_TAUJIT=0.5 SR_HMC_N=200 SR_HMC_DTFAC=0.35 SR_H=0.100 SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=24000  -- examples/equilibrium.jl 1.2 4 760 1 4 hb_wc4_ha4_v0.8
