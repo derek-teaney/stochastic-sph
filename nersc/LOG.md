@@ -50,6 +50,13 @@ chains (hq12_s135, hq12_s541, hq12_s541_b08); hq12_s54, hq24_* still running.  A
 `BOOST_BURN=… julia --project=nersc examples/boost_analysis.jl HD`, `examples/hmc_analysis.jl`.  To do as they finish: the
 rest of GLF + HMC v0.8, the hq24 chains (then replace Fig. Skk), the long runs' S(k) against HMC, g(r) along/across at v0 = 0.8.
 
+**2026-11-14, campaign `hmc_liou`** (owner's request): the GLF + HMC cell with `SPH_MEASURE=liouville`, v = 0 and 0.8, 16 runs each,
+`nersc/campaign_hmc_liou.txt`, array job **61308476** (32 tasks, ≈ 0.75 node-hours), from worktree `~/stochastic-sph-eq3` at `428ea25`
+(`test/testmeasure.jl` PASS).  Same seeds as hd_hmc_v0/v0.8.  Output `$SCRATCH/sph/hmc_liou/hl_hmc_v0{,.8}`.
+**Correction, same day:** with all 16 GLF + HMC runs and errors at three k, the C_EE deficit along the flow at v0 = 0.8 is not
+removed by one change alone (DKD+HMC 0.86(4) at kh 0.79, GLF+HMC 0.77(10) at 0.26; only GLF + lattice consistent with 1) —
+the first-look claim was from kh = 0.52 alone.  Section rewritten (997f7d4).
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
