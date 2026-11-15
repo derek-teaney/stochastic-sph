@@ -162,7 +162,7 @@ end
 res = Dict{String,Any}()
 for (run, dirs, v, col) in SETS
     fs = vcat([files(joinpath(DIR, d)) for d in dirs]...);  isempty(fs) && continue
-    rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000, rs)
+    rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000 && get(r.meta, :complete, true), rs)   # complete runs only (not checkpoints of runs in progress)
     isempty(rs) && continue
     m = rs[1].meta;  ks = rs[1].rec.ks;  NV = m.N * m.V
     ipar = sort([i for i in eachindex(ks) if abs(ks[i][2]) < 1e-9 && ks[i][1] > 0], by = i -> ks[i][1])
