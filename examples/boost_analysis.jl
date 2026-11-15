@@ -52,6 +52,15 @@ const SETS = GROUP == "L24" ?
      ("DKD, HMC start v=0", ["hl2_dkd_hmc_v0"], 0.0, "C4"), ("DKD, lattice v=0", ["hl2_dkd_lat_v0"], 0.0, "C7"),
      ("GLF, HMC start v=0.8", ["hl2_glf_hmc_v0.8"], 0.8, "C3"), ("GLF, lattice v=0.8", ["hl2_glf_lat_v0.8"], 0.8, "C1"),
      ("DKD, HMC start v=0.8", ["hl2_dkd_hmc_v0.8"], 0.8, "C5"), ("DKD, lattice v=0.8", ["hl2_dkd_lat_v0.8"], 0.8, "C8")] :
+             GROUP == "HB2" ?                     # docs/hbya.tex: h/a = 2, kernels C2/C4/C6, $SCRATCH/sph/hbya
+    [("C2 v=0", ["hb_wc2_ha2_v0"], 0.0, "C0"), ("C4 v=0", ["hb_wc4_ha2_v0"], 0.0, "C1"), ("C6 v=0", ["hb_wc6_ha2_v0"], 0.0, "C2"),
+     ("C2 v=0.8", ["hb_wc2_ha2_v0.8"], 0.8, "C3"), ("C4 v=0.8", ["hb_wc4_ha2_v0.8"], 0.8, "C4")] :
+             GROUP == "HB3" ?                     # docs/hbya.tex: h/a = 3, kernels C2/C4/C6, $SCRATCH/sph/hbya
+    [("C2 v=0", ["hb_wc2_ha3_v0"], 0.0, "C0"), ("C4 v=0", ["hb_wc4_ha3_v0"], 0.0, "C1"), ("C6 v=0", ["hb_wc6_ha3_v0"], 0.0, "C2"),
+     ("C2 v=0.8", ["hb_wc2_ha3_v0.8"], 0.8, "C3"), ("C4 v=0.8", ["hb_wc4_ha3_v0.8"], 0.8, "C4")] :
+             GROUP == "HB4" ?                     # docs/hbya.tex: h/a = 4, kernels C2/C4/C6, $SCRATCH/sph/hbya
+    [("C2 v=0", ["hb_wc2_ha4_v0"], 0.0, "C0"), ("C4 v=0", ["hb_wc4_ha4_v0"], 0.0, "C1"), ("C6 v=0", ["hb_wc6_ha4_v0"], 0.0, "C2"),
+     ("C2 v=0.8", ["hb_wc2_ha4_v0.8"], 0.8, "C3"), ("C4 v=0.8", ["hb_wc4_ha4_v0.8"], 0.8, "C4")] :
              GROUP == "CKSTATS" ?                 # commonkernel.tex: grid + one kernel, high statistics, $SCRATCH/sph/ck_stats
     [("v=0.3", ["cks_v0.3"], 0.3, "C2"), ("v=0.6", ["cks_v0.6"], 0.6, "C1")] :
              GROUP == "POI" ?                     # particles from a Poisson start, $SCRATCH/sph/poisson
@@ -248,7 +257,7 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].v for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key

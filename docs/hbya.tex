@@ -80,11 +80,12 @@ output \texttt{\$SCRATCH/sph/hbya/hb\_<kernel>\_ha<h/a>\_v<v>}):
 $h/a$ & $h$ & $t_{\rm end}$ & modes $kh$ & $v_0=0$ & $v_0=0.8$ & threads & job \\ \hline
 $2$ & $0.050$ & $190$ & $0.26$, $0.52$, $0.79$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 2 & 61343006 \\
 $3$ & $0.075$ & $428$ & $0.39$, $0.79$, $1.18$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 4 & 61342999 \\
-$4$ & $0.100$ & $760$ & $0.52$, $1.05$, $1.57$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 8 & 61343000 \\
+$4$ & $0.100$ & $760$ & $0.52$, $1.05$, $1.57$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 4 & 61346451$^*$ \\
 \hline
 \end{tabular}
 \end{center}
-384 runs, estimated $\approx37$ node-hours (budget 48).  Expected wall time per run: $1$--$2$ h at $h/a=2$, $3$--$4$ h at $3$, about $5$ h at $4$.
+$^*$Packed on 4 whole nodes with \texttt{nersc/node.sh} (32 runs per node at 4 threads), so that all 128 run at once.
+384 runs, estimated $\approx40$ node-hours (budget 48).  Expected wall time per run: $1$--$2$ h at $h/a=2$, $3$--$4$ h at $3$, about $5$ h at $4$.
 The errors expected from \texttt{hmc\_liou2} (64 runs, $\pm0.02$ on $\delta$ at rest): $\pm0.03$ at rest with 32 runs, $\pm0.13$ along the flow at
 $v_0=0.8$ with 16 runs.
 

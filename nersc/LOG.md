@@ -84,6 +84,11 @@ default 0.05) in examples/equilibrium.jl.  Timing test debug job 61342810 (`$SCR
 s_a = 135, L = 1.2; kernels C2/C4/C6 at v = 0 (32 runs), C2/C4 at v = 0.8 (16 runs); GLF + Liouville + HMC start (200 updates, TAUJIT 0.5).
 Worktree ~/stochastic-sph-hb at 18eb717.  Arrays in shared: ha2 **61343006** (-c 2, 2 threads; an earlier -c 4 submission 61342998 was
 cancelled before it started), ha3 **61342999** (-c 8, SR_THREADS=4), ha4 **61343000** (-c 16, SR_THREADS=8); 384 tasks, ≈ 37 node-hours.
+ha4 moved (owner: pack onto whole nodes) to `node.sh` on 4 regular nodes, THREADS=4 (32 slots per node, all 128 at once), job
+**61346451**, -t 09:00:00, ≈ 28 node-hours billed (the longest task, C4 at v = 0.8, ≈ 7 h at 4 threads).  Cancelling array 61343000 also
+killed its 6 tasks that had just started (minutes in): check for running tasks right before cancelling an array.  Task logs of the
+packed job: `$SCRATCH/sph/hbya/slurm/61346451_<task>.out`.
+Also cancelled at the owner's request: the held GPU jobs 58984xxx of the m2 campaign (other project, m4662_g / m3722_g).
 
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
