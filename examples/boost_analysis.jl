@@ -251,6 +251,8 @@ end
 if GROUP in ("HD", "HL", "HL2")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].v for r in runs)) for dir in (:par, :perp)]
+    method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
+    meths = unique(method.(runs));  mcol = Dict(m => "C$(i-1)" for (i, m) in enumerate(meths))
     fig, axg = subplots(3, length(cols), figsize = (4.2 * length(cols), 9.5), squeeze = false)
     for (ci, (v, dir)) in enumerate(cols), a in 1:3
         ax = axg[a, ci];  rv = [r for r in runs if res[r].v == v]
@@ -258,14 +260,16 @@ if GROUP in ("HD", "HL", "HL2")
             r = res[run];  χ = chi(r.Trel, r.v);  js = sort([j for (d, j) in keys(r.C) if d === dir])
             kh = [norm(r.C[(dir, j)].k) * r.h for j in js] .+ 0.012 * (m - (length(rv) + 1) / 2)
             ye = [jack(C -> real(C[a, a, 1]) / χ[a, a], r.C[(dir, j)].Cs) for j in js]
-            ax.errorbar(kh, first.(ye), last.(ye), fmt = "o-", ms = 4, color = r.col, capsize = 2, lw = 1,
-                        label = replace(run, r" v=[0-9.]+" => ""))
+            ax.errorbar(kh, first.(ye), last.(ye), fmt = "o-", ms = 4, color = mcol[method(run)], capsize = 2, lw = 1,
+                        label = method(run))
         end
         ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.5, 1.5)
         ax.set_title(@sprintf("v = %.1f, k %s v:  C_%s%s(k,0)/χ", v, dir === :par ? "∥" : "⊥", names[a], names[a]), fontsize = 10)
-        a == 3 && ax.set_xlabel("kh");  a == 1 && ci == 1 && ax.legend(fontsize = 8)
+        a == 3 && ax.set_xlabel("kh")
     end
-    tight_layout();  savefig(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
+    h, l = axg[1, 1].get_legend_handles_labels()
+    fig.legend(h, l, loc = "upper center", ncol = length(meths), fontsize = 10, frameon = false)
+    tight_layout(rect = (0, 0, 1, 0.96));  savefig(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
     # dynamics: the correlators of boost.tex, one figure each, the methods as panels
     types = [("shear",    :par,  3, 3, real, "Re C_yy, k ∥ v (advected shear)", 80.0, (0.0, 0.8)),
              ("soundpar", :par,  2, 2, real, "Re C_xx, k ∥ v (sound along the flow)", 15.0, (0.0, 0.8)),
