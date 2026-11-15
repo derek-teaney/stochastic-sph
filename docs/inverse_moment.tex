@@ -624,10 +624,9 @@ shear $\Gamma/\Gamma_{\rm hydro}$, $kh=1.05$, along / across & $1.10(3)$ / $1.02
 \end{tabular}
 \end{center}
 The equal-time correlators agree within the errors at every $kh$ (both show $C_{EE}/\chi$ rising to $1.14$--$1.18$ at $kh=1.57$, the
-finite-$kh$ correction).  One difference stands out: at $v_0=0.8$, $kh=0.52$ (the fundamental mode of the $L=0.6$ box) the shear damping along
-the flow is $1.49(17)$ for common and $0.86(14)$ for moment, $2.9\sigma$ apart; at $kh=1.05$ they agree.  The stochastic trajectories
-decorrelate quickly, so the shared seeds do not correlate the two sets much; one $2.9\sigma$ difference among about 16 comparisons is a
-flag, not yet a result --- to be checked with more runs or a larger box.
+finite-$kh$ correction).  The largest fluctuation is the shear damping along the flow at $v_0=0.8$, $kh=0.52$ (the fundamental mode of the $L=0.6$ box, the
+noisiest fit): $1.49(17)$ for common and $0.86(14)$ for moment (\Fig{fig:nersc_fit}; the correlators in \Fig{fig:nersc_shear8} differ only
+modestly).  One such $2.9\sigma$ difference among about 16 comparisons is what chance gives; at $kh=1.05$ the two agree.
 
 \paragraph{Deterministic viscous step alone, $v_0=0.8$} (\texttt{examples/moment\_det.jl} set A, rerun as a debug job with the fix below): the
 fitted decay rates of common and moment agree to four digits in all twelve cases, with $\Delta S=2\int K\,dt$ to $10^{-4}$ and $\Delta H/H\sim10^{-13}$.
@@ -636,8 +635,24 @@ energy, $D=\sum_a[S_a(e_a,\bar{\bm m})-S_a(e_a,\bm m_a)]$, is negative: $K/D$ is
 negative, so these cases had never run (they appeared as zeros).  With $|K/D|$ setting the run length they run, are stable, and decay at
 $0.35$--$1.27\,|K/D|$ --- not a single exponential at that rate; only the two pure modes give clean rates, as the laptop results above already use.
 
-\paragraph{Verdict.}  No difference between common and moment beyond the statistics, except the $2.9\sigma$ flag at $v_0=0.8$, $kh=0.52$.
-The default stays \texttt{common}; the owner decides.
+\paragraph{More runs at $v_0=0.8$} (campaign \texttt{moment\_a}, job 61361957, 4 debug nodes, 8 min; $L=0.6$, 64 runs per scheme, new seeds;
+Figs.~\ref{fig:nersc_A_fit}--\ref{fig:nersc_A_shear}):
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+$v_0=0.8$, $L=0.6$, 64 runs & common & moment \\ \hline
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$, along / across & $1.26(9)$ / $1.20(6)$ & $1.12(10)$ / $1.13(5)$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=1.05$, along / across & $1.20(5)$ / $1.09(3)$ & $1.19(5)$ / $1.10(3)$ \\
+KE$/2VwT$ (predicted $17.6$) & $17.50$ & $17.47$ \\
+\hline
+\end{tabular}
+\end{center}
+The difference along the flow at $kh=0.52$ is now $1.0\sigma$ ($2.9\sigma$ with 16 runs): a fluctuation.  The equal-time correlators agree at
+every $kh$.
+
+\paragraph{Verdict.}  No difference between common and moment beyond the statistics: acceptances, guards, kinetic energy, equal-time
+correlators, shear and sound at rest and at $v_0=0.8$, along and across the flow, the stochastic step alone and the deterministic viscous step.
+The default stays \texttt{common} until the owner decides.
 
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/moment_nersc_equaltime_MO.png}
@@ -689,7 +704,6 @@ The default stays \texttt{common}; the owner decides.
 \caption{The stochastic step alone at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right).  (At $v_0=0.8$ there is no advection without the ideal step, so the moving correlators of this set are not shown.)}
 \end{figure}
 
-%=============================================================================
 \section{Stage 2: results on the laptop}
 \label{sec:laptop2}
 
@@ -733,5 +747,22 @@ The relative change $\epsilon$ is largest when the coefficients depend strongly 
 when a move changes $\bm m_a$ much (low $s_a$, large $\Delta t$).  The acceptance recovers at smaller $\Delta t$ ($0.45$ at $\frac18$).  Rejections slow the
 damping of the residual modes; they do not bias the equilibrium.  Whether the lower acceptance matters for the dynamics, i.e.\ for the
 damping of the lattice modes and the correlators, is for the runs at NERSC.
+=======
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_A_fit.png}
+\caption{Campaign \texttt{moment\_a} ($v_0=0.8$, $L=0.6$, 64 runs per scheme): $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$; common blue,
+moment orange; filled along, open across the flow.}
+\label{fig:nersc_A_fit}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_A_equaltime.png}
+\caption{Campaign \texttt{moment\_a}: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ at $v_0=0.8$, common and moment, 64 runs each.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/moment_nersc_A_shear_v0.8.png}
+\caption{Campaign \texttt{moment\_a}: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right), 64 runs each.}
+\label{fig:nersc_A_shear}
+\end{figure}
 
+%======================================================================
 \end{document}

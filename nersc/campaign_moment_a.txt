@@ -1,0 +1,6 @@
+# Campaign `moment_a` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 1: results from NERSC"): the full step at v0 = 0.8,
+# L = 0.6, as mo_full_*_v0.8 of campaign `moment`, with 64 runs per scheme (4×) and new seeds: is the difference of the shear damping along
+# the flow at kh = 0.52 (common 1.49(17), moment 0.86(14)) a fluctuation?  Defaults: GLF, Liouville, HMC start (200 updates, TAUJIT 0.5).
+# Packed on 4 debug nodes, THREADS=4 (≈ 7 min per run).
+moa_c_v0.8   64  SPH_DISSIPATION=common SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=1400  -- examples/equilibrium.jl 0.6 2 100 1 4 moa_c_v0.8
+moa_m_v0.8   64  SPH_DISSIPATION=moment SR_S0=2.5e5 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=1400  -- examples/equilibrium.jl 0.6 2 100 1 4 moa_m_v0.8
