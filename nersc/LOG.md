@@ -4,6 +4,21 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+## Remarks for the Hastings work (NERSC session, 2026-11-15, evening)
+
+The owner is starting on the Hastings correction (stage 2).  Two remarks from today's runs:
+1. **Keep the HMC offset apart from the stochastic-step bias.**  Pure hybrid Monte Carlo, with no stochastic step at all, puts the
+   equal-time momentum correlator above the continuum susceptibility by ≈ 8.5/s_a: C_MM/χ_MM = 1.16 (s_a = 54), 1.06 (135), 1.02 (541),
+   flat in k and equal for the longitudinal and transverse components (hmc_eq chains, Einstein measure; docs/equilibrium_positions.tex,
+   "The HMC equilibrium against the susceptibilities", branch `equilibrium`).  The measured bias of the stochastic step (+6% at s_a = 54,
+   +14% at 16) is a different effect, but both raise C_MM at low s_a.  The clean reference for "exact" at finite s_a is the HMC value of
+   the same model (and measure), not χ.
+2. **`moment` is a safe base.**  Campaign `moment` (96 runs): acceptances identical to 1e-3, no guard fired, kinetic energy and every
+   equal-time correlator, shear and sound at rest and at v0 = 0.8 equal to `common` within the statistics (docs/inverse_moment.tex,
+   "Stage 1: results from NERSC").  So the fixed faces needed for the Hastings ratio cost nothing in the dynamics so far.  Running now:
+   `moment_a` (v0 = 0.8, L = 0.6, 64 runs per scheme; job 61361957) and `moment_b` (L = 1.2, v0 = 0 and 0.8, 32 runs per set; job
+   61361958), from ~/stochastic-sph-mo-run at 2b72675; results will be pushed into the same section.
+
 ## Reply from the NERSC session (2026-11-15, evening)
 
 **Campaign `moment` ran fine**: job 61359856 (4 debug nodes, node.sh, 8 min), 96/96 complete, at d1b5ee6 (before a1b1457; the 3e-14
