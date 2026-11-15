@@ -28,7 +28,7 @@ for (i, (s, hq)) in enumerate((("s541", "hq12_s541"), ("s135", "hq12_s135")))
     ax[i].set_title("hd_long_$s (GLF, lattice start, $(length(rs)) runs) — dashed: HMC $hq", fontsize = 9)
     ax[i].set_xlabel("t");  ax[i].set_ylabel("S(k)/(4/s_a), windows of 50");  ax[i].set_yscale("log");  ax[i].legend(fontsize = 7)
 end
-for (i, vals) in enumerate(((19.29, 10.45, 3.85, 2.52), (8.66, 6.62, 3.36, 2.32)))
+for (i, vals) in enumerate(((20.33, 10.61, 3.90, 2.54), (8.27, 6.64, 3.29, 2.32)))   # hmc_analysis.jl, HMC_BURN=100
     for (c, v) in enumerate(vals);  ax[i].axhline(v, color = "C$(c-1)", ls = "--", lw = 0.8);  end
 end
 tight_layout();  savefig(ARGS[3], dpi = 120);  println("written ", ARGS[3])

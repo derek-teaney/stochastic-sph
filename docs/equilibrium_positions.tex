@@ -688,47 +688,50 @@ start that remembers it need not give equal $C(k\hat x)$ and $C(k\hat y)$.  The 
 not equilibrium, at $kh\lesssim0.5$.  Campaign \texttt{hmc\_liou2} (job 61309610) repeats the $2\times2$ with the Liouville measure, an HMC start of
 200 updates with random trajectory lengths in $[L/2c_s,L/c_s]$ (\texttt{SR\_HMC\_TAUJIT}), independent seeds, and 64 runs per cell.
 
-\paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; first 37 of 72 chains: $L=1.2$, $s_a=135$ (13
-chains) and $541$ (16), and $s_a=541$ boosted to $v_0=0.8$ (8; $s_a=902$ in the lab), \Fig{fig:hmceqfirst}).  $S(\bm k)/(4/s_a)$ per band of $kh$,
-with the error from the spread of the chains and $\tau_{\rm int}$:
+\paragraph{The equilibrium $S(\bm k)$ from many chains} (campaign \texttt{hmc\_eq}, job 61295241; the $L=1.2$ sets complete, 16 chains each at
+$s_a=54$, $135$, $541$, and 8 at $s_a=541$ boosted to $v_0=0.8$ ($s_a=902$ in the lab); the $L=2.4$ sets running; \Fig{fig:hmceqfirst}).
+$S(\bm k)/(4/s_a)$ per band of $kh$, after a burn-in of 100 updates, with the error from the spread of the chains and $\tau_{\rm int}$:
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
 $kh$ & $0.3$ & $0.5$ & $1.0$ & $1.5$ \\ \hline
-$s_a=135$ & $8.7(3)$ & $6.6(2)$ & $3.36(7)$ & $2.32(3)$ \\
-$s_a=541$ & $19.3(14)$ & $10.5(3)$ & $3.85(8)$ & $2.52(3)$ \\
-$s_a=541$, $v_0=0.8$ & $27(2)$ & $10.9(4)$ & $4.2(1)$ & $2.47(4)$ \\
+$s_a=54$ & $4.7(3)$ & $3.85(8)$ & $2.44(9)$ & $2.06(6)$ \\
+$s_a=135$ & $8.3(3)$ & $6.6(2)$ & $3.29(7)$ & $2.32(4)$ \\
+$s_a=541$ & $20.3(15)$ & $10.6(4)$ & $3.90(11)$ & $2.54(4)$ \\
+$s_a=541$, $v_0=0.8$ & $30(3)$ & $12.0(10)$ & $4.4(2)$ & $2.53(9)$ \\
 \hline
 \end{tabular}
 \end{center}
-The equilibrium $S(\bm k)$ rises steeply toward small $k$ at $s_a=541$ (from $2.5$ to $19$ times $4/s_a$ between $kh=1.5$ and $0.3$), less at
-$s_a=135$.  The boosted chains (in units of their own $4/s_a$) agree with those at rest at $kh=0.4$--$0.5$ and $kh\ge1.2$, lie
-$5$--$15\%$ (about $2\sigma$) higher at $kh=0.6$--$1.1$, and well above at $kh=0.3$ ($27$ against $19$); more chains will tell.
-The dynamics from the lattice reached $3.9(4)$ at $kh=0.52$ by $t=200$ (\Sect{sec:hmcvsdyn}): far from the equilibrium value $10.5(3)$
-(the one-chain estimate there, $15.1(1.5)$, was high), still relaxing.  The long runs of \texttt{hmc\_dyn} ($t=1000$, $2000$)
-and the rest of \texttt{hmc\_eq} ($s_a=54$; $L=2.4$) are running.
+The burn-in matters at small $k$: from the lattice, $S$ at $kh=0.3$ settles only after $\approx100$ updates (the default of 20 used before gave
+$19.3$ at $s_a=541$).  The equilibrium $S(\bm k)$ rises toward small $k$, more steeply the higher the entropy per particle: between $kh=1.5$
+and $0.3$ by a factor $2.3$ at $s_a=54$ and $8$ at $s_a=541$.  The boosted chains used the fixed trajectory $\tau=L/c_s$; at rest that
+length is resonant (\Sect{sec:hmcdyn}), so they are to be repeated with random lengths before they are compared in detail.  The dynamics
+from the lattice reached $3.9(4)$ at $kh=0.52$ by $t=200$ (\Sect{sec:hmcvsdyn}), far from the equilibrium $10.6(4)$ (the one-chain estimate
+there, $15.1(1.5)$, was high).
 
-\paragraph{The long runs against HMC} (\texttt{hmc\_dyn}, \texttt{hd\_long\_s541} and \texttt{hd\_long\_s135}: GLF from the lattice, 4 runs each, still
-running, read from their checkpoints at $t=1040$ and $890$; \Fig{fig:longhmc}).  $S(\bm k)/(4/s_a)$ over the last $200$:
+\paragraph{The long runs against HMC} (\texttt{hmc\_dyn}, \texttt{hd\_long\_s541} to $t=2000$ and \texttt{hd\_long\_s135} to $t=1000$: GLF from
+the lattice, 4 runs each, complete; \Fig{fig:longhmc}).  $S(\bm k)/(4/s_a)$ averaged over the plateau ($t>800$ and $t>300$), errors from the
+spread of the 4 runs:
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
 $kh$ & $0.3$ & $0.5$ & $1.0$ & $1.5$ \\ \hline
-$s_a=541$, dynamics, $t=840$--$1040$ & $15.6$ & $7.9$ & $3.5$ & $2.39$ \\
-$s_a=541$, HMC & $19.3(14)$ & $10.5(3)$ & $3.85(8)$ & $2.52(3)$ \\
-$s_a=135$, dynamics, $t=690$--$890$ & $6.8$ & $4.9$ & $2.76$ & $2.19$ \\
-$s_a=135$, HMC & $8.7(3)$ & $6.6(2)$ & $3.36(7)$ & $2.32(3)$ \\
+$s_a=541$, dynamics, $t>800$ & $14.6(45)$ & $8.6(14)$ & $3.67(19)$ & $2.40(8)$ \\
+$s_a=541$, HMC & $20.3(15)$ & $10.6(4)$ & $3.90(11)$ & $2.54(4)$ \\
+$s_a=135$, dynamics, $t>300$ & $5.8(6)$ & $5.1(7)$ & $2.93(7)$ & $2.14(5)$ \\
+$s_a=135$, HMC & $8.3(3)$ & $6.6(2)$ & $3.29(7)$ & $2.32(4)$ \\
 \hline
 \end{tabular}
 \end{center}
-At $s_a=541$ the short wavelengths reach the HMC values by $t\approx300$; the long ones are still rising at $t=1000$ ($kh=0.3$ from $1.4$ to
-$16$).  At $s_a=135$ the bands level off by $t\approx200$, but at $kh=1$--$1.5$ about $5$--$15\%$ below HMC, outside the errors of the
-windows; whether this is a real difference between the dynamics and the HMC measure needs the remaining runs (and more of them).
+The dynamics levels off below HMC in every band, by $6$--$11\%$ at $kh=1$--$1.5$ and $20$--$30\%$ at $kh=0.3$--$0.5$.  At $s_a=135$ the plateau
+holds from $t\approx300$ to $1000$ and is $3$--$4\sigma$ below HMC at $kh=0.3$ and $1.0$.  So this is not slow relaxation: the dynamics
+samples a smaller $S(\bm k)$ than HMC.  At $s_a=541$ the same shortfall is within $1$--$2\sigma$ (4 runs).  Both use the Einstein measure;
+campaign \texttt{hmc\_liou2} (Liouville) will show whether the measure moves the dynamics, HMC, or both.
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_Sk_long_vs_hmc.png}
-\caption{The long runs of \texttt{hmc\_dyn} (GLF, lattice start, 4 runs, read from checkpoints): $S(\bm k)/(4/s_a)$ in windows of $50$ against
-$t$ for four bands of $kh$; dashed, the HMC equilibrium of \texttt{hmc\_eq} at the same $s_a$.  \texttt{examples/long\_vs\_hmc.jl}.}
+\caption{The long runs of \texttt{hmc\_dyn} (GLF, lattice start, 4 runs, complete): $S(\bm k)/(4/s_a)$ in windows of $50$ against
+$t$ for four bands of $kh$; dashed, the HMC equilibrium of \texttt{hmc\_eq} at the same $s_a$ (burn-in 100 updates).  \texttt{examples/long\_vs\_hmc.jl}.}
 \label{fig:longhmc}
 \end{figure}
 
@@ -770,7 +773,7 @@ along and across $x$ (columns); the four methods overlaid (shifted slightly in $
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/equilibrium_Sk_hmc_eq_first.png}
-\caption{Campaign \texttt{hmc\_eq}, the first 37 chains: the equilibrium $S(\bm k)/(4/s_a)$ against $kh$ (left) and $g(r)$ (right), $L=1.2$.}
+\caption{Campaign \texttt{hmc\_eq}, the $L=1.2$ sets (burn-in 100 updates): the equilibrium $S(\bm k)/(4/s_a)$ against $kh$ (left) and $g(r)$ (right), $L=1.2$.}
 \label{fig:hmceqfirst}
 \end{figure}
 
