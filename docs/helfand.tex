@@ -1,0 +1,323 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage{amsmath,amssymb,bm,mathtools,graphicx,dsfont}
+\usepackage{xcolor}
+\definecolor{darkblue}{RGB}{0,0,160}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Helfand moments: the transport coefficients of the scheme from equilibrium runs}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The viscosities of the scheme can be measured directly, at $k=0$, from the growth of the variance of the Helfand moments in an
+equilibrium run: the Einstein form of the Green--Kubo relations.  The self-diffusion coefficient is the simplest case; it differs
+from the pair separation of the particles, which counts only the flow modes shorter than the separation and is the local quantity
+fluctuating hydrodynamics predicts.  In a
+periodic box the moment must be built from the momentum transfers themselves, as the integrated momentum flux; our scheme
+moves momentum only along bonds, so this is natural.  In two dimensions the viscosity is renormalized by the fluctuations and
+the variance grows as $t\ln t$ (the long-time tails); fluctuating hydrodynamics predicts the coefficient, which makes the
+measurement a test of the fluctuations as well.  Long single runs are the natural way to accumulate it.  Nothing here has
+been implemented.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Self-diffusion: the simplest Helfand moment}
+\label{sec:diffusion}
+
+The Einstein relation in two dimensions,
+\st
+D=\lim_{t\to\infty}\frac{\avg{|\bm x_a(t)-\bm x_a(0)|^2}}{4t}=\frac12\int_0^\infty dt\;\avg{\bm v_a(t)\cdot\bm v_a(0)} ,
+\label{einstein}
+\stp
+is the Green--Kubo integral of the velocity correlation written as the growth of the variance of its time integral, the
+displacement: the simplest Helfand moment.  It uses the mean square displacement, not $\avg{\bm x(t)\cdot\bm x(0)}$, which is
+ill-defined in a periodic box.  The runs record it, and also the separation of particle pairs, which measures something
+different.
+
+\subsection{What is recorded}
+\label{sec:recorded}
+
+\texttt{ParticleRecorder} (\texttt{src/measure.jl}) follows the displacements of the particles,
+\st
+\bm u_a(t)=\bm x_a(t)-\bm x_a(0),
+\stp
+unwrapped: at every record each displacement grows by the minimum image of the change of position since the previous record
+(a particle moves far less than $L/2$ between records), so $\bm u_a$ is the displacement in the infinite plane.  The mean drift of the
+box, $\bar{\bm u}=N^{-1}\sum_a\bm u_a$, is removed.  Two quantities are written to the run's file:
+\st
+\mathrm{MSD}(t)=\frac1N\sum_a\big|\bm u_a(t)-\bar{\bm u}(t)\big|^2\qquad(\texttt{part\_MSD}),
+\stp
+\st
+D^2(r,t)=\Big\langle\big|\bm u_a(t)-\bm u_b(t)\big|^2\Big\rangle_{\text{pairs at distance }r\text{ at }t=0}\qquad(\texttt{part\_D2}),
+\stp
+for the pairs whose minimum-image distance at $t=0$ is within $0.05a$ of $r=a$, $2a$, $4a$, $8a$ (\texttt{part\_rs}).  The pair is fixed at
+$t=0$, and so is the image of $b$ that is $a$'s partner; afterwards the current separation is
+\st
+\bm r_{ab}(t)=\bm r_{ab}(0)+\bm u_b(t)-\bm u_a(t),
+\stp
+unwrapped, so the pair may drift apart beyond $L/2$, or beyond $L$, without ambiguity.  The mean drift cancels in the difference.
+
+%=============================================================================
+\subsection{Self-diffusion and pair separation: how they differ}
+\label{sec:differ}
+
+Expanding the square,
+\st
+D^2(r,t)=2\,\mathrm{MSD}(t)-2\avg{\bm u_a(t)\cdot\bm u_b(t)} :
+\label{D2MSD}
+\stp
+the two agree, $D^2=2\,\mathrm{MSD}$, only if the displacements of the two particles are uncorrelated.
+
+\paragraph{Two parts of a displacement.}  A particle moves by its own particle-level noise (a diffusion constant $D_0$) and by
+advection in the thermal flow, the fluctuating velocity field of fluctuating hydrodynamics.  A flow mode of wavelength $\lambda$ carries
+everything within $\lambda$ together.
+\begin{itemize}
+\item The mean square displacement counts every flow mode of the box, down to the longest, $\lambda=L$ (the mode $k=0$, the drift, is
+  removed).
+\item The pair separation counts only the modes shorter than the separation $r$: longer ones move both particles together and
+  cancel in the difference.
+\end{itemize}
+
+\paragraph{The logarithms of two dimensions.}  The transverse flow modes have equal-time variance $T/(wA)$ each and decay at the
+rate $\nu k^2$, with $\eta=w\nu$; a mode advects a particle diffusively with a coefficient $\propto T/(w\nu k^2)$.  Summed over the modes in two
+dimensions, each decade of wavelength contributes equally:
+\st
+D_{\rm self}\simeq D_0+\frac{T}{4\pi\eta}\ln\frac La,\qquad
+D_{\rm rel}(r)\simeq2D_0+\frac{T}{2\pi\eta}\ln\frac ra\qquad(r\ll L),
+\label{logs}
+\stp
+up to constants of order one inside the logarithms (the sound modes oscillate and add little).  Here
+\st
+D_{\rm self}=\frac{d\,\mathrm{MSD}/dt}{4},\qquad D_{\rm rel}(r)=\frac{dD^2/dt}{4}
+\stp
+in two dimensions.  The logarithm in $D_{\rm self}$ is the long-time tail of the velocity correlation: it grows with time as the
+diffusing flow reaches longer wavelengths, $\ln(\sqrt{\nu t}/a)$, until $\sqrt{\nu t}\sim L$, and then saturates at $\ln(L/a)$.  In an infinite system
+it never saturates.
+
+\paragraph{The box cuts off the advection.}  Both cutoffs are on the flow modes, not on the bookkeeping: in a periodic box the
+flow contains wavelengths up to $L$ only.  $D_{\rm self}$ is cut off by the box; $D_{\rm rel}(r)$ by the separation, which grows as the pair
+separates (more modes act, the separation accelerates), until $r\sim L$.
+
+\paragraph{Late times.}  Once the separation is comparable to $L$ no mode of the box moves the two particles together; their increments
+are uncorrelated, the correlation built up while they were close stays as a constant offset in \Eq{D2MSD}, and
+\st
+\frac{dD^2}{dt}\ \to\ 2\,\frac{d\,\mathrm{MSD}}{dt}=8D_{\rm self}(L)\qquad(r\gtrsim L) .
+\stp
+So the separation rate grows like $\ln(r/a)$ while $r\ll L$, saturates as $r$ approaches $L$, and ends at $2D_{\rm self}(L)$.
+
+%=============================================================================
+\subsection{What it is good for}
+\label{sec:use}
+
+\paragraph{Fluid elements or independent walkers.}  If $D^2\approx2\,\mathrm{MSD}$ from the start, independent of $r$, the particles walk
+independently: the particle-level noise dominates, an artifact of the particles.  If $D^2<2\,\mathrm{MSD}$ and the separation rate grows
+like $\ln r$, the particles move as fluid elements.  \texttt{frozen.tex} saw both: at $\delta v=0.014$ the pair separation matched the
+hydrodynamic relative dispersion (within a factor $2$ at $r=a$, within $10\%$ at $r\ge4a$); at $\delta v=0.043$ it was independent of $r$ and $2$--$5$
+times faster than hydrodynamics.
+
+\paragraph{The hydrodynamic test.}  $D_{\rm rel}(r)$ at $r\ll L$ is local and free of the box; \Eq{logs} predicts its dependence on $r$ from
+$T$ and $\eta$ alone.  $D_{\rm self}$ in two dimensions always carries $\ln L$, and $\ln t$ until the flow has reached the box.
+
+\paragraph{Time scales.}  A pair separates across the box, and the particle-number fluctuations at the lowest wavevector of the box
+relax, in a time of order
+\st
+\tau\sim\frac{L^2}{4\pi^2D_{\rm self}} ,
+\stp
+long when the thermal velocity is small ($D_{\rm self}$ falls roughly as $1/s_a$): this is the slow relaxation of the long-wavelength structure
+factor seen in \texttt{equilibrium\_positions.tex} (relaxed by $t\approx20$--$50$ at $s_a=54$, still rising at $t=200$ at $s_a=541$).  The same
+logarithms appear in the Helfand-moment viscosity (\texttt{helfand.tex}), whose $t\ln t$ growth is the long-time tail of the momentum flux.
+
+
+%=============================================================================
+\section{The Helfand moments of the viscosities}
+\label{sec:moments}
+
+\paragraph{Green--Kubo and Einstein--Helfand.}  Let $J^{ij}(t)$ be the total momentum flux in the box, $A\,T^{ij}$ integrated over the
+area $A$.  At rest, with $T$ the temperature,
+\st
+\eta=\frac1{AT}\int_0^\infty dt\;\avg{J^{xy}(t)\,J^{xy}(0)} .
+\stp
+With the Helfand moment, the time integral of the flux,
+\st
+G^{ij}(t)=\int_0^tdt'\;J^{ij}(t') ,
+\stp
+the same coefficient is the growth rate of its variance \cite{Helfand},
+\st
+\boxed{\;\eta=\lim_{t\to\infty}\frac{\avg{\big[G^{xy}(t_0+t)-G^{xy}(t_0)\big]^2}}{2AT\,t}\;}
+\label{helfand}
+\stp
+averaged over the time origins $t_0$ of a run.  For particles, $J^{ij}=\frac{d}{dt}\sum_ax_a^i\,m_a^j$ and $G^{ij}=\sum_ax_a^im_a^j$ up to a constant.
+
+\paragraph{Two shear components in two dimensions.}  The symmetric traceless part of $G$ has two components, $\frac12(G^{xy}+G^{yx})$
+and $\frac12(G^{xx}-G^{yy})$; both give $\eta$ by \Eq{helfand}, and their average doubles the statistics.
+
+\paragraph{Bulk viscosity.}  The scalar flux must be projected off the conserved densities.  With the scalar projector of
+\texttt{theory.tex}, at rest,
+\st
+J_\zeta=\frac1d\tr J-c_s^2\,E ,
+\stp
+$E$ the total energy, whose fluctuations are conserved and would otherwise make the variance grow as $t^2$; the mean $A\avg{p-c_s^2\varepsilon}$
+is subtracted.  Then
+\st
+\zeta=\lim_{t\to\infty}\frac{\avg{\big[G_\zeta(t_0+t)-G_\zeta(t_0)\big]^2}}{2AT\,t},\qquad G_\zeta(t)=\int_0^tdt'\,\big[J_\zeta(t')-\avg{J_\zeta}\big].
+\stp
+For our equation of state the bulk viscosity of the input is $\zeta=0$, so this measures the bulk viscosity the scheme generates.
+
+%=============================================================================
+\section{The momentum flux of the particles}
+\label{sec:pbc}
+
+\paragraph{The general identity.}  Momentum conservation, $\partial_tM^j+\partial_kT^{kj}=0$, multiplied by $x^i$ and integrated by parts over an
+unbounded system, gives the total momentum flux
+\st
+J^{ij}\equiv\int d^2x\;T^{ij}=\frac d{dt}\int d^2x\;x^iM^j .
+\stp
+For particles $\int d^2x\,x^iM^j\to\sum_ax_a^im_a^j$.  Let $\bm f_{ab}$ be the momentum that particle $a$ gives particle $b$ per unit time, so that
+\st
+\bm f_{ba}=-\bm f_{ab},\qquad \dot{\bm m}_a=\sum_b\bm f_{ba} .
+\stp
+Then
+\st
+J^{ij}=\sum_a\dot x_a^i\,m_a^j+\sum_ax_a^i\,\dot m_a^j=\sum_a\dot x_a^i\,m_a^j+\sum_{\rm pairs}r_{ab}^i\,f_{ab}^j,\qquad \bm r_{ab}=\bm x_b-\bm x_a :
+\label{Jgeneral}
+\stp
+a convective term and the virial of the transfers.  The second form depends only on the bond vectors.
+
+\paragraph{Periodic boxes.}  With unwrapped positions the naive $\sum_ax_a^im_a^j$ is wrong for the viscosity: momentum exchanged between two
+particles on opposite sides of a boundary enters with the wrong lever arm.  Erpenbeck showed that the Einstein--Helfand relations
+are ambiguous in periodic systems \cite{Erpenbeck}; Viscardy and Gaspard derived the Helfand moment with the extra jump terms of the
+minimum-image convention and showed that it agrees with Green--Kubo \cite{ViscardyGaspard,ViscardyServantieGaspard}.  The second form of
+\Eq{Jgeneral}, with $\bm r_{ab}$ the minimum-image bond vector, is free of the ambiguity, and the Helfand moment is accumulated from it step
+by step.
+
+\paragraph{The ideal step.}  The equations of motion
+\st
+\dot{\bm m}_a=-\sum_b\big[P_a\bm D_{ab}-P_b\bm D_{ba}\big],\qquad P_a=p_aV_a^2 ,
+\stp
+are of the form above with
+\st
+\bm f_{ab}=P_a\bm D_{ab}-P_b\bm D_{ba} .
+\stp
+In the virial, relabelling $a\leftrightarrow b$ in the $P_b$ term ($\bm r_{ba}=-\bm r_{ab}$) gives
+\st
+J^{ij}_{\rm ideal}=\sum_a\Big[\,v_a^i\,m_a^j+P_a\sum_br_{ab}^i\,D_{ab}^j\,\Big] ,
+\label{Jideal}
+\stp
+with $\dot{\bm x}_a=\bm v_a$.  So in the particle representation each particle carries the ideal stress
+\st
+V_aT_a^{ij}=v_a^i\,m_a^j+P_a\sum_br_{ab}^i\,D_{ab}^j .
+\label{Tparticle}
+\stp
+Check: the closure of the kernel gradient, $\sum_b\bm r_{ab}\bm D_{ab}^T\simeq n_a\one$, makes the second term $\simeq p_aV_a\,\delta^{ij}$, and
+\st
+J^{ij}_{\rm ideal}\simeq\int d^2x\;\big(M^iv^j+p\,\delta^{ij}\big),
+\stp
+the ideal $T^{ij}$ of the density frame.  For the lab kernel $\bm D_{ab}=\psi_{ab}\bm r_{ab}$ and the stress is symmetric; a kernel whose gradient
+is not along the bond (the comoving kernel of \texttt{commonkernel\_comove.tex}) adds an antisymmetric part, the torque of the
+non-central forces.
+
+\paragraph{The stochastic step.}  At fixed positions only the transfers contribute:
+\st
+\Delta G^{ij}=\sum_{\rm transfers}r_{ab}^i\,\delta m_{ab}^j .
+\stp
+\begin{itemize}
+\item \emph{The stress move} of particle $a$ gives the traction $\xi_a\bm A_{ab}$ to each bond.  By the closure of the faces,
+  $\sum_b\bm A_{ab}\bm r_{ab}^T=V_a\one$,
+  \st
+  \sum_br_{ab}^i\,\big(\xi_a\bm A_{ab}\big)^j=V_a\,\xi_a^{ji}=V_a\,\xi_a^{ij} :
+  \stp
+  each accepted stress move adds exactly $V_a\xi_a$ to the integrated flux.
+\item \emph{The residual move} contributes nothing: its tractions are built to have zero virial,
+  $\sum_b\vec p_{ab}\,\bm r_{ab}^T=0$ (\texttt{stochastic.tex}); they carry no stress.
+\end{itemize}
+The viscous stress of the particles is therefore the accepted stress noise,
+\st
+V_aT^{ij}_{a,\rm visc}\,\Delta t=V_a\,\xi_a^{ij}\quad\text{(if accepted)},\qquad
+\avg{V_a\,\xi_a^{ij}\,P(\xi_a)}=V_a\,\Pi_a^{ij}\,\Delta t ,
+\stp
+whose mean is the viscous stress of the fitted gradient (\texttt{stochastic.tex}, ``Mean of the accepted stress'').
+
+\paragraph{The Helfand moment per step.}  Altogether
+\st
+\boxed{\;\Delta G^{ij}=\Delta t\sum_a\Big[v_a^i\,m_a^j+P_a\sum_br_{ab}^i\,D_{ab}^j\Big]_{\rm kick}
++\sum_{\text{accepted stress moves}}V_a\,\xi_a^{ij} ,\;}
+\label{accumulate}
+\stp
+the ideal part evaluated at the configuration of the kick (with the generalized leapfrog, the average of its two half steps),
+the stochastic part a sum the sweeps already compute.  It is exact to the order of the integrator, with no ambiguity at the
+boundaries; the cost is a running $2\times2$ tensor.
+
+\paragraph{The density frame.}  At rest the density frame and the Landau frame agree, and the normalization above holds with
+$T=T_{\rm rel}$.  For a moving fluid the momentum flux is $T^{ij}$ of the density frame, and its Green--Kubo integrals should give the
+anisotropic tensor $T\kappa^{ijlm}(v)$ of \texttt{theory.tex}; whether they do, with which temperature, is not known and would be
+a prediction to test.
+
+%=============================================================================
+\section{Long-time tails in two dimensions}
+\label{sec:tails}
+
+The current correlations of a fluid decay algebraically, as $t^{-d/2}$: the long-time tails, observed by Alder and Wainwright
+and explained by kinetic theory and mode coupling (Dorfman and Cohen \cite{DorfmanCohen}, Ernst, Hauge and van Leeuwen).  In two
+dimensions the decay is $1/t$, so the Green--Kubo integral diverges logarithmically: the viscosity is renormalized by the
+fluctuations and depends on scale, and the Helfand variance grows as $t\ln t$ instead of $t$.  For our runs this means
+\begin{itemize}
+\item an effective $\eta(t)$ from \Eq{helfand} that drifts slowly upward with the lag $t$, and with the box size;
+\item a coefficient of the logarithm predicted by fluctuating hydrodynamics from $T$, the enthalpy and $\nu$, of relative size
+  $T/(w\nu^2)$ up to a numerical factor, to be derived;
+\item a test of the fluctuations as well as of the dissipation: a scheme with the right noise should reproduce both the bare $\eta$ at
+  short lags and the logarithm.
+\end{itemize}
+The relative size grows as the entropy per particle falls: small at $s_a=541$, larger in the regime $s_a\lesssim50$.
+
+\paragraph{The escape-rate formalism.}  The Helfand moments are also the starting point of the escape-rate theory of transport
+\cite{GaspardNicolis,DorfmanGaspard}: a transport coefficient is the rate at which the Helfand moment escapes an interval with
+absorbing boundaries, related to the Lyapunov exponents and the Kolmogorov--Sinai entropy of the fractal repeller.  It is
+background here; the measurement needs only \Eq{helfand}.
+
+%=============================================================================
+\section{Plan}
+\label{sec:plan}
+
+\begin{enumerate}
+\item \emph{Accumulate} \Eq{accumulate} in the ideal and the stochastic step (a running $2\times2$ tensor and the scalar of the
+  bulk channel), and record it with the other observables.
+\item \emph{Analysis}: $\eta(t)$ and $\zeta(t)$ from \Eq{helfand} against the lag $t$, averaged over time origins and over the two shear
+  components; the self-diffusion coefficient from \texttt{part\_MSD}.
+\item \emph{First tests} at rest, $L=1.2$, $h/a=2$, generalized leapfrog, from equilibrium positions: $s_a=541$ and $54$, input
+  $\eta/s=0.2$; the measured $\eta$ at short lags against the input, and its drift with the lag against the predicted logarithm.
+\item \emph{Long single runs} to accumulate the statistics: the relative error of the variance at lag $t$ falls as $(t/t_{\rm run})^{1/2}$.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{Helfand} E.~Helfand, ``Transport coefficients from dissipation in a canonical ensemble,'' Phys.\ Rev.\ \textbf{119}, 1 (1960).
+\bibitem{Erpenbeck} J.~J.~Erpenbeck, ``Einstein-Kubo-Helfand and McQuarrie relations for transport coefficients,'' Phys.\ Rev.\ E
+  \textbf{51}, 4296 (1995).
+\bibitem{ViscardyGaspard} S.~Viscardy and P.~Gaspard, ``Viscosity in molecular dynamics with periodic boundary conditions,'' Phys.\
+  Rev.\ E \textbf{68}, 041204 (2003); ``Viscosity in the escape-rate formalism,'' Phys.\ Rev.\ E \textbf{68}, 041205 (2003).
+\bibitem{ViscardyServantieGaspard} S.~Viscardy, J.~Servantie and P.~Gaspard, ``Transport and Helfand moments in the Lennard-Jones
+  fluid. I. Shear viscosity,'' J.\ Chem.\ Phys.\ \textbf{126}, 184512 (2007).
+\bibitem{DorfmanCohen} J.~R.~Dorfman and E.~G.~D.~Cohen, ``Velocity correlation functions in two and three dimensions,'' Phys.\ Rev.\
+  Lett.\ \textbf{25}, 1257 (1970); Phys.\ Rev.\ A \textbf{12}, 292 (1975).
+\bibitem{GaspardNicolis} P.~Gaspard and G.~Nicolis, ``Transport properties, Lyapunov exponents, and entropy per unit time,'' Phys.\
+  Rev.\ Lett.\ \textbf{65}, 1693 (1990).
+\bibitem{DorfmanGaspard} J.~R.~Dorfman and P.~Gaspard, ``Chaotic scattering theory of transport and reaction-rate coefficients,''
+  Phys.\ Rev.\ E \textbf{51}, 28 (1995).
+\end{thebibliography}
+
+\end{document}

@@ -9,7 +9,9 @@
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
 \def\Fig#1{Fig.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
 \usepackage{dsfont}
+\usepackage{algpseudocode}
 \newcommand{\one}{\mathds{1}}
 \newcommand{\pf}{\bm{\mathsf p}}
 \DeclareMathOperator{\tr}{tr}
@@ -123,104 +125,54 @@ at rest, and check its mean traction.
   \stp
   which is symmetric, so the faces exert no net torque.  This is the
   angular-momentum constraint.
-\item \emph{Ask the star.}  Accept or reject the whole proposal by the
-  consensus of its bonds, described next.  On rejection the star is left
-  untouched.
+\item \emph{Ask the star.}  Accept or reject the whole proposal by a single
+  Metropolis vote, described next.  On rejection the star is left untouched.
 \end{enumerate}
 Each particle in turn does the same, so particle $b$, with its own stress
 $\xi_b$ of variance $\kappa_b$, gives the traction $\pf_{ba}$ to $a$.
 
-\paragraph{The consensus.}  The proposal changes the entropy of $a$ and of every
+\paragraph{The vote.}  The proposal changes the entropy of $a$ and of every
 member of its star,
 \st
-\Delta\mathbb S=\Delta S_a+\sum_{b\neq a}\Delta S_b .
+\Delta\mathbb S=\Delta S_a+\sum_{b\neq a}\Delta S_b ,
 \label{dStot}
 \stp
-We write this as a sum over the bonds,
+each at its fixed $e$ and $V$.  The whole proposal is accepted with probability
 \st
-\Delta\mathbb S=\sum_{b\neq a}\Delta S_{ab} ,
-\label{dSbonds}
+P(\xi_a)=\min\big(1,e^{\Delta\mathbb S}\big) ,
+\label{Pstar}
 \stp
-with one term per bond, specified below.  A single vote would accept the
-proposal with probability $\min(1,e^{\Delta\mathbb S})$.  Instead each bond votes,
-accepting with probability $\min(1,e^{\Delta S_{ab}})$, and the proposal is kept
-only if every bond accepts:
-\st
-P(\xi_a)=\prod_{b\neq a}\min\big(1,e^{\Delta S_{ab}}\big).
-\label{Pfact}
-\stp
-If any bond rejects, the whole proposal is rejected.  This is a factorized
-Metropolis filter.  Like the single vote, it satisfies detailed balance with
-respect to $e^{\mathbb S}$, provided
-\begin{enumerate}
-\item the bond terms add up to $\Delta\mathbb S$, \Eq{dSbonds};
-\item each bond term flips its sign exactly under the reverse move, which
-  starts from the new momenta and proposes $-\pf_{ab}$ on every bond.
-\end{enumerate}
-It rejects more often than the single vote: a bond that loses entropy can
-veto the move even when the others gain more.
+all or nothing.
 
-\paragraph{Partitioning $\Delta S_a$.}  Particle $b$ receives only the traction
-$\pf_{ab}$, so $\Delta S_b$ belongs to the bond $ab$.  Particle $a$ gives up the sum
-of all its tractions, so $\Delta S_a$ has to be divided among the bonds:
+\paragraph{Detailed balance.}  Let $q(\bm m\to\bm m')$ be the probability density to propose the move from the
+momenta $\bm m$ of the star to $\bm m'$, and $P(\bm m\to\bm m')$ the probability to accept it.  Detailed balance with
+respect to $e^{\mathbb S}$ is
 \st
-\Delta S_a=\sum_{b\neq a}\delta S_{ab},\qquad
-\Delta S_{ab}=\delta S_{ab}+\Delta S_b .
-\label{dSab}
+e^{\mathbb S[\bm m]}\,q(\bm m\to\bm m')\,P(\bm m\to\bm m')=e^{\mathbb S[\bm m']}\,q(\bm m'\to\bm m)\,P(\bm m'\to\bm m) .
+\label{detbal}
 \stp
-Condition 1 then holds for any partition; condition 2 requires each
-$\delta S_{ab}$ to flip its sign under the reverse move.  (Counting $\Delta S_a$ in
-full on every bond would violate condition 1.)  We take
+The reverse move starts from $\bm m'$ and proposes $-\pf_{ab}$ on every bond, i.e.\ the stress $-\xi_a$.  The
+coefficients are frozen for the step, so $\xi_a$ is drawn from a fixed zero-mean Gaussian, and $-\xi_a$ is
+as likely as $\xi_a$:
 \st
-\delta S_{ab}=\sigma_{ab}+\frac{R_a}{n_{\rm b}} ,
+q(\bm m\to\bm m')=q(\bm m'\to\bm m) .
 \stp
-where $\sigma_{ab}$ is the part of $\Delta S_a$ due to $\pf_{ab}$, $R_a$ is the rest, and
-$n_{\rm b}$ is the number of bonds of $a$.
+The Metropolis acceptance \Eq{Pstar} gives
+\st
+\frac{P(\bm m\to\bm m')}{P(\bm m'\to\bm m)}=\frac{\min\big(1,e^{\Delta\mathbb S}\big)}{\min\big(1,e^{-\Delta\mathbb S}\big)}=e^{\Delta\mathbb S}
+=e^{\mathbb S[\bm m']-\mathbb S[\bm m]} ,
+\stp
+which is \Eq{detbal}.  The same holds for the residual move, whose tractions are a fixed linear map of
+zero-mean Gaussian draws.  The coefficients are rebuilt at the start of the next step from the new momenta,
+so across steps the proposal is not symmetric; the Hastings correction that would restore \Eq{detbal}
+is discussed in \texttt{commonkernel.tex}, ``Detailed balance with state-dependent coefficients''.
 
-For $\sigma_{ab}$, with $\bm m_a$ and
-$\bm m_a'=\bm m_a+\delta\bm m_a$ the momenta of $a$ before and after the move,
-\st
-\sigma_{ab}=\frac12\Big[S_a(\bm m_a-\pf_{ab})-S_a(\bm m_a)\Big]
--\frac12\Big[S_a(\bm m_a'+\pf_{ab})-S_a(\bm m_a')\Big],
-\label{sigmaab}
-\stp
-at fixed $e_a$, and the rest
-\st
-R_a=\Delta S_a-\sum_{b\neq a}\sigma_{ab}
-\stp
-is split evenly.  The reverse move exchanges $\bm m_a$ and $\bm m_a'$ and flips
-$\pf_{ab}$, so it flips the sign of each $\sigma_{ab}$ exactly, and of $R_a$:
-condition 2 holds.  To leading order $\sigma_{ab}\simeq\beta_a\cdot\pf_{ab}$, $R_a$ is of
-third order, and
-\st
-\Delta S_{ab}\simeq-\big(\beta_b-\beta_a\big)\cdot\pf_{ab} :
-\stp
-each factor is the entropy produced by the bond itself.  It depends only on the
-difference $\beta_b-\beta_a$, so it vanishes for a uniformly moving fluid, as the
-dissipation does.
-
-For an entropy quadratic in the momentum the second-order terms
-cancel in \Eq{sigmaab}, and
-\st
-\sigma_{ab}=\beta_a^{\rm mid}\cdot\pf_{ab},\qquad
-\Delta S_b=-\beta_b^{\rm mid}\cdot\pf_{ab},
-\stp
-where $\beta^{\rm mid}$ is evaluated at the midpoint of each particle's move:
-$\beta_a^{\rm mid}$ at the average of $\bm m_a$ and $\bm m_a'$, and $\beta_b^{\rm mid}$ at
-$\bm m_b+\pf_{ab}/2$.  The bond factor is then
-\st
-\Delta S_{ab}=-\big(\beta_b^{\rm mid}-\beta_a^{\rm mid}\big)\cdot\pf_{ab} ,
-\stp
-the entropy produced by the bond, with the midpoint $\beta$ at each end, exact up
-to third-order terms, which go into $R_a$.
-
-The simpler even split, $\delta S_{ab}=\Delta S_a/n_{\rm b}$, also satisfies both
-conditions, but it
-is not invariant under a uniform shift of $\beta$: in a fluid moving with
-velocity $\bm v$, $\Delta S_b\simeq-\beta_b\cdot\pf_{ab}$ contains $-(\bm v/T)\cdot\pf_{ab}$,
-which is large and of random sign, and the bonds reject even though nothing
-dissipates.  In a fluid moving at $v=0.32$, the even split accepts 7\% of the
-residual moves in 2D, and \Eq{sigmaab} 47\%, the same as at rest.
+Momentum is conserved by the move, so to linear order $\Delta\mathbb S$ depends only
+on the differences $\Delta\beta_{ab}=\beta_b-\beta_a$ (below).  A uniform flow, which
+shifts every $\beta$ by the same amount, does not enter the vote: the acceptance
+in a moving fluid is the same as at rest (\Sect{sec:tests}).  A factorized vote,
+one factor per bond, is described in \App{app:bonds}; it is also exact, rejects
+more often, and is not used.
 
 \paragraph{The mean traction.}  For a small proposal the entropy change is
 linear in the momentum changes, with $\partial S_c/\partial\bm m_c=-\beta_c$:
@@ -233,38 +185,34 @@ where $(\nabla\beta)_a$ is the fitted gradient of $\beta$ at $a$
 (\texttt{bond\_dissipation.tex}, mean-field form) and $\Delta\beta_{ab}=\beta_b-\beta_a$.  The proposal sees $\beta$ only
 through $(\nabla\beta)_a$.
 
-\paragraph{Mean of the accepted stress.}  Each factor of \Eq{Pfact} is linear in
-the proposal to leading order,
+\paragraph{Mean of the accepted stress.}  To leading order the entropy change is
+linear in the proposal,
 \st
-\Delta S_{ab}\simeq g_{ab}{:}\xi_a ,\qquad
-\sum_{b\neq a}g_{ab}=\frac{\partial\Delta\mathbb S}{\partial\xi_a}=-V_a(\nabla\beta)_a ,
+\Delta\mathbb S\simeq g_a{:}\xi_a ,\qquad
+g_a=\frac{\partial\Delta\mathbb S}{\partial\xi_a}=-V_a(\nabla\beta)_a ,
 \stp
 and is of order $\sqrt{\Delta t}$.  To the same order the acceptance probability
-is
+\Eq{Pstar} is
 \st
-P(\xi_a)\simeq1+\sum_{b\neq a}\min\big(0,\ g_{ab}{:}\xi_a\big).
+P(\xi_a)\simeq1+\min\big(0,\ x\big),\qquad x=g_a{:}\xi_a .
 \stp
 The proposal has zero mean, so the mean of the accepted stress is
 \st
-\avg{\xi_a\,P(\xi_a)}=\sum_{b\neq a}\avg{\xi_a\,\min\big(0,\ x_b\big)},\qquad
-x_b=g_{ab}{:}\xi_a .
+\avg{\xi_a\,P(\xi_a)}=\avg{\xi_a\,\min(0,x)} .
 \stp
 Write $C=\avg{\xi_a\xi_a}$ for the covariance \Eq{xivar}.  For a Gaussian $\xi_a$
-the part of $\xi_a$ correlated with $x_b$ is $C{:}g_{ab}\,x_b/\avg{x_b^2}$, and the
-rest is independent of $x_b$, so
+the part of $\xi_a$ correlated with $x$ is $C{:}g_a\,x/\avg{x^2}$, and the
+rest is independent of $x$, so
 \st
-\avg{\xi_a\,\min(0,x_b)}=\frac{C{:}g_{ab}}{\avg{x_b^2}}\,\avg{x_b\min(0,x_b)}
-=\frac12\,C{:}g_{ab} ,
+\avg{\xi_a\,\min(0,x)}=\frac{C{:}g_a}{\avg{x^2}}\,\avg{x\min(0,x)}
+=\frac12\,C{:}g_a ,
 \stp
-since $x_b\min(0,x_b)$ is $x_b^2$ for half of the Gaussian and zero otherwise.
-Summing over the bonds,
+since $x\min(0,x)$ is $x^2$ for half of the Gaussian and zero otherwise.  Hence
 \st
-\avg{\xi_aP(\xi_a)}=\frac12\,C{:}\frac{\partial\Delta\mathbb S}{\partial\xi_a}
+\avg{\xi_aP(\xi_a)}=\frac12\,C{:}g_a
 =-\Delta t\,(T_{\rm rel})_a\,\kappa_a{:}(\nabla\beta)_a=\Delta t\,\Pi_a(\nabla\beta) ,
 \stp
-the viscous stress of the fitted gradient.  A single test on the whole star,
-$\min(1,e^{\Delta\mathbb S})$, gives the same mean: the factorization changes
-the rejection rate, not the drift.  The mean traction is therefore
+the viscous stress of the fitted gradient.  The mean traction is therefore
 \st
 \avg{\pf_{ab}}=\Delta t\,\Pi_a(\nabla\beta)\,\bm A_{ab} .
 \label{tmean}
@@ -324,9 +272,8 @@ is no cross term, the covariances add, and so do the mean tractions.
   =\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T-\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T=0 ,
   \stp
   so the residual tractions carry no stress and exert no torque.
-\item \emph{Kick and ask the bonds.}  Particle $b$ receives $\vec p_{ab}$ and $a$
-  gives up their sum.  Accept with the factorized filter \Eq{Pfact}, with the
-  bond factors \Eq{dSab}.
+\item \emph{Kick and ask the star.}  Particle $b$ receives $\vec p_{ab}$ and $a$
+  gives up their sum.  Accept with the single vote \Eq{Pstar}.
 \end{enumerate}
 
 \paragraph{The mean traction.}  To leading order the entropy change of the
@@ -358,8 +305,8 @@ Added to the mean stress traction \Eq{tmean},
 \stp
 the deterministic traction of the bond form, on every bond.
 
-\paragraph{One vote or two.}  The two moves could also be drawn together and
-accepted by a single vote.  Both are exact.  We take two separate moves:
+\paragraph{One move or two.}  The two moves could also be drawn together and
+accepted by one vote.  Both are exact.  We take two separate moves:
 \begin{itemize}
 \item The stress move stays as in \Sect{sec:stress}.
 \item Each vote sees less noise, so each is rejected less often.
@@ -369,53 +316,10 @@ accepted by a single vote.  Both are exact.  We take two separate moves:
 In 1D there is no rotation, and the residual move is what damps the zone-edge
 mode.
 
-\paragraph{A cold residual.}  The residual move need not satisfy detailed
-balance.  The modes it acts on are lattice modes, which we want damped but do
-not need to fluctuate.  A one-parameter family keeps its mean traction and
-reduces its noise.  For $\lambda\geq1$:
-\begin{itemize}
-\item shrink the proposal covariance by $1/\lambda$;
-\item accept with $\min(1,e^{\lambda\Delta S_{ab}})$ in place of
-  $\min(1,e^{\Delta S_{ab}})$ in \Eq{Pfact}.
-\end{itemize}
-By the argument of \Sect{sec:stress}, the mean is multiplied by $\lambda$ through
-the acceptance and divided by $\lambda$ through the covariance, so the mean
-residual traction is unchanged.  The noise is reduced by $1/\lambda$: the
-residual drives the modes toward the temperature $T/\lambda$.
-\begin{itemize}
-\item $\lambda=1$ is detailed balance.
-\item $\lambda\to\infty$ is the deterministic residual step, done directly: the
-  residual part of the force of \texttt{changerep.tex}, at fixed $e_a$, with no
-  accept/reject.
-\end{itemize}
-The argument requires the exponent $\lambda\Delta S_{ab}$ to be small.  It is of
-order $\sqrt{\lambda\Delta t}$, so the family holds for $\lambda\Delta t\ll1$.
-
-The reduction of the covariance is essential.  Raising the exponent alone, or
-accepting only moves with $\Delta S>0$, gives a mean kick of fixed size, of order
-$\sqrt{\Delta t}$, along the gradient, independent of the residual itself.
-That is a friction of fixed magnitude, not a viscosity, and it does not
-converge as $\Delta t\to0$.
-
-\paragraph{The effective temperature.}  A mode of wavenumber $k$ receives noise
-from the stress move at temperature $T$ and from the residual move at
-temperature $T/\lambda$, and is damped by both.  Its steady state has
-\st
-\frac{T_{\rm eff}(k)}{T}=\frac{K_{\rm res}(k)+K_{\rm resid}(k)/\lambda}{K_{\rm res}(k)+K_{\rm resid}(k)} .
-\label{Teff}
-\stp
-For a smooth mode $K_{\rm res}\propto k^2$ and $K_{\rm resid}\propto k^4h^2$, so
-\st
-\frac{T_{\rm eff}(k)}{T}=1-O\big((kh)^2\big) ,
-\stp
-and the hydrodynamic modes fluctuate at the right temperature.  At the zone
-edge the fit sees nothing, $K_{\rm res}=0$, and $T_{\rm eff}=T/\lambda$.  In
-between the crossover is smooth.  This is a smooth regulator: the
-cutoff-dependent renormalization of the transport coefficients comes from the
-thermal modes up to the cutoff, now weighted by \Eq{Teff}.  The counterterm
-changes, but it can be computed in the same way.  The total entropy is, to
-quadratic order, a constant minus the kinetic energy over $T$, so the steady
-state does not heat.
+\paragraph{A cold residual.}  The residual move need not satisfy detailed balance: the modes it acts on
+are lattice modes, which we want damped but do not need to fluctuate.  A parameter $\lambda\geq1$
+keeps its mean traction and lowers its noise to the temperature $T/\lambda$; $\lambda=1$ is detailed
+balance (the default), and $\lambda=\infty$ the deterministic residual step (\App{app:cold}).
 
 %=============================================================================
 \section{The sweep}
@@ -474,48 +378,54 @@ ones.  The random color order makes the sweep reversible on average.
 (\texttt{stochastic\_step!}).  The colors along a direction of $n$ cells are
 $0,1,2,0,1,2,\dots$ for the first $3\lfloor n/3\rfloor$ cells and $3,4$ for the
 one or two leftover cells; the color of a cell is the pair of its two colors.
-\begin{verbatim}
-stochastic_step!(particles, dt; lambda):
-    # frozen for the step (or for the whole run on a frozen lattice)
-    for each particle a:
-        V[a], e[a]                          # particle volume and energy
-        star[a] = bonds b within 2h:  r_ab, w_ab, c_ab
-        Trel_a, eta_a, zeta_eff_a              # rest frame
-    m[a] = current momenta;  S[a] = S_a(e[a], m[a])
-    for kind in (stress, residual)          # order alternates step to step
-        if kind == residual and lambda == Inf
-            deterministic residual step;  continue
-        u = random vector within one cell;  re-bin particles by x + u
-        for color in random_permutation(colors)
-            parallel for cell in cells_of(color)
-                for a in random_permutation(particles_in(cell))
-                    move(a, kind)
-    write back m[a] and s[a] = S[a]
+\medskip
+\noindent\fbox{\begin{minipage}{0.95\textwidth}
+\textbf{Algorithm: stochastic step} (positions fixed, only the momenta move)
+\begin{algorithmic}[1]
+\For{each particle $a$} \Comment{frozen for the step}
+  \State $V_a$, $e_a$; the star: all $b\neq a$ with $|\bm r_{ab}|<2h$, with $w_{ab}$ and $\bm A_{ab}$
+  \State $(T_{\rm rel})_a$, $\eta_a$, $\zeta_a$, $\ell_a$, from the momenta at the start of the step
+  \State $S_a\gets S_a(e_a,\bm m_a)$
+\EndFor
+\For{each sweep, stress and residual} \Comment{the order alternates from step to step}
+  \If{residual sweep and $\lambda=\infty$}
+    \State the deterministic residual step; next sweep
+  \EndIf
+  \State shift the grid of cells by a random vector within one cell
+  \For{each color, in random order}
+    \For{each cell of that color} \Comment{in parallel}
+      \For{each particle $a$ of the cell, in random order}
+        \State \textbf{move} of particle $a$ (below)
+      \EndFor
+    \EndFor
+  \EndFor
+\EndFor
+\State write back $\bm m_a$ and the entropies $s_a=S_a$
+\end{algorithmic}
 
-move(a, kind):                              # random numbers from rngs[a]
-    if kind == stress
-        xi = random symmetric stress, <xi xi> = 2 dt Trel_a kappa_a / V_a
-        delta[b] = xi A_ab,                 A_ab = V_a w_ab r_ab
-        lam = 1
-    else
-        y[b] = random vector, <y y^T> = 2 dt c_ab / lambda
-        Y = sum_b y[b] r_ab^T
-        delta[b] = y[b] - (Y / V_a) A_ab
-        lam = lambda
-    delta_a = - sum_b delta[b]
-    m'_a = m[a] + delta_a
-    dSa  = S_a(e[a], m'_a) - S[a]
-    for b:  sigma[b] = (S_a(m[a] - delta[b]) - S_a(m[a]))/2
-                     - (S_a(m'_a + delta[b]) - S_a(m'_a))/2
-    R    = dSa - sum_b sigma[b]
-    logP = sum_b min(0, lam (S_b(e[b], m[b] + delta[b]) - S[b]
-                             + sigma[b] + R/n_a))
-    if log(uniform) < logP:                 # all or nothing
-        m[b] += delta[b] for every bond;  m[a] += delta_a;  update S
-\end{verbatim}
-A single vote of the star, $\log P=\min(0,\lambda\,\Delta\mathbb S)$, is also
-available (\texttt{vote=:star}); it is exact as well and rejects less often.
-The even split is \texttt{vote=:even}.
+\medskip
+\textbf{Move of particle $a$} (random numbers from the stream of particle $a$)
+\begin{algorithmic}[1]
+\If{stress sweep}
+  \State draw the symmetric stress $\xi_a$ with the variance \Eq{xivar}
+  \State tractions $\pf_{ab}\gets\xi_a\bm A_{ab}$ by \Eq{tstress}; \quad $\lambda_{\rm move}\gets1$
+\Else
+  \State draw $\mathfrak p_{ab}$ on each bond with the variance of \Sect{sec:resid}, divided by $\lambda$
+  \State tractions $\pf_{ab}\gets\vec p_{ab}$ by \Eq{tauab} (the virial $\sum_c\mathfrak p_{ac}\bm r_{ac}^T$ removed)
+  \State $\lambda_{\rm move}\gets\lambda$
+\EndIf
+\State $\bm m_a'\gets\bm m_a-\sum_b\pf_{ab}$, \quad $\bm m_b'\gets\bm m_b+\pf_{ab}$
+\State $\Delta S_a$ and every $\Delta S_b$ at the fixed $e$, $V$
+\State $\log P\gets\min\big(0,\lambda_{\rm move}\Delta\mathbb S\big)$, \quad $\Delta\mathbb S$ of \Eq{dStot} \Comment{the vote \Eq{Pstar}}
+\If{$\log u<\log P$, $u$ uniform} \Comment{all or nothing}
+  \State accept: $\bm m_a\gets\bm m_a'$, $\bm m_b\gets\bm m_b'$, update $S_a$ and $S_b$
+\EndIf
+\end{algorithmic}
+\end{minipage}}
+\medskip
+
+\noindent The single vote is \texttt{vote=:star}, the default.  The factorized votes of \App{app:bonds} are
+\texttt{vote=:bonds} and \texttt{vote=:even}.
 
 %=============================================================================
 \section{Tests on a frozen lattice}
@@ -541,9 +451,8 @@ relativistic correction.  This is the reference value below.
 
 \paragraph{Detailed balance.}  With $\lambda=1$ the sweep must reproduce it
 exactly, for any $\Delta t$.  Starting from a thermal draw, the time-averaged
-$\avg{m^2}/(V_awT)$ in 1D is $0.990\pm0.004$ with the bond vote,
-$0.991\pm0.003$ with the even split and $0.996\pm0.004$ with the single vote, and
-$0.992\pm0.004$ with the grid shift.
+$\avg{m^2}/(V_awT)$ in 1D is $0.996\pm0.004$, and $0.992\pm0.004$ with the grid
+shift (the factorized votes in \App{app:bonds}).
 
 \paragraph{The residual damping.}  For a single small mode, one deterministic
 residual step reduces the amplitude at exactly the rate
@@ -584,16 +493,9 @@ times, and its error is large (a run eight times longer gives
 $0.965\pm0.032$ there, against $0.995$).  For $\lambda=\infty$ the deficit
 $1-T_{\rm eff}/T$ vanishes as $k^2$, and the measurement follows it.  Close to the
 prediction there remains a small deficit that is a time-step error: relative to
-$T_{\rm eff}$, at $ka/\pi=0.1$--$0.2$,
-\begin{center}
-\begin{tabular}{lcc}
-$\Delta t$ / default & bond vote & single vote \\ \hline
-$1/4$  & $-3\%$   & $-3\%$ \\
-$1/16$ & $-1.5\%$ & $-0.5\%$
-\end{tabular}
-\end{center}
-It does not depend on the vote, so it comes from the explicit residual step,
-not from the rejections.
+$T_{\rm eff}$, at $ka/\pi=0.1$--$0.2$, it is $-3\%$ at a quarter of the default
+step and $-0.5\%$ at $1/16$ of it.  It comes from the explicit residual step,
+not from the rejections (\App{app:bonds}).
 
 \begin{figure}[t]
 \centering
@@ -605,18 +507,9 @@ $1-\avg{|m_k|^2}/(NV_awT)$ for $\lambda=\infty$, and the prediction, $\propto k^
 \end{figure}
 
 \paragraph{Acceptance.}  Rejections fall as $\sqrt{\Delta t}$.  The residual move,
-with 88 bonds in 2D, is rejected most:
-\begin{center}
-\begin{tabular}{lccc}
-residual move & bond vote, \Eq{sigmaab} & even split & single vote \\ \hline
-1D, at rest            & 0.75 & 0.79 & 0.89 \\
-1D, moving at $v=0.32$ & 0.73 & 0.18 & 0.89 \\
-2D, at rest            & 0.48 & 0.58 & 0.88 \\
-2D, moving at $v=0.32$ & 0.47 & 0.07 & 0.88
-\end{tabular}
-\end{center}
-In 2D, at the full default step, the bond vote accepts 0.35 of the residual
-moves and the single vote 0.77; at $1/16$ of it, 0.76 and 0.94.  These tables
+with 88 bonds in 2D, is rejected most.  At a quarter of the default step it
+accepts 0.89 in 1D and 0.88 in 2D, the same at rest and moving at $v=0.32$.  In
+2D it accepts 0.77 at the full default step and 0.94 at $1/16$ of it.  These
 were measured without the grid shift.
 
 \paragraph{Still to do.}
@@ -650,7 +543,7 @@ the same substitutions as in the deterministic bond form
 (\texttt{bond\_dissipation.tex}, the moving fluid): bonds are measured in the
 rest frame of the particle, the metric $\delta$ is replaced by the comoving
 metric $\ell$, and the scalar part of the strain is removed along the projector
-$P$.  The consensus, the partition of $\Delta S_a$ and the sweep are unchanged.
+$P$.  The vote and the sweep are unchanged.
 
 \paragraph{Ingredients.}  For particle $a$, with velocity $\bm v_a$,
 $\gamma_a=1/\sqrt{1-v_a^2}$, temperature $T_a=\partial H/\partial s_a$ and rest-frame
@@ -772,9 +665,8 @@ the residual part of the moving bond traction.  The two moves together give
 the deterministic traction $-(2T_{\rm rel}\eta)_a\,V_aw_{ab}\,\ell_a\,\mathcal D_{ab}\beta$ on
 every bond, plus the mean-field force of the bulk and dilation terms, as at rest.
 
-\paragraph{The consensus.}  Unchanged.  The bond factor is still, to leading
-order, $-(\beta_b-\beta_a)\cdot\pf_{ab}$, so it is not affected by the
-background flow; this is why the partition \Eq{sigmaab} was chosen
+\paragraph{The vote.}  Unchanged.  To linear order $\Delta\mathbb S$ still depends only on
+the differences $\beta_b-\beta_a$, so it is not affected by the background flow
 (\Sect{sec:tests}: in a fluid moving at $v=0.32$ the acceptance is the same as
 at rest).
 
@@ -836,5 +728,200 @@ in the stochastic step and in the deterministic bond force alike, so that the
 mean of the one equals the other.  The coefficients use
 $(T_{\rm rel})_a=\gamma_a\,\partial H/\partial s_a$; in the code \texttt{pa.T} is
 $\partial H/\partial s_a=(T_{\rm rel})_a/\gamma_a$.  In 1D the rest-frame forms are used.
+
+%=============================================================================
+\appendix
+\section{A factorized vote}
+\label{app:bonds}
+
+The code also has a factorized vote, one factor per bond (\texttt{vote=:bonds}), and its
+simpler variant (\texttt{vote=:even}).  Both are exact.  Both reject more often than the single vote
+\Eq{Pstar}, and neither changes the mean drift, so they are not used.  They apply to the stress
+and the residual move alike, with the traction $\pf_{ab}$ of the stress move or $\vec p_{ab}$ of the residual
+move; we write $\pf_{ab}$.
+
+\paragraph{The vote of the bonds.}  Write the entropy change \Eq{dStot} as a sum over the bonds,
+\st
+\Delta\mathbb S=\sum_{b\neq a}\Delta S_{ab} ,
+\label{dSbonds}
+\stp
+with one term per bond, specified below.  Each bond votes, accepting with probability
+$\min(1,e^{\Delta S_{ab}})$, and the proposal is kept only if every bond accepts:
+\st
+P(\xi_a)=\prod_{b\neq a}\min\big(1,e^{\Delta S_{ab}}\big).
+\label{Pfact}
+\stp
+This is a factorized Metropolis filter.  Like the single vote, it satisfies detailed balance with
+respect to $e^{\mathbb S}$, provided
+\begin{enumerate}
+\item the bond terms add up to $\Delta\mathbb S$, \Eq{dSbonds};
+\item each bond term flips its sign exactly under the reverse move, which
+  starts from the new momenta and proposes $-\pf_{ab}$ on every bond.
+\end{enumerate}
+Then the ratio of the forward and reverse acceptances is
+\st
+\prod_{b\neq a}\frac{\min\big(1,e^{\Delta S_{ab}}\big)}{\min\big(1,e^{-\Delta S_{ab}}\big)}
+=\prod_{b\neq a}e^{\Delta S_{ab}}=e^{\Delta\mathbb S} .
+\stp
+It rejects more often than the single vote: a bond that loses entropy can
+veto the move even when the others gain more.  For the cold residual,
+$\Delta S_{ab}\to\lambda\Delta S_{ab}$ in every factor.
+
+\paragraph{Partitioning $\Delta S_a$.}  Particle $b$ receives only the traction
+$\pf_{ab}$, so $\Delta S_b$ belongs to the bond $ab$.  Particle $a$ gives up the sum
+of all its tractions, so $\Delta S_a$ has to be divided among the bonds:
+\st
+\Delta S_a=\sum_{b\neq a}\delta S_{ab},\qquad
+\Delta S_{ab}=\delta S_{ab}+\Delta S_b .
+\label{dSab}
+\stp
+Condition 1 then holds for any partition; condition 2 requires each
+$\delta S_{ab}$ to flip its sign under the reverse move.  (Counting $\Delta S_a$ in
+full on every bond would violate condition 1.)  We take
+\st
+\delta S_{ab}=\sigma_{ab}+\frac{R_a}{n_{\rm b}} ,
+\stp
+where $\sigma_{ab}$ is the part of $\Delta S_a$ due to $\pf_{ab}$, $R_a$ is the rest, and
+$n_{\rm b}$ is the number of bonds of $a$.
+
+For $\sigma_{ab}$, with $\bm m_a$ and
+$\bm m_a'=\bm m_a+\delta\bm m_a$ the momenta of $a$ before and after the move,
+\st
+\sigma_{ab}=\frac12\Big[S_a(\bm m_a-\pf_{ab})-S_a(\bm m_a)\Big]
+-\frac12\Big[S_a(\bm m_a'+\pf_{ab})-S_a(\bm m_a')\Big],
+\label{sigmaab}
+\stp
+at fixed $e_a$, and the rest
+\st
+R_a=\Delta S_a-\sum_{b\neq a}\sigma_{ab}
+\stp
+is split evenly.  The reverse move exchanges $\bm m_a$ and $\bm m_a'$ and flips
+$\pf_{ab}$, so it flips the sign of each $\sigma_{ab}$ exactly, and of $R_a$:
+condition 2 holds.  To leading order $\sigma_{ab}\simeq\beta_a\cdot\pf_{ab}$, $R_a$ is of
+third order, and
+\st
+\Delta S_{ab}\simeq-\big(\beta_b-\beta_a\big)\cdot\pf_{ab} :
+\stp
+each factor is the entropy produced by the bond itself.  It depends only on the
+difference $\beta_b-\beta_a$, so it vanishes for a uniformly moving fluid, as the
+dissipation does.
+
+For an entropy quadratic in the momentum the second-order terms
+cancel in \Eq{sigmaab}, and
+\st
+\sigma_{ab}=\beta_a^{\rm mid}\cdot\pf_{ab},\qquad
+\Delta S_b=-\beta_b^{\rm mid}\cdot\pf_{ab},
+\stp
+where $\beta^{\rm mid}$ is evaluated at the midpoint of each particle's move:
+$\beta_a^{\rm mid}$ at the average of $\bm m_a$ and $\bm m_a'$, and $\beta_b^{\rm mid}$ at
+$\bm m_b+\pf_{ab}/2$.  The bond factor is then
+\st
+\Delta S_{ab}=-\big(\beta_b^{\rm mid}-\beta_a^{\rm mid}\big)\cdot\pf_{ab} ,
+\stp
+the entropy produced by the bond, with the midpoint $\beta$ at each end, exact up
+to third-order terms, which go into $R_a$.
+
+\paragraph{The even split.}  The simpler partition $\delta S_{ab}=\Delta S_a/n_{\rm b}$
+(\texttt{vote=:even}) also satisfies both conditions, but it
+is not invariant under a uniform shift of $\beta$: in a fluid moving with
+velocity $\bm v$, $\Delta S_b\simeq-\beta_b\cdot\pf_{ab}$ contains $-(\bm v/T)\cdot\pf_{ab}$,
+which is large and of random sign, and the bonds reject even though nothing
+dissipates.
+
+\paragraph{The mean is unchanged.}  To leading order each factor of \Eq{Pfact} is linear in
+the proposal,
+\st
+\Delta S_{ab}\simeq g_{ab}{:}\xi_a ,\qquad
+\sum_{b\neq a}g_{ab}=g_a=-V_a(\nabla\beta)_a ,
+\stp
+and the acceptance probability is
+\st
+P(\xi_a)\simeq1+\sum_{b\neq a}\min\big(0,\ g_{ab}{:}\xi_a\big).
+\stp
+The argument of \Sect{sec:stress}, applied factor by factor, gives
+\st
+\avg{\xi_aP(\xi_a)}=\frac12\sum_{b\neq a}C{:}g_{ab}=\frac12\,C{:}g_a ,
+\stp
+the same mean as the single vote: the factorization changes the rejection rate, not the drift.
+
+\paragraph{Measurements.}  On the frozen lattices of \Sect{sec:tests}.
+\begin{itemize}
+\item \emph{Detailed balance.}  The time-averaged $\avg{m^2}/(V_awT)$ in 1D (reference $0.993$) is
+  $0.990\pm0.004$ with the bond vote, $0.991\pm0.003$ with the even split and $0.996\pm0.004$ with the
+  single vote.
+\item \emph{Small $k$.}  The deficit relative to $T_{\rm eff}$ at $ka/\pi=0.1$--$0.2$ does not
+  depend on the vote at a quarter of the default step, so it is a time-step error of the explicit
+  residual step, not an effect of the rejections:
+  \begin{center}
+  \begin{tabular}{lcc}
+  $\Delta t$ / default & bond vote & single vote \\ \hline
+  $1/4$  & $-3\%$   & $-3\%$ \\
+  $1/16$ & $-1.5\%$ & $-0.5\%$
+  \end{tabular}
+  \end{center}
+\item \emph{Acceptance of the residual move}, at a quarter of the default step, without the grid shift:
+  \begin{center}
+  \begin{tabular}{lccc}
+  residual move & bond vote, \Eq{sigmaab} & even split & single vote \\ \hline
+  1D, at rest            & 0.75 & 0.79 & 0.89 \\
+  1D, moving at $v=0.32$ & 0.73 & 0.18 & 0.89 \\
+  2D, at rest            & 0.48 & 0.58 & 0.88 \\
+  2D, moving at $v=0.32$ & 0.47 & 0.07 & 0.88
+  \end{tabular}
+  \end{center}
+  In 2D, at the full default step, the bond vote accepts 0.35 of the residual moves and the single
+  vote 0.77; at $1/16$ of it, 0.76 and 0.94.
+\end{itemize}
+
+\section{A cold residual}
+\label{app:cold}
+
+The residual move need not satisfy detailed
+balance.  The modes it acts on are lattice modes, which we want damped but do
+not need to fluctuate.  A one-parameter family keeps its mean traction and
+reduces its noise.  For $\lambda\geq1$:
+\begin{itemize}
+\item shrink the proposal covariance by $1/\lambda$;
+\item accept with $\min(1,e^{\lambda\Delta\mathbb S})$ in place of
+  $\min(1,e^{\Delta\mathbb S})$ in \Eq{Pstar}.
+\end{itemize}
+By the argument of \Sect{sec:stress}, the mean is multiplied by $\lambda$ through
+the acceptance and divided by $\lambda$ through the covariance, so the mean
+residual traction is unchanged.  The noise is reduced by $1/\lambda$: the
+residual drives the modes toward the temperature $T/\lambda$.
+\begin{itemize}
+\item $\lambda=1$ is detailed balance.
+\item $\lambda\to\infty$ is the deterministic residual step, done directly: the
+  residual part of the force of \texttt{changerep.tex}, at fixed $e_a$, with no
+  accept/reject.
+\end{itemize}
+The argument requires the exponent $\lambda\Delta\mathbb S$ to be small.  It is of
+order $\sqrt{\lambda\Delta t}$, so the family holds for $\lambda\Delta t\ll1$.
+
+The reduction of the covariance is essential.  Raising the exponent alone, or
+accepting only moves with $\Delta S>0$, gives a mean kick of fixed size, of order
+$\sqrt{\Delta t}$, along the gradient, independent of the residual itself.
+That is a friction of fixed magnitude, not a viscosity, and it does not
+converge as $\Delta t\to0$.
+
+\paragraph{The effective temperature.}  A mode of wavenumber $k$ receives noise
+from the stress move at temperature $T$ and from the residual move at
+temperature $T/\lambda$, and is damped by both.  Its steady state has
+\st
+\frac{T_{\rm eff}(k)}{T}=\frac{K_{\rm res}(k)+K_{\rm resid}(k)/\lambda}{K_{\rm res}(k)+K_{\rm resid}(k)} .
+\label{Teff}
+\stp
+For a smooth mode $K_{\rm res}\propto k^2$ and $K_{\rm resid}\propto k^4h^2$, so
+\st
+\frac{T_{\rm eff}(k)}{T}=1-O\big((kh)^2\big) ,
+\stp
+and the hydrodynamic modes fluctuate at the right temperature.  At the zone
+edge the fit sees nothing, $K_{\rm res}=0$, and $T_{\rm eff}=T/\lambda$.  In
+between the crossover is smooth.  This is a smooth regulator: the
+cutoff-dependent renormalization of the transport coefficients comes from the
+thermal modes up to the cutoff, now weighted by \Eq{Teff}.  The counterterm
+changes, but it can be computed in the same way.  The total entropy is, to
+quadratic order, a constant minus the kinetic energy over $T$, so the steady
+state does not heat.
 
 \end{document}

@@ -32,13 +32,15 @@ itself, $\psi_{ab}=-W'(r_{ab})/r_{ab}$ at the lab distance, so that the bond mom
 comoving metric $\ell_a$ in by hand.  For the stochastic step this changes only the weights and the
 faces: the metric already sits in the Onsager matrix of the stress move.  For the deterministic step the
 bond form is written in its exact resolved-plus-residual form.  This note works out the formulas,
-describes the implementation (\texttt{SPH\_DISSIPATION=common}) and its tests.
+describes the implementation and its tests.  As in the code (\texttt{SPH\_DISSIPATION}), the scheme with the
+comoving bond weights is called \texttt{particle} (the default before 2026-11-14) and the scheme with one kernel
+\texttt{common} (the default since).
 \end{abstract}
 
 \maketitle
 
 %=============================================================================
-\section{The present scheme}
+\section{The particle scheme}
 \label{sec:present}
 
 Notation as in \texttt{particle\_metrics.tex} and \texttt{stochastic.tex}: $\bm r_{ab}=\bm x_b-\bm x_a$, $r_{ab}=|\bm r_{ab}|$,
@@ -69,7 +71,7 @@ With the normalized weights $w_{ab}=V_b\psi_{ab}/n_a$, $\sum_bw_{ab}\bm r_{ab}\b
 Two kernels: $W$ round in the lab for the ideal step, $\psi$ round in the rest frame for the viscous step.
 
 %=============================================================================
-\section{One kernel}
+\section{The common scheme: one kernel}
 \label{sec:common}
 
 \paragraph{The weights.}  Take the bond weight from the SPH kernel itself, at the lab distance:
@@ -78,7 +80,7 @@ Two kernels: $W$ round in the lab for the ideal step, $\psi$ round in the rest f
 \label{psicommon}
 \stp
 The bond vector weighted by $\psi$ is the kernel gradient of the ideal step.  For the Wendland C2 kernel
-$\psi\propto(1-r/2h)^3$, the present shape with $h_\psi=h$; for C4 and C6 it is the gradient of those kernels.
+$\psi\propto(1-r/2h)^3$, the shape of the particle scheme with $h_\psi=h$; for C4 and C6 it is the gradient of those kernels.
 The weights are round in the lab, so the bond moment is
 \st
 M_a=\sum_{b\neq a}V_b\,\psi_{ab}\,\bm r_{ab}\bm r_{ab}^T=n_a\one
@@ -91,7 +93,7 @@ w_{ab}=\frac{V_b\psi_{ab}}{n_a},\qquad \sum_{b\neq a}w_{ab}\,\bm r_{ab}\bm r_{ab
 \bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab},\qquad \sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\one .
 \label{wnew}
 \stp
-At rest $\ell_a=\one$ and nothing changes: for C2 the scheme is the present one.
+At rest $\ell_a=\one$ and nothing changes: for C2 the common scheme is the particle scheme.
 
 \paragraph{The fit} needs no metric (\texttt{particle\_metrics.tex}, Operation 1):
 \st
@@ -110,63 +112,119 @@ for any weights, provided the fit uses the same weights.
 \paragraph{The target.}  The dissipative function of a moving fluid contracts both indices of the strain
 with the comoving metric (\texttt{particle\_metrics.tex}, ``The metric''; \texttt{stochastic.tex}, ``A moving fluid''):
 \st
-K_a^{\rm res}=V_aT_a\Big[\eta_a\,\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],\qquad
-\mathring S_a=\tfrac12\big((\nabla\beta)_a+(\nabla\beta)_a^T\big)-\theta_aP_a,\qquad \theta_a=\frac{\ell_a{:}(\nabla\beta)_a}{\langle P\ell\rangle_a},
+K_a^{\rm res}=V_aT_a\Big[\eta_a\,\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],
 \label{target}
 \stp
-with $P$ and $\langle P\ell\rangle$ the scalar projector of \texttt{stochastic.tex} and $T_a=T_{\rm rel,a}$.  The question is where the
-two factors of $\ell_a$ come from.
+with the traceless (comoving) strain and the expansion
+\st
+\mathring S_a=\tfrac12\big((\nabla\beta)_a+(\nabla\beta)_a^T\big)-\theta_aP_a,\qquad
+\theta_a=\frac{\ell_a{:}(\nabla\beta)_a}{\langle P\ell\rangle_a} .
+\stp
+Here $P$ and $\langle P\ell\rangle$ are the scalar projector of \texttt{stochastic.tex}, and $T_a$ is the rest-frame temperature
+$T_{\rm rel,a}$.  The question is where the two factors of $\ell_a$ come from.
 
 %=============================================================================
 \section{The stochastic step}
 \label{sec:stoch}
 
-\paragraph{The stress move.}  Particle $a$ draws a random symmetric stress $\xi_a$ and gives the traction $\xi_a\bm A_{ab}$
-to each bond.  The entropy it produces is, to first order,
+\paragraph{The dissipative function.}  In the common scheme the dissipative function is a sum over particles of a resolved and a
+residual part,
 \st
-\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}=-\xi_a{:}\sum_{b\neq a}\Delta\beta_{ab}\bm A_{ab}^T=-V_a\,\xi_a{:}(\nabla\beta)_a ,
-\label{dSstress}
+\boxed{\;K=\sum_a\Big(K_a^{\rm res}+K_a^{\rm resid}\Big)\;}
+\label{Kcommon}
 \stp
-by \Eq{fit}.  Only the closure $\sum_b\bm A_{ab}\bm r_{ab}^T=V_a\one$ is used, and it holds for both \Eq{Aold} and \Eq{wnew}.  The
-stress is drawn as
+with
 \st
-\xi_a=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\sum_{k=1}^3z_kB_k,\qquad
-B_{1,2}=\sqrt{2\eta_a}\,E(e_{1,2}),\quad B_3=\sqrt{\zeta_{\rm eff}}\,\frac{\ell_a}{\langle P\ell\rangle_a},\qquad
-E(e)=\ell_a^{1/2}e\,\ell_a^{1/2}-\frac{P{:}\ell_a^{1/2}e\,\ell_a^{1/2}}{\langle P\ell\rangle_a}\,\ell_a ,
-\label{B}
-\stp
-$z_k$ standard normal, $e_{1,2}$ the traceless symmetric unit matrices.  The dissipation of the move is
-\st
-K_a^{\rm res}=\frac{V_aT_a}{2}\sum_k(B_k{:}(\nabla\beta)_a)^2=V_aT_a\Big[\eta_a\tr(\ell_a\mathring S_a\ell_a\mathring S_a)+\tfrac12\zeta_{\rm eff}\theta_a^2\Big],
-\label{Kfromxi}
-\stp
-\Eq{target}.  Indeed $E(e){:}(\nabla\beta)=e{:}Z$ with $Z=\ell^{1/2}\mathring S\ell^{1/2}$, which is traceless because $\ell{:}\mathring S=\ell{:}(\nabla\beta)-\theta\,P{:}\ell=0$
-($\langle P\ell\rangle=P{:}\ell$), so $\sum_{k=1,2}(E(e_k){:}(\nabla\beta))^2=\tr Z^2=\tr(\ell\mathring S\ell\mathring S)$; checked numerically for a random $(\nabla\beta)$ at
-$\bm v=(0.7,0.3)$, to roundoff.  The two factors of $\ell_a$ are the two factors $\ell_a^{1/2}$ on each side of $e$ in
-$E(e)$: they are in the Onsager matrix, not in the bond moment.  So the stress move needs \emph{no change} beyond the
-weights and the faces \Eq{wnew}.
-
-\paragraph{The residual move.}  Particle $a$ draws a random vector $\mathfrak p_{ab}$ on each bond, with
-$\langle\mathfrak p_{ab}\mathfrak p_{ab}^T\rangle\propto c_{ab}\,\ell_a$, and gives the residual traction (\texttt{stochastic.tex})
-\st
-\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} .
-\stp
-By the closure alone its virial vanishes, $\sum_b\vec p_{ab}\,\bm r_{ab}^T=0$: it carries no resolved part.  Its dissipation is the residual
-\st
-K_a^{\rm resid}=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\,\delta_{ab}\beta\ \ge0 ,
+\begin{aligned}
+K_a^{\rm res}&=V_aT_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],\\[4pt]
+K_a^{\rm resid}&=V_aT_a\eta_a\sum_{b\neq a}w_{ab}\,f_{ab}\;(\delta_{ab}\beta)_i\,\ell_a^{ij}\,(\delta_{ab}\beta)_j .
+\end{aligned}
 \label{Kresid}
 \stp
-zero for linear fields; it damps the modes the fit cannot see.  With lab weights it is round in the lab
-instead of the rest frame, which only changes how the unresolved modes are damped.
+The resolved part is the target \Eq{target}, a function of the fitted gradient $(\nabla\beta)_a$ through $\mathring S_a$ and $\theta_a$.  The
+residual part is a sum over the bonds of the residuals $\delta_{ab}\beta=\Delta\beta_{ab}-(\nabla\beta)_a\bm r_{ab}$, contracted with the
+comoving metric; it is zero for linear fields and damps the modes the fit cannot see.  The weights $w_{ab}$ are the lab weights
+\Eq{wnew}, and $f_{ab}=(\hat{\bm r}_{ab}\cdot\ell_a\hat{\bm r}_{ab})^2$ is the residual factor of \Sect{sec:resid}, which restores the comoving
+weighting of the residual ($f_{ab}=1$ at rest).  Below we write $\delta_{ab}\beta\cdot\ell_a\,\delta_{ab}\beta$ for the contraction.
 
-\paragraph{So:} for the stochastic step, one kernel means $\psi_{ab}$ from \Eq{psicommon} at the lab distance, $\Lambda_a$ for the
-flat metric, and $\bm A_{ab}=V_aw_{ab}\bm r_{ab}$.  Nothing else changes.
+The stochastic step has one move for each part.  By the fluctuation--dissipation theorem the noise of each move is fixed by its
+part of $K$: its covariance is $2\Delta t$ times the Onsager matrix, the second derivative of that part with respect to the
+variables it depends on.
+
+\paragraph{The stress move.}  Particle $a$ draws a random symmetric stress $\xi_a$ and gives each bond the traction
+\st
+\pf_{ab}=\xi_a\bm A_{ab} .
+\stp
+To first order the entropy it produces is
+\st
+\Delta\mathbb S=-\sum_{b\neq a}\Delta\beta_{ab}\cdot\xi_a\bm A_{ab}
+=-\xi_a{:}\sum_{b\neq a}\Delta\beta_{ab}\,\bm A_{ab}^T
+=-V_a\,\xi_a{:}(\nabla\beta)_a ,
+\label{dSstress}
+\stp
+by the fit \Eq{fit} and the closure of the faces, $\sum_b\bm A_{ab}\bm r_{ab}^T=V_a\one$, which holds for both \Eq{Aold} and \Eq{wnew}.  The
+stress move therefore sees $\beta$ only through $(\nabla\beta)_a$, and its noise is that of $K_a^{\rm res}$: the proposals for $\xi_a$ must have
+the covariance
+\st
+\big\langle\xi_a^{ij}\,\xi_a^{kl}\big\rangle=\frac{2\Delta t}{V_a^2}\,
+\frac{\partial^2K_a^{\rm res}}{\partial(\nabla_j\beta_i)_a\,\partial(\nabla_l\beta_k)_a} .
+\label{xicov}
+\stp
+The metric enters only here, through $K_a^{\rm res}$; the faces and the weights carry none.
+
+\paragraph{One way to draw it.}  Write the stress as
+\st
+\xi_a=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\;\sum_{k=1}^3z_k\,B_k ,
+\label{B}
+\stp
+with $z_k$ independent standard normal numbers and three basis stresses
+\st
+\begin{aligned}
+B_{1,2}&=\sqrt{2\eta_a}\;E(e_{1,2}),\qquad B_3=\sqrt{\zeta_{\rm eff}}\;\frac{\ell_a}{\langle P\ell\rangle_a},\\[4pt]
+E(e)&=\ell_a^{1/2}\,e\,\ell_a^{1/2}-\frac{P{:}\big(\ell_a^{1/2}\,e\,\ell_a^{1/2}\big)}{\langle P\ell\rangle_a}\;\ell_a .
+\end{aligned}
+\stp
+Here $e_1$ and $e_2$ are the traceless symmetric unit matrices; $E(e)$ dresses $e$ with the comoving metric on both sides and
+removes its scalar part along the projector $P$.  This has the covariance \Eq{xicov} because
+\st
+K_a^{\rm res}=\frac{V_aT_a}{2}\sum_{k=1}^3\big(B_k{:}(\nabla\beta)_a\big)^2 .
+\label{Kfromxi}
+\stp
+(With the dressed strain $Z=\ell^{1/2}\mathring S\ell^{1/2}$ one has $E(e){:}(\nabla\beta)=e{:}Z$, and $Z$ is traceless, so the two unit matrices
+give $\tr Z^2=\tr(\ell\mathring S\ell\mathring S)$; checked numerically at $\bm v=(0.7,0.3)$, to roundoff.)  The two factors of $\ell_a$ are the two
+factors $\ell_a^{1/2}$ on either side of $e$.
+
+\paragraph{The residual move.}  Particle $a$ draws a random vector $\mathfrak p_{ab}$ on each bond.  The residual part is a sum over the bonds,
+each a quadratic form in $\delta_{ab}\beta$ with Onsager matrix $c_{ab}\ell_a$, so the draws are independent from bond to bond with
+\st
+\big\langle\mathfrak p_{ab}\,\mathfrak p_{ab}^T\big\rangle=2\Delta t\,c_{ab}\,\ell_a ,\qquad
+c_{ab}=2\,V_aT_a\eta_a\,w_{ab}\,f_{ab} .
+\stp
+The part of the draws the fit can see, their virial, is removed through the faces: $b$ receives the residual traction
+(\texttt{stochastic.tex})
+\st
+\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} ,
+\stp
+whose virial vanishes by the closure,
+\st
+\sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T=0 .
+\stp
+It carries no resolved part, and its entropy change is $-\sum_b\mathfrak p_{ab}\cdot\delta_{ab}\beta$.
+
+\paragraph{So:} for the stochastic step, the common scheme means
+\begin{itemize}
+\item the bond weights $\psi_{ab}$ of \Eq{psicommon}, at the lab distance, with $\Lambda_a$ for the flat metric;
+\item the faces $\bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab}$;
+\item the stress drawn with the covariance \Eq{xicov}, e.g.\ by \Eq{B}, unchanged from the particle scheme;
+\item the residual factor $f_{ab}$ in $c_{ab}$.
+\end{itemize}
+Nothing else changes.
 
 %=============================================================================
 \section{The deterministic step}
 \label{sec:det}
 
-The present deterministic bond form,
+The deterministic bond form of the particle scheme,
 \st
 K=\sum_aV_aT_a\eta_a\sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\,\mathcal D_{ab}+\tfrac12\sum_aV_aT_a\zeta_{\rm eff}\theta_a^2,\qquad
 \mathcal D_{ab}=\Delta\beta_{ab}-\big(\Omega_a+\theta_aP_a\big)\bm r_{ab} ,
@@ -178,14 +236,14 @@ $\mathcal D_{ab}=\mathring S_a\bm r_{ab}+\delta_{ab}\beta$ and \Eq{orthog},
 \sum_{b\neq a}w_{ab}\,\mathcal D_{ab}\cdot\ell_a\mathcal D_{ab}=\tr\Big(\mathring S_a\ell_a\mathring S_a\,\frac{M_a}{n_a}\Big)+\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\delta_{ab}\beta .
 \label{split}
 \stp
-With \Eq{Mold} the first term is $\tr(\ell\mathring S\ell\mathring S)$; with \Eq{Mnew} it would be $\tr(\mathring S\ell\mathring S)$, one $\ell$ short.  With one kernel
+With \Eq{Mold} the first term is $\tr(\ell\mathring S\ell\mathring S)$; with \Eq{Mnew} it would be $\tr(\mathring S\ell\mathring S)$, one $\ell$ short.  In the common scheme
 we therefore write $K$ in its split form directly, the resolved part being the target:
 \st
 \boxed{\;K=\sum_a\Big(K_a^{\rm res}+K_a^{\rm resid}\Big)
 =\sum_aV_aT_a\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\theta_a^2+\eta_a\sum_{b\neq a}w_{ab}\,\delta_{ab}\beta\cdot\ell_a\delta_{ab}\beta\Big].\;}
 \label{Knew}
 \stp
-With \Eq{Mold} this is identical to \Eq{Kold}; with \Eq{Mnew} it is the one-kernel form, and it is the mean of
+With \Eq{Mold} this is identical to \Eq{Kold}; with \Eq{Mnew} it is the common form, and it is the mean of
 the stochastic step of \Sect{sec:stoch}.
 
 \paragraph{The force} $\bm F_a=-\partial K/\partial\beta_a$.  $K$ depends on $\beta$ through $(\nabla\beta)_a$ (linear in $\Delta\beta_{ab}$, \Eq{fit}) and through the
@@ -205,26 +263,44 @@ E_a\equiv\frac{\partial K_a^{\rm res}}{\partial (\nabla\beta)_a}
 +V_aT_a\zeta_{\rm eff}\,\theta_a\,\frac{\ell_a}{\langle P\ell\rangle_a}
 \label{E}
 \stp
-(from $dK^{\rm res}=2V_aT_a\eta_a\,\ell\mathring S\ell{:}d\mathring S+V_aT_a\zeta_{\rm eff}\theta\,d\theta$, $d\mathring S={\rm sym}\,d(\nabla\beta)-P\,\ell{:}d(\nabla\beta)/\langle P\ell\rangle$).  Since
-$\partial (\nabla\beta)_a/\partial\beta_b=w_{ab}\,(\cdot)\,\bm r_{ab}^T(M_a/n_a)^{-1}$ for $b\neq a$ and minus their sum for $b=a$, the resolved force is
-again a sum over bonds, $\partial K/\partial\beta_b\mathrel{+}=E_a(M_a/n_a)^{-1}\bm r_{ab}\,w_{ab}$ and the opposite to $a$.  Both parts
-are sums of antisymmetric pair forces: momentum is conserved.  $E_a$ is symmetric, so the resolved
-part exerts no torque; the residual tractions, as in the present scheme, need not be central.  The
-entropy produced in a step $\Delta t$ is $2K\Delta t\ge0$.
+It follows from the differentials
+\st
+dK_a^{\rm res}=2V_aT_a\eta_a\,\big(\ell_a\mathring S_a\ell_a\big){:}d\mathring S_a+V_aT_a\zeta_{\rm eff}\,\theta_a\,d\theta_a ,
+\stp
+\st
+d\mathring S_a={\rm sym}\,d(\nabla\beta)_a-\frac{\ell_a{:}d(\nabla\beta)_a}{\langle P\ell\rangle_a}\,P_a ,\qquad
+d\theta_a=\frac{\ell_a{:}d(\nabla\beta)_a}{\langle P\ell\rangle_a} .
+\stp
 
-\paragraph{The rest frame.}  At $\bm v_a=0$, $\ell_a=\one$, $\mathring S_a$ is the traceless strain at rest and \Eq{Knew} is the split form (\texttt{bond\_dissipation.tex}, eq.~split2d) of the present \Eq{Kold}: identical.
+\paragraph{The resolved force is a sum over bonds.}  By the fit \Eq{fit}, the gradient at $a$ depends on $\beta_b$ through
+\st
+\frac{\partial(\nabla\beta)_a}{\partial\beta_b}=w_{ab}\,(\,\cdot\,)\,\bm r_{ab}^T\Big(\frac{M_a}{n_a}\Big)^{-1}\qquad(b\neq a),
+\stp
+and on $\beta_a$ through minus the sum of these.  So the star of $a$ adds to the derivative of $K$
+\st
+\frac{\partial K}{\partial\beta_b}\mathrel{+}=w_{ab}\,E_a\Big(\frac{M_a}{n_a}\Big)^{-1}\bm r_{ab}
+\stp
+for each bond, and the opposite to $\partial K/\partial\beta_a$.  Hence:
+\begin{itemize}
+\item both parts are sums of antisymmetric pair forces, so momentum is conserved;
+\item $E_a$ is symmetric, so the resolved part exerts no torque;
+\item the residual tractions \Eq{tresid}, as in the particle scheme, need not be central;
+\item the entropy produced in a step $\Delta t$ is $2K\Delta t\ge0$.
+\end{itemize}
+
+\paragraph{The rest frame.}  At $\bm v_a=0$, $\ell_a=\one$, $\mathring S_a$ is the traceless strain at rest and \Eq{Knew} is the split form (\texttt{bond\_dissipation.tex}, eq.~split2d) of \Eq{Kold} of the particle scheme: identical.
 
 %=============================================================================
 \section{The residual in a moving fluid}
 \label{sec:resid}
 
-The resolved part is exact.  The residual \Eq{Kresid} is not: it is a regulator, of relative size $(kh)^2$
-for smooth fields, and it knows only the metric of its weights.  For a smooth field the residual of a
+This section explains the residual factor $f_{ab}$ in \Eq{Kresid}.  The resolved part is exact.  The residual is not: it is a
+regulator, of relative size $(kh)^2$ for smooth fields, and without $f_{ab}$ it knows only the metric of its weights.  For a smooth field the residual of a
 bond is the curvature, $\delta_{ab}\beta\simeq\frac12\partial_i\partial_j\beta\,r^i_{ab}r^j_{ab}$, so it is weighted by the fourth moment of the
 stencil.  Take the shear wave along the flow, $\beta_y(x)$, $\bm k\parallel\bm v$.  The resolved part is proportional to
 $\ell_{xx}=1/\gamma^2$ (time dilation slows the physical rate); the residual is proportional to $\sum_bw_{ab}r_x^4$, which
 for comoving weights carries $\ell_{xx}^2$ but for lab weights carries nothing.  The relative error of the
-one-kernel residual is therefore enhanced by about $\gamma^2$ (to $\gamma^4$) over the present one, exactly for
+common residual is therefore enhanced by about $\gamma^2$ (to $\gamma^4$) over that of the particle scheme, exactly for
 the mode of the boost benchmark.
 
 The cure is again to put $\ell$ in by hand: weight the residual of each bond by
@@ -249,109 +325,218 @@ on 2026-11-14, and its columns below are kept as the record.
 \section{Detailed balance with state-dependent coefficients}
 \label{sec:hastings}
 
-\paragraph{The point.}  The stochastic step should leave the distribution $e^{\mathbb S}$ (at fixed $H$) invariant.  The Metropolis
-test guarantees this when the proposal is symmetric: the probability to propose $\bm m\to\bm m'$ equals that of $\bm m'\to\bm m$.  The
-proposal of a stress move is a Gaussian whose covariance depends on the state: the metric $\ell_a$, the projector, $T_a$ and
-$\eta_a$ are all functions of the momentum $\bm m_a$ (at the fixed $e_a$, $V_a$ of the step).  The code builds them once, from the state at the
-start of the step, and freezes them through the sweeps.  Within a step the proposal is then symmetric and the test is exact.  But the
-next step rebuilds them, so the move $\bm m\to\bm m'$ is made with the coefficients of $\bm m$ and the move back with those of $\bm m'$: the two
-proposal probabilities differ at order $\Delta t$, and $e^{\mathbb S}$ is the stationary distribution only up to corrections of that order.
-In the language of a Langevin equation, frozen coefficients are multiplicative noise without the drift from the state dependence
-of the Onsager matrix.
+\paragraph{The point.}  At fixed particle energies $e_a$ and volumes $V_a$, the stochastic step should leave the distribution
+\st
+\pi(\bm m)\propto e^{\mathbb S(\bm m)},\qquad \mathbb S=\sum_aS_a(e_a,\bm m_a),
+\stp
+invariant.  A move of star $a$ is drawn from a proposal density $q(\bm m\to\bm m')$ and accepted with the Metropolis probability
+$\min(1,e^{\Delta\mathbb S})$.  This is exact when the proposal is symmetric, $q(\bm m\to\bm m')=q(\bm m'\to\bm m)$
+(\texttt{stochastic.tex}, ``Detailed balance'').  Both proposals are Gaussian, and their covariances depend on the state.
+
+\paragraph{What the coefficients depend on.}  The coefficients of star $a$ are built in \texttt{build\_stars} from the smoothed
+fields at $a$, not from the momentum $\bm m_a$ alone:
+\begin{itemize}
+\item the comoving metric $\ell_a$, the projector $P_a$ and the residual factor $f_{ab}$, at the smoothed velocity
+  $\dot{\bm x}_a=\sum_bs_b(\bm v/S)_bW_{ab}$;
+\item the rest-frame temperature $T_a=\gamma_aT$ and the viscosities $\eta_a$, $\zeta_a$, from the smoothed thermodynamics at $a$.
+\end{itemize}
+They depend on the momenta of the particles within the kernel radius of $a$, which are all members of the star of $a$.  The
+code builds them once, at the start of the step, and freezes them through the sweeps.  Within a step every proposal is then a
+fixed symmetric Gaussian, and the test is exact.  The next step rebuilds them, so the move $\bm m\to\bm m'$ is made with the
+coefficients of $\bm m$, and the move back with those of $\bm m'$.  In the language of a Langevin equation, this is
+multiplicative noise without the drift that comes from the state dependence of the Onsager matrix.
+
+\paragraph{The error does not vanish with $\Delta t$.}  Write the proposal covariance of the momenta as $\Sigma(\bm m)\,\Delta t$.  For
+small steps the Metropolis chain without a correction is a diffusion with drift and diffusion matrix
+\st
+\bm A=\frac12\,\Sigma\,\frac{\partial\ln\pi}{\partial\bm m},\qquad B=\Sigma ,
+\stp
+evaluated at the start of each move (the It\^o convention).  Its stationary density $\rho$ has zero probability current,
+\st
+\bm A\rho=\frac12\,\frac{\partial}{\partial\bm m}\cdot\big(\Sigma\rho\big) ,
+\stp
+so
+\st
+\frac{\partial\ln\rho}{\partial\bm m}=\frac{\partial\ln\pi}{\partial\bm m}-\Sigma^{-1}\Big(\frac{\partial}{\partial\bm m}\cdot\Sigma\Big) .
+\label{rhostat}
+\stp
+For a covariance proportional to the identity, $\Sigma=\sigma^2(\bm m)\,\one$, this is
+\st
+\rho\propto\frac{\pi}{\sigma^2(\bm m)} .
+\stp
+For a general $\Sigma$ the right-hand side of \Eq{rhostat} need not be a gradient, and the stationary state then carries a small
+probability current.  Neither depends on $\Delta t$: the missing drift
+\st
+\frac12\,\frac{\partial}{\partial\bm m}\cdot\Sigma
+\stp
+is of the same order in $\Delta t$ as the physical drift.
+
+\paragraph{Measurement.}  \texttt{examples/hastings\_baseline.jl}: a frozen hexagonal lattice ($h=0.05$, $h/a=2$, $L=0.6$, 672
+particles) with equal $e_a$, the stochastic step alone (\texttt{common}, default options), started from an exact draw of $\pi$, eight
+runs of $200$ viscous time steps $\Delta t_{\rm visc}$ each.  The single-particle averages are compared with the exact ones, computed
+by integrating $e^{S_a(e_a,\bm m_0+\delta\bm m)+\bm\mu\cdot\delta\bm m}$ over one particle's momentum, with $\bm\mu$ the multiplier of the
+total momentum.  In the control the coefficients are frozen for the whole run, so the chain is exactly reversible.  The variance of
+the momentum along the flow, $\langle\delta m_x^2\rangle/C_{xx}$ (errors $\pm0.003$ to $\pm0.006$):
+\begin{center}
+\begin{tabular}{lccccc}
+\hline
+coefficients & $\Delta t/\Delta t_{\rm visc}$ & \multicolumn{2}{c}{$s_a=16$} & \multicolumn{2}{c}{$s_a=54$} \\
+ & & $v_0=0$ & $v_0=0.8$ & $v_0=0$ & $v_0=0.8$ \\ \hline
+rebuilt every step & $1/2$ & $1.088$ & $1.023$ & $1.036$ & $1.001$ \\
+rebuilt every step & $1/8$ & $1.140$ & $0.960$ & $1.057$ & $0.966$ \\
+frozen for the run & $1/2$ & $0.998$ & $0.994$ & $0.995$ & $1.001$ \\
+frozen for the run & $1/8$ & $0.998$ & $0.999$ & $1.002$ & $1.000$ \\
+\hline
+\end{tabular}
+\end{center}
+Across the flow, $\langle\delta m_y^2\rangle/C_{yy}$ at $v_0=0.8$ is $1.07$--$1.08$ at $s_a=16$ and $1.02$ at $s_a=54$ when rebuilt, and $1.00$
+when frozen.  The mean $\langle\ln T_a\rangle$ of the bare particle temperature is low by $0.011$--$0.017$ at $s_a=16$, $v_0=0$, when rebuilt,
+and exact when frozen.  So:
+\begin{itemize}
+\item the frozen chain samples $\pi$ to $0.3\%$: the moves, the vote and the exact moments are right;
+\item rebuilding the coefficients biases the momentum fluctuations by up to $14\%$ at $s_a=16$ and $6\%$ at $s_a=54$, roughly
+  $2/s_a$ at rest;
+\item the bias does not decrease as $\Delta t$ decreases; between $\tfrac12$ and $\tfrac18$ of the viscous step it grows.
+\end{itemize}
+The bias is larger than an estimate from the dependence on $\bm m_a$ alone would give; which coefficients produce it has not been
+measured.
 
 \paragraph{The Hastings correction.}  For a proposal that is not symmetric, accepting with
 \st
 P=\min\Big(1,\ e^{\Delta\mathbb S}\,\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big)
 \label{hastings}
 \stp
-keeps $e^{\mathbb S}$ exactly, provided the reverse move can be proposed at all.
+keeps $\pi$ exactly, provided the reverse move can be proposed at all.  Here $q(\bm m\to\bm m')$ is the density of the move with the
+coefficients of star $a$ at $\bm m$, and $q(\bm m'\to\bm m)$ the density of the reverse move with the coefficients of star $a$ at $\bm m'$.
+
+\paragraph{The two schemes.}  Both moves use the bond weights $w_{ab}$, the faces $\bm A_{ab}$ and the residual coefficients $c_{ab}$,
+with $T_a$ the rest-frame temperature:
+\begin{itemize}
+\item \texttt{particle}: $w_{ab}=V_b\psi(\rho_{ab})/n_a$ at the comoving distance, with $\Lambda_a$ for $\ell_a$, and
+  \st
+  \bm A_{ab}=V_a\,w_{ab}\,\ell_a^{-1}\bm r_{ab},\qquad c_{ab}=2\,T_a\eta_a\,V_a\,w_{ab} ;
+  \stp
+\item \texttt{common}: $w_{ab}=V_b\psi_{ab}/n_a$ with $\psi_{ab}=-W'(r_{ab})/r_{ab}$ at the lab distance, with $\Lambda_a$ for $\one$, and
+  \st
+  \bm A_{ab}=V_a\,w_{ab}\,\bm r_{ab},\qquad c_{ab}=2\,T_a\eta_a\,V_a\,w_{ab}\,f_{ab},\qquad f_{ab}=\big(\hat{\bm r}_{ab}\cdot\ell_a\,\hat{\bm r}_{ab}\big)^2 .
+  \stp
+\end{itemize}
+Here $f_{ab}$ is the residual factor of \Sect{sec:resid}, \Eq{fab}: with $\hat{\bm r}_{ab}$ the unit bond vector, it is $\ell_{xx}^2=1/\gamma^4$ for
+a bond along the flow and $1$ for a bond across it.  The comoving weights of \texttt{particle} weight the residual of a bond
+along the flow by that factor; the lab weights of \texttt{common} do not, and $f_{ab}$ puts it back by hand.  At rest $f_{ab}=1$.
+In \texttt{particle} the weights, and so the faces, depend on $\ell_a$, i.e.\ on the velocity.  In \texttt{common} the weights and the
+faces depend only on the positions and the volumes, which are fixed during the step; only $T_a$, $\eta_a$, $\ell_a$, the projector and
+$f_{ab}$ depend on the momenta.
 
 \paragraph{The stress move.}  Star $a$ draws, as in \Eq{B},
 \st
 \xi_a=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\sum_{k=1}^3z_kB_k,\qquad z_k\sim N(0,1),
 \stp
-and gives $\xi_a\bm A_{ab}$ to each bond.  $\xi_a$ is Gaussian in the three-dimensional space of symmetric matrices, with covariance
+and gives $\xi_a\bm A_{ab}$ to each bond.  $\xi_a$ is a Gaussian in the three-dimensional space of symmetric $2\times2$ matrices,
+with covariance
 \st
-C_a(\bm m_a)=\frac{2\Delta t\,T_a}{V_a}\sum_kB_k\otimes B_k .
+C_a=\frac{2\Delta t\,T_a}{V_a}\sum_kB_k\otimes B_k .
 \stp
-If the faces $\bm A_{ab}$ do not change in the move, the reverse move is the same star with $-\xi_a$, and
-\st
-\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=\sqrt{\frac{\det C_a(\bm m_a)}{\det C_a(\bm m_a')}}\;
-\exp\Big[-\tfrac12\,\xi_a{:}\big(C_a^{-1}(\bm m_a')-C_a^{-1}(\bm m_a)\big){:}\xi_a\Big] ,
-\label{qratio}
-\stp
-with $C_a(\bm m_a')$ rebuilt at the momentum of $a$ after the move.  Only particle $a$ enters: the reverse move belongs to the same star.  The
-logarithm of \Eq{qratio} is of order $\sqrt{\Delta t}$ with a mean of order $\Delta t$; that mean is the missing drift.  The cost is one $3\times3$
-covariance, its determinant and its inverse per proposal, with no loop over the neighbours.
-
-\paragraph{The faces must be fixed.}  The reverse move needs a stress $\xi'$ with
+The reverse move needs a stress $\xi'$ with
 \st
 \xi'\,\bm A'_{ab}=-\xi_a\,\bm A_{ab}\qquad\text{for every bond } b ,
 \stp
-two equations per bond for three unknowns, which has a solution only if $\bm A'_{ab}=\bm A_{ab}$.
+two equations per bond for three unknowns.
 \begin{itemize}
-\item \emph{Present scheme:} the faces \Eq{Aold} are built with $\psi(\rho_{ab})$ and $\ell_a^{-1}$ at the velocity of $a$, so they change with $\bm m_a$.
-  The reverse move does not exist, $q(\bm m'\to\bm m)=0$, and no Hastings correction is possible.  Freezing the faces over the step is the
-  only option, and with it the lag.
-\item \emph{One kernel:} the faces \Eq{wnew} are round in the lab and depend only on the positions and the volumes, which are fixed in
-  the step.  Only $C_a$ changes, and \Eq{qratio} is exact.
+\item \texttt{particle}: the faces change with the velocity, $\bm A'_{ab}\neq\bm A_{ab}$, and there is no solution.  The reverse move
+  does not exist, $q(\bm m'\to\bm m)=0$, and no Hastings correction is possible.
+\item \texttt{common}: the faces are fixed, the reverse move is $\xi'=-\xi_a$, and the ratio of the two Gaussian densities is
+  \st
+  \frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=\sqrt{\frac{\det C_a}{\det C'_a}}\;
+  \exp\Big[-\tfrac12\,\xi_a{:}\big(C_a'^{-1}-C_a^{-1}\big){:}\xi_a\Big] ,
+  \label{qratio}
+  \stp
+  with $C'_a$ built from the coefficients of star $a$ at $\bm m'$.
 \end{itemize}
+The logarithm of \Eq{qratio} is of order $\sqrt{\Delta t}$, with a mean of order $\Delta t$; that mean is the missing drift.  The cost
+is one $3\times3$ covariance, its determinant and its inverse per proposal.
 
 \paragraph{The residual move.}  Each bond of star $a$ draws an independent two-dimensional Gaussian,
 \st
-\mathfrak p_{ab}\sim N(0,\Sigma_{ab}),\qquad \Sigma_{ab}=\frac{2\Delta t}{\lambda}\,c_{ab}\,\ell_a ,
+\mathfrak p_{ab}\sim N(0,\Sigma_{ab}),\qquad \Sigma_{ab}=2\Delta t\,c_{ab}\,\ell_a .
 \stp
-with $c_{ab}$ the residual coefficient (it carries $T_a$, $\eta_a$ and, with one kernel, $f_{ab}$).  The virial of the draws,
-$\sum_c\mathfrak p_{ac}\bm r_{ac}^T$, is then subtracted, so that the residual traction $\vec p_{ab}$ has no virial: it carries no stress and, in
-particular, no torque.  The subtraction is what couples the bonds.  It is needed: without it the draws add a random stress to the
-stress move, i.e.\ extra resolved viscosity with the fixed shear-to-bulk ratio of the bond form, and their antisymmetric part damps
-rigid rotation.  Removing only the torque keeps the first of these.
-
-The subtraction is simplest to analyse as a \emph{conditioning}: draw $\mathfrak p$ from $N(0,\Sigma)$ conditioned on zero virial.  For a
-Gaussian this is the projection
+The virial of the draws,
 \st
-\vec p_{ab}=\mathfrak p_{ab}-c_{ab}\Big(\sum_c\mathfrak p_{ac}\,\bm r_{ac}^T\Big)R_a^{-1}\bm r_{ab},\qquad R_a=\sum_bc_{ab}\,\bm r_{ab}\bm r_{ab}^T ,
+Y_a=\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T ,
+\stp
+is a stress.  It is removed, so that the residual tractions $\vec p_{ab}$ carry no stress and, in particular, no torque.  The removal is
+what couples the bonds, and it is needed: without it the draws add a random stress to the stress move (extra resolved viscosity) and
+their antisymmetric part damps rigid rotation.
+
+To compute $q$, view the removal as a \emph{conditioning}: draw $\mathfrak p$ from $N(0,\Sigma)$ conditioned on zero virial.  The
+virial is Gaussian with covariance
+\st
+\big\langle (Y_a)_{ij}(Y_a)_{kl}\big\rangle=2\Delta t\,(\ell_a)_{ik}\,(R_a)_{jl},\qquad
+R_a=\sum_{b\neq a}c_{ab}\,\bm r_{ab}\bm r_{ab}^T .
+\label{Ra}
+\stp
+The $2\times2$ matrix $R_a$ is the bond moment weighted by the residual coefficients: it says how strongly the bonds along
+each direction feed the virial.  For a Gaussian the conditioning is the projection that subtracts from each draw its regression
+on the virial,
+\st
+\vec p_{ab}=\mathfrak p_{ab}-c_{ab}\,Y_a\,R_a^{-1}\bm r_{ab} .
 \label{condition}
 \stp
-which has zero virial by construction.  The present subtraction (\Sect{sec:stoch}) is
+Each bond gives back a share of the virial in proportion to its coefficient $c_{ab}$ and its bond vector, and by \Eq{Ra}
 \st
-\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\Big(\sum_c\mathfrak p_{ac}\,\bm r_{ac}^T\Big)\bm A_{ab} .
+\sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T=Y_a-Y_aR_a^{-1}\sum_{b\neq a}c_{ab}\,\bm r_{ab}\bm r_{ab}^T=0 .
 \stp
-With $c_{ab}\propto w_{ab}$ (the present scheme, or one kernel at rest) $R_a\propto\ell_a$ resp.\ $\one$, and \Eq{condition} is the present
-subtraction exactly; with $f_{ab}\neq1$ it differs by the weights.
+The code subtracts the virial through the faces instead (\Sect{sec:stoch}),
+\st
+\vec p_{ab}=\mathfrak p_{ab}-\frac1{V_a}\,Y_a\,\bm A_{ab} .
+\stp
+The two agree when
+\st
+c_{ab}\,R_a^{-1}\bm r_{ab}=\frac{\bm A_{ab}}{V_a} ,
+\stp
+which holds when $c_{ab}\propto w_{ab}$: in \texttt{particle}, where $R_a\propto\ell_a$, and in \texttt{common} at rest, where $f_{ab}=1$ and
+$R_a\propto\one$.  In \texttt{common} with $f_{ab}\neq1$ they differ by the weights.
 
-The density of a conditioned Gaussian is known in closed form.  With $U$ the four linear constraints (zero virial), it is the Gaussian
-density of the residual tractions divided by the density of the virial at zero,
+The density of a conditioned Gaussian is the Gaussian density of the residual tractions divided by the density of the virial at
+zero,
 \st
-q\propto\frac{N(\vec p;\Sigma)}{N(0;U^T\Sigma U)},\qquad
-U^T\Sigma U=\frac{2\Delta t}{\lambda}\,\ell_a\otimes R_a ,
+q\propto\frac{N(\vec p;\Sigma)}{N(0;\Sigma_Y)},\qquad \Sigma_Y=2\Delta t\,\ell_a\otimes R_a ,
 \stp
-where the constant Jacobian depends only on the positions and cancels.  $\Sigma$ is block-diagonal over the bonds and $U^T\Sigma U$ is a Kronecker
-product, so with one kernel (fixed bond vectors, and $\Sigma$ depending on the state only through particle $a$)
+up to a Jacobian that depends only on the bond vectors.  $\Sigma$ is block-diagonal over the bonds and $\Sigma_Y$ is a Kronecker
+product, so, with $n$ the number of bonds and primes for the coefficients of star $a$ at $\bm m'$,
 \st
 \frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}
-=\Big(\prod_b\frac{c_{ab}}{c'_{ab}}\Big)\Big(\frac{\det\ell_a}{\det\ell'_a}\Big)^{n/2-1}\frac{\det R'_a}{\det R_a}\;
-\exp\Big[-\frac{\lambda}{4\Delta t}\sum_b\vec p_{ab}\cdot\Big(\frac{\ell_a'^{-1}}{c'_{ab}}-\frac{\ell_a^{-1}}{c_{ab}}\Big)\vec p_{ab}\Big] ,
+=\Big(\prod_{b\neq a}\frac{c_{ab}}{c'_{ab}}\Big)\Big(\frac{\det\ell_a}{\det\ell'_a}\Big)^{n/2-1}\frac{\det R'_a}{\det R_a}\;
+\exp\Big[-\frac{1}{4\Delta t}\sum_{b\neq a}\vec p_{ab}\cdot\Big(\frac{\ell_a'^{-1}}{c'_{ab}}-\frac{\ell_a^{-1}}{c_{ab}}\Big)\vec p_{ab}\Big] .
 \label{qresid}
 \stp
-$n$ the number of bonds, primes for the coefficients at the momentum of $a$ after the move.  No pseudo-determinant is needed: one sum over
-the bonds and two $2\times2$ determinants.  For the present scheme the bond vectors of the subtraction are fixed too, but the faces of the
-stress move are not, so only the residual move could be corrected there.
+The first two factors are the normalizations of the $n$ bond Gaussians, the third the normalization of the virial, and the
+exponential the change of the quadratic forms.  The bond vectors are fixed in both schemes, so \Eq{qresid} holds for
+\texttt{particle} too; but there the stress move cannot be corrected, so the step as a whole cannot be made exact.
 
-\paragraph{What it takes.}  With one kernel both moves can be made exact, and the coefficients then need not be frozen at all:
+\paragraph{What it takes.}  In \texttt{common} both moves can be made exact:
 \begin{itemize}
-\item the coefficients of star $a$ ($\ell_a$, the projector, $T_a$, $\eta_a$, $f_{ab}$) are computed from the current momentum of $a$ at each proposal,
-  and again at the proposed one; the inversion of the equation of state at the proposed state is already done for $S_a$;
+\item the coefficients of star $a$ are computed at each proposal from the current state, and again at the proposed one.  Since they
+  come from smoothed fields, this means the smoothed velocity and thermodynamics at $a$, a sum over the star, at both states; the
+  inversion of the equation of state at the proposed state is already done for $\Delta\mathbb S$;
+\item they are no longer frozen over the step, since other moves change the momenta of the star in between;
 \item the residual move uses the conditioning \Eq{condition};
-\item the logarithm of \Eq{qratio} or \Eq{qresid} is added to $\Delta\mathbb S$ in the single vote; with a factorized vote it may be split among the
-  factors, since each factor $\min(1,x)$ against its reverse $\min(1,1/x)$ gives $x$;
-\item the cold residual ($\lambda\neq1$) is not in detailed balance anyway, and needs no correction.
+\item the logarithm of \Eq{qratio} or \Eq{qresid} is added to $\Delta\mathbb S$ in the vote.
 \end{itemize}
-In the present scheme only the residual move could be corrected, which does not make the step exact.
 
-\paragraph{Is it needed?}  Not at the time steps used so far: test 4 below samples the moving equilibrium, fluctuation KE$/2VwT$
-$=17.66$ against $17.6$, with either scheme.  The correction becomes relevant if a smaller error is needed at a given $\Delta t$, or a
-larger $\Delta t$ is wanted.  It is a reason to prefer the one-kernel step, which allows it; it is not implemented.
+\paragraph{Is it needed?}  Yes, at low entropy per particle.  The measurement above shows a bias of $6$--$14\%$ in the momentum
+fluctuations at $s_a=16$--$54$, which does not go away with $\Delta t$.  Test 4 below, at $v_0=0.8$ with KE$/2VwT=17.66$ against $17.6$,
+is at large entropy per particle, where the bias is small.  The correction is a reason to prefer \texttt{common}, which allows it;
+it is not implemented.
+
+\paragraph{A note on $\lambda$.}  This section is about detailed balance, so the residual move is taken at $\lambda=1$, the default.
+As always, to damp the UV modes more strongly and approach the deterministic residual step, the residual noise can be lowered
+and the vote sharpened (\texttt{stochastic.tex}, Appendix~B):
+\st
+\mathfrak p_{ab}\to\frac{\mathfrak p_{ab}}{\sqrt\lambda},\qquad \Delta\mathbb S\to\lambda\,\Delta\mathbb S ,
+\stp
+which keeps the mean residual traction and drives the residual modes to the temperature $T/\lambda$.  For $\lambda>1$ the residual
+move is not in detailed balance by design, and a Hastings correction has no meaning there.
 
 %=============================================================================
 \section{Implementation}
@@ -359,28 +544,28 @@ larger $\Delta t$ is wanted.  It is a reason to prefer the one-kernel step, whic
 
 \begin{itemize}
 \item \texttt{SimParams.dissipation = :common}, set by \texttt{SPH\_DISSIPATION} (recorded in \texttt{[sim]} and
-  \texttt{[settings]} of the run record); 2D, with \texttt{hamiltonian = :energy}.  The default stays \texttt{:particle}.
+  \texttt{[settings]} of the run record); 2D, with \texttt{hamiltonian = :energy}.  The default since 2026-11-14 (\texttt{:particle} before).
 \item Weights (\texttt{src/viscous.jl}): $\psi_{ab}=-W'(r_{ab};h)/r_{ab}$ of \texttt{params.kernel} at the lab distance; $\Lambda_a$ with the flat
   metric; $n_a=\frac12\tr M_a$.
 \item Stochastic step (\texttt{build\_stars}): these weights, $\bm A_{ab}=V_aw_{ab}\bm r_{ab}$, and $c_{ab}f_{ab}$; the rest unchanged.
 \item Deterministic step (\texttt{\_bond\_dissipation!}): \Eq{Knew} with \Eq{fab}, the tractions \Eq{tresid} (times $f_{ab}$) and the
   mean-field term \Eq{E} plus the residual term above.
-\item The present scheme is untouched (every change is behind \texttt{dissipation = :common}).
+\item The particle scheme is untouched (every change is behind \texttt{dissipation = :common}).
 \end{itemize}
 
 %=============================================================================
 \section{Tests}
 \label{sec:tests}
 
-\paragraph{1. At rest} (\texttt{test/testcommonkernel.jl}, C2): $K$ and the forces of the one-kernel step equal those of the
-present step to $2\times10^{-16}$ and $1\times10^{-15}$, on a perfect and on a jittered ($0.3a$) lattice; $\sum_a\bm F_a=0$ to roundoff.
+\paragraph{1. At rest} (\texttt{test/testcommonkernel.jl}, C2): $K$ and the forces of the \texttt{common} step equal those of the
+\texttt{particle} step to $2\times10^{-16}$ and $1\times10^{-15}$, on a perfect and on a jittered ($0.3a$) lattice; $\sum_a\bm F_a=0$ to roundoff.
 
 \paragraph{2. One mode in a moving fluid} ($v_0=0.8$, $L=1.2$, $h/a=2$): $K$ of $\beta=A\,\bm e\sin\bm k\cdot\bm x$ against the target
 \Eq{target}:
 \begin{center}
 \begin{tabular}{lccc}
 \hline
-$K/K_{\rm target}$ at $kh=0.26$, $0.52$, $1.05$ & present & \texttt{common\_lab} & \texttt{common} \\ \hline
+$K/K_{\rm target}$ at $kh=0.26$, $0.52$, $1.05$ & \texttt{particle} & \texttt{common\_lab} & \texttt{common} \\ \hline
 shear, $\bm k\parallel\bm v$ & $1.003$, $1.013$, $1.049$ & $1.059$, $1.229$, $1.799$ & $0.999$, $0.997$, $0.991$ \\
 long., $\bm k\parallel\bm v$ & $0.997$, $0.991$, $0.967$ & $1.017$, $1.067$, $1.229$ & $0.989$, $0.959$, $0.854$ \\
 shear, $\bm k\perp\bm v$ & $1.008$, $1.034$, $1.116$ & $1.008$, $1.034$, $1.116$ & $1.003$, $1.014$, $1.040$ \\
@@ -389,9 +574,9 @@ long., $\bm k\perp\bm v$ & $1.007$, $1.027$, $1.092$ & $1.007$, $1.027$, $1.091$
 \end{tabular}
 \end{center}
 All converge to the target as $(kh)^2$.  With the lab residual the shear wave along the flow is $23\%$ high at
-$kh=0.52$ (\Sect{sec:resid}); with $f_{ab}$ it is within $0.3\%$, better than the present scheme, and so are both
+$kh=0.52$ (\Sect{sec:resid}); with $f_{ab}$ it is within $0.3\%$, better than the particle scheme, and so are both
 modes across the flow.  The price is the longitudinal wave along the flow, $4\%$ low at $kh=0.52$ (the
-present scheme: $1\%$), where the weaker residual no longer offsets the low SPH gradient.
+\texttt{particle}: $1\%$), where the weaker residual no longer offsets the low SPH gradient.
 
 \paragraph{3. The viscous step alone,} deterministic (\texttt{examples/commonkernel\_waves.jl}, job 61227129): one mode
 $\delta\bm m_a=\epsilon\,\bm e\sin\bm k\cdot\bm x_a$, positions fixed, no ideal step, $v_0=0$ and $0.8$.  The entropy deficit
@@ -402,7 +587,7 @@ identical.  At $v_0=0.8$, $\Gamma/\Gamma_{\rm hydro}$ at $kh=0.26$, $0.52$, $1.0
 \begin{center}
 \begin{tabular}{lccc}
 \hline
- & present & \texttt{common\_lab} & \texttt{common} \\ \hline
+ & \texttt{particle} & \texttt{common\_lab} & \texttt{common} \\ \hline
 shear, $\bm k\parallel\bm v$ & $1.003$, $1.013$, $1.050$ & $1.059$, $1.230$, $1.802$ & $0.999$, $0.997$, $0.992$ \\
 long., $\bm k\perp\bm v$ & $1.007$, $1.028$, $1.095$ & $1.007$, $1.028$, $1.095$ & $1.002$, $1.009$, $1.024$ \\
 \hline
@@ -417,28 +602,28 @@ $L=1.2$, 8 runs each, $t=50$):
 \begin{tabular}{lccc}
 \hline
  & acceptance, stress & residual & KE$/2VwT$ \\ \hline
-present, $v_0=0$ & $0.969$ & $0.773$ & $0.997$ \\
+\texttt{particle}, $v_0=0$ & $0.969$ & $0.773$ & $0.997$ \\
 \texttt{common}, $v_0=0$ & $0.969$ & $0.774$ & $0.998$ \\
-present, $v_0=0.8$ & $0.968$ & $0.841$ & $17.660$ \\
+\texttt{particle}, $v_0=0.8$ & $0.968$ & $0.841$ & $17.660$ \\
 \texttt{common}, $v_0=0.8$ & $0.981$ & $0.878$ & $17.661$ \\
 \hline
 \end{tabular}
 \end{center}
 Both sample the moving equilibrium (predicted KE $17.6$); $\Delta H/H\sim10^{-10}$.  At rest they are identical.  At $v_0=0.8$
-the one-kernel step accepts more: its faces are smaller (the lab stencil is not contracted along $\bm v$, so
-$\sum_b|\bm A_{ab}|^2$ is $0.33$ of the present one) and its residual coefficients carry $f_{ab}\le1$ ($\sum_bc_{ab}$ is $0.57$).  Without
+the \texttt{common} step accepts more: its faces are smaller (the lab stencil is not contracted along $\bm v$, so
+$\sum_b|\bm A_{ab}|^2$ is $0.33$ of that of \texttt{particle}) and its residual coefficients carry $f_{ab}\le1$ ($\sum_bc_{ab}$ is $0.57$).  Without
 the ideal step the long waves relax only by diffusion, and the equal-time correlators are not converged
 by $t=50$; they are measured in the full benchmark.
 
 \paragraph{5. The boost benchmark} (\texttt{boost.tex}; \texttt{nersc/campaign\_commonkernel.txt}, job 61227349, 19 minutes on 4 nodes):
 the four boost sets ($L=1.2$, $h/a=2$, $\eta/s=0.2$, $t=300$, 16 runs per $v_0$) with \texttt{SPH\_DISSIPATION=common}, once with
 the particle ideal step (the default) and once with the grid ideal step (\texttt{SPH\_IDEAL=grid}, \texttt{gridstep.tex}), against
-the same sets with the present viscous step (16 runs each; for the particles at $v_0=0.8$, 32):
+the same sets with the \texttt{particle} viscous step (16 runs each; for the particles at $v_0=0.8$, 32):
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
  & \multicolumn{2}{c}{particle ideal step} & \multicolumn{2}{c}{grid ideal step} \\
- & present & \texttt{common} & present & \texttt{common} \\ \hline
+ & \texttt{particle} & \texttt{common} & \texttt{particle} & \texttt{common} \\ \hline
 \multicolumn{5}{l}{shear along the flow, $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$} \\
 $v_0=0.3$ & $1.11(4)$ & $1.12(5)$ & $0.95(4)$ & $0.98(5)$ \\
 $v_0=0.6$ & $1.10(7)$ & $1.15(9)$ & $0.96(7)$ & $0.96(8)$ \\
@@ -458,18 +643,18 @@ $v_0=0.8$ & $0.84(4)$ & $0.77(6)$ & $1.01(18)$ & $0.99(14)$ \\
 \end{center}
 (Figs.~\ref{fig:ckstatic}--\ref{fig:ckgfit}.)  Two conclusions.
 \begin{itemize}
-\item \emph{With the particle ideal step} the one-kernel viscous step reproduces the present results, the good
+\item \emph{With the particle ideal step} the \texttt{common} viscous step reproduces the \texttt{particle} results, the good
   ones and the known discrepancies alike: the excess shear damping along the flow at $v_0=0.8$ ($1.42\pm0.13$) and
   the equal-time deficit along the flow ($0.77$--$0.94$).  The viscous kernel is not their cause, in line with
   \texttt{boost.tex} (paragraph 6) and \texttt{gridstep.tex}, which trace them to the ideal step of moving particles.
 \item \emph{With the grid ideal step} the scheme is one kernel throughout, and it behaves as the grid with the
-  present viscous step within the statistics of 16 runs: the shear along the flow at $0.88$--$0.98$ at $kh=0.52$,
+  \texttt{particle} viscous step within the statistics of 16 runs: the shear along the flow at $0.88$--$0.98$ at $kh=0.52$,
   the equal-time values at or a few percent above 1 (the long-wave excess of \texttt{gridstep.tex}), the energy
   conserved to $10^{-5}$.  At $kh=0.26$ along the flow the fits scatter more ($0.57\pm0.10$ at $v_0=0.6$, $0.77\pm0.12$ at
-  $0.3$), as they did for the grid with the present step ($0.84\pm0.12$); the high-statistics grid runs of \texttt{gridstep.tex}
+  $0.3$), as they did for the grid with the \texttt{particle} step ($0.84\pm0.12$); the high-statistics grid runs of \texttt{gridstep.tex}
   settled those at $0.97$--$0.98$, and the same is needed here before a difference can be claimed.
 \end{itemize}
-The correlators themselves are in Figs.~\ref{fig:ckshear}--\ref{fig:ckgpar}.  For the grid with the one-kernel step the
+The correlators themselves are in Figs.~\ref{fig:ckshear}--\ref{fig:ckgpar}.  For the grid with the \texttt{common} step the
 shear correlator along the flow at $kh=0.26$ decays visibly more slowly than hydrodynamics at late times for
 $v_0=0.3$ and $0.6$ (\Fig{fig:ckgshear}; at $\tau=80$ the envelope is $\approx0.25$ against $0.08$ at $v_0=0.6$) --- the low fits above ---
 while at $v_0=0$ and $0.8$ it follows hydrodynamics.  The deterministic tests 2 and 3 covered only $v_0=0$ and $0.8$;
@@ -477,7 +662,7 @@ whether this is statistics or a real effect at intermediate $v_0$ is open (a det
 more statistics would decide).
 
 \paragraph{6. Two follow-up checks.}  (i) \emph{Deterministic, at intermediate speed.}  $K/K_{\rm target}$ of one mode (test 2) at
-$v_0=0.3$ and $0.6$: for the shear wave along the flow the one-kernel step gives $1.007$ and $1.002$ at $kh=0.26$ (present:
+$v_0=0.3$ and $0.6$: for the shear wave along the flow the \texttt{common} step gives $1.007$ and $1.002$ at $kh=0.26$ (\texttt{particle}:
 $1.008$, $1.005$), and every mode at every $v_0$ is within $1\%$ at $kh=0.26$.  The slow late-time decay of grid + one
 kernel at $v_0=0.3$, $0.6$ (\Fig{fig:ckgshear}) is therefore not in the dissipation of the viscous step.
 
@@ -561,77 +746,77 @@ Poisson start leaves it varying by $22\%$ from particle to particle, a frozen-in
 in the energy fluctuations.  The lattice start, with a uniform entropy per particle, is the cleaner one (unless the
 $s_a$ are drawn from their own equilibrium distribution).
 
-\paragraph{9. The slow shear decay of grid + one kernel, settled.}  Campaign \texttt{ck\_stats} (\texttt{nersc/campaign\_ck\_stats.txt},
-branch \texttt{common-default}, job 61283666, 37 minutes on 4 nodes): the grid with the one-kernel step at $v_0=0.3$ and
-$0.6$, $t=1000$, 64 runs each, against \texttt{grid\_stats} (\texttt{gridstep.tex}; the grid with the present viscous step) at equal
+\paragraph{9. The slow shear decay of grid + \texttt{common}, settled.}  Campaign \texttt{ck\_stats} (\texttt{nersc/campaign\_ck\_stats.txt},
+branch \texttt{common-default}, job 61283666, 37 minutes on 4 nodes): the grid with the \texttt{common} step at $v_0=0.3$ and
+$0.6$, $t=1000$, 64 runs each, against \texttt{grid\_stats} (\texttt{gridstep.tex}; the grid with the \texttt{particle} viscous step) at equal
 statistics.  Shear damping along the flow, $\Gamma/\Gamma_{\rm hydro}$:
 \begin{center}
 \begin{tabular}{lcccc}
 \hline
  & \multicolumn{2}{c}{$v_0=0.3$} & \multicolumn{2}{c}{$v_0=0.6$} \\
  & $kh=0.26$ & $0.52$ & $0.26$ & $0.52$ \\ \hline
-grid + one kernel, 16 runs, $t=300$ (test 5) & $0.77(12)$ & $0.98(5)$ & $0.57(10)$ & $0.96(8)$ \\
-grid + one kernel, 64 runs, $t=1000$ & $0.99(3)$ & $0.95(2)$ & $0.97(3)$ & $0.97(2)$ \\
-grid + present step, 64 runs, $t=1000$ & $0.95(4)$ & $1.00(1)$ & $0.96(4)$ & $0.99(2)$ \\
+grid + \texttt{common}, 16 runs, $t=300$ (test 5) & $0.77(12)$ & $0.98(5)$ & $0.57(10)$ & $0.96(8)$ \\
+grid + \texttt{common}, 64 runs, $t=1000$ & $0.99(3)$ & $0.95(2)$ & $0.97(3)$ & $0.97(2)$ \\
+grid + \texttt{particle}, 64 runs, $t=1000$ & $0.95(4)$ & $1.00(1)$ & $0.96(4)$ & $0.99(2)$ \\
 \hline
 \end{tabular}
 \end{center}
-(burn-in $t=5$ for the one kernel, $t=100$ for the present step; with $t=100$ the one-kernel values move by at most $0.01$.)
+(burn-in $t=5$ for \texttt{common}, $t=100$ for \texttt{particle}; with $t=100$ the \texttt{common} values move by at most $0.01$.)
 Across the flow, $0.96$--$1.03$.  The low values of the 16-run set were statistical: with 64 runs the shear
 correlator follows hydrodynamics at both speeds (\Fig{fig:cksshear}), apart from the phase lag of the grid's
-dispersion, and the one-kernel step and the present step agree within the errors.  The equal-time values
-agree too: $C_{EE}/\chi$ along the flow at $kh=0.52$ is $1.06(1)$, $1.06(2)$ (one kernel) and $1.06(1)$, $1.07(2)$ (present), the
+dispersion, and the \texttt{common} and the \texttt{particle} step agree within the errors.  The equal-time values
+agree too: $C_{EE}/\chi$ along the flow at $kh=0.52$ is $1.06(1)$, $1.06(2)$ (\texttt{common}) and $1.06(1)$, $1.07(2)$ (\texttt{particle}), the
 long-wave excess of \texttt{gridstep.tex}.
 
-In short, the one-kernel step is a correct and simpler viscous step --- one kernel, the metric only in the
-Onsager matrix and the residual factor --- that does as well as the present one; it does not by itself change
+In short, the \texttt{common} step is a correct and simpler viscous step --- one kernel, the metric only in the
+Onsager matrix and the residual factor --- that does as well as \texttt{particle}; it does not by itself change
 the benchmark, whose remaining discrepancies belong to the particle ideal step.
 
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_static_CK.png}
-\caption{Boost benchmark, particle ideal step with the one-kernel viscous step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per $v_0$.}
+\caption{Boost benchmark, particle ideal step with the \texttt{common} viscous step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$, one row per $v_0$.}
 \label{fig:ckstatic}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_fit_CK.png}
-\caption{Boost benchmark, particle ideal step with the one-kernel viscous step: advection speed and shear damping at $kh=0.26$.}
+\caption{Boost benchmark, particle ideal step with the \texttt{common} viscous step: advection speed and shear damping at $kh=0.26$.}
 \label{fig:ckfit}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_shear_CK.png}
-\caption{Particle ideal step, one-kernel viscous step: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$, real and imaginary
+\caption{Particle ideal step, \texttt{common} viscous step: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$, real and imaginary
 parts, one row per $v_0$; dashed hydrodynamics.}
 \label{fig:ckshear}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_par_CK.png}
-\caption{Particle ideal step, one-kernel viscous step: sound along the flow, $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ for $\bm k\parallel\bm v$ at $kh=0.26$.}
+\caption{Particle ideal step, \texttt{common} viscous step: sound along the flow, $\mathrm{Re}\,C_{xx}$ and $\mathrm{Re}\,C_{EE}$ for $\bm k\parallel\bm v$ at $kh=0.26$.}
 \label{fig:ckpar}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_shear_CKG.png}
-\caption{Grid ideal step, one-kernel viscous step: the advected shear correlator at $kh=0.26$, one row per $v_0$; dashed hydrodynamics.}
+\caption{Grid ideal step, \texttt{common} viscous step: the advected shear correlator at $kh=0.26$, one row per $v_0$; dashed hydrodynamics.}
 \label{fig:ckgshear}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_par_CKG.png}
-\caption{Grid ideal step, one-kernel viscous step: sound along the flow at $kh=0.26$.}
+\caption{Grid ideal step, \texttt{common} viscous step: sound along the flow at $kh=0.26$.}
 \label{fig:ckgpar}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/boost_static_CKG.png}
-\caption{Boost benchmark, grid ideal step with the one-kernel viscous step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$.}
+\caption{Boost benchmark, grid ideal step with the \texttt{common} viscous step: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$ against $kh$.}
 \label{fig:ckgstatic}
 \end{figure}
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_fit_CKG.png}
-\caption{Boost benchmark, grid ideal step with the one-kernel viscous step: advection speed and shear damping at $kh=0.26$.}
+\caption{Boost benchmark, grid ideal step with the \texttt{common} viscous step: advection speed and shear damping at $kh=0.26$.}
 \label{fig:ckgfit}
 \end{figure}
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{figs/boost_shear_CKSTATS.png}
-\caption{Grid + one-kernel step, 64 runs to $t=1000$: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$ for $v_0=0.3$, $0.6$;
+\caption{Grid + \texttt{common} step, 64 runs to $t=1000$: the advected shear correlator $C_{yy}(k\hat x,\tau)$ at $kh=0.26$ for $v_0=0.3$, $0.6$;
 dashed hydrodynamics.  Compare \Fig{fig:ckgshear} (16 runs, $t=300$).}
 \label{fig:cksshear}
 \end{figure}
