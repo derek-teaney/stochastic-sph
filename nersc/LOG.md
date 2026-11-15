@@ -101,6 +101,10 @@ packed job: `$SCRATCH/sph/hbya/slurm/61346451_<task>.out`.
 h/a = 2 complete (128/128, mean 2.2 h per task at -c 2).  ha3 in shared was slow (13 running, 108 pending): the pending tasks 21–128 were
 cancelled (`scancel 61342999_[21-128]`, none started) and packed on 4 regular nodes, THREADS=4, job **61349267** (-t 05:00:00).  Packed
 ha4 rates: C4 v = 0.8 ≈ 55 min HMC + 15 s per unit time → ≈ 4 h; C4 v = 0 ≈ 2.4 h.
+**hbya complete** (2026-11-15 12:25): ha4 packed job 4 h 04 min (4 nodes, ≈ 16 node-hours), ha3 packed 2 h 13 min (≈ 9), ha2 + 20 ha3 in
+shared (≈ 4); total ≈ 30 node-hours.  Analysis in debug jobs (`$SCRATCH/sph/hbya/analysis/hb{2,3,4}.txt`).  Result: the excess shear
+damping at rest GROWS with h/a at fixed a: δ ≈ 0.09, 0.14, 0.2–0.28 at h/a = 2, 3, 4, all kernels (C6 lowest), flat in kh — an extra
+viscosity ∝ h.  docs/hbya.tex.
 Also cancelled at the owner's request: the held GPU jobs 58984xxx of the m2 campaign (other project, m4662_g / m3722_g).
 
 **2026-11-15: hq24_s54 rerun (61330757) done**, 8/8 in 11.3–12.5 h, but HMC acceptance 0.16 (δt factor 0.1 is too large for N = 10752):
