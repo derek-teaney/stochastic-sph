@@ -57,6 +57,17 @@ rest of GLF + HMC v0.8, the hq24 chains (then replace Fig. Skk), the long runs' 
 removed by one change alone (DKD+HMC 0.86(4) at kh 0.79, GLF+HMC 0.77(10) at 0.26; only GLF + lattice consistent with 1) —
 the first-look claim was from kh = 0.52 alone.  Section rewritten (997f7d4).
 
+**2026-11-14 evening: the HMC start of hmc_dyn/hmc_liou was resonant.**  `SR_POSITIONS=hmc` used trajectories of τ = L/c_s (default),
+exactly one period of the box's fundamental sound mode, so the kh = 0.26 density mode barely moves from the lattice: S(k)/(4/s_a) ≈ 3
+at the start of the dynamics against ≈ 20 in equilibrium.  Debug job 61309290 (`$SCRATCH/sph/hmc_tau_test`, 3 × 4 chains from the
+lattice, 60 updates): τ = 2.08 → kh 0.26 stuck (4.4 at updates 41–60); τ = 1.73 → 8.6, relaxing; τ = 1.04 = L/2c_s → kh 0.52 stuck
+(3.3 against ~10).  Also the two HMC cells of hmc_dyn shared seeds, hence identical starts.  Fix: `SR_HMC_TAUJIT` (examples/equilibrium.jl,
+3a84f31), random τ per update; `SR_SEEDOFFSET` per line for independent cells.  hmc_analysis' default HMC_BURN = 20 is too short at
+kh ≲ 0.3 (S settles after ~100 updates): rerun with HMC_BURN=100.
+**Campaign `hmc_liou2`** (owner: rerun with the Liouville measure, up to 24 node-hours): the 2×2 at v = 0, 0.8, 64 runs per cell, HMC start
+τ ∈ [L/2c_s, L/c_s], 200 updates.  `nersc/campaign_hmc_liou2.txt`, array job **61309610** (512 tasks, ≈ 11.5 node-hours), worktree
+`~/stochastic-sph-eq4` at `3a84f31`.  hmc_liou (61308476) has the old resonant start; kept running.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
