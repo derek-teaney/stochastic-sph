@@ -224,6 +224,22 @@ function particle_entropy(e, m, V, eos::ConformalEOS)
     return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
 end
 
+# The entropy that weights a state in the votes.  measure = :einstein: S_a itself (flat in e_a, m_a).  measure = :liouville
+# (equilibrium_positions.tex, Appendix A): the measure flat in s_a, which at fixed e_a and V_a induces e^{S_a}/T_a in m_a, so the
+# votes use S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (the third return of eos_from_energy).  −Inf as particle_entropy.
+function particle_entropy_lnT(e, m, V, eos)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
+    r = try
+        eos_from_energy(ε, M, eos)
+    catch
+        return -Inf
+    end
+    S, v, T = r
+    return (isfinite(S) && dot(v, v) < 1 && T > 0) ? V * S - log(T) : -Inf
+end
+vote_entropy(e, m, V, eos, liouville::Bool) = liouville ? particle_entropy_lnT(e, m, V, eos) : particle_entropy(e, m, V, eos)
+
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
 const GUARD_EVENSPLIT = Threads.Atomic{Int}(0)   # bond split fell back to the even split
@@ -244,11 +260,11 @@ restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_EVENSPLIT[] = g.even
 # reverse move, and σ_ab ≈ β_a·t_ab, so ΔS_ab ≈ −Δβ_ab·t_ab is the bond's own entropy
 # production (invariant under a uniform shift of β).  vote = :even uses σ_ab = 0
 # (ΔS_a split evenly); vote = :star a single vote, min(1, exp(λ Σ_c ΔS_c)).  All exact.
-function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbol = :star)
+function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbol = :star, liouville::Bool = false)
     n  = length(st.nb)
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
-    Sa = particle_entropy(e[a], ma′, V[a], eos)
+    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville)
     if !isfinite(Sa)
         Threads.atomic_add!(GUARD_REJECTED, 1);  return false
     end
@@ -256,7 +272,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     ΔStot = ΔSa
     for k in 1:n
         b = st.nb[k]
-        Snew[k] = particle_entropy(e[b], m[b] + δ[k], V[b], eos)
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville)
         if !isfinite(Snew[k])
             Threads.atomic_add!(GUARD_REJECTED, 1);  return false
         end
@@ -272,8 +288,8 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     else
         σ = zeros(n)
         for k in 1:n
-            σ[k] = 0.5 * (particle_entropy(e[a], m[a] - δ[k], V[a], eos) - Sc[a]) -
-                   0.5 * (particle_entropy(e[a], ma′ + δ[k], V[a], eos) - Sa)
+            σ[k] = 0.5 * (vote_entropy(e[a], m[a] - δ[k], V[a], eos, liouville) - Sc[a]) -
+                   0.5 * (vote_entropy(e[a], ma′ + δ[k], V[a], eos, liouville) - Sa)
         end
         # an unphysical intermediate state: use the even split for this move (the same
         # points are evaluated for the reverse move, so detailed balance is kept)
@@ -296,7 +312,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
 end
 
 # One checkerboard sweep of the given kind (:stress or :resid).  Returns the number accepted.
-function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos, rngs, rng, vote)
+function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos, rngs, rng, vote, liouville::Bool = false)
     nacc = Threads.Atomic{Int}(0)
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]
@@ -308,10 +324,10 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos
                 resize!(δ, n);  resize!(Snew, n)
                 if kind === :stress
                     propose_stress!(δ, st, dt, oneD, rngs[a])
-                    ok = ask_star!(m, Sc, e, V, a, st, δ, 1.0, eos, rngs[a], Snew, vote)
+                    ok = ask_star!(m, Sc, e, V, a, st, δ, 1.0, eos, rngs[a], Snew, vote, liouville)
                 else
                     propose_resid!(δ, st, dt, λ, oneD, rngs[a])
-                    ok = ask_star!(m, Sc, e, V, a, st, δ, λ, eos, rngs[a], Snew, vote)
+                    ok = ask_star!(m, Sc, e, V, a, st, δ, λ, eos, rngs[a], Snew, vote, liouville)
                 end
                 ok && Threads.atomic_add!(nacc, 1)
             end
@@ -472,9 +488,13 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     V, e, stars = fz.V, fz.e, fz.stars
     N  = length(particles)
     m  = [pa.m for pa in particles]
+    # measure = :liouville: Sc holds the vote entropy S_a − ln T_a during the sweeps; the particle entropies are the true S_a,
+    # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
+    liouville = params.measure === :liouville
+    liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
     Sc = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N
-        Sc[a] = particle_entropy(e[a], m[a], V[a], eos)
+        Sc[a] = vote_entropy(e[a], m[a], V[a], eos, liouville)
     end
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
@@ -493,13 +513,13 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
             cells = shifted_cells(particles, cl, u)
             g0 = GUARD_REJECTED[]
             acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
-                                     eos, rngs, rng, vote) / N
+                                     eos, rngs, rng, vote, liouville) / N
             grj[kind] = (GUARD_REJECTED[] - g0) / N
         end
     end
     gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
-        pa.m = m[a];  pa.s = Sc[a]
+        pa.m = m[a];  pa.s = liouville ? particle_entropy(e[a], m[a], V[a], eos) : Sc[a]
     end
     # acceptances, and the fractions of proposals rejected by the guard (a state no fluid can
     # have; for the conformal EOS exactly |v| ≥ 1), for the stress and the residual sweep

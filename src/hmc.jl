@@ -1,6 +1,7 @@
 # hmc.jl — hybrid Monte Carlo on the positions and momenta (docs/equilibrium_positions.tex, Sects. V and VIII).
-# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the Einstein measure
+# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the Einstein measure (default)
 #   π_E ∝ Π_a T_a · exp[Σ_a s_a − β⁰ H + β·P]   (flat in the particle energies and momenta),
+# or, with params.measure = :liouville, π_L ∝ exp[Σ_a s_a − β⁰ H + β·P] (flat in the entropies; Appendix A of the note),
 # whose position marginal is Π_a V_a^{3/2} exp[(p/T) Σ_a V_a] to leading order.  One update:
 #   1. heat bath at fixed positions: per particle, an independence Metropolis chain for (e_a, m_a), continued from the
 #      current values (so the conditional distribution is preserved exactly), then s_a = S_a(e_a, m_a);
@@ -35,11 +36,11 @@ end
 
 # 1. Heat bath at fixed positions (the smoothed state must be current).  Returns the acceptance of the chains.
 function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, widen::Float64 = 2.0)
-    nacc = 0
+    nacc = 0;  liouville = params.measure === :liouville       # the target S_a − ln T_a (sph.jl, measure)
     for pa in ps
         V = pa.s / pa.S_smooth;  r = V / tg.Vref
         ē = V * tg.ε̄;  m̄ = V * tg.M̄;  Lw = sqrt(widen * r) * tg.L;  Hn = tg.Hn / r
-        logp(x) = particle_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
+        logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
         x = SVector(e - ē, pa.m[1] - m̄[1], pa.m[2] - m̄[2]);  wx = logp(x) - logq(x)
@@ -114,7 +115,8 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
     its = hmc_trajectory!(ps, params, cl, eos, dt, nsteps)
     H1, P1, lnT1 = hmc_measure!(ps, params, cl, eos)
-    dlnπ = -tg.β0 * (H1 - H0) + dot(tg.β, P1 - P0) + (lnT1 - lnT0)
+    # Einstein measure: the trajectory changes the T_a at fixed s_a, hence Δ Σ ln T_a; the Liouville measure is invariant
+    dlnπ = -tg.β0 * (H1 - H0) + dot(tg.β, P1 - P0) + (params.measure === :liouville ? 0.0 : lnT1 - lnT0)
     acc = isfinite(dlnπ) && log(rand(rng)) < dlnπ
     if !acc
         setm!(ps, m0);  setx!(ps, params, cl, x0);  hmc_measure!(ps, params, cl, eos)

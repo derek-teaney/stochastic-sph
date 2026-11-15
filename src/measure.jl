@@ -57,8 +57,8 @@ end
 # an independence Metropolis chain of nmh steps whose proposal is the Gaussian with the
 # covariance widen·C, C = (−∂²S_a)⁻¹.  Widened so that its tails cover the skewed target
 # (exact as nmh → ∞).  L = cholesky(C).L, Hn = −∂²S_a.  Returns (x, accepted moves).
-function draw_particle(ē, m̄, V, β0, β, eos, L, Hn, rng; nmh = 30, widen = 2.0)
-    logp(x) = particle_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos) - β0 * x[1] + dot(β, SVector(x[2], x[3]))
+function draw_particle(ē, m̄, V, β0, β, eos, L, Hn, rng; nmh = 30, widen = 2.0, liouville::Bool = false)
+    logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville) - β0 * x[1] + dot(β, SVector(x[2], x[3]))
     logq(x) = -0.5 * dot(x, Hn * x) / widen
     Lw = sqrt(widen) * L
     x = Lw * SVector(randn(rng), randn(rng), randn(rng));  wx = logp(x) - logq(x);  nacc = 0
@@ -89,13 +89,13 @@ end
 # exp[S_a(e, m) − β⁰ e + β·m] on a grid around the most probable state (skewed range in e):
 # returns the most probable (ē, m̄), the mean ⟨(e, m)⟩, the covariance, and the Gaussian
 # pieces (L, Hn) for the sampler.
-function particle_moments(V, β0, β::SVector{2,Float64}, eos::AbstractEOS; nq::Int = 41)
+function particle_moments(V, β0, β::SVector{2,Float64}, eos::AbstractEOS; nq::Int = 41, liouville::Bool = false)
     st = state_from_beta(β0, β, eos);  ē = V * st.ε;  m̄ = V * st.M
     H  = entropy_hessian(ē, m̄, V, eos, 0.02 * sqrt(ē / β0));  Hn = SMatrix{3,3,Float64}(-H)
     C  = inv(Matrix(Hn));  L = SMatrix{3,3,Float64}(cholesky(Symmetric(C)).L);  sd = sqrt.(diag(C))
     x1 = range(-6sd[1], 10sd[1], length = nq);  x2 = range(-9sd[2], 9sd[2], length = nq)
     x3 = range(-9sd[3], 9sd[3], length = nq)
-    lw = [particle_entropy(ē + a, m̄ + SVector(b, c), V, eos) - β0 * a + β[1] * b + β[2] * c
+    lw = [vote_entropy(ē + a, m̄ + SVector(b, c), V, eos, liouville) - β0 * a + β[1] * b + β[2] * c
           for a in x1, b in x2, c in x3]
     w  = exp.(lw .- maximum(filter(isfinite, lw)));  w[.!isfinite.(w)] .= 0;  Z = sum(w)
     X  = [SVector(a, b, c) for a in x1, b in x2, c in x3]
@@ -113,15 +113,15 @@ end
 #   from the nearest node (Hn ∝ 1/V, L ∝ √V).  The draws stay exact (the Metropolis target
 #   is the particle's own S_a); the interpolation only enters the averages used for β.
 function moments_table(V::Vector{Float64}, β0, β::SVector{2,Float64}, eos::AbstractEOS;
-                       nq::Int = 41, nnode::Int = 9, maxgroups::Int = 32)
+                       nq::Int = 41, nnode::Int = 9, maxgroups::Int = 32, liouville::Bool = false)
     vs = unique(V)
     if length(vs) <= maxgroups
-        d = Dict(v => particle_moments(v, β0, β, eos; nq) for v in vs)
+        d = Dict(v => particle_moments(v, β0, β, eos; nq, liouville) for v in vs)
         return v -> d[v]
     end
     st = state_from_beta(β0, β, eos)
     nodes = collect(range(minimum(V), maximum(V), length = nnode))
-    P = [particle_moments(v, β0, β, eos; nq) for v in nodes]
+    P = [particle_moments(v, β0, β, eos; nq, liouville) for v in nodes]
     off = [p.mean - SVector(p.ē, p.m̄[1], p.m̄[2]) for p in P]
     return function (v)
         j = clamp(searchsortedlast(nodes, v), 1, nnode - 1);  f = (v - nodes[j]) / (nodes[j+1] - nodes[j])
@@ -137,13 +137,13 @@ end
 # exponential family).  Starts from the most probable state at the mean densities.
 # Returns (β⁰, β, mom) with mom(V_a) the moments of a particle of volume V_a.
 function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64},
-                            eos::AbstractEOS; nq::Int = 41, iters::Int = 8)
+                            eos::AbstractEOS; nq::Int = 41, iters::Int = 8, liouville::Bool = false)
     Vtot = sum(V);  _, v0, T0 = eos_from_energy(E / Vtot, M / Vtot, eos)
     θ = SVector(-1 / T0, v0[1] / T0, v0[2] / T0);  target = SVector(E, M[1], M[2])
     mom = nothing
     for it in 1:iters
         β0 = -θ[1];  β = SVector(θ[2], θ[3])
-        mom = moments_table(V, β0, β, eos; nq)
+        mom = moments_table(V, β0, β, eos; nq, liouville)
         ms = mom.(V);  X = sum(p.mean for p in ms);  Ct = sum(p.cov for p in ms)
         r = target - X
         abs(r[1]) <= 1e-12 * abs(E) && norm(r[2:3]) <= 1e-12 * abs(E) && break
@@ -159,11 +159,11 @@ end
 # volumes (an equal share per particle on an equal-volume lattice), so that a run starts
 # at exactly the target energy and momentum.
 function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int = 30,
-                            exact_totals::Bool = false, E = nothing, M = nothing)
+                            exact_totals::Bool = false, E = nothing, M = nothing, liouville::Bool = false)
     N = length(V);  X = Vector{SVector{3,Float64}}(undef, N);  nacc = 0
     for a in 1:N
         p = mom(V[a])
-        x, na = draw_particle(p.ē, p.m̄, V[a], β0, β, eos, p.L, p.Hn, rng; nmh)
+        x, na = draw_particle(p.ē, p.m̄, V[a], β0, β, eos, p.L, p.Hn, rng; nmh, liouville)
         X[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
     end
     if exact_totals
@@ -185,8 +185,9 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
     V = [pa.s / pa.S_smooth for pa in particles]
     Etot = E === nothing ? sum(particle_energy(pa, eos) for pa in particles) : Float64(E)
     Mtot = M === nothing ? sum(pa.m for pa in particles) : SVector{2,Float64}(M)
-    β0, β, mom = beta_from_averages(V, Etot, Mtot, eos)
-    X, acc = draw_configuration(V, β0, β, mom, eos, rng; nmh, exact_totals, E = Etot, M = Mtot)
+    liouville = params.measure === :liouville                     # draw with S_a − ln T_a (sph.jl, measure)
+    β0, β, mom = beta_from_averages(V, Etot, Mtot, eos; liouville)
+    X, acc = draw_configuration(V, β0, β, mom, eos, rng; nmh, exact_totals, E = Etot, M = Mtot, liouville)
     e = [x[1] for x in X]
     for (a, pa) in enumerate(particles)
         pa.m = SVector(X[a][2], X[a][3])

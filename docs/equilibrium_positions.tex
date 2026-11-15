@@ -767,9 +767,19 @@ the same correction in the heat bath of hybrid Monte Carlo, and the trajectories
 the factor $\prod_aT_a'/T_a$ of \Sect{sec:sampler}.  The inversion of the equation of state that gives $S_a$ gives $T_a$ as well, so the
 cost is nil.  The ideal step, the stochastic step and the sampler then share one measure, $e^{\sum_as_a}\prod d\bm x\,d\bm m\,ds$, at every $s_a$.
 
-\paragraph{Status.}  Not implemented.  The hydrodynamic susceptibilities are unaffected at leading order; the single-particle
-distributions (the spread of $s_a$, $\avg{\ln T_a}$, the kinetic energy) change at relative order $1/s_a$: $0.2\%$ at $s_a=541$, a few
-per cent at $s_a\approx20$--$50$.  If small $s_a$ becomes important, the test is runs from a sampled state at $s_a\approx30$, with and
-without the correction, watching whether those distributions stay at their sampled values.
+\paragraph{Implementation.}  An option, \texttt{SPH\_MEASURE=liouville} (\texttt{SimParams.measure}, recorded in the run record); the
+default stays \texttt{einstein}, the present behaviour, bit-identical.  With \texttt{liouville}:
+\begin{itemize}
+\item the votes of the stochastic step use $\tilde S_a=S_a-\ln T_a$ (\texttt{vote\_entropy} in \texttt{src/stochastic.jl}); the sweeps carry $\tilde S_a$ and
+  the particle entropies are set to the true $S_a(e_a,\bm m_a)$ at the end of the step;
+\item the heat bath of hybrid Monte Carlo targets $\tilde S_a-\beta^0e_a+\bm\beta\cdot\bm m_a$, and its trajectories are accepted without $\Delta\sum_a\ln T_a$;
+\item the equilibrium start draws with $\tilde S_a$ as well (\texttt{draw\_particle}, \texttt{particle\_moments}), so that every route starts in the
+  same measure;
+\item not with the deterministic residual move ($\lambda=\infty$) or the gradient back map, which are not Metropolis moves.
+\end{itemize}
+The hydrodynamic susceptibilities are unaffected at leading order; the single-particle distributions change at relative order
+$1/s_a$.  At $s_a=16$ the Liouville start is cooler, $\avg{\ln T_a}$ lower by $0.033$ against $1/s_a=0.062$ (\texttt{test/testmeasure.jl}).  The
+physics test: runs from a sampled state at low $s_a$, with each measure, watching whether the single-particle distributions stay at
+their sampled values.
 
 \end{document}

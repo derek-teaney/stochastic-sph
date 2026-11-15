@@ -30,6 +30,7 @@ mutable struct SimParams{K<:AbstractKernel}
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
     ideal       :: Symbol          # :particle (default) or :grid — see below
+    measure     :: Symbol          # :einstein (default) or :liouville — see below
 end
 
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
@@ -62,6 +63,11 @@ end
 #   hamiltonian = :energy and volume = :number.  :generalized is the moving particles with the generalized
 #   leapfrog (hmc.jl: implicit, symplectic and reversible for the non-separable H; equilibrium_positions.tex),
 #   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else :particle.
+# measure: the integration measure of the stochastic step and of hybrid Monte Carlo (equilibrium_positions.tex, Appendix A).
+#   :einstein (default) is flat in the conserved energy and momentum (the Einstein formula; the particle entropy read as
+#   the Boltzmann entropy).  :liouville is flat in the entropy, the measure the Hamiltonian ideal step preserves (s_a the
+#   adiabatic invariant, the Gibbs entropy): the votes, the heat bath and the equilibrium start use S_a − ln T_a; the hybrid
+#   Monte Carlo acceptance drops Σ ln T_a.  Needs hamiltonian = :energy.  Default from SPH_MEASURE, else :einstein.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
@@ -78,7 +84,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
                    dissipation=setting("SPH_DISSIPATION", default_dissipation(sim_dim)), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
-                   ideal=setting("SPH_IDEAL", :particle))
+                   ideal=setting("SPH_IDEAL", :particle), measure=setting("SPH_MEASURE", :einstein))
     dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
@@ -134,7 +140,11 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     ideal === :grid && (lattice === :hex && sim_dim == 2 && hamiltonian === :energy && volume === :number ||
         error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
     ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
-    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal)
+    measure in (:einstein, :liouville) || error("measure must be :einstein or :liouville, got $measure")
+    measure === :liouville && (hamiltonian === :energy ||
+        error("measure = :liouville needs hamiltonian = :energy (equilibrium_positions.tex, Appendix A)"))
+    measure === :liouville && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
+    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
 end
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.
