@@ -68,7 +68,25 @@ equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, $g(r,\theta)$ (\texttt{examples/g\_theta
 
 \section{Runs}
 
-To be filled in after the timing test (debug job 61342810).
+\paragraph{Timing test} (debug job 61342810; $v_0=0.8$, 10 HMC updates, then $t=3$; $\$SCRATCH$\texttt{/sph/hbya\_test}).  HMC acceptance $1.00$ at every
+$h/a$ and kernel.  The cost per step grows as $(h/a)^2$ (the number of neighbours): HMC $1:2.5:4.3$ at $h/a=2:3:4$.  C4 and C6 cost $\approx1.35$ times C2.
+At $h/a=4$, 4, 8 and 16 threads are $1.7$, $2.4$ and $3.2$ times faster than 2.  The time step is acoustic, $0.2h/c_s$, at every setting.
+
+\paragraph{The runs} (campaign files \texttt{nersc/campaign\_hbya\_ha\{2,3,4\}.txt}, worktree \texttt{\textasciitilde/stochastic-sph-hb} at \texttt{18eb717};
+output \texttt{\$SCRATCH/sph/hbya/hb\_<kernel>\_ha<h/a>\_v<v>}):
+\begin{center}
+\begin{tabular}{cccccccc}
+\hline
+$h/a$ & $h$ & $t_{\rm end}$ & modes $kh$ & $v_0=0$ & $v_0=0.8$ & threads & job \\ \hline
+$2$ & $0.050$ & $190$ & $0.26$, $0.52$, $0.79$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 2 & 61343006 \\
+$3$ & $0.075$ & $428$ & $0.39$, $0.79$, $1.18$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 4 & 61342999 \\
+$4$ & $0.100$ & $760$ & $0.52$, $1.05$, $1.57$, \dots & C2, C4, C6 $\times32$ & C2, C4 $\times16$ & 8 & 61343000 \\
+\hline
+\end{tabular}
+\end{center}
+384 runs, estimated $\approx37$ node-hours (budget 48).  Expected wall time per run: $1$--$2$ h at $h/a=2$, $3$--$4$ h at $3$, about $5$ h at $4$.
+The errors expected from \texttt{hmc\_liou2} (64 runs, $\pm0.02$ on $\delta$ at rest): $\pm0.03$ at rest with 32 runs, $\pm0.13$ along the flow at
+$v_0=0.8$ with 16 runs.
 
 \section{Results}
 

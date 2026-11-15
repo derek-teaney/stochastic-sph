@@ -79,6 +79,12 @@ docs/equilibrium_positions.tex, Sect. "The 2×2 with the Liouville measure".
 hq24_s54 (tasks 57–64) all TIMEOUT at 8 h with no output (hmc_positions.jl writes only at the end; ≈ 12.5 h needed on 2 threads,
 scaled from hq12_s54) — resubmitted with -t 16:00:00 as job **61330757** from ~/stochastic-sph-eq2 (cc8e292), ≈ 1.6 node-hours.
 
+**2026-11-15: campaign `hbya`** (owner: explore h/a, up to 48 node-hours, done today; docs/hbya.tex).  New option `SR_H` (kernel scale,
+default 0.05) in examples/equilibrium.jl.  Timing test debug job 61342810 (`$SCRATCH/sph/hbya_test`).  h/a = 2, 3, 4 at fixed a = 0.025,
+s_a = 135, L = 1.2; kernels C2/C4/C6 at v = 0 (32 runs), C2/C4 at v = 0.8 (16 runs); GLF + Liouville + HMC start (200 updates, TAUJIT 0.5).
+Worktree ~/stochastic-sph-hb at 18eb717.  Arrays in shared: ha2 **61343006** (-c 2, 2 threads; an earlier -c 4 submission 61342998 was
+cancelled before it started), ha3 **61342999** (-c 8, SR_THREADS=4), ha4 **61343000** (-c 16, SR_THREADS=8); 384 tasks, ≈ 37 node-hours.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
