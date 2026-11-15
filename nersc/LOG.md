@@ -42,6 +42,14 @@ boost.tex).  Commit the figures and the section on `equilibrium`, push, and repo
 `~/stochastic-sph-eq2` at `cc8e292`; `test/testhmc.jl` PASS (δt² ratios 4.02, 4.01; acceptance 1.00).  `hmc_dyn` array job
 **61295240** (104 tasks), `hmc_eq` array job **61295241** (72 tasks), both from `~/stochastic-sph-eq2`, 8 h limit.
 
+**2026-11-14 evening, first look written up** (`docs/equilibrium_positions.tex`, section "First look: HMC start and the
+generalized leapfrog"; figs `boost_static_HD.png`, `boost_shear_HD.png`, `equilibrium_Sk_hmc_eq_first.png`).
+`hmc_dyn`: 5 of 6 short cells complete (GLF + HMC at v0 = 0.8: 6 of 16); at v0 = 0.8, kh = 0.52 the C_EE deficit along the flow
+(0.77) and the excess shear damping (1.42) appear only in DKD + lattice; HMC start or GLF each remove both.  `hmc_eq`: 37 of 72
+chains (hq12_s135, hq12_s541, hq12_s541_b08); hq12_s54, hq24_* still running.  Analysis:
+`BOOST_BURN=… julia --project=nersc examples/boost_analysis.jl HD`, `examples/hmc_analysis.jl`.  To do as they finish: the
+rest of GLF + HMC v0.8, the hq24 chains (then replace Fig. Skk), the long runs' S(k) against HMC, g(r) along/across at v0 = 0.8.
+
 ## Earlier: campaign `hmc_eq` instructions (written 2026-11-14, on the laptop; now submitted with `hmc_dyn` above)
 
 The equilibrium S(k) of the positions from many independent hybrid Monte Carlo chains (docs/equilibrium_positions.tex,
