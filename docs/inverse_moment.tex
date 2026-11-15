@@ -487,7 +487,8 @@ schemes:
   other two are not pure modes of a step that holds each particle's energy);
 \item[B.] the viscous step alone on disordered positions at rest: a jittered lattice ($0.3a$) and random positions;
 \item[C.] the full deterministic step at rest on the lattice (the physics tests): the shear wave and the damped sound wave, $\eta/s=0.02$,
-  $h/a=3$.
+  $h/a=3$;
+\item[D.] the nonlinear Gaussian blob (below).
 \end{itemize}
 In every case the entropy produced equals $2\int K\,dt$ to $10^{-4}$ and $\Delta H/H\lesssim10^{-13}$.  The decay rates against hydrodynamics,
 $\Gamma/\Gamma_{\rm hydro}$, at $kh=0.26$, $0.52$, $1.05$ (C: $0.35$, $0.70$, $1.40$):
@@ -514,8 +515,23 @@ And $K/K_{\rm target}$ of the four modes in set A agree within $0.2\%$ (\Fig{fig
   mode differs from the continuum by up to $75\%$ at $kh=0.26$); \texttt{moment} is closer in four cases of six and farther in two;
 \item the full deterministic step on the lattice is identical to four digits.
 \end{itemize}
-Nothing is made worse.  The disordered case that matters in practice is the liquid of the stochastic runs; it is tested by the
-campaign at NERSC.
+\paragraph{The nonlinear Gaussian blob} (\texttt{examples/moment\_gaussian.jl}; \Fig{fig:gauss}).  The standard nonlinear test: the energy
+density $e=0.1+\exp(-x^2/2\sigma_x^2-y^2/2\sigma_y^2)$ at rest, $\sigma_x=0.1$, $\sigma_y=0.14$, $L=1$ with periodic images, $h=0.025$ ($N=7360$), the full
+deterministic step to $t=2.2$, at $\eta/s=0.002$ and $0.005$.  The blob expands at up to $|v|=0.34$ and the particles rearrange, so the stars
+are no longer lattice stars.  The two schemes agree: the largest difference of the energy density along either slice is
+$1.2\times10^{-4}$ of the peak (at $t=1$), the entropy produced $\Delta S/S$ ($0.0360$ and $0.0497$) and the energy conservation
+($\Delta H/H=5\times10^{-5}$) agree to all printed digits.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/moment_gaussian.png}
+\caption{The Gaussian blob in the full deterministic step: slices of the energy density along $x$ and along $y$ through the centre at
+$t=0$, $0.5$, $1$, $2.2$, \texttt{common} (left), \texttt{moment} (middle) and their difference (right, scale $10^{-5}$); two rows per $\eta/s$.}
+\label{fig:gauss}
+\end{figure}
+
+Nothing is made worse: on the lattice, the jittered lattice and in the nonlinear blob the two schemes agree to $0.2\%$ or better.
+The disordered case that matters in practice is the liquid of the stochastic runs; it is tested by the campaign at NERSC.
 
 \begin{figure}[h]
 \centering

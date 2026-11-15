@@ -12,6 +12,9 @@ using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 # The reference path is the smoothed Hamiltonian with the gradient-corrected map (the default
 # until 2026-11-10); set SPH_HAMILTONIAN=energy to check the n-scheme instead.
 ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "smoothed")
+# The λ = ∞ case (the deterministic residual) needs the Einstein measure; with the energy Hamiltonian the default is Liouville
+# since 2026-11-15, so the regression fixes it (with the smoothed Hamiltonian it is Einstein anyway).
+ENV["SPH_MEASURE"] = get(ENV, "SPH_MEASURE", "einstein")
 const ROOT = joinpath(@__DIR__, "..", "..")
 include(joinpath(ROOT, "src", "load.jl"))
 

@@ -133,20 +133,22 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
             As[j] = common ? V[a] * wab * r : V[a] * wab * (ℓi * r)     # faces: Σ_b A_ab r_abᵀ = V_a 𝟙 either way
         end
-        if moment                                        # faces V_a w_ab 𝓜_a⁻¹ r_ab;  u_ab = c_ab R_a⁻¹ r_ab
-            Mm = zero(SMatrix{2,2,Float64});  R = zero(SMatrix{2,2,Float64})
-            for k in 1:nk
-                Mm += ws[k] * (rs[k] * rs[k]');  R += cs[k] * (rs[k] * rs[k]')
-            end
-            Mi = inv(Mm);  Ri = inv(R)
-            for k in 1:nk
-                As[k] = Mi * As[k];  Us[k] = cs[k] * (Ri * rs[k])
-            end
-        end
+        moment && moment_faces!(As, Us, ws, cs, rs)      # faces V_a w_ab 𝓜_a⁻¹ r_ab;  u_ab = c_ab R_a⁻¹ r_ab
         stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi, Us)
     end
     end
     return stars
+end
+
+@noinline function moment_faces!(As, Us, ws, cs, rs)
+    Mm = zero(SMatrix{2,2,Float64});  R = zero(SMatrix{2,2,Float64})
+    for k in eachindex(rs)
+        Mm += ws[k] * (rs[k] * rs[k]');  R += cs[k] * (rs[k] * rs[k]')
+    end
+    Mi = inv(Mm);  Ri = inv(R)
+    for k in eachindex(rs)
+        As[k] = Mi * As[k];  Us[k] = cs[k] * (Ri * rs[k])
+    end
 end
 
 # ── Checkerboard ─────────────────────────────────────────────────────────────
@@ -191,7 +193,21 @@ function propose_stress!(δ, st::Star, dt, oneD, rng)
     end
 end
 
+# :moment (inverse_moment.tex): the draws conditioned on zero virial, y − Y_a u_ab, u_ab = c_ab R_a⁻¹ r_ab.  A separate function, so
+# that the code of the other schemes is unchanged (bit-identical: the compiler's fusion of muladd depends on the surrounding code).
+@noinline function propose_resid_moment!(δ, st::Star, dt, λ, rng)
+    Y = zero(SMatrix{2,2,Float64})
+    for k in eachindex(st.nb)
+        y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
+        δ[k] = y;  Y += y * st.r[k]'
+    end
+    for k in eachindex(st.nb)
+        δ[k] -= Y * st.U[k]
+    end
+end
+
 function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
+    isempty(st.U) || return propose_resid_moment!(δ, st, dt, λ, rng)
     if oneD
         Y = 0.0
         for k in eachindex(st.nb)
@@ -207,14 +223,8 @@ function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
             y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
             δ[k] = y;  Y += y * st.r[k]'
         end
-        if isempty(st.U)
-            for k in eachindex(st.nb)
-                δ[k] -= (Y * st.A[k]) / st.V          # y − (Y/V_a) A_ab
-            end
-        else
-            for k in eachindex(st.nb)
-                δ[k] -= Y * st.U[k]                   # :moment, conditioned on zero virial: y − Y R_a⁻¹ r_ab c_ab
-            end
+        for k in eachindex(st.nb)
+            δ[k] -= (Y * st.A[k]) / st.V              # y − (Y/V_a) A_ab
         end
     end
 end
@@ -370,8 +380,8 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
         for k in eachindex(st.nb)
             G += st.w[k] * ((β[st.nb[k]] - β[a]) * st.r[k]')
         end
-        G = isempty(st.U) ? G * st.ℓi :                # G_a = Σ w Δβ rᵀ ℓ⁻¹
-            sum((β[st.nb[k]] - β[a]) * st.U[k]' for k in eachindex(st.nb); init = zero(SMatrix{2,2,Float64}))   # :moment: X_a
+        G = G * st.ℓi                                  # G_a = Σ w Δβ rᵀ ℓ⁻¹
+        isempty(st.U) || (G = moment_fit(β, a, st))    # :moment: the fit X_a with the weights c_ab
 
         for k in eachindex(st.nb)
             δab = β[st.nb[k]] - β[a] - G * st.r[k]
@@ -393,6 +403,9 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
         m[a] += Δm[a];  Sc[a] = Snew[a]
     end
 end
+
+@noinline moment_fit(β, a, st::Star) =
+    sum((β[st.nb[k]] - β[a]) * st.U[k]' for k in eachindex(st.nb); init = zero(SMatrix{2,2,Float64}))
 
 # ── Gradient-corrected change of representation ─────────────────────────────
 # (changerep.tex, Appendix A): the gradient energy g_a of the long-wavelength momentum
