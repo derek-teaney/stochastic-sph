@@ -333,14 +333,15 @@ invariant.  A move of star $a$ is drawn from a proposal density $q(\bm m\to\bm m
 $\min(1,e^{\Delta\mathbb S})$.  This is exact when the proposal is symmetric, $q(\bm m\to\bm m')=q(\bm m'\to\bm m)$
 (\texttt{stochastic.tex}, ``Detailed balance'').  Both proposals are Gaussian, and their covariances depend on the state.
 
-\paragraph{What the coefficients depend on.}  The coefficients of star $a$ are built in \texttt{build\_stars} from the smoothed
-fields at $a$, not from the momentum $\bm m_a$ alone:
+\paragraph{What the coefficients depend on.}  The coefficients of star $a$ are built in \texttt{build\_stars} from the fields of the
+particle, \texttt{pa.dotx}, \texttt{pa.T}, \texttt{pa.}$\gamma$, \texttt{pa.e}:
 \begin{itemize}
-\item the comoving metric $\ell_a$, the projector $P_a$ and the residual factor $f_{ab}$, at the smoothed velocity
-  $\dot{\bm x}_a=\sum_bs_b(\bm v/S)_bW_{ab}$;
-\item the rest-frame temperature $T_a=\gamma_aT$ and the viscosities $\eta_a$, $\zeta_a$, from the smoothed thermodynamics at $a$.
+\item the comoving metric $\ell_a$, the projector $P_a$ and the residual factor $f_{ab}$, at the velocity $\dot{\bm x}_a$;
+\item the rest-frame temperature $T_a=\gamma_aT$ and the viscosities $\eta_a$, $\zeta_a$.
 \end{itemize}
-They depend on the momenta of the particles within the kernel radius of $a$, which are all members of the star of $a$.  The
+With the energy Hamiltonian and the number volume (the default) these are the particle's own: only the entropy density is smoothed,
+$S_a=s_an_a$, the momentum density is $\bm m_a/V_a$, and $\dot{\bm x}_a=\bm v_a$.  So the coefficients of star $a$ depend only on $(e_a,\bm m_a,V_a)$,
+with $V_a$ fixed by the positions.  (With the smoothed Hamiltonian they are smoothed over the kernel.)  The
 code builds them once, at the start of the step, and freezes them through the sweeps.  Within a step every proposal is then a
 fixed symmetric Gaussian, and the test is exact.  The next step rebuilds them, so the move $\bm m\to\bm m'$ is made with the
 coefficients of $\bm m$, and the move back with those of $\bm m'$.  In the language of a Langevin equation, this is
@@ -398,8 +399,8 @@ and exact when frozen.  So:
   $2/s_a$ at rest;
 \item the bias does not decrease as $\Delta t$ decreases; between $\tfrac12$ and $\tfrac18$ of the viscous step it grows.
 \end{itemize}
-The bias is larger than an estimate from the dependence on $\bm m_a$ alone would give; which coefficients produce it has not been
-measured.
+The coefficients depend on the particle's own momentum, not on a smoothed one, so nothing dilutes the bias.  Which coefficients
+produce most of it has not been measured.
 
 \paragraph{The Hastings correction.}  For a proposal that is not symmetric, accepting with
 \st
@@ -516,10 +517,10 @@ exponential the change of the quadratic forms.  The bond vectors are fixed in bo
 
 \paragraph{What it takes.}  In \texttt{common} both moves can be made exact:
 \begin{itemize}
-\item the coefficients of star $a$ are computed at each proposal from the current state, and again at the proposed one.  Since they
-  come from smoothed fields, this means the smoothed velocity and thermodynamics at $a$, a sum over the star, at both states; the
-  inversion of the equation of state at the proposed state is already done for $\Delta\mathbb S$;
-\item they are no longer frozen over the step, since other moves change the momenta of the star in between;
+\item the coefficients of star $a$ are computed at each proposal from the current momentum of $a$, and again at the proposed one; they
+  depend only on the state of particle $a$, and the inversion of the equation of state at the proposed state is already done for
+  $\Delta\mathbb S$;
+\item they are no longer frozen over the step, since the moves of the neighbouring stars change $\bm m_a$ in between;
 \item the residual move uses the conditioning \Eq{condition};
 \item the logarithm of \Eq{qratio} or \Eq{qresid} is added to $\Delta\mathbb S$ in the vote.
 \end{itemize}

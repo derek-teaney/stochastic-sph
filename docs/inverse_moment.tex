@@ -49,8 +49,8 @@ The common scheme has two weak spots.
   moment is exactly $n_a\one$.  This costs a $4\times4$ solve per star, can make weights negative, and then falls back to $\Lambda_a=0$.  In
   the fallback the faces no longer close, the virial of a stress move is not symmetric, and the move exerts a small torque.  The
   fallback occurs in $7\%$ of the stars at $s_a=16$ and $h/a=2$ (\Sect{sec:fluct}).
-\item \emph{Detailed balance across steps.}  The coefficients of the stochastic step are rebuilt every step from the smoothed fields, and
-  no Hastings factor is included.  On a frozen lattice this biases the momentum fluctuations by up to $14\%$ at $s_a=16$ and $6\%$ at
+\item \emph{Detailed balance across steps.}  The coefficients of the stochastic step are rebuilt every step from the state of each particle,
+  and no Hastings factor is included.  On a frozen lattice this biases the momentum fluctuations by up to $14\%$ at $s_a=16$ and $6\%$ at
   $s_a=54$, independent of $\Delta t$ (\texttt{commonkernel.tex}, ``Detailed balance with state-dependent coefficients'').
 \end{itemize}
 Both have the same cure.  The shape of a star is handled by inverting its moment, never by reshaping its weights; then the faces and
@@ -311,8 +311,9 @@ How $\langle\tr Q^2\rangle$ follows from the measured $g(r)$ and $g_3$ in the su
 \label{sec:hastings}
 
 \paragraph{What changes.}  The coefficients of star $a$ (its $T_a$, $\eta_a$, $\zeta_a$, $\ell_a$, the projector, $f_{ab}$, hence $C_a$, $c_{ab}$ and
-$R_a$) are computed at each proposal from the current state, and again at the proposed state.  They come from the smoothed velocity and
-thermodynamics at $a$, which are sums over the star.  The faces and bond vectors are fixed.  A move of star $a$ is accepted with
+$R_a$) are computed at each proposal from the current state, and again at the proposed state.  With the energy Hamiltonian and the
+number volume they depend only on the state $(e_a,\bm m_a,V_a)$ of particle $a$ itself: only the entropy density is smoothed, and $\dot{\bm x}_a=\bm v_a$.
+The faces and bond vectors are fixed.  A move of star $a$ is accepted with
 \st
 P=\min\Big(1,\ e^{\Delta\mathbb S}\,\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big) ,
 \label{hastings}
@@ -358,21 +359,21 @@ $\Delta\mathbb S\to\lambda\Delta\mathbb S$ as before; that move is not in detail
 \textbf{Algorithm: move of star $a$} (\texttt{moment}, with \texttt{SPH\_HASTINGS=1})
 \begin{algorithmic}[1]
 \State \textbf{fixed for the step}: the star, $w_{ab}$, $\mathcal M_a$, the faces $\bm A_{ab}$ \Comment{positions and volumes only}
-\State \textbf{coefficients at the current state}: smoothed velocity and thermodynamics at $a$; $\ell_a$, $T_a$, $\eta_a$, $\zeta_a$, $f_{ab}$
+\State \textbf{coefficients at the current state}: from $(e_a,\bm m_a,V_a)$, $\ell_a$, $T_a$, $\eta_a$, $\zeta_a$, $f_{ab}$
 \If{stress move}
   \State build $C_a$; draw $\xi_a$; tractions $\xi_a\bm A_{ab}$
 \Else
   \State build $c_{ab}$ and $R_a$; draw $\mathfrak p_{ab}$; condition on zero virial by \Eq{condition}
 \EndIf
 \State proposed momenta of $a$ and of every $b$ in the star; $\Delta\mathbb S$ at the fixed $e$, $V$
-\State \textbf{coefficients at the proposed state}: the same sums over the star, at the proposed momenta and entropies
+\State \textbf{coefficients at the proposed state}: the same, at the proposed momentum $\bm m_a'$
 \State $\log P\gets\min\big(0,\ \Delta\mathbb S+\log$ of \Eq{qstress} or \Eq{qresid}$\big)$
 \If{$\log u<\log P$, $u$ uniform} \State accept: update the momenta and entropies of the star \EndIf
 \end{algorithmic}
 \end{minipage}}
 \medskip
 
-\paragraph{Cost.}  Per proposal, two evaluations of the smoothed fields at $a$ (sums over the star) and of the equation of state, one
+\paragraph{Cost.}  Per proposal, two evaluations of the coefficients of particle $a$ (one equation-of-state inversion each), one
 $3\times3$ or two $2\times2$ determinants.  The bond loop of the move is already there.  To be measured; the stochastic step is a minor part of
 the full step.
 
@@ -394,8 +395,7 @@ Only after these does \texttt{moment} become a candidate for the default.
 
 \paragraph{Open questions.}
 \begin{itemize}
-\item Which coefficient produces most of the measured bias: $\ell_a$ and $f_{ab}$ through the smoothed velocity, or $T_a$ and $\eta_a$ through the
-  smoothed thermodynamics.  A cheap test before the implementation.
+\item Which coefficient produces most of the measured bias: $\ell_a$ and $f_{ab}$ through the velocity, or $T_a$ and $\eta_a$.
 \item Whether the deterministic step should use \Eq{Kresid} too (proposed), so that it stays the mean of the stochastic step.
 \end{itemize}
 
@@ -458,6 +458,61 @@ Earlier \texttt{common} runs on tape (\texttt{ck\_alone}, \texttt{ck\_v*}) used 
 and if the campaign shows no difference beyond the statistics in the stochastic and full runs, other than through the residual where
 $f_{ab}\neq1$.
 
+
+%=============================================================================
+\section{Stage 2: the Hastings correction}
+\label{sec:stage2}
+
+\paragraph{The option.}  \texttt{SPH\_HASTINGS=1}, with \texttt{moment}, $\lambda=1$ and the single vote.  The geometry of each star (bonds, $w_{ab}$, $\mathcal M_a$, faces) is
+built once per step as before.  The coefficients are \emph{not} frozen: at each proposal they are computed from the current state of
+particle $a$, and again at the proposed one.  With the energy Hamiltonian and the number volume they depend only on $(e_a,\bm m_a,V_a)$:
+\st
+\begin{aligned}
+&(e_a,\bm m_a,V_a)\ \to\ s_a=S_a(e_a,\bm m_a,V_a)\ \to\ \big(\bm v_a,\ T_a,\ \gamma_a,\ e^{\rm rest}_a\big)\\
+&\qquad\to\ \big(\ell_a,\ P_a,\ \eta_a,\ \zeta_a,\ B_k,\ f_{ab},\ c_{ab},\ R_a\big) ,
+\end{aligned}
+\stp
+the same functions \texttt{build\_stars} uses.  The moves of the neighbouring stars change $\bm m_a$, so the coefficients are evaluated at
+the moment of the proposal.
+
+\paragraph{The stress move.}  Write the draw as
+\st
+\xi_a=\sum_{k=1}^3z_k\,J_k,\qquad J_k=\sqrt{\frac{2\Delta t\,T_a}{V_a}}\;B_k ,
+\stp
+with $z_k$ independent standard normal numbers, and let $J$ be the $3\times3$ matrix whose columns are the $J_k$ in the coordinates
+$(\xi^{xx},\xi^{xy},\xi^{yy})$.  The reverse move needs the $z'$ with
+\st
+\sum_{k=1}^3z'_k\,J'_k=-\xi_a ,
+\stp
+one $3\times3$ solve with the coefficients at the proposed state.  The densities are those of $z$ divided by $|\det J|$, so
+\st
+\ln\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=-\tfrac12|z'|^2+\tfrac12|z|^2+\ln|\det J|-\ln|\det J'| .
+\label{qstress2}
+\stp
+
+\paragraph{The residual move.}  The draws are made with the coefficients at the current state and conditioned with
+$\bm u_{ab}=c_{ab}R_a^{-1}\bm r_{ab}$ of the current state; the ratio is \Eq{qresid}, with $c'_{ab}$, $\ell'_a$, $R'_a$ at the proposed state.
+
+\paragraph{The vote.}
+\st
+\ln P=\min\Big(0,\ \Delta\mathbb S+\ln\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big) ,
+\stp
+with $\Delta\mathbb S$ the change of the vote entropy ($S_a-\ln T_a$ with the Liouville measure).
+
+\paragraph{Code.}  In \texttt{src/stochastic.jl}, in functions of their own, so that the other paths stay bit-identical: the coefficients of
+a particle from its state; the two proposals with their log-ratios; a sweep that uses them; the option in \texttt{StochOptions}
+(\texttt{SPH\_HASTINGS}, recorded in the run record).
+
+\paragraph{Tests.}
+\begin{enumerate}
+\item \emph{The ratios}, on one star with the coefficients at two different momenta of $a$: \Eq{qstress2} against the ratio of the two
+  Gaussian densities of $\xi$ computed directly, and \Eq{qresid} against the density of the conditioned draws in the $2n$-dimensional
+  space of the bonds, from the pseudo-inverse and pseudo-determinant of their covariance.
+\item \emph{The equilibrium}: \texttt{examples/hastings\_baseline.jl} with the coefficients rebuilt and \texttt{SPH\_HASTINGS=1}, $s_a=16$ and $54$, $v_0=0$
+  and $0.8$, both $\Delta t$: $\langle\delta m^2\rangle/C$ and $\langle\ln T_a\rangle$ must be exact, where without the correction they are biased by up to $14\%$.
+\item \emph{Cost and acceptances} against \texttt{moment} without the correction.
+\item \emph{At NERSC}: the stochastic step alone and the full step, with and without the correction (as campaign \texttt{moment}).
+\end{enumerate}
 
 %=============================================================================
 \section{Stage 1: results on the laptop}
@@ -633,5 +688,50 @@ The default stays \texttt{common}; the owner decides.
 \includegraphics[width=\textwidth]{figs/moment_nersc_shear_v0.0_MOA.png}
 \caption{The stochastic step alone at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, common (left) and moment (right).  (At $v_0=0.8$ there is no advection without the ideal step, so the moving correlators of this set are not shown.)}
 \end{figure}
+
+%=============================================================================
+\section{Stage 2: results on the laptop}
+\label{sec:laptop2}
+
+\paragraph{The ratios} (\texttt{test/testhastings.jl}; jittered lattice moving with $v_0=0.5$, thermal momenta at $s_a\approx16$, twice the usual time
+step).  The coefficients computed from the state of a particle equal those of \texttt{build\_stars} to $4\times10^{-12}$.  \Eq{qstress2} equals the
+ratio of the two Gaussian densities of $\xi$ to $4\times10^{-15}$; \Eq{qresid} equals the ratio of the densities of the conditioned draws on the
+zero-virial subspace of the $2n\approx110$ bond components to $6\times10^{-8}$ (the roundoff of the direct side).  The residual ratios range over
+$-86\le\ln(q'/q)\le0.3$ in these stars: large, see below.
+
+\paragraph{The equilibrium} (\texttt{examples/hastings\_baseline.jl}, \texttt{moment}, \texttt{SPH\_MEASURE=einstein}, coefficients rebuilt, eight runs of $200$
+viscous time steps).  the ratios $\langle\delta m_x^2\rangle/C_{xx}$ and $\langle\delta m_y^2\rangle/C_{yy}$ (columns $x$, $y$) and the residual acceptance, without and
+with the correction:
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+ & \multicolumn{2}{c}{without} & \multicolumn{2}{c}{with the correction} \\
+$s_a$, $v_0$, $\Delta t/\Delta t_{\rm visc}$ & $x$, $y$ & acc. & $x$, $y$ & acc. \\ \hline
+$16$, $0$, $\frac12$   & $1.086$, $1.083$ & $0.60$ & $0.996$, $0.994$ & $0.41$ \\
+$16$, $0$, $\frac18$   & $1.146$, $1.140$ & $0.79$ & $1.003$, $0.996$ & $0.66$ \\
+$16$, $0.8$, $\frac12$ & $1.023$, $1.067$ & $0.65$ & $1.007$, $0.998$ & $0.22$ \\
+$16$, $0.8$, $\frac18$ & $0.961$, $1.088$ & $0.83$ & $1.003$, $0.998$ & $0.45$ \\
+$54$, $0$, $\frac12$   & $1.033$, $1.031$ & $0.68$ & $1.007$, $1.003$ & $0.65$ \\
+$54$, $0$, $\frac18$   & $1.056$, $1.050$ & $0.83$ & $1.001$, $0.997$ & $0.82$ \\
+$54$, $0.8$, $\frac12$ & $0.995$, $1.021$ & $0.75$ & $1.005$, $0.991$ & $0.47$ \\
+$54$, $0.8$, $\frac18$ & $0.973$, $1.033$ & $0.87$ & $0.999$, $1.001$ & $0.70$ \\
+\hline
+\end{tabular}
+\end{center}
+The errors are $\pm0.002$ to $\pm0.007$.  With the correction every value is $1$ within the errors (the largest deviation $1.007\pm0.0025$), and
+$\langle\ln T_a\rangle$ is exact; the bias of up to $15\%$ is gone.  The stress acceptance is unchanged ($0.94$--$0.98$), and the wall time grows by
+about $20\%$.
+
+\paragraph{The price: the residual acceptance.}  It falls, most at low entropy per particle in a moving fluid ($0.65\to0.22$ at $s_a=16$, $v_0=0.8$,
+$\Delta t=\frac12\Delta t_{\rm visc}$).  The residual proposal lives in about $2n\approx110$ dimensions, and its density changes with the coefficients of
+particle $a$: the normalization in \Eq{qresid} moves by about $n$ times the relative change $\epsilon$ of the coefficients in one move, and the
+quadratic form compensates it only on average, so
+\st
+\ln\frac{q'}{q}\sim\sqrt{2n}\;\epsilon .
+\stp
+The relative change $\epsilon$ is largest when the coefficients depend strongly on $\bm m_a$ (a moving fluid, through $\ell_a$, $f_{ab}$ and $\gamma_a$) and
+when a move changes $\bm m_a$ much (low $s_a$, large $\Delta t$).  The acceptance recovers at smaller $\Delta t$ ($0.45$ at $\frac18$).  Rejections slow the
+damping of the residual modes; they do not bias the equilibrium.  Whether the lower acceptance matters for the dynamics, i.e.\ for the
+damping of the lattice modes and the correlators, is for the runs at NERSC.
 
 \end{document}

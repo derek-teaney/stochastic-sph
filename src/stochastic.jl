@@ -407,6 +407,122 @@ end
 @noinline moment_fit(β, a, st::Star) =
     sum((β[st.nb[k]] - β[a]) * st.U[k]' for k in eachindex(st.nb); init = zero(SMatrix{2,2,Float64}))
 
+# ── The Hastings correction (dissipation = :moment, SPH_HASTINGS=1; inverse_moment.tex, stage 2) ──────────────
+# The coefficients of star a are computed from the present state (e_a, m_a, V_a) of particle a, as build_stars does from the
+# particle fields after solve_eos! (energy Hamiltonian, number volume: the particle's own state; ẋ_a = v_a), at each proposal
+# and again at the proposed state.  The geometry of the star (bonds, w_ab, faces) stays that of build_stars.
+struct StarCoef
+    T  :: Float64                                    # T_rel,a
+    κs :: Float64                                    # η_a
+    κb :: Float64                                    # ζ_eff,a
+    ℓ  :: SMatrix{2,2,Float64,4}
+    ℓh :: SMatrix{2,2,Float64,4}
+    ℓi :: SMatrix{2,2,Float64,4}
+    B  :: NTuple{3,SMatrix{2,2,Float64,4}}
+end
+
+# nothing for a state no fluid can have
+function star_coef(e, m, V, eos, d)
+    s = particle_entropy(e, m, V, eos);  isfinite(s) || return nothing
+    S_in = s / V;  M = m / V;  Mm = norm(M)
+    ε = eos_newton(S_in, Mm, e / V, eos)
+    w = ε + pressure(eos, ε);  G, _ = eos_wgamma(w, Mm);  γ = G / w;  v = M * (w / G^2)
+    Ta = (w / S_in) * γ;  sr = srel(eos, ε);  η = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
+    ℓ, ℓi, P, Pℓ = comoving_structures(v, cs2(eos), 2)
+    κs, κb = η, ζ + 2η * (1 / 2 - 1 / d)
+    ℓh = sqrt_comoving(v)
+    e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
+    E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
+    return StarCoef(Ta, κs, κb, ℓ, ℓh, ℓi, (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ))
+end
+
+symvec(X) = SVector(X[1, 1], X[1, 2], X[2, 2])
+stress_J(c::StarCoef, V, dt) = (amp = sqrt(2dt * c.T / V);
+    hcat(symvec(amp * c.B[1]), symvec(amp * c.B[2]), symvec(amp * c.B[3])))
+resid_c(c::StarCoef, st::Star, k, V, params) = 2c.κs * c.T * V * st.w[k] * resid_factor(params, c.ℓ, st.r[k])
+
+# The stress move: δ[k] = ξ A_ab with ξ = Σ_k z_k J_k; returns ln q(m′→m)/q(m→m′) (inverse_moment.tex, eq. qstress2).
+function propose_stress_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, rng)
+    z = SVector(randn(rng), randn(rng), randn(rng))
+    J = stress_J(c, V, dt);  xv = J * z
+    ξ = SMatrix{2,2,Float64}(xv[1], xv[2], xv[2], xv[3])
+    for k in eachindex(st.nb);  δ[k] = ξ * st.A[k];  end
+    c′ = star_coef(e, ma - sum(@view δ[1:length(st.nb)]), V, eos, d);  c′ === nothing && return -Inf
+    J′ = stress_J(c′, V, dt);  z′ = J′ \ (-xv)
+    return -0.5 * dot(z′, z′) + 0.5 * dot(z, z) + log(abs(det(J))) - log(abs(det(J′)))
+end
+
+# The residual move, conditioned on zero virial with the coefficients of the present state; returns the log ratio
+# (inverse_moment.tex, eq. qresid).
+function propose_resid_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, params, rng)
+    n = length(st.nb)
+    Y = zero(SMatrix{2,2,Float64});  R = zero(SMatrix{2,2,Float64})
+    for k in 1:n
+        ck = resid_c(c, st, k, V, params)
+        y = sqrt(2dt * ck) * (c.ℓh * SVector(randn(rng), randn(rng)))
+        δ[k] = y;  Y += y * st.r[k]';  R += ck * (st.r[k] * st.r[k]')
+    end
+    Ri = inv(R)
+    for k in 1:n
+        δ[k] -= resid_c(c, st, k, V, params) * (Y * (Ri * st.r[k]))
+    end
+    c′ = star_coef(e, ma - sum(@view δ[1:n]), V, eos, d);  c′ === nothing && return -Inf
+    R′ = zero(SMatrix{2,2,Float64});  lq = 0.0;  quad = 0.0
+    for k in 1:n
+        ck = resid_c(c, st, k, V, params);  ck′ = resid_c(c′, st, k, V, params)
+        R′ += ck′ * (st.r[k] * st.r[k]')
+        lq += log(ck / ck′)
+        quad += dot(δ[k], (c′.ℓi / ck′ - c.ℓi / ck) * δ[k])
+    end
+    return lq + (n / 2 - 1) * log(det(c.ℓ) / det(c′.ℓ)) + log(det(R′) / det(R)) - quad / (4dt)
+end
+
+# The single vote with the Hastings factor: accept with min(1, e^{ΔS + lq}).
+function ask_star_hastings!(m, Sc, e, V, a, st::Star, δ, lq, eos, rng, Snew, liouville::Bool)
+    n  = length(st.nb)
+    isfinite(lq) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
+    ma′ = m[a] - sum(@view δ[1:n])
+    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville)
+    isfinite(Sa) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
+    ΔStot = Sa - Sc[a]
+    for k in 1:n
+        b = st.nb[k]
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville)
+        isfinite(Snew[k]) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
+        ΔStot += Snew[k] - Sc[b]
+    end
+    logP = min(0.0, ΔStot + lq)
+    if logP >= 0 || log(rand(rng)) < logP
+        for k in 1:n
+            b = st.nb[k];  m[b] += δ[k];  Sc[b] = Snew[k]
+        end
+        m[a] = ma′;  Sc[a] = Sa
+        return true
+    end
+    return false
+end
+
+# One checkerboard sweep with the Hastings correction (as color_sweep!).
+function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool, params)
+    nacc = Threads.Atomic{Int}(0);  d = params.d
+    for g in shuffle(rng, collect(eachindex(groups)))
+        cg = groups[g]
+        order = [shuffle(rng, cells[ix, iy]) for (ix, iy) in cg]
+        Threads.@threads for ci in eachindex(cg)
+            δ = sizehint!(SVector{2,Float64}[], 128);  Snew = sizehint!(Float64[], 128)
+            for a in order[ci]
+                st = stars[a];  n = length(st.nb);  n == 0 && continue
+                resize!(δ, n);  resize!(Snew, n)
+                c = star_coef(e[a], m[a], V[a], eos, d);  c === nothing && continue
+                lq = kind === :stress ? propose_stress_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, rngs[a]) :
+                                        propose_resid_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, params, rngs[a])
+                ask_star_hastings!(m, Sc, e, V, a, st, δ, lq, eos, rngs[a], Snew, liouville) && Threads.atomic_add!(nacc, 1)
+            end
+        end
+    end
+    return nacc[]
+end
+
 # ── Gradient-corrected change of representation ─────────────────────────────
 # (changerep.tex, Appendix A): the gradient energy g_a of the long-wavelength momentum
 # profile is frozen during the sweeps, so e_a = e′_a + g_a is fixed there; the back map
@@ -484,6 +600,9 @@ end
 #   gradient  gradient-corrected back map; default on, except with hamiltonian = :energy
 #             (H = Σ e_a exactly, no gradient energy to carry; energystep.tex) and on a
 #             frozen lattice
+#   hastings  the Hastings correction (inverse_moment.tex, stage 2): the coefficients of each star from the present state of its
+#             particle at every proposal, and the ratio of the reverse and forward proposal densities in the vote.  Needs
+#             dissipation = :moment, λ = 1, the single vote, 2D.  Default from SPH_HASTINGS, else false.
 # The default of `gradient` is resolved here, so the struct holds the value used.
 struct StochOptions
     λ        :: Float64
@@ -491,13 +610,17 @@ struct StochOptions
     vote     :: Symbol
     shift    :: Bool
     gradient :: Bool
+    hastings :: Bool
 end
 function StochOptions(params::SimParams; λ = 1.0, residual::Bool = true, vote::Symbol = :star,
                       shift::Bool = true, frozen::Bool = false,
-                      gradient::Bool = !frozen && params.hamiltonian !== :energy)
+                      gradient::Bool = !frozen && params.hamiltonian !== :energy,
+                      hastings::Bool = setting("SPH_HASTINGS", false))
     gradient && params.hamiltonian === :energy &&
         error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
-    return StochOptions(Float64(λ), residual, vote, shift, gradient)
+    hastings && !(is_moment(params) && λ == 1 && vote === :star && !(params.kernel isa WendlandC2_1D)) &&
+        error("SPH_HASTINGS=1 needs dissipation = :moment, λ = 1, the single vote and 2D (inverse_moment.tex, stage 2)")
+    return StochOptions(Float64(λ), residual, vote, shift, gradient, hastings)
 end
 
 # The step with the settings as keywords (tests, examples): builds the StochOptions.
@@ -516,7 +639,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                           flip::Bool = false, rng::AbstractRNG = Random.default_rng(),
                           rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                           frozen = nothing, cache = nothing)
-    (; λ, residual, vote, shift, gradient) = opts
+    (; λ, residual, vote, shift, gradient, hastings) = opts
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     oneD = params.kernel isa WendlandC2_1D
     fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen
@@ -547,8 +670,10 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                         zero(SVector{2,Float64})
             cells = shifted_cells(particles, cl, u)
             g0 = GUARD_REJECTED[]
-            acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
-                                     eos, rngs, rng, vote, liouville) / N
+            acc[kind] = hastings ?
+                color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params) / N :
+                color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
+                             eos, rngs, rng, vote, liouville) / N
             grj[kind] = (GUARD_REJECTED[] - g0) / N
         end
     end
