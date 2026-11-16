@@ -16,9 +16,14 @@ the `.tex`).  Owner: D. Teaney.
   viscous step), `stochastic.jl`, `grid.jl` (the ideal step on the fixed lattice, its lattice FFT and
   bare propagator; `SPH_IDEAL=grid`, `docs/gridstep.tex`), `measure.jl`, …  Superseded code (two-level strain form, the
   old particle sweep) in `src/legacy/`.
-- **The viscous step** (since 2026-11-14, branch `common-default`): the default is the one-kernel step,
-  `SPH_DISSIPATION=common` (`docs/commonkernel.tex`), wherever it applies (2D, energy Hamiltonian);
-  `SPH_DISSIPATION=particle` gives the previous default (needed to reproduce runs before that date).
+- **The viscous step** (since 2026-11-15, branch `inverse-moment`): the default is the inverse-moment step,
+  `SPH_DISSIPATION=moment` (`docs/inverse_moment.tex`), with the Hastings correction of the stochastic step
+  (`SPH_HASTINGS`, on wherever it applies: moment, λ = 1, the single vote, 2D), and Lorentz factors capped at
+  `SPH_GAMMA_MAX=100`.  The faces carry the inverse bond moment (no Λ_a), the residual move is conditioned on zero
+  virial, and the coefficients are evaluated at each proposal with the ratio of proposal densities in the vote: the
+  stochastic step is in detailed balance across steps (without it the dynamics is 5–20% above HMC at s_a = 54–16).
+  To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
+  `SPH_DISSIPATION=particle` (before 2026-11-14).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
 - **The ideal step, the measure and the equilibrium start** (since 2026-11-15, branch `new-defaults`): the defaults
   are the generalized leapfrog (`SPH_IDEAL=generalized`, `src/hmc.jl`), the Liouville measure (`SPH_MEASURE=liouville`,
@@ -90,12 +95,12 @@ You may be running on a Perlmutter login node.  Rules:
   "The generalized leapfrog"): at s_a = 54 the drift is first order in Δt and made by the
   drift–kick–drift ideal step (H is not separable); the generalized leapfrog, `SPH_IDEAL=generalized`,
   removes it (drift 1.9e-4 → ~3e-6 per unit time, full step ≈ 1.7× the cost); it is the default since 2026-11-15.
-- Detailed balance across steps (docs/commonkernel.tex, "Detailed balance with state-dependent coefficients"; measured
-  2026-11-15 with examples/hastings_baseline.jl): the coefficients of the stochastic step are rebuilt every step from the
-  smoothed fields, with no Hastings factor.  On a frozen lattice this biases the momentum fluctuations by up to +14% at
-  s_a = 16 and +6% at s_a = 54 (not reduced by Δt); frozen coefficients give the exact distribution.  Open; the fix
-  (inverse-moment faces, the residual as a conditioning, the Hastings ratio) is to be written up in a new note on its own
-  branch before any code.
+- Detailed balance across steps: solved by the Hastings correction (default since 2026-11-15; docs/inverse_moment.tex,
+  Stage 2, laptop and NERSC).  At s_a ≈ 16 and below the residual log ratios have large tails (particles at γ ~ 10–100);
+  NERSC campaign `hastings_low` (s_a = 12, 8, 4) explores that edge.
+- Renormalization of the transport coefficients (docs/helfand.tex): the Helfand moments of the particles, the Helfand
+  separation (the analogue of the pair separation D_rel(r)), normalized by the momentum fluctuations, with the statics
+  (the initial pair correlation of the moments) from hybrid Monte Carlo.  First case: s_a ≈ 100 at rest.
 - The equilibrium of the particle positions (docs/equilibrium_positions.tex, branch
   `equilibrium`): g(r), ψ6, S(k) from the lattice; hybrid Monte Carlo as the reference.
 - Equilibrium correlators: transverse ⟨M_T(t+τ,k) M_T*(t,k)⟩ against e^{−νk²τ}, and the

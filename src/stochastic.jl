@@ -607,7 +607,8 @@ end
 #             frozen lattice
 #   hastings  the Hastings correction (inverse_moment.tex, stage 2): the coefficients of each star from the present state of its
 #             particle at every proposal, and the ratio of the reverse and forward proposal densities in the vote.  Needs
-#             dissipation = :moment, λ = 1, the single vote, 2D.  Default from SPH_HASTINGS, else false.
+#             dissipation = :moment, λ = 1, the single vote, 2D.  Default from SPH_HASTINGS, else on wherever it applies
+#             (since 2026-11-15, with :moment the default viscous step); SPH_HASTINGS=0 turns it off.
 # The default of `gradient` is resolved here, so the struct holds the value used.
 struct StochOptions
     λ        :: Float64
@@ -620,7 +621,8 @@ end
 function StochOptions(params::SimParams; λ = 1.0, residual::Bool = true, vote::Symbol = :star,
                       shift::Bool = true, frozen::Bool = false,
                       gradient::Bool = !frozen && params.hamiltonian !== :energy,
-                      hastings::Bool = setting("SPH_HASTINGS", false))
+                      hastings::Bool = setting("SPH_HASTINGS",
+                          is_moment(params) && λ == 1 && vote === :star && !(params.kernel isa WendlandC2_1D)))
     gradient && params.hamiltonian === :energy &&
         error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
     hastings && !(is_moment(params) && λ == 1 && vote === :star && !(params.kernel isa WendlandC2_1D)) &&

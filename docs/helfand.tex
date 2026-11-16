@@ -269,6 +269,191 @@ anisotropic tensor $T\kappa^{ijlm}(v)$ of \texttt{theory.tex}; whether they do, 
 a prediction to test.
 
 %=============================================================================
+\section{The Helfand moment of a particle and the Helfand separation}
+\label{sec:hsep}
+
+The pair separation of \Sect{sec:diffusion} resolves the diffusion by scale: two particles at distance $r$ are advected together by
+the flow modes longer than $r$, and $D_{\rm rel}(r)$ counts only the shorter ones.  The same can be done for the viscosity, once the
+Helfand moment is split into the contributions of the particles.
+
+\paragraph{The Helfand moment of a particle.}  \Eq{accumulate} is a sum over particles: each carries the ideal stress \Eq{Tparticle}
+and the stress noise of its own accepted moves.  Define the Helfand displacement of particle $a$, the analogue of its displacement $\bm u_a$,
+\st
+g_a^{ij}(t)=\int_0^tdt'\;V_aT_a^{ij}(t')+\sum_{\text{accepted stress moves of }a}V_a\,\xi_a^{ij},
+\qquad \sum_ag_a^{ij}(t)=G^{ij}(t)-G^{ij}(0) .
+\label{ga}
+\stp
+The residual moves contribute nothing, star by star.  Below $g_a$ stands for one shear component, $\frac12(g_a^{xy}+g_a^{yx})$ or
+$\frac12(g_a^{xx}-g_a^{yy})$, with its mean over the particles removed, as the drift is removed from $\bm u_a$.
+
+\paragraph{The dictionary.}  Displacements and Helfand displacements play the same roles:
+\begin{center}
+\begin{tabular}{lll}
+\hline
+ & diffusion & viscosity \\ \hline
+per particle & $\bm u_a(t)$ & $g_a(t)$ \\
+self part & $\mathrm{MSD}(t)=\avg{|\bm u_a|^2}$ & $\avg{g_a^2}$ \\
+pair at distance $r$ & $D^2(r,t)=\avg{|\bm u_a-\bm u_b|^2}_r$ & $H^2(r,t)=\avg{(g_a-g_b)^2}_r$ \\
+cross part & $\avg{\bm u_a\cdot\bm u_b}_r$ & $C_g(r,t)=\avg{g_a\,g_b}_r$ \\
+\hline
+\end{tabular}
+\end{center}
+with $\avg{\cdots}_r$ the average over the pairs at distance $r$ at $t=0$, as for $D^2$.  Expanding the square, as in \Eq{D2MSD},
+\st
+H^2(r,t)=2\avg{g_a^2}-2\,C_g(r,t) .
+\label{H2}
+\stp
+We call $H^2(r,t)$ the Helfand separation of the pair.
+
+\paragraph{The momentum fluctuations set the scale.}  A displacement is kinematics; a Helfand moment carries momentum, so its variance
+grows with the size of the momentum fluctuations as well as with the transport rate.  For the transverse mode at wavenumber $k$, with
+equal-time variance $C_{MM}(k)$ per unit area and decay rate $\nu k^2$,
+\st
+\avg{|\Delta M_T(k,t)|^2}=2A\,C_{MM}(k)\big(1-e^{-\nu k^2t}\big)\simeq2A\,C_{MM}(k)\,\nu k^2\,t ,
+\stp
+and since $\Delta G_k=\Delta M_T(k)/ik$,
+\st
+\avg{|\Delta G_k(t)|^2}\simeq2A\,C_{MM}\,\nu\,t .
+\stp
+The Helfand moment measures the product of the static susceptibility and the rate.  The relation \Eq{helfand} identifies $\eta=C_{MM}\nu/T$, which is
+the viscosity $w\nu$ only when $C_{MM}=wT$, the continuum value.  At finite entropy per particle the model's equilibrium has a different
+$C_{MM}$: hybrid Monte Carlo of the same model gives $C_{MM}/\chi=1.16$ at $s_a=54$ (Einstein measure) and $\approx0.85$ at $s_a=16$ (Liouville),
+flat in $k$ (\texttt{equilibrium\_positions.tex}, \texttt{inverse\_moment.tex}).  The plain $\eta$ of \Eq{helfand} would mix that static offset into
+the transport coefficient.  The rate is free of it when the variance is normalized by the measured momentum fluctuations.
+
+\paragraph{Shear: the static input.}  At rest, by isotropy and reflection, the transverse momentum does not couple at equal times to the
+positions or the energies, and the measured $C_{MM}(k)$ is flat: different particles are uncorrelated,
+\st
+\avg{\delta m_a^y\,\delta m_b^y}=\delta_{ab}\,\avg{(\delta m^y)^2}\qquad(\text{up to }-1/N\text{ from the fixed total momentum}),
+\stp
+so $C_{MM}=n\avg{(\delta m^y)^2}$ and $C_g(r,0)=0$: the correlation of the Helfand moments is built by the dynamics.  The variance of a
+particle depends on its volume, $\avg{(\delta m_a^y)^2}\propto V_a$, and $V_a$ on the positions; its mean over the particles is the
+normalization that matches the total.  The component must match the moment: $g^{xy}=\int\cdots x\,m^y$ is normalized by $\avg{(\delta m^y)^2}$.
+
+\paragraph{The initial pair correlation.}  Write the Helfand moment as a sum over particles of their moments,
+\st
+G(t)=\sum_ah_a(t),\qquad h_a=x_a\,m_a^y ,
+\stp
+with $x_a$ the unwrapped position from a fixed origin and $\sum_a\bm m_a=0$, so that $G$ does not depend on the origin.  In equilibrium the
+statistics are stationary, $\avg{h_a(t)h_b(t)}=\avg{h_a(0)h_b(0)}$, so the variance of the increment is the equal-time correlation minus the
+correlation across the lag:
+\st
+\avg{\big[G(t)-G(0)\big]^2}=\sum_{a,b}\Big[2\avg{h_a(0)\,h_b(0)}-\avg{h_a(t)\,h_b(0)}-\avg{h_b(t)\,h_a(0)}\Big] .
+\stp
+Split into the self terms, $a=b$, and the pairs, $a\neq b$.  A sum over pairs is an integral over their separation at $t=0$,
+\st
+\sum_{a\neq b}F_{ab}=N\,n\int d^2r\;g(r)\,\avg{F_{ab}}_r ,
+\stp
+exactly: $g(r)$ counts the pairs at separation $r$, and $\avg{\cdots}_r$, the average over those pairs, keeps every correlation between $a$ and $b$; nothing
+is assumed to factorize.  Then
+\st
+\avg{\Delta G^2}=2N\Big\{\Big[\avg{h_a^2}-\avg{h_a(t)\,h_a(0)}\Big]
++n\int d^2r\;\Big[S_h(r)-K_h(r,t)\Big]\Big\} ,
+\label{selfcross}
+\stp
+with the initial (equal-time) pair correlation of the moments and its correlation across the lag,
+\st
+S_h(r)=g(r)\,\avg{x_a\,m_a^y\;x_b\,m_b^y}_r ,\qquad
+K_h(r,t)=g(r)\,\tfrac12\avg{h_a(t)\,h_b(0)+h_b(t)\,h_a(0)}_r ,
+\stp
+both pair-correlation functions in the sense of $g(r)$: $N n\,S_h(r)\,d^2r$ is the sum of $h_ah_b$ over the pairs in $d^2r$.  $S_h(r)$ is the static
+input, the analogue of $g(r)$ itself for the pair separation; $K_h(r,t)$ is the dynamics.  The individual terms depend on the origin of $x_a$;
+the combination in \Eq{selfcross} does not.  That is why the moments are measured with the local attribution \Eq{ga}, through the bond
+vectors: its increments $g_a$ start at zero and give the same total,
+\st
+\avg{\Delta G^2}=N\Big[\avg{g_a^2}+n\int d^2r\;g(r)\,C_g(r,t)\Big],
+\label{selfcrossg}
+\stp
+with the initial correlation already subtracted in $C_g(r,t)=\avg{g_ag_b}_r$.
+
+\paragraph{What the initial correlation is.}
+\begin{itemize}
+\item \emph{Shear at rest}: the transverse momenta of different particles are uncorrelated at equal times, and uncorrelated with the
+  positions, so $\avg{x_am_a^y\,x_bm_b^y}_r=\avg{x_ax_b}_r\avg{m_a^ym_b^y}\approx0$ for $a\neq b$ (up to $-1/N$ from the fixed total momentum): $S_h(r)\approx0$,
+  only the self term is static, and the pair correlation $g(r)$ enters only as the weight of the dynamical cross term.  This is a result
+  of the symmetry, to be checked, not an assumption.
+\item \emph{Bulk}: the scalar moments carry the energies and pressures of the particles, which are correlated at equal times with the
+  positions and with each other; $S_h(r)\neq0$, and it must be measured.
+\item \emph{A moving fluid}: energy and momentum mix at equal times; $S_h(r)\neq0$ even for the shear components.
+\end{itemize}
+In every case $S_h(r)$ is a static property of the model, measured exactly by hybrid Monte Carlo.
+
+\paragraph{Self and cross rates.}  The two static inputs of the shear case at rest are $g(r)$, where the pairs start, and $\avg{(\delta m^y)^2}$, how
+much momentum each carries.  Normalized by the latter, \Eq{selfcrossg} gives the transverse rate as a self and a cross part,
+\st
+\nu=\frac{\avg{\Delta G^2}}{2N\avg{(\delta m^y)^2}\,t}=\nu_{\rm self}+n\int d^2r\;g(r)\,\nu_{\rm cross}(r),
+\label{etasplit}
+\stp
+with
+\st
+\nu_{\rm self}=\frac{\avg{g_a^2}}{2\avg{(\delta m^y)^2}\,t},\qquad
+\nu_{\rm cross}(r)=\frac{C_g(r,t)}{2\avg{(\delta m^y)^2}\,t},
+\stp
+at lags $t$ long enough for the rates to be constant.  The Helfand separation gives the scale-resolved combination
+\st
+\nu_{\rm rel}(r)=\frac{H^2(r,t)}{4\avg{(\delta m^y)^2}\,t}=\nu_{\rm self}-\nu_{\rm cross}(r) ,
+\stp
+the analogue of $D_{\rm rel}(r)=2[D_{\rm self}-D_{\rm cross}(r)]$, and like it a rate in length$^2$ per time.  Restricting the integral in \Eq{etasplit} to
+$r<R$ gives the rate carried by the pairs within $R$,
+\st
+\nu(R)=\nu_{\rm self}+n\int_{r<R}d^2r\;g(r)\,\nu_{\rm cross}(r),\qquad \nu(R\to L)=\nu .
+\label{etaR}
+\stp
+The viscosity follows as $\eta=w\nu$, with $w$ the enthalpy of the continuum.
+
+\paragraph{Bulk: the static input is not trivial.}  The scalar flux $J_\zeta$ is correlated at equal times with the conserved densities, the
+energy and the particle number (the positions), and through the positions with $g(r)$ and $S(k)$.
+\begin{itemize}
+\item \emph{The mean.}  $\avg{J_\zeta}$ is the model's mean pressure at finite $s_a$, not the continuum $p-c_s^2\varepsilon$; any mismatch grows in
+  $\avg{\Delta G_\zeta^2}$ as $t^2$ and swamps the linear growth.  (In the dynamics the total energy is conserved, so at $k=0$ only the mean
+  matters, but it must be the true mean of the ensemble.)
+\item \emph{The projection.}  Resolved in scale, the longitudinal sector projects $J_\zeta$ off the energy, number and longitudinal momentum
+  modes with their equal-time correlations.  These are not the continuum ones at finite $s_a$ and finite $kh$: $C_{EE}=\chi$ only as $k\to0$, and
+  $S(k)$ is that of the liquid.
+\item \emph{The pairs.}  The initial condition of the bulk pair moment is $g(r)$ together with the equal-time correlations of the energies and
+  pressures of two particles at separation $r$.
+\end{itemize}
+
+\paragraph{The statics from hybrid Monte Carlo.}  Hybrid Monte Carlo samples the equilibrium of the model exactly, so it supplies the static
+half and the dynamics only the increments: the momentum variance per component and its dependence on $V_a$; the mean scalar flux and its
+equal-time correlations with the energy, the number modes and $g(r)$; the pair correlations of energy and pressure at separation $r$; and
+$g(r)$, $S(k)$, $C_{EE}(k)$, which the chains already record.  With the Hastings correction the dynamics reproduces these statics
+(\texttt{inverse\_moment.tex}, Stage 2), so the normalization is the same either way; hybrid Monte Carlo is the clean reference.
+
+\paragraph{A moving fluid.}  Not clear.  In the density frame energy and momentum mix at equal times (the correlation of $E$ and $P_x$), the
+susceptibility is an anisotropic tensor (at $v_0=0.8$ the two momentum components differ by a factor of about $6$), and fast particles
+make both the statics and the kinetic stress $v^xm^y$ strongly velocity-dependent.  Which normalization and which temperature enter the
+Helfand relation there is the open question of the paragraph on the density frame in \Sect{sec:pbc}.  The fluid at rest, and the
+shear components, come first.
+
+\paragraph{What to expect.}
+\begin{itemize}
+\item \emph{Short range}, $r\lesssim2h$: particles in the same star exchange momentum directly, through the pair force and the moves of
+  their stars; the self part and the short-range cross part together make the bare, local viscosity, the one the scheme puts in.
+\item \emph{Long range}: two distant particles share the hydrodynamic modes longer than their separation.  The kinetic stress
+  $v^xm^y$ is quadratic in the transverse velocity, so their stress currents are correlated through the modes they share, as their
+  displacements are in $D_{\rm cross}(r)$.  If the correlation falls as
+  \st
+  \nu_{\rm cross}(r)\propto\frac1{r^2}\qquad(a\ll r\ll\sqrt{\nu t},\ L),
+  \stp
+  then \Eq{etaR} grows as $\ln(R/a)$ until $R$ reaches $\sqrt{\nu t}$ or $L$: the logarithm of \Sect{sec:tails}, resolved in space.  The prefactor,
+  of relative size $T/(w\nu^2)$ times a number, is to be derived from fluctuating hydrodynamics, together with the analogue of \Eq{logs}
+  for $\nu_{\rm rel}(r)$.
+\item \emph{The dependence on $t$}: as in the pair separation, the range of the cross correlation grows with the lag, as $\sqrt{\nu t}$, and
+  the box ends it.
+\end{itemize}
+So the same measurement separates the bare viscosity (self and short range) from its renormalization (the long-range tail weighted by
+$g(r)$), and $\nu(R)$ is the scale-dependent rate that the transverse correlator $C_{MM}(k,\tau)$ measures at $k\sim1/R$.
+
+\paragraph{Measurement.}  Each particle accumulates $g_a^{ij}$ as \Eq{accumulate} does for the total: the ideal stress \Eq{Tparticle} at the kick
+and $V_a\xi_a$ for each accepted stress move of its star.  At each record, alongside $\mathrm{MSD}$ and $D^2$: $\avg{g_a^2}$, and $H^2(r,t)$ and
+$C_g(r,t)$ for the pairs at distance $r$ at $t=0$, in bins of $r$ out to $L/2$ (not only $a$, $2a$, $4a$, $8a$: the integral \Eq{etasplit} needs them
+all).  The check: $\sum_ag_a$ is the total Helfand moment of \Eq{accumulate}, and \Eq{selfcrossg} with the measured $g(r)$ must reproduce its variance.
+The normalization $\avg{(\delta m^y)^2}$ is recorded in the same run and checked against hybrid Monte Carlo.  Then $\nu_{\rm self}$, $\nu_{\rm cross}(r)$ and
+$\nu(R)$ against $R$ at several lags, $s_a$ and $L$, next to $D_{\rm self}$, $D_{\rm rel}(r)$ and the shear damping $\nu(k)$ from the transverse correlator;
+at rest ($v_0=0$, $s_a\approx100$), shear components first.
+
+%=============================================================================
 \section{Long-time tails in two dimensions}
 \label{sec:tails}
 
@@ -299,9 +484,16 @@ background here; the measurement needs only \Eq{helfand}.
   bulk channel), and record it with the other observables.
 \item \emph{Analysis}: $\eta(t)$ and $\zeta(t)$ from \Eq{helfand} against the lag $t$, averaged over time origins and over the two shear
   components; the self-diffusion coefficient from \texttt{part\_MSD}.
-\item \emph{First tests} at rest, $L=1.2$, $h/a=2$, generalized leapfrog, from equilibrium positions: $s_a=541$ and $54$, input
-  $\eta/s=0.2$; the measured $\eta$ at short lags against the input, and its drift with the lag against the predicted logarithm.
+\item \emph{First tests} at rest, $v_0=0$, and fairly large entropy per particle, $s_a\approx100$ ($s_a=135$, as \texttt{hbya}), $L=1.2$, $h/a=2$,
+  the current defaults (generalized leapfrog, Liouville measure, HMC start), input $\eta/s=0.2$: the clean case, where the static offset
+  of the momentum fluctuations is a few per cent, the particles are far from relativistic, and the tails of the Hastings ratios are
+  rare.  The measured rate at short lags against the input, and its drift with the lag against the predicted logarithm.  Lower $s_a$
+  and the moving fluid afterwards.
 \item \emph{Long single runs} to accumulate the statistics: the relative error of the variance at lag $t$ falls as $(t/t_{\rm run})^{1/2}$.
+\item \emph{The Helfand separation} (\Sect{sec:hsep}): the Helfand moments of the particles \Eq{ga}, their self and cross parts and $\nu(R)$ \Eq{etaR},
+  normalized by the momentum fluctuations, with the fluctuating-hydrodynamics prediction of the long-range tail derived first, next to
+  $D_{\rm rel}(r)$ and the transverse correlator; the statics (momentum variance per component, and for the bulk channel the mean flux and its
+  equal-time correlations) from hybrid Monte Carlo of the same model and measure.
 \end{enumerate}
 
 \begin{thebibliography}{9}

@@ -35,11 +35,12 @@ end
 
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
 #   distance, ψ_ab = −W′(r_ab)/r_ab (bond moment n_a 𝟙), and the comoving metric put in by hand
-#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  It is the
-#   default since 2026-11-14 wherever it applies (2D with the energy Hamiltonian).  :moment (inverse_moment.tex, stage 1;
-#   2D, hamiltonian = :energy) is :common without the correction Λ_a of the weights: the faces carry the inverse bond moment,
-#   A_ab = V_a w_ab 𝓜_a⁻¹ r_ab, the residual is the least-squares residual with the weights c_ab, and the residual move is
-#   conditioned on zero virial.  :particle (the default in 1D
+#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  It was the
+#   default from 2026-11-14 to 2026-11-15.  :moment (inverse_moment.tex; 2D, hamiltonian = :energy) is :common without the
+#   correction Λ_a of the weights: the faces carry the inverse bond moment, A_ab = V_a w_ab 𝓜_a⁻¹ r_ab, the residual is the
+#   least-squares residual with the weights c_ab, and the residual move is conditioned on zero virial.  It is the default since
+#   2026-11-15 wherever it applies (2D with the energy Hamiltonian), together with the Hastings correction of the stochastic
+#   step (SPH_HASTINGS, StochOptions).  :particle (the default in 1D
 #   and with SPH_HAMILTONIAN=smoothed; formerly :changerep, still accepted) is the bond form in the particle
 #   representation with the gradient-corrected conversion map (changerep.tex); :bond is
 #   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
@@ -80,10 +81,11 @@ end
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
 # The Hamiltonian when none is given: SPH_HAMILTONIAN, else :energy (:smoothed with the
 # two-level form, which needs it).  Drivers that need the scheme before SimParams use this too.
-# The viscous step when none is given (2026-11-14): the one-kernel step :common where it applies (2D, energy
-# Hamiltonian; commonkernel.tex), else :particle.  SPH_DISSIPATION=particle gives the earlier default back.
+# The viscous step when none is given (2026-11-15): the inverse-moment step :moment where it applies (2D, energy
+# Hamiltonian; inverse_moment.tex), else :particle.  SPH_DISSIPATION=common SPH_HASTINGS=0 gives the default of
+# 2026-11-14/15 back, SPH_DISSIPATION=particle the one before.
 default_dissipation(sim_dim = 2) =
-    sim_dim == 2 && setting("SPH_HAMILTONIAN", :energy) === :energy ? :common : :particle
+    sim_dim == 2 && setting("SPH_HAMILTONIAN", :energy) === :energy ? :moment : :particle
 # The largest Lorentz factor a fluid particle may have (2026-11-15; docs/inverse_moment.tex, Stage 2 results): a state with
 # γ > SPH_GAMMA_MAX has no weight (the stochastic votes, the equilibrium start and hybrid Monte Carlo reject it, through
 # particle_entropy), and the comoving structures are built with the velocity capped there.  Near the light cone the inversion of

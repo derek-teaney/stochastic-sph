@@ -41,6 +41,15 @@ figures moment_nersc_A_*, moment_nersc_B_*.
 from a fresh worktree ~/stochastic-sph-hs at 927e035 (testhastings.jl PASS there).  Output $SCRATCH/sph/hastings.  moment_b (61361958)
 still running from ~/stochastic-sph-mo-run.
 
+## 2026-11-15 (late night, laptop): NEW DEFAULTS on `main` — moment + Hastings
+
+`inverse-moment` is merged into `main`.  The defaults are now `SPH_DISSIPATION=moment` with the Hastings correction
+(`SPH_HASTINGS` on wherever it applies) and `SPH_GAMMA_MAX=100`, besides the generalized leapfrog, the Liouville measure and the
+HMC start.  Campaign files that spell out `SPH_DISSIPATION=moment` and `SPH_HASTINGS=1` are unaffected; campaigns relying on the
+previous defaults must now set `SPH_DISSIPATION=common SPH_HASTINGS=0` to be reproduced (CLAUDE.md).  Running jobs are unaffected
+(fixed worktrees).  The h5 of every default run now carries hast_lq_{stress,resid}_{mean,rms}.  Next physics: the renormalization
+(docs/helfand.tex, the Helfand separation), first at s_a ≈ 100, v0 = 0.
+
 ## From the laptop (2026-11-15, late night): γ_max = 100 — rerun the crashed tasks; add Fig. 37
 
 `SPH_GAMMA_MAX` (default 100, src/sph.jl): states with γ > 100 (|v|² > 1 − 1e-4) have no weight (particle_entropy), and the comoving
