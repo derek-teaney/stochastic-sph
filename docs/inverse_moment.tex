@@ -1051,4 +1051,104 @@ $\Delta H/H$: $2\times10^{-5}$--$2.5\times10^{-4}$ at $s_a=54$, $2\times10^{-4}$
 \label{fig:hs16_last}
 \end{figure}
 
+\clearpage
+\subsection{Lower entropy per particle: $s_a=12$, $8$ (campaign \texttt{hastings\_low})}
+\label{sec:nersc2low}
+
+The same runs at $s_a=12$, $8$ and $4$, with the $\gamma$ cap (\texttt{nersc/campaign\_hastings\_low.txt}, \texttt{77cf74f}; jobs 61376871, 61376872, 61376873, one
+packed 4-node job per $s_a$).  $s_a=12$: all 128 runs complete (33 min).  $s_a=8$: all 96 runs of the dynamics complete (34 min); 3 of the 32 HMC
+reference chains stopped (below).  $s_a=4$: running at the time of writing, with about $40\%$ of its tasks stopped.
+
+\paragraph{A new failure at low $s_a$: the EOS inversion.}  The stopped tasks all end in \texttt{eos\_newton} (\texttt{src/sph.jl:359}): the Newton
+iteration for the energy at given entropy and momentum runs away to $e=-\infty$, and \texttt{Trel} takes $\sqrt{-\infty}$ (\texttt{sph.jl:204}).  It
+happens inside hybrid Monte Carlo --- the HMC start of the dynamics and the HMC reference chains --- when a leapfrog step takes a particle to a
+state the inversion cannot solve.  The $\gamma$ cap gives such states no weight in the entropy, but \texttt{eos\_newton} is called on the
+trajectory before the weight is ever evaluated.  The acceptance of the HMC starts that finish is still $0.98$--$0.99$ at every $s_a$ (minimum $0.95$):
+the failures are rare single events, not a step size that is too large on average.  Needed: a guard in \texttt{eos\_newton} (no solution $\Rightarrow$
+zero weight: the HMC trajectory, or the stochastic proposal, rejected), and perhaps a smaller HMC step at $s_a\le8$.  At $s_a=8$ the reference uses the
+surviving chains (14 at rest, 15 at $v_0=0.8$), a small selection.
+
+\paragraph{The trend.}  At rest (the moving fluid shows no bias in either version at any $s_a$, within $2$--$5\%$, \Fig{fig:hs_spectra_low}):
+\begin{center}
+\resizebox{\textwidth}{!}{\begin{tabular}{lcccc}
+\hline
+at rest & $s_a=54$ & $16$ & $12$ & $8$ \\ \hline
+spectra / HMC without the correction ($M_L$, $M_T$, $E$) & $1.02$--$1.08$ & $1.13$--$1.19$ & $1.15$--$1.21$ & $1.05$--$1.12$ \\
+spectra / HMC with the correction & $1.00\pm0.01$ & $0.98$--$1.02$ & $0.94$--$1.02$ & $0.98$--$1.02$ \\
+stress acceptance, without / with & $0.95$ / $0.95$ & $0.92$ / $0.92$ & $0.84$ / $0.85$ & $0.57$ / $0.63$ \\
+residual acceptance, without / with & $0.66$ / $0.62$ & $0.64$ / $0.44$ & $0.53$ / $0.32$ & $0.23$ / $0.10$ \\
+light cone, stress / residual (without) & $10^{-6}$ / $10^{-4}$ & $0.03$ / $0.12$ & $0.09$ / $0.28$ & $0.31$ / $0.65$ \\
+residual $\ln q'/q$, median rms (with) & $1.8$ & $2.1\times10^3$ & $4.8\times10^4$ & $1.1\times10^7$ \\
+KE$/2VwT$, without / with & $0.99$ / $0.95$ & $0.97$ / $0.85$ & $0.96$ / $0.82$ & $0.85$ / $0.75$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$, without / with & $0.92$--$0.99$ / $0.95$--$1.10$ & $1.06$--$1.09$ / $1.18$--$1.22$ & $0.92$--$0.98$ / $1.14$--$1.16$ & $1.25$--$1.26$ / $1.36$ \\
+$\Delta H/H$ at $t=100$ & $2\times10^{-5}$--$8\times10^{-5}$ & $2\times10^{-3}$ & $4$--$5\times10^{-3}$ & $1\times10^{-2}$ \\
+\hline
+\end{tabular}}
+\end{center}
+\begin{itemize}
+\item \emph{With the correction the dynamics matches HMC at every $s_a$}, down to $8$ (one band at $s_a=12$, $kh=0.52$, is $3\sigma$ low).
+\item \emph{Without it the excess is largest at $s_a\approx12$--$16$} and smaller again at $8$.  At $s_a=8$ the light cone rejects two thirds of the residual
+  and a third of the stress proposals: the stochastic step hardly moves, so its bias has less to act on.
+\item \emph{The cost of the correction} grows as $s_a$ falls: the residual acceptance at rest drops by $0.04$, $0.20$, $0.21$, $0.13$ (to $0.10$ at $s_a=8$), and the
+  residual log ratios become enormous ($10^7$ at $s_a=8$).
+\item \emph{The corrected dynamics damps the shear mode faster at rest} at every $s_a\le16$ (by $0.1$--$0.2$ of $\Gamma_{\rm hydro}$).
+\item \emph{The method degrades below $s_a\approx12$}: at $s_a=8$ the energy drifts ($\Delta H/H\sim10^{-2}$), the advected shear mode at $v_0=0.8$ moves at
+  $\Omega/k=0.77$--$0.78$ instead of $0.80$ (in both versions), and HMC itself begins to fail.
+\end{itemize}
+
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_spectra_low.png}
+\caption{Campaign \texttt{hastings\_low}: as \Fig{fig:hs_spectra} at $s_a=12$ and $8$ --- the equal-time $\langle|M_L|^2\rangle$, $\langle|M_T|^2\rangle$ of the dynamics over HMC, without (orange) and with (blue) the correction, and the stochastic step alone.}
+\label{fig:hs_spectra_low}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_equaltime_hmc.png}
+\caption{$s_a=12$: equal-time $\langle|A_{\bm k}|^2\rangle$ of the dynamics divided by HMC of the same model and measure; without and with the correction (key at the top); 16 runs each.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_fit.png}
+\caption{$s_a=12$: $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$ against $v_0$, without (blue) and with (orange) the correction; filled along, open across.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_shear_v0.0.png}
+\caption{$s_a=12$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_soundpar_v0.0.png}
+\caption{$s_a=12$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_shear_v0.8.png}
+\caption{$s_a=12$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS12_soundpar_v0.8.png}
+\caption{$s_a=12$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\clearpage
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_equaltime_hmc.png}
+\caption{$s_a=8$: equal-time $\langle|A_{\bm k}|^2\rangle$ of the dynamics divided by HMC of the same model and measure; without and with the correction (key at the top); 16 runs each.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_fit.png}
+\caption{$s_a=8$: $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$ against $v_0$, without (blue) and with (orange) the correction; filled along, open across.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_shear_v0.0.png}
+\caption{$s_a=8$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_soundpar_v0.0.png}
+\caption{$s_a=8$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_shear_v0.8.png}
+\caption{$s_a=8$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_soundpar_v0.8.png}
+\caption{$s_a=8$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+
 \end{document}
