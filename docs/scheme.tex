@@ -114,6 +114,53 @@ The entropy per particle sets how much a particle fluctuates: its thermal veloci
 $s_a\approx50$--$500$.
 
 %=============================================================================
+\section{The equilibrium}
+\label{sec:equilibrium}
+
+At temperature $T$, for a fluid at rest or moving uniformly with velocity $\bm v$, the particles have a definite equilibrium distribution.  It can be
+written in two equivalent forms, one in the entropies of the particles and one in their energies.  Each is the natural form for one of the
+two steps of the scheme.
+
+\paragraph{In the entropies.}  With the positions, momenta and entropies as variables, and the measure $\prod_ad\bm x_a\,d\bm m_a\,ds_a$,
+\begin{keyeq}
+\st
+\pi\propto\exp\sum_a\Big[s_a-\frac{e_a(s_a,\bm m_a,V_a)-\bm v\cdot\bm m_a}{T}\Big] .
+\label{equilibrium}
+\stp
+\end{keyeq}
+The sum of the particle energies is the Hamiltonian $H$ and that of the momenta the total momentum $\bm P$, so the exponent is
+$\sum_as_a-(H-\bm v\cdot\bm P)/T$.
+
+\paragraph{In the energies.}  At fixed positions and momenta, change the variable of each particle from its entropy to its energy.  By the first
+law \Eq{firstlaw}, at fixed $\bm m_a$ and $V_a$, $ds_a=de_a/T_a$, and the entropy becomes the function $S_a(e_a,\bm m_a,V_a)$.  With the
+measure $\prod_ad\bm x_a\,d\bm m_a\,de_a$,
+\begin{keyeq}
+\st
+\pi\propto\exp\sum_a\Big[S_a(e_a,\bm m_a,V_a)-\ln T_a-\frac{e_a-\bm v\cdot\bm m_a}{T}\Big] .
+\label{equilibriume}
+\stp
+\end{keyeq}
+The $-\ln T_a$ is the change of measure.  It is not extensive: it is of order one per particle, against an entropy of tens to hundreds.
+
+\paragraph{One form for each step.}
+\begin{itemize}
+\item \emph{The ideal step} moves the positions and momenta at fixed entropies.  It conserves $H$ and $\bm P$ and preserves $\prod_ad\bm x_a\,d\bm m_a$, so it
+  keeps \Eq{equilibrium}.
+\item \emph{The viscous step} moves the momenta at fixed positions and energies, and conserves $\bm P$.  On that surface \Eq{equilibriume} is a
+  distribution of the momenta alone, \Eq{target}, which the step must keep (\Sect{sec:viscous}).
+\end{itemize}
+Both steps keep the same distribution, so the run as a whole does.
+
+\paragraph{What it looks like.}  The momenta of the particles fluctuate thermally about the flow, with a variance of order $V_awT$ per component,
+and the energies fluctuate with them.  The positions are not a lattice: at finite entropy per particle they form a liquid, with a pair
+correlation $g(r)$ and a structure factor that the equilibrium fixes.
+
+\paragraph{What the hydrodynamics must reproduce.}  Since both steps keep this distribution, the equal-time correlations of a run, of the energy
+and momentum densities and of the positions, must be those of \Eq{equilibrium} at the same $s_a$, at rest and in a moving fluid.  This is the
+test of the scheme's fluctuations: the distribution itself is sampled independently by hybrid Monte Carlo (\Sect{sec:start}), and the
+dynamics must agree with it.  It is also how a run starts: from a sample of \Eq{equilibrium}.
+
+%=============================================================================
 \section{The ideal step}
 \label{sec:ideal}
 
@@ -160,14 +207,14 @@ S_a(\bm m_a)\equiv S_a(e_a,\bm m_a,V_a),\qquad \frac{\partial S_a}{\partial\bm m
 The step must do two things.
 \begin{itemize}
 \item \emph{On average}, move momentum as viscosity does: the entropy grows at the rate $2K$, with $K$ the dissipative function.
-\item \emph{In its fluctuations}, keep the thermal equilibrium.  At fixed energies and positions that equilibrium is
+\item \emph{In its fluctuations}, keep the thermal equilibrium.  At fixed energies and positions the equilibrium \Eq{equilibriume} is
 \begin{keyeq}
   \st
-  \pi(\bm m)\propto\exp\sum_a\big[S_a(\bm m_a)-\ln T_a\big] .
+  \pi(\bm m)\propto\exp\sum_a\big[S_a(\bm m_a)-\ln T_a\big]
   \label{target}
   \stp
 \end{keyeq}
-  The $-\ln T_a$ makes it the same equilibrium the ideal step keeps (\App{app:measure}).
+  (\Sect{sec:equilibrium}; the flow term drops out because the step conserves the total momentum).
 \end{itemize}
 A Metropolis chain does both.  A random momentum transfer, drawn from a zero-mean Gaussian with covariance $\Sigma$ and accepted with the
 Metropolis probability, drifts on average by
@@ -320,31 +367,19 @@ set by the sound speed, the viscosity and the shortest modes of the particles (\
 \section{The start: hybrid Monte Carlo}
 \label{sec:start}
 
-\paragraph{The equilibrium.}  At temperature $T$, for a fluid at rest or moving uniformly with velocity $\bm v$, the equilibrium of the particles is
-\begin{keyeq}
-\st
-\pi\big(\{\bm x_a,\bm m_a,s_a\}\big)\propto\exp\sum_a\Big[s_a-\frac{e_a(s_a,\bm m_a,V_a)-\bm v\cdot\bm m_a}{T}\Big],
-\label{equilibrium}
-\stp
-\end{keyeq}
-a density with respect to the phase-space measure $\prod_ad\bm x_a\,d\bm m_a\,ds_a$; the sum of the particle energies is $H$, and of their momenta
-the total momentum $\bm P$.  It includes the positions, and they are not a lattice: at finite entropy per particle they form a liquid.
-A run started on a lattice relaxes to it only slowly, at a rate set by self-diffusion, which falls as $1/s_a$.  So the run starts from a
-sample of \Eq{equilibrium}.
+A run starts from a sample of the equilibrium, \Eq{equilibrium}, positions included.  Started on a lattice instead, it would relax to the
+liquid only slowly, at a rate set by self-diffusion, which falls as $1/s_a$.
 
 \paragraph{Hybrid Monte Carlo} samples it by alternating two exact steps.
 \begin{enumerate}
-\item \emph{Heat bath} at fixed positions.  Each particle draws its energy and momentum from its own conditional distribution,
-  \st
-  \exp\Big[S_a(e_a,\bm m_a,V_a)-\ln T_a-\frac{e_a-\bm v\cdot\bm m_a}{T}\Big]\,de_a\,d\bm m_a ,
-  \stp
-  and its entropy follows, $s_a=S_a(e_a,\bm m_a,V_a)$.  The $-\ln T_a$ reflects the change of measure, $ds_a=de_a/T_a$, and is not
-  extensive: it is of order one per particle, against an entropy $s_a$ of tens to hundreds.
+\item \emph{Heat bath} at fixed positions, with the energy form \Eq{equilibriume}.  Each particle draws its energy and momentum from its own
+  factor of \Eq{equilibriume}, independently of the others, and its entropy follows, $s_a=S_a(e_a,\bm m_a,V_a)$.
 \item \emph{Hamiltonian trajectory} at fixed entropies.  The generalized leapfrog \Eq{glf} runs for a time $\tau$, and the end point is accepted with
   \st
   \min\Big(1,\ e^{-(\Delta H-\bm v\cdot\Delta\bm P)/T}\Big) .
   \stp
-  The exact flow keeps \Eq{equilibrium}; because the integrator is symplectic and reversible, the test removes its error exactly.
+  This is the entropy form \Eq{equilibrium}: the exact flow keeps it, and because the integrator is symplectic and reversible, the test removes
+  its error exactly.
 \end{enumerate}
 The trajectories are the fluid's own motion, and they are what moves the positions into the liquid.  A trajectory as long as the time sound
 takes to cross the box, $\tau=L/c_s$, decorrelates the longest modes; the length is drawn at random in $[\tau/2,\tau]$, because a fixed length
@@ -378,19 +413,6 @@ The known limits are in \App{app:limits}.
 
 %=============================================================================
 \appendix
-
-\section{The equilibrium and the measure}
-\label{app:measure}
-
-The ideal step conserves $H$ and the entropies and preserves $\prod_ad\bm x_a\,d\bm m_a$; it therefore keeps \Eq{equilibrium} with the measure flat in
-the entropies.  The viscous step moves the momenta at fixed energies.  On that surface, changing variables from $s_a$ to $e_a$ at fixed $\bm m_a$
-and $V_a$ gives, by \Eq{firstlaw},
-\st
-ds_a=\frac{de_a}{T_a},
-\stp
-so the weight of a momentum at fixed energy is $e^{S_a}/T_a$: \Eq{target}.  Both steps then keep the same distribution.  The alternative, a
-measure flat in the energies and momenta, differs by $\prod_aT_a$, an effect of relative size $1/s_a$; it is available as an option
-(\App{app:options}).
 
 \section{Detailed balance and the Hastings factor}
 \label{app:mh}
@@ -536,7 +558,9 @@ The alternatives:
 \begin{itemize}
 \item ideal step: \texttt{particle} is the drift--kick--drift leapfrog, \texttt{grid} the step on a fixed lattice;
 \item viscous step: \texttt{common} corrects the weights of each star instead of inverting its moment, \texttt{particle} uses weights round in
-  the rest frame.
+  the rest frame;
+\item measure: \texttt{einstein} is flat in the energies and momenta instead of the entropies; it differs from \Eq{equilibrium} by $\prod_aT_a$, an
+  effect of relative size $1/s_a$, and the ideal step does not keep it exactly.
 \end{itemize}
 Earlier runs are reproduced with
 \begin{itemize}
