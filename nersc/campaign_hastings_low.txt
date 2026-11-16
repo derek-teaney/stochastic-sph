@@ -1,0 +1,33 @@
+# Campaign `hastings_low` (2026-11-16, NERSC; owner: "let's go wild"): the runs of campaign hastings (moment without/with SPH_HASTINGS,
+# the stochastic step alone, HMC chains of the same model and measure) at s_a = 12, 8, 4, with the γ cap (SPH_GAMMA_MAX = 100).  The s_a = 16
+# lines of campaign_hastings.txt with S0 and the seed offsets changed; everything else as there.  384 tasks of 4 cores, packed on 12 nodes.
+hs12_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=2.217e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=10500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs12_nh_v0
+hs12_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.217e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=10500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs12_h_v0
+hs12_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=10600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs12_nh_v0.8
+hs12_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=10600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs12_h_v0.8
+hs12_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.217e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=10900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs12_nh_alone_v0
+hs12_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.217e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=10900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs12_h_alone_v0
+hs12_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=11000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs12_nh_alone_v0.8
+hs12_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=11000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs12_h_alone_v0.8
+hq12_v0      16  SR_S0=2.217e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq12_v0
+hq12_v0.8    16  SR_S0=2.217e+04 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq12_v0.8
+hs8_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=20500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs8_nh_v0
+hs8_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=20500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs8_h_v0
+hs8_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=20600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs8_nh_v0.8
+hs8_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=20600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs8_h_v0.8
+hs8_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=20900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs8_nh_alone_v0
+hs8_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=20900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs8_h_alone_v0
+hs8_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=21000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs8_nh_alone_v0.8
+hs8_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=21000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs8_h_alone_v0.8
+hq8_v0      16  SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq8_v0
+hq8_v0.8    16  SR_S0=1.478e+04 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq8_v0.8
+hs4_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_nh_v0
+hs4_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_h_v0
+hs4_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=30600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_nh_v0.8
+hs4_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=30600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_h_v0.8
+hs4_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_nh_alone_v0
+hs4_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_h_alone_v0
+hs4_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=31000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_nh_alone_v0.8
+hs4_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=31000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_h_alone_v0.8
+hq4_v0      16  SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq4_v0
+hq4_v0.8    16  SR_S0=7390 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq4_v0.8
