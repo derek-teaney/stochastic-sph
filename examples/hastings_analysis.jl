@@ -42,9 +42,10 @@ end
 
 ratio(a, ea, b, eb) = (a / b, abs(a / b) * sqrt((ea / a)^2 + (eb / b)^2))
 
-fig, axs = subplots(2, 4, figsize = (18, 8), squeeze = false)
+const SAS = parse.(Int, split(get(ENV, "HA_SAS", "16,54"), ","))     # the entropies per particle to show (HA_SAS, default 16,54)
+fig, axs = subplots(2, 2 * length(SAS), figsize = (4.5 * 2 * length(SAS), 8), squeeze = false)
 COL = Dict("nh" => "#eb6834", "h" => "#2a78d6", "nh_alone" => "#eda100", "h_alone" => "#1baf7a")
-for (ci, (sa, v)) in enumerate([(sa, v) for sa in (16, 54) for v in ("0", "0.8")])
+for (ci, (sa, v)) in enumerate([(sa, v) for sa in SAS for v in ("0", "0.8")])
     ref = set_spectra("hq$(sa)_v$(v)", true)
     ref === nothing && (println("no HMC reference hq$(sa)_v$(v)");  continue)
     @printf("\ns_a = %d, v0 = %s: HMC reference %d chains\n", sa, v, ref.n)
