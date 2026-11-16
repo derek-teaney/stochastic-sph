@@ -961,6 +961,13 @@ entropy per particle, not of the correction.  $\Delta H/H$: $2\times10^{-5}$--$2
 \label{fig:hs54_et}
 \end{figure}
 \begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS54_equaltime_hmc.png}
+\caption{$s_a=54$: as \Fig{fig:hs54_et}, the equal-time $\langle|A_{\bm k}|^2\rangle$ divided by HMC of the same model and measure instead of by $\chi$ (16 runs,
+16 chains each; the three smallest modes along $x$ and $y$).  At rest the runs without the correction lie $2$--$11\%$ above HMC, with it on $1$.
+\texttt{examples/equaltime\_over\_hmc.jl}.}
+\label{fig:hs54_et_hmc}
+\end{figure}
+\begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/hastings_nersc_HS54_fit.png}
 \caption{$s_a=54$: $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$ against $v_0$, without (blue) and with (orange) the correction; filled along, open across.}
 \end{figure}
