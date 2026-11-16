@@ -4,6 +4,12 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-16 (NERSC): campaign `hastings_low` submitted** (owner: "let's go wild"): the hastings runs at s_a = 12, 8, 4 with the γ cap,
+nersc/campaign_hastings_low.txt (77cf74f), 384 tasks, worktree ~/stochastic-sph-hs.  Three packed 4-node regular jobs: s_a = 12 **61376871**
+(tasks 1–128, -t 1:30), s_a = 8 **61376872** (129–256, -t 3:00), s_a = 4 **61376873** (257–384, -t 5:00); ≈ 20 node-hours at most.  Smoke test
+at s_a = 4, v0 = 0.8, with the correction: runs, but dt = 8e-4 (≈ 4× smaller than at s_a = 16) and 51503 light-cone rejections in 125
+steps.  Analysis: HA_SAS=12,8,4 examples/hastings_analysis.jl; boost groups HS12, HS8, HS4.
+
 **2026-11-16 (NERSC): s_a = 16 rerun with the γ cap (dfa4834)** — campaign_hastings_s16.txt, job 61372840 (4 debug nodes, 29 min, all 96
 complete), and the s_a = 16 HMC chains, campaign_hastings_hq16.txt, job 61374810 (1 debug node, 7 min).  Pre-cap output kept as *_precap.
 **Not bit-identical**, for the corrected runs too: the start already differs (the HMC start / equilibrium draw at s_a = 16 produced states
