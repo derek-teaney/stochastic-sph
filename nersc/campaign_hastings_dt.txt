@@ -1,0 +1,16 @@
+# Campaign `hastings_dt` (2026-11-16, NERSC): campaign_hastings_low at s_a = 4 (all 128 tasks) and the s_a = 8 HMC chains (32), with the HMC
+# time step halved, SR_HMC_DTFAC = 0.175 (was 0.35), in the HMC start of the dynamics and in the chains: at s_a <= 8 the EOS inversion failed
+# inside the HMC trajectory (the implicit half step) in ~40% of the s_a = 4 tasks.  A smaller step changes efficiency, not the target.
+# Output in $SCRATCH/sph/hastings_dt (the first s_a = 4 run, job 61376873, keeps its own).  160 tasks, packed on 5 nodes.
+hq8_v0      16  SR_S0=1.478e+04 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.175  -- examples/hmc_positions.jl 0.6 2 300 0 hq8_v0
+hq8_v0.8    16  SR_S0=1.478e+04 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.175  -- examples/hmc_positions.jl 0.6 2 300 0 hq8_v0.8
+hs4_nh_v0      16  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175                SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_nh_v0
+hs4_h_v0       16  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175 SPH_HASTINGS=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_h_v0
+hs4_nh_v0.8    16  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175                SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=30600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_nh_v0.8
+hs4_h_v0.8     16  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175 SPH_HASTINGS=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=30600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs4_h_v0.8
+hs4_nh_alone_v0    8  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175                SR_NOHAM=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_nh_alone_v0
+hs4_h_alone_v0     8  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175 SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=30900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_h_alone_v0
+hs4_nh_alone_v0.8  8  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175                SR_NOHAM=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=31000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_nh_alone_v0.8
+hs4_h_alone_v0.8   8  SPH_DISSIPATION=moment SR_HMC_DTFAC=0.175 SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=31000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs4_h_alone_v0.8
+hq4_v0      16  SR_S0=7390 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.175  -- examples/hmc_positions.jl 0.6 2 300 0 hq4_v0
+hq4_v0.8    16  SR_S0=7390 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.175  -- examples/hmc_positions.jl 0.6 2 300 0 hq4_v0.8
