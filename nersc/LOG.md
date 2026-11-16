@@ -4,6 +4,13 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-16 (NERSC): hastings_low, s_a = 4 done** (61376873, 37 min): 49/128 tasks stopped in HMC (eos_newton, see below); survivors at rest
+7 nh / 10 h / 5 chains, at v0 = 0.8 14 / 14 / 13.  Indicative: at rest residual acceptance 5% (nh) / 0.8% (h), light cone 90% of residual and 60%
+of stress proposals, shear Γ/Γ_hyd ≈ 2.6–2.7 in both, KE/2VwT ≈ 0.6; spectra / HMC: nh +3–9% at rest and M_T +6–11% at v0 = 0.8, h ≈ 1.
+**Note on the new defaults (a82ccdc, moment + Hastings by default):** the hastings campaign files' "nh" lines set SPH_DISSIPATION=moment but
+not SPH_HASTINGS=0 — run at or after a82ccdc they would get the correction.  Add SPH_HASTINGS=0 before reusing them.  (campaign_hastings_dt.txt,
+9e4bf68, written but NOT run — cancelled before it started; it needs that fix too.)
+
 **2026-11-16 (NERSC): hastings_low, s_a = 12 and 8 done** (61376871: 128/128; 61376872: 96/96 dynamics, 29/32 HMC chains).  docs/inverse_moment.tex,
 Stage 2, new subsection "Lower entropy per particle".  With the correction the dynamics matches HMC down to s_a = 8; without it the excess at rest
 is +15–21% at s_a = 12 and +5–12% at 8 (smaller: at s_a = 8 the light cone rejects 65% of the residual and 31% of the stress proposals).  The

@@ -1057,7 +1057,8 @@ $\Delta H/H$: $2\times10^{-5}$--$2.5\times10^{-4}$ at $s_a=54$, $2\times10^{-4}$
 
 The same runs at $s_a=12$, $8$ and $4$, with the $\gamma$ cap (\texttt{nersc/campaign\_hastings\_low.txt}, \texttt{77cf74f}; jobs 61376871, 61376872, 61376873, one
 packed 4-node job per $s_a$).  $s_a=12$: all 128 runs complete (33 min).  $s_a=8$: all 96 runs of the dynamics complete (34 min); 3 of the 32 HMC
-reference chains stopped (below).  $s_a=4$: running at the time of writing, with about $40\%$ of its tasks stopped.
+reference chains stopped (below).  $s_a=4$ (37 min): 49 of the 128 tasks stopped, all inside HMC (survivors: at rest 7 without and 10 with the correction, 5 reference chains;
+at $v_0=0.8$ 14, 14 and 13); its numbers below are indicative.
 
 \paragraph{A new failure at low $s_a$: the EOS inversion.}  The stopped tasks all end in \texttt{eos\_newton} (\texttt{src/sph.jl:359}): the Newton
 iteration for the energy at given entropy and momentum runs away to $e=-\infty$, and \texttt{Trel} takes $\sqrt{-\infty}$ (\texttt{sph.jl:204}).  It
@@ -1070,18 +1071,18 @@ surviving chains (14 at rest, 15 at $v_0=0.8$), a small selection.
 
 \paragraph{The trend.}  At rest (the moving fluid shows no bias in either version at any $s_a$, within $2$--$5\%$, \Fig{fig:hs_spectra_low}):
 \begin{center}
-\resizebox{\textwidth}{!}{\begin{tabular}{lcccc}
+\resizebox{\textwidth}{!}{\begin{tabular}{lccccc}
 \hline
-at rest & $s_a=54$ & $16$ & $12$ & $8$ \\ \hline
-spectra / HMC without the correction ($M_L$, $M_T$, $E$) & $1.02$--$1.08$ & $1.13$--$1.19$ & $1.15$--$1.21$ & $1.05$--$1.12$ \\
-spectra / HMC with the correction & $1.00\pm0.01$ & $0.98$--$1.02$ & $0.94$--$1.02$ & $0.98$--$1.02$ \\
-stress acceptance, without / with & $0.95$ / $0.95$ & $0.92$ / $0.92$ & $0.84$ / $0.85$ & $0.57$ / $0.63$ \\
-residual acceptance, without / with & $0.66$ / $0.62$ & $0.64$ / $0.44$ & $0.53$ / $0.32$ & $0.23$ / $0.10$ \\
-light cone, stress / residual (without) & $10^{-6}$ / $10^{-4}$ & $0.03$ / $0.12$ & $0.09$ / $0.28$ & $0.31$ / $0.65$ \\
-residual $\ln q'/q$, median rms (with) & $1.8$ & $2.1\times10^3$ & $4.8\times10^4$ & $1.1\times10^7$ \\
-KE$/2VwT$, without / with & $0.99$ / $0.95$ & $0.97$ / $0.85$ & $0.96$ / $0.82$ & $0.85$ / $0.75$ \\
-shear $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$, without / with & $0.92$--$0.99$ / $0.95$--$1.10$ & $1.06$--$1.09$ / $1.18$--$1.22$ & $0.92$--$0.98$ / $1.14$--$1.16$ & $1.25$--$1.26$ / $1.36$ \\
-$\Delta H/H$ at $t=100$ & $2\times10^{-5}$--$8\times10^{-5}$ & $2\times10^{-3}$ & $4$--$5\times10^{-3}$ & $1\times10^{-2}$ \\
+at rest & $s_a=54$ & $16$ & $12$ & $8$ & $4$ \\ \hline
+spectra / HMC without the correction ($M_L$, $M_T$, $E$) & $1.02$--$1.08$ & $1.13$--$1.19$ & $1.15$--$1.21$ & $1.05$--$1.12$ & $1.03$--$1.09$ \\
+spectra / HMC with the correction & $1.00\pm0.01$ & $0.98$--$1.02$ & $0.94$--$1.02$ & $0.98$--$1.02$ & $0.97$--$1.03$ \\
+stress acceptance, without / with & $0.95$ / $0.95$ & $0.92$ / $0.92$ & $0.84$ / $0.85$ & $0.57$ / $0.63$ & $0.22$ / $0.26$ \\
+residual acceptance, without / with & $0.66$ / $0.62$ & $0.64$ / $0.44$ & $0.53$ / $0.32$ & $0.23$ / $0.10$ & $0.05$ / $0.008$ \\
+light cone, stress / residual (without) & $10^{-6}$ / $10^{-4}$ & $0.03$ / $0.12$ & $0.09$ / $0.28$ & $0.31$ / $0.65$ & $0.65$ / $0.90$ \\
+residual $\ln q'/q$, median rms (with) & $1.8$ & $2.1\times10^3$ & $4.8\times10^4$ & $1.1\times10^7$ & --- \\
+KE$/2VwT$, without / with & $0.99$ / $0.95$ & $0.97$ / $0.85$ & $0.96$ / $0.82$ & $0.85$ / $0.75$ & $0.65$ / $0.61$ \\
+shear $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$, without / with & $0.92$--$0.99$ / $0.95$--$1.10$ & $1.06$--$1.09$ / $1.18$--$1.22$ & $0.92$--$0.98$ / $1.14$--$1.16$ & $1.25$--$1.26$ / $1.36$ & $2.6$ / $2.7$ \\
+$\Delta H/H$ at $t=100$ & $2\times10^{-5}$--$8\times10^{-5}$ & $2\times10^{-3}$ & $4$--$5\times10^{-3}$ & $1\times10^{-2}$ & $0.6$--$1\times10^{-2}$ \\
 \hline
 \end{tabular}}
 \end{center}
@@ -1092,6 +1093,9 @@ $\Delta H/H$ at $t=100$ & $2\times10^{-5}$--$8\times10^{-5}$ & $2\times10^{-3}$ 
 \item \emph{The cost of the correction} grows as $s_a$ falls: the residual acceptance at rest drops by $0.04$, $0.20$, $0.21$, $0.13$ (to $0.10$ at $s_a=8$), and the
   residual log ratios become enormous ($10^7$ at $s_a=8$).
 \item \emph{The corrected dynamics damps the shear mode faster at rest} at every $s_a\le16$ (by $0.1$--$0.2$ of $\Gamma_{\rm hydro}$).
+\item \emph{$s_a=4$ is beyond the edge.}  At rest the light cone rejects $90\%$ of the residual and $60\%$ of the stress proposals (the step is
+  nearly frozen: residual acceptance $0.8\%$ with the correction), the shear mode damps at $2.6$--$2.7\,\Gamma_{\rm hydro}$ in both versions, and KE$/2VwT\approx0.6$.  The
+  correction still brings the spectra to HMC, and at $v_0=0.8$ the uncorrected $M_T$ is now biased too ($1.06$--$1.11$, $3$--$7\sigma$; $1$ with the correction).
 \item \emph{The method degrades below $s_a\approx12$}: at $s_a=8$ the energy drifts ($\Delta H/H\sim10^{-2}$), the advected shear mode at $v_0=0.8$ moves at
   $\Omega/k=0.77$--$0.78$ instead of $0.80$ (in both versions), and HMC itself begins to fail.
 \end{itemize}
@@ -1149,6 +1153,28 @@ $\Delta H/H$ at $t=100$ & $2\times10^{-5}$--$8\times10^{-5}$ & $2\times10^{-3}$ 
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/hastings_nersc_HS8_soundpar_v0.8.png}
 \caption{$s_a=8$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+
+\clearpage
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_spectra_s4.png}
+\caption{$s_a=4$ (survivors; indicative): the equal-time $\langle|M_L|^2\rangle$, $\langle|M_T|^2\rangle$ of the dynamics over HMC (5 chains at rest, 13 at $v_0=0.8$), without (orange) and with (blue) the correction, and the stochastic step alone.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS4_equaltime_hmc.png}
+\caption{$s_a=4$: equal-time $\langle|A_{\bm k}|^2\rangle$ divided by HMC, without (7 runs at rest, 14 moving) and with (10, 14) the correction.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS4_fit.png}
+\caption{$s_a=4$: $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$ against $v_0$, without (blue) and with (orange) the correction; filled along, open across.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS4_shear_v0.0.png}
+\caption{$s_a=4$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, without (left) and with (right) the correction: $2.6$--$2.7$ times faster than hydrodynamics (dashed).}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS4_shear_v0.8.png}
+\caption{$s_a=4$, $v_0=0.8$: the advected shear mode, without (left) and with (right) the correction; dashed hydrodynamics.}
 \end{figure}
 
 \end{document}
