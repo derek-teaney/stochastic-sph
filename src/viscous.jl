@@ -59,6 +59,7 @@ bond_weight(ρ::Float64, hψ::Float64) =
 # comoving metric ℓ = δ − v vᵀ, its inverse δ + γ² v vᵀ, and the scalar projector
 # P (2×2 block) and ⟨Pℓ⟩ for physical dimension d.
 function comoving_structures(v::SVector{2,Float64}, cs2v::Float64, d::Int)
+    v   = cap_velocity(v)                               # |v|² ≤ 1 − 1/γ_max² (sph.jl)
     vv  = v * v'
     γ2  = 1 / (1 - dot(v, v))
     ℓ   = SMatrix{2,2,Float64}(I) - vv

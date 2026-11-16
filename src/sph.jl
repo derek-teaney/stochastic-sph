@@ -84,6 +84,16 @@ end
 # Hamiltonian; commonkernel.tex), else :particle.  SPH_DISSIPATION=particle gives the earlier default back.
 default_dissipation(sim_dim = 2) =
     sim_dim == 2 && setting("SPH_HAMILTONIAN", :energy) === :energy ? :common : :particle
+# The largest Lorentz factor a fluid particle may have (2026-11-15; docs/inverse_moment.tex, Stage 2 results): a state with
+# γ > SPH_GAMMA_MAX has no weight (the stochastic votes, the equilibrium start and hybrid Monte Carlo reject it, through
+# particle_entropy), and the comoving structures are built with the velocity capped there.  Near the light cone the inversion of
+# the equation of state loses accuracy as 1e-16 γ² (relative, in 1 − v², T, S), and the comoving metric and the residual coefficients
+# become singular; nothing in our flows needs γ ≳ 10.  Default 100 (|v|² ≤ 1 − 10⁻⁴).
+const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
+const V2MAX = 1 - 1 / GAMMA_MAX^2
+# the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
+cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
+
 # The ideal step and the measure when none is given (2026-11-15): the generalized leapfrog and the Liouville measure where
 # they apply (2D, energy Hamiltonian, and for the leapfrog the n-scheme), else :particle and :einstein.
 default_ideal(sim_dim, hamiltonian, volume) =

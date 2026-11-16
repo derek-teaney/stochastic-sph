@@ -780,6 +780,20 @@ beyond the light cone, toward which the Liouville weight grows.)
 per record window, next to the acceptances, as \texttt{hast\_lq\_\{stress,resid\}\_\{mean,rms\}}; without the correction nothing is written.  In a short run
 at $s_a=541$, $v_0=0$ the residual log ratios have an rms of $0.04$ and the stress log ratios are below $10^{-3}$.
 
+\paragraph{A cap on the Lorentz factor} (\texttt{SPH\_GAMMA\_MAX}, default $100$, since 2026-11-15).  At $s_a=16$ without the correction a particle
+reached $1-v^2\approx10^{-16}$ ($\gamma\approx10^8$) and the comoving structures failed (\Sect{sec:nersc2}).  Near the light cone the inversion of the
+equation of state loses accuracy as $10^{-16}\gamma^2$ (relative error of $1-v^2$, $T$, $S$: $7\times10^{-12}$ at $\gamma=100$, $4\times10^{-8}$ at $10^4$,
+$5\times10^{-4}$ at $10^6$).  A state with
+\st
+\gamma>\gamma_{\max}=100,\qquad |\bm v|^2>1-\gamma_{\max}^{-2}=1-10^{-4},
+\stp
+now has no weight in the votes, the equilibrium start and hybrid Monte Carlo (all through the particle entropy), and the comoving
+structures are built with the velocity capped there.  Bit-identical for every run below the cap.  At $s_a=16$ at rest the uncorrected run
+now completes ($11\%$ of the residual proposals are rejected at the cap).  The large residual log ratios remain there (median rms per
+window $2.6\times10^3$): particles at $\gamma\sim10$--$100$, where one move changes $\det\ell_a=\gamma^{-2}$ and $f_{ab}$ by large factors, are common at
+$s_a=16$ ($|\bm v|>0.99$ in $0.1\%$ of the samples).  The correction is still exact there, but the residual move is then decided by $q'/q$.
+$s_a\approx16$ is the edge of the method.
+
 \paragraph{The price: the residual acceptance.}  It falls, most at low entropy per particle in a moving fluid ($0.65\to0.22$ at $s_a=16$, $v_0=0.8$,
 $\Delta t=\frac12\Delta t_{\rm visc}$).  The residual proposal lives in about $2n\approx110$ dimensions, and its density changes with the coefficients of
 particle $a$: the normalization in \Eq{qresid} moves by about $n$ times the relative change $\epsilon$ of the coefficients in one move, and the

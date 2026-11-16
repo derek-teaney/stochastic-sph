@@ -29,6 +29,7 @@
 
 # ℓ^{1/2} for ℓ = 𝟙 − v vᵀ (|v| < 1)
 function sqrt_comoving(v::SVector{2,Float64})
+    v = cap_velocity(v)                                 # |v|² ≤ 1 − 1/γ_max² (sph.jl)
     v2 = dot(v, v)
     v2 == 0 && return SMatrix{2,2,Float64}(I)
     return SMatrix{2,2,Float64}(I) - (1 - sqrt(1 - v2)) * (v * v') / v2
@@ -230,7 +231,7 @@ function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
 end
 
 # Particle entropy S_a(e, m) at volume V; −Inf for a state no fluid can have (the
-# inversion fails, or |v| ≥ 1).  Such states have zero weight under e^𝕊: a move that
+# inversion fails, or γ > γ_max, i.e. |v|² > 1 − 1/γ_max²; sph.jl, SPH_GAMMA_MAX).  Such states have zero weight under e^𝕊: a move that
 # reaches one is rejected (docs/plan.tex, "Guarding against superluminal proposals").
 function particle_entropy(e, m, V, eos)
     ε = e / V;  M = m / V
@@ -241,7 +242,7 @@ function particle_entropy(e, m, V, eos)
         return -Inf
     end
     S, v, _ = r
-    return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
+    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
 end
 
 # Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
@@ -251,7 +252,7 @@ function particle_entropy(e, m, V, eos::ConformalEOS)
     ε = e / V;  M = m / V
     (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
     S, v, _ = eos_from_energy(ε, M, eos)
-    return (isfinite(S) && dot(v, v) < 1) ? V * S : -Inf
+    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
 end
 
 # The entropy that weights a state in the votes.  measure = :einstein: S_a itself (flat in e_a, m_a).  measure = :liouville
@@ -266,7 +267,7 @@ function particle_entropy_lnT(e, m, V, eos)
         return -Inf
     end
     S, v, T = r
-    return (isfinite(S) && dot(v, v) < 1 && T > 0) ? V * S - log(T) : -Inf
+    return (isfinite(S) && dot(v, v) <= V2MAX && T > 0) ? V * S - log(T) : -Inf
 end
 vote_entropy(e, m, V, eos, liouville::Bool) = liouville ? particle_entropy_lnT(e, m, V, eos) : particle_entropy(e, m, V, eos)
 

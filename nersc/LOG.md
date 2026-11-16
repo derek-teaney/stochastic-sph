@@ -27,6 +27,23 @@ figures moment_nersc_A_*, moment_nersc_B_*.
 from a fresh worktree ~/stochastic-sph-hs at 927e035 (testhastings.jl PASS there).  Output $SCRATCH/sph/hastings.  moment_b (61361958)
 still running from ~/stochastic-sph-mo-run.
 
+## From the laptop (2026-11-15, late night): γ_max = 100 — rerun the crashed tasks; add Fig. 37
+
+`SPH_GAMMA_MAX` (default 100, src/sph.jl): states with γ > 100 (|v|² > 1 − 1e-4) have no weight (particle_entropy), and the comoving
+structures cap the velocity there.  Bit-identical below the cap (step.jl, the equilibrium driver: 44 datasets identical).  This fixes the
+`sqrt_comoving` DomainError of the 20 hs16_nh tasks (on the laptop the s_a = 16 run at rest now completes).  The large residual log ratios
+at s_a = 16, v0 = 0 remain (median rms 2.6e3): particles at γ ~ 10–100 are common there; the correction stays exact.  The owner: s_a ≈ 16
+is the edge of the method.
+
+To do (worktree updated to the pushed tip; a few node-minutes):
+1. **Rerun the 20 crashed tasks** of campaign `hastings` (hs16_nh_v0: 15, hs16_nh_alone_v0: 4, hs16_nh_v0.8: 1) — delete their partial
+   output or keep it apart, then the same node.sh line restricted to those tasks (node.sh takes [first last]; or a short campaign file
+   with just those lines).  Note: the hs16 *with* runs were done before the cap; they need no rerun (none reached γ > 100?  check the
+   max |v| in their logs and say so).
+2. **Keep Fig. 36** (equal-time C_AA/χ, s_a = 16) **and add a figure next to it, in the same layout, divided by HMC instead of χ**
+   (the owner's request), and the same for s_a = 54.
+3. Update "Stage 2: results from NERSC" with the s_a = 16 row without the correction, and push.
+
 ## Next session at NERSC — campaign `hastings` (written 2026-11-15, night, on the laptop; branch `inverse-moment`)
 
 **Question** (owner): is the Hastings correction needed in practice?  The stochastic step alone is biased at low s_a (up to +17% in
