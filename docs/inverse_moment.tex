@@ -866,21 +866,21 @@ moment orange; filled along, open across the flow.}
 \label{sec:nersc2}
 
 \emph{The answer: at rest the Hastings correction is needed --- without it the full dynamics overestimates the equal-time momentum and energy
-fluctuations by about $5\%$ at $s_a=54$ and $20\%$ at $s_a=16$ against HMC of the same model; with it they agree with HMC to $1$--$2\%$.  At $v_0=0.8$
+fluctuations by about $5\%$ at $s_a=54$ and $13$--$19\%$ at $s_a=16$ against HMC of the same model; with it they agree with HMC to $1$--$2\%$.  At $v_0=0.8$
 neither shows a bias within the errors ($2$--$5\%$).}
 
 Campaign \texttt{hastings} (\texttt{nersc/campaign\_hastings.txt}, job 61364382, 8 regular nodes, 18 min; worktree at \texttt{927e035}): \texttt{moment} without
 (nh) and with (h) \texttt{SPH\_HASTINGS=1}, $L=0.6$, $h/a=2$, current defaults, $s_a=16$ and $54$, $v_0=0$ and $0.8$, full step (16 runs each, $t=100$), the
 stochastic step alone (8 runs, $t=50$), and HMC chains of the same model and measure (16 each, 300 updates).
 
-\paragraph{Failed runs.}  20 of the 256 tasks stopped, all at $s_a=16$ \emph{without} the correction (\texttt{hs16\_nh\_v0}: 15 of 16;
-\texttt{hs16\_nh\_alone\_v0}: 4 of 8; \texttt{hs16\_nh\_v0.8}: 1 of 16), with
-\st
-\texttt{DomainError: sqrt of } -6.7\times10^{-16}\quad\text{in } \texttt{sqrt\_comoving} \text{ (stochastic.jl:34), from } \texttt{build\_stars}:
-\stp
-a particle at $|\bm v|=1$ to roundoff, so $1-v^2<0$.  The path with the correction builds the coefficients elsewhere and did not stop.
-That the uncorrected runs reach the light cone at all fits their inflated momentum fluctuations.  A clamp, $\sqrt{\max(1-v^2,0)}$, or a guard in
-\texttt{build\_stars} is needed before they can be rerun; with the same seeds they would stop again.
+\paragraph{The $\gamma$ cap and the rerun at $s_a=16$.}  20 of the 256 tasks stopped, all at $s_a=16$ without the correction, with a
+\texttt{DomainError} in \texttt{sqrt\_comoving}: a particle at $|\bm v|=1$ to roundoff.  The laptop added the cap $\gamma_{\max}=100$ (\texttt{SPH\_GAMMA\_MAX},
+\texttt{dfa4834}: states beyond it have no weight; the comoving structures are capped there), and all eight $s_a=16$ sets were rerun (job 61372840, 96
+runs, all complete), as were the $s_a=16$ HMC chains (job 61374810).  The rerun is \emph{not} bit-identical to the first run, for the corrected runs
+either: already the start differs (the HMC start and the equilibrium draw at $s_a=16$ produced states beyond $\gamma=100$, which now have no weight),
+and so does the time step, set by the extreme particle ($3.1\times10^{-3}\to5.4\times10^{-3}$ at rest).  All $s_a=16$ numbers below are from the capped
+runs against the capped HMC chains; the first, uncapped run is kept apart (\texttt{*\_precap}).  The $s_a=54$ sets did not come near the cap
+($\max|\bm v|\le0.99$).
 
 \paragraph{Equal-time spectra against HMC} (\texttt{examples/hastings\_analysis.jl}, \Fig{fig:hs_spectra}): $\langle|A_{\bm k}|^2\rangle/N$ of the dynamics over that of the
 HMC chains, in bands $kh=0.52$--$1.56$, errors from the spread of the runs:
@@ -889,26 +889,25 @@ HMC chains, in bands $kh=0.52$--$1.56$, errors from the spread of the runs:
 \hline
  & without & with the correction \\ \hline
 $s_a=54$, $v_0=0$: $M_L$, $M_T$, $E$ & $1.02$--$1.06$, $1.02$--$1.08$, $1.05$--$1.06$ ($2$--$5\sigma$) & $1.00\pm0.01$ in all three \\
-$s_a=16$, $v_0=0$: $M_L$, $M_T$, $E$ & $1.15$--$1.39$ (1 run); alone $1.15$--$1.23$ (4 runs) & $0.98$--$1.02$ (16 runs) \\
+$s_a=16$, $v_0=0$: $M_L$, $M_T$, $E$ & $1.16$--$1.19$, $1.16$--$1.18$, $1.13$--$1.15$ ($5$--$18\sigma$); alone $1.16$--$1.22$ & $0.98$--$1.02$; alone $0.99$--$1.06$ \\
 $s_a=54$, $v_0=0.8$ & $1$ within the errors (one band $0.88(9)$) & $1$ within the errors \\
-$s_a=16$, $v_0=0.8$ & $1$ within the errors & $1$ within the errors \\
+$s_a=16$, $v_0=0.8$ & $1$ within the errors & $1$ within the errors (one band $0.85(6)$) \\
 \hline
 \end{tabular}}
 \end{center}
 (For the stochastic step alone at $v_0=0.8$ the HMC chains are not the reference --- the alone runs keep the positions of their start --- and
 both versions scatter alike.)
 
-\paragraph{Acceptances and rejections} (from the running totals in the task logs, mean over the runs that reached them; for the runs that
-stopped, their totals at the stop).  ``nh'' without, ``h'' with the correction; ``light cone'' the fraction of proposals rejected because a
+\paragraph{Acceptances and rejections} (from the running totals in the task logs, mean over the runs; $s_a=16$ from the capped rerun).  ``nh'' without, ``h'' with the correction; ``light cone'' the fraction of proposals rejected because a
 particle would reach $|\bm v|\ge1$:
 \begin{center}
 \resizebox{\textwidth}{!}{\begin{tabular}{llccccc}
 \hline
 set & runs (complete) & stress acc., nh / h & residual acc., nh / h & $\Delta$ residual & light cone, residual, nh / h \\ \hline
-$s_a=16$, $v_0=0$, full & $1$ / $16$ & $0.907$ / $0.913$ & $0.643$ / $0.444$ & $-0.20$ & $0.12$ / $0.11$ \\
-$s_a=16$, $v_0=0$, alone & $4$ / $8$ & $0.914$ / $0.921$ & $0.653$ / $0.454$ & $-0.20$ & $0.11$ / $0.09$ \\
-$s_a=16$, $v_0=0.8$, full & $15$ / $16$ & $0.970$ / $0.969$ & $0.837$ / $0.541$ & $-0.30$ & $9\times10^{-3}$ / $8\times10^{-3}$ \\
-$s_a=16$, $v_0=0.8$, alone & $8$ / $8$ & $0.970$ / $0.967$ & $0.833$ / $0.530$ & $-0.30$ & $9\times10^{-3}$ / $9\times10^{-3}$ \\
+$s_a=16$, $v_0=0$, full & $16$ / $16$ & $0.917$ / $0.920$ & $0.644$ / $0.441$ & $-0.20$ & $0.12$ / $0.10$ \\
+$s_a=16$, $v_0=0$, alone & $8$ / $8$ & $0.920$ / $0.923$ & $0.623$ / $0.408$ & $-0.22$ & $0.11$ / $0.10$ \\
+$s_a=16$, $v_0=0.8$, full & $16$ / $16$ & $0.970$ / $0.969$ & $0.835$ / $0.541$ & $-0.29$ & $9\times10^{-3}$ / $7\times10^{-3}$ \\
+$s_a=16$, $v_0=0.8$, alone & $8$ / $8$ & $0.970$ / $0.968$ & $0.835$ / $0.534$ & $-0.30$ & $8\times10^{-3}$ / $8\times10^{-3}$ \\
 $s_a=54$, $v_0=0$, full & $16$ / $16$ & $0.951$ / $0.952$ & $0.660$ / $0.622$ & $-0.04$ & $8\times10^{-5}$ / $5\times10^{-5}$ \\
 $s_a=54$, $v_0=0$, alone & $8$ / $8$ & $0.952$ / $0.952$ & $0.664$ / $0.625$ & $-0.04$ & $5\times10^{-5}$ / $4\times10^{-5}$ \\
 $s_a=54$, $v_0=0.8$, full & $16$ / $16$ & $0.970$ / $0.970$ & $0.817$ / $0.644$ & $-0.17$ & $10^{-7}$ / $4\times10^{-8}$ \\
@@ -927,10 +926,10 @@ quantiles over the windows of all runs):
 \resizebox{\textwidth}{!}{\begin{tabular}{lrcccccc}
 \hline
 set & windows & stress: mean & stress: rms & residual: mean (10\%, 90\%) & residual: rms & rms $>10$ & rms $>100$ \\ \hline
-$s_a=16$, $v_0=0$, full & $114\,358$ & $-1.1\times10^{-3}$ & $0.040$ & $-50$ ($-1.4\times10^4$, $-3.9$) & $1.7\times10^3$ & $99\%$ & $83\%$ \\
-$s_a=16$, $v_0=0$, alone & $28\,430$ & $-1.1\times10^{-3}$ & $0.040$ & $-44$ ($-1.1\times10^4$, $-5.1$) & $1.4\times10^3$ & $100\%$ & $85\%$ \\
-$s_a=16$, $v_0=0.8$, full & $185\,991$ & $-3.9\times10^{-4}$ & $0.029$ & $-1.33$ ($-2.28$, $-0.84$) & $4.7$ & $14\%$ & $2.1\%$ \\
-$s_a=16$, $v_0=0.8$, alone & $43\,140$ & $-4.6\times10^{-4}$ & $0.031$ & $-1.58$ ($-2.19$, $-1.31$) & $5.7$ & $18\%$ & $2.5\%$ \\
+$s_a=16$, $v_0=0$, full & $109\,216$ & $-1.1\times10^{-3}$ & $0.041$ & $-63$ ($-1.8\times10^4$, $-4.1$) & $2.1\times10^3$ & $100\%$ & $84\%$ \\
+$s_a=16$, $v_0=0$, alone & $20\,138$ & $-1.6\times10^{-3}$ & $0.049$ & $-305$ ($-8.3\times10^4$, $-19$) & $1.2\times10^4$ & $100\%$ & $98\%$ \\
+$s_a=16$, $v_0=0.8$, full & $197\,085$ & $-3.4\times10^{-4}$ & $0.029$ & $-1.44$ ($-2.24$, $-0.41$) & $4.8$ & $14\%$ & $1.8\%$ \\
+$s_a=16$, $v_0=0.8$, alone & $44\,995$ & $-4.2\times10^{-4}$ & $0.031$ & $-1.73$ ($-2.22$, $-0.84$) & $5.6$ & $16\%$ & $1.9\%$ \\
 $s_a=54$, $v_0=0$, full & $46\,192$ & $-9.6\times10^{-5}$ & $0.007$ & $-0.36$ ($-0.44$, $-0.31$) & $1.8$ & $2.6\%$ & $0.4\%$ \\
 $s_a=54$, $v_0=0$, alone & $11\,802$ & $-9.0\times10^{-5}$ & $0.007$ & $-0.35$ ($-0.42$, $-0.29$) & $1.8$ & $1.8\%$ & $0.2\%$ \\
 $s_a=54$, $v_0=0.8$, full & $76\,976$ & $-7.4\times10^{-5}$ & $0.013$ & $-0.54$ ($-0.58$, $-0.50$) & $1.6$ & $0$ & $0$ \\
@@ -939,16 +938,26 @@ $s_a=54$, $v_0=0.8$, alone & $19\,240$ & $-7.2\times10^{-5}$ & $0.013$ & $-0.54$
 \end{tabular}}
 \end{center}
 The stress ratios are tiny everywhere.  The residual ratios are of order one at $s_a=54$ and at $s_a=16$ in the moving fluid, with a negative mean
-(the reason for the extra rejections), and rare large windows.  At $s_a=16$ at rest they are large in almost every window (median rms $1.7\times10^3$,
-maxima $\sim10^{18}$): residual covariances close to singular in many stars.  The spectra still agree with HMC there, but the residual move is then
+(the reason for the extra rejections), and rare large windows.  At $s_a=16$ at rest they are large in almost every window (median rms $2.1\times10^3$,
+maxima $\sim10^{13}$ with the cap, $\sim10^{18}$ before): residual covariances close to singular in many stars.  The spectra still agree with HMC there, but the residual move is then
 decided by $q'/q$ rather than by $\Delta S$.
 
-\paragraph{Kinetic energy and damping} (\texttt{boost\_analysis.jl}, groups HS54, HS16; Figs.~\ref{fig:hs54_et}--\ref{fig:hs16_shear8}).  KE$/2VwT$ against the continuum:
-$s_a=54$: $0.987$ (without) and $0.948$ (with) at rest, $16.80$ and $16.37$ at $v_0=0.8$; $s_a=16$, with: $0.854$ and $14.61$.  The corrected values are lower,
-as is the HMC equilibrium of the same model at finite $s_a$.  The shear damping at $s_a=54$ is the same without and with the correction within the
-errors ($0.92$--$1.11$ at rest, $1.13$--$1.33$ along and $0.97$--$1.20$ across at $v_0=0.8$).  At $s_a=16$, $v_0=0.8$ the advected shear mode is far from
-hydrodynamics in both versions ($\Gamma/\Gamma_{\rm hydro}\approx3$ at $kh=0.52$, $2$ at $1.05$; $\Omega/k=0.81$--$0.83$ against $0.80$): a limit of the dynamics at this
-entropy per particle, not of the correction.  $\Delta H/H$: $2\times10^{-5}$--$2.5\times10^{-4}$ at $s_a=54$, $\sim10^{-3}$ at $16$.
+\paragraph{Kinetic energy and damping} (\texttt{boost\_analysis.jl}, groups HS54, HS16; Figs.~\ref{fig:hs54_et}--\ref{fig:hs16_last}).  KE$/2VwT$ against the
+continuum, without / with the correction: $s_a=54$: $0.987$ / $0.948$ at rest, $16.80$ / $16.37$ at $v_0=0.8$; $s_a=16$: $0.972$ / $0.849$ and $15.55$ / $14.20$.  The
+corrected values are lower, as is the HMC equilibrium of the same model at finite $s_a$.
+\begin{center}
+\resizebox{\textwidth}{!}{\begin{tabular}{lcccc}
+\hline
+shear $\Gamma/\Gamma_{\rm hydro}$, without / with & at rest, $kh=0.52$, $\bm k$ along $x$, $y$ & at rest, $kh=1.05$, $x$, $y$ & $v_0=0.8$, $kh=0.52$, along, across & $v_0=0.8$, $kh=1.05$, along, across \\ \hline
+$s_a=54$ & $0.92(8)$, $0.99(7)$ / $0.95(7)$, $1.10(6)$ & $1.00(4)$, $1.04(4)$ / $1.11(2)$, $1.05(2)$ & $1.33(18)$, $1.20(13)$ / $1.13(15)$, $1.20(9)$ & $1.22(8)$, $1.17(4)$ / $1.20(8)$, $0.97(4)$ \\
+$s_a=16$ & $1.06(6)$, $1.09(7)$ / $1.22(8)$, $1.18(7)$ & $1.09(4)$, $1.02(4)$ / $1.24(5)$, $1.17(4)$ & $2.6(6)$, $1.29(8)$ / $2.4(5)$, $1.25(10)$ & $1.68(18)$, $1.17(4)$ / $1.71(20)$, $1.07(3)$ \\
+\hline
+\end{tabular}}
+\end{center}
+At $s_a=16$ at rest the corrected dynamics damps the shear mode $\approx15\%$ faster than the uncorrected one ($1.17$--$1.24$ against $1.02$--$1.09$, about
+$2\sigma$ per fit, the same in all four); at $s_a=54$ the same tendency is weaker.  Along the flow at $s_a=16$, $v_0=0.8$ both are far from
+hydrodynamics ($\Gamma/\Gamma_{\rm hydro}\approx2.5$ at $kh=0.52$, $1.7$ at $1.05$): a limit of the dynamics at this entropy per particle, not of the correction.
+$\Delta H/H$: $2\times10^{-5}$--$2.5\times10^{-4}$ at $s_a=54$, $2\times10^{-4}$--$2\times10^{-3}$ at $16$.
 
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/hastings_nersc_spectra.png}
@@ -1001,12 +1010,45 @@ entropy per particle, not of the correction.  $\Delta H/H$: $2\times10^{-5}$--$2
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_equaltime.png}
-\caption{$s_a=16$: equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, without (1 run at rest, 15 at $v_0=0.8$) and with (16) the correction.}
+\caption{$s_a=16$ (capped rerun): equal-time $C_{AA}(\bm k,0)/\chi_{AA}$, without and with the correction (key at the top); 16 runs each.}
+\label{fig:hs16_et}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_equaltime_hmc.png}
+\caption{$s_a=16$: as \Fig{fig:hs16_et}, divided by HMC of the same model and measure (16 capped chains) instead of by $\chi$.  At rest the runs without the correction lie $10$--$22\%$ above HMC, with it on $1$.  \texttt{examples/equaltime\_over\_hmc.jl}.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_fit.png}
+\caption{$s_a=16$: $\Omega/k$ and $\Gamma/\Gamma_{\rm hydro}$ of the shear mode at $kh=0.52$ against $v_0$, without (blue) and with (orange) the correction; filled along, open across.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_shear_v0.0.png}
+\caption{$s_a=16$, at rest: the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_soundpar_v0.0.png}
+\caption{$s_a=16$, at rest: sound, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
 \end{figure}
 \begin{figure}[p]
 \includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_shear_v0.8.png}
-\caption{$s_a=16$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ at $kh=0.52$, without (left) and with (right) the correction: far from hydrodynamics in both.}
-\label{fig:hs16_shear8}
+\caption{$s_a=16$, $v_0=0.8$: the advected shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ (far from hydrodynamics in both); without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_soundpar_v0.8.png}
+\caption{$s_a=16$, $v_0=0.8$: sound along the flow, $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_EEpar_v0.8.png}
+\caption{$s_a=16$, $v_0=0.8$: $\mathrm{Re}\,C_{EE}(k\hat x,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_soundperp_v0.8.png}
+\caption{$s_a=16$, $v_0=0.8$: sound across the flow, $\mathrm{Re}\,C_{yy}(k\hat y,\tau)$; without (left) and with (right) the correction; dashed hydrodynamics.}
+\end{figure}
+\begin{figure}[p]
+\includegraphics[width=\textwidth]{figs/hastings_nersc_HS16_shearperp_v0.8.png}
+\caption{$s_a=16$, $v_0=0.8$: across the flow, $\mathrm{Re}\,C_{xx}(k\hat y,\tau)$ (shear and sound); without (left) and with (right) the correction.}
+\label{fig:hs16_last}
 \end{figure}
 
 \end{document}

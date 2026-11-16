@@ -4,6 +4,14 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-16 (NERSC): s_a = 16 rerun with the γ cap (dfa4834)** — campaign_hastings_s16.txt, job 61372840 (4 debug nodes, 29 min, all 96
+complete), and the s_a = 16 HMC chains, campaign_hastings_hq16.txt, job 61374810 (1 debug node, 7 min).  Pre-cap output kept as *_precap.
+**Not bit-identical**, for the corrected runs too: the start already differs (the HMC start / equilibrium draw at s_a = 16 produced states
+beyond γ = 100) and so does dt (3.1e-3 → 5.4e-3 at rest).  So the hs16 *with* runs did reach γ > 100 (at least at the start).  Results with
+the cap: at rest without the correction 13–19% above HMC in M_L, M_T, E (16 runs, 5–18σ), with it 0.98–1.02; v0 = 0.8 both ≈ 1.  New: at
+s_a = 16 at rest the corrected dynamics damps the shear mode ≈ 15% faster (1.17–1.24 vs 1.02–1.09).  Residual log-ratio tails remain (max
+~1e13).  docs/inverse_moment.tex, Stage 2 NERSC section updated; Fig. "divided by HMC" added for s_a = 16 and 54 (examples/equaltime_over_hmc.jl).
+
 **2026-11-15 (NERSC): campaign `hastings` done** (61364382, 8 nodes, 18 min ≈ 2.4 node-hours).  docs/inverse_moment.tex, new last section
 "Stage 2: results from NERSC" (figures hastings_nersc_*).  Answer: at rest the correction is needed — without it the full dynamics is ≈ 5%
 (s_a = 54) and ≈ 20% (s_a = 16) above HMC of the same model in ⟨|M_L|²⟩, ⟨|M_T|²⟩, ⟨|E|²⟩; with it 1.00 ± 0.01–0.02.  At v0 = 0.8 no bias
