@@ -1,0 +1,10 @@
+# Campaign hastings_s16 (2026-11-15, NERSC): rerun of all s_a = 16 lines of campaign_hastings.txt with SPH_GAMMA_MAX = 100 (dfa4834): the 20 crashed
+# tasks (hs16_nh_*), and the rest to check bit-identity with the first run (did any reach γ > 100?).  Lines copied unchanged.
+hs16_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_nh_v0
+hs16_h_v0       16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_h_v0
+hs16_nh_v0.8    16  SPH_DISSIPATION=moment                SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_nh_v0.8
+hs16_h_v0.8     16  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_h_v0.8
+hs16_nh_alone_v0    8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_nh_alone_v0
+hs16_h_alone_v0     8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=900   -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_h_alone_v0
+hs16_nh_alone_v0.8  8  SPH_DISSIPATION=moment                SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_nh_alone_v0.8
+hs16_h_alone_v0.8   8  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_NOHAM=1 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=1000 -- examples/equilibrium.jl 0.6 2 50 1 4 hs16_h_alone_v0.8
