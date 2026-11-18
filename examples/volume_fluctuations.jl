@@ -16,7 +16,7 @@ const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
 
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps, cl, _ = setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
 start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))
 tg = HMCTarget(start.β0, start.β, params.vol, eos)
@@ -40,7 +40,7 @@ for n in 1:NUPD
                                             n, mean(acc), μ, vvar[end], vskew[end], time() - t0)
 end
 outdir = joinpath(@__DIR__, "..", "data", "volfluct");  mkpath(outdir)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = S0 * params.vol, T0 = start.T,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = S0 * params.vol, T0 = start.T, eos_meta(params, eos)...,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt, acceptance = mean(acc), seed = SEED,
         measure = string(params.measure))
 write_equilibrium_h5(joinpath(outdir, "$(TAG).h5"), meta, rec, vmean, zeros(NUPD); prec,

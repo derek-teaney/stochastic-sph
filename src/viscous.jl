@@ -176,7 +176,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
     h      = params.h
     L      = params.L
     hψ     = params.bond_h
-    d      = params.d
+    d      = params.phys_dim
     cs2v   = cs2(eos)
     oneD   = params.kernel isa WendlandC2_1D
 

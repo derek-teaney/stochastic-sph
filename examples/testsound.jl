@@ -12,7 +12,7 @@ function initialize_sound_wave(h, ha, L, s0, A, cs2v, nx, ny)
     khat  = SVector(Float64(nx), Float64(ny)) / knorm
     T_period = L / (cs * knorm)
 
-    eos = ConformalEOS(cs2v, 1.0, 0.0, 0.0)
+    eos = ConstantCs2EOS(cs2v, 1.0, 0.0, 0.0)
 
     # Uniform background → read off T_rel_0 for the entropy IC closure.
     _, bg, _, _ = setup_ic(h, ha, eos, (x, y) -> s0, (x, y) -> SVector(0.0, 0.0); L)

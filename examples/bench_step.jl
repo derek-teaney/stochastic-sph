@@ -5,7 +5,7 @@ using StaticArrays, LinearAlgebra, Printf, Random
 const ROOT = joinpath(@__DIR__, "..")
 include(joinpath(ROOT, "src", "sph.jl")); include(joinpath(ROOT, "src", "load.jl"))
 for ha in (2.0, 2.5)
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps, cl, eos = setup_ic(0.05, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=0.6, lattice=:hex)
 N = params.N;  rngs = make_phys_rng(N, 1);  rng = Xoshiro(2);  dotm = zeros(SVector{2,Float64}, N)
 dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)

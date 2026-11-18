@@ -35,12 +35,12 @@ function gamma_hydro(isshear, ω, k, v0, etas, Trel)
 end
 
 function bare(v0, etas)
-    eos = ConformalEOS(1/3, 1.0, etas, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = etas)
     _, q, _, _ = quiet(() -> setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex))
     w0 = q[1].e + q[1].p;  Trel = q[1].T * q[1].γ;  γ = 1 / sqrt(1 - v0^2)
     params, ps, cl, _ = quiet(() -> setup_ic(H, HA, eos, (x, y) -> γ * S0, (x, y) -> SVector(w0 * γ^2 * v0, 0.0); L = LBOX, lattice = :hex))
     st = GridStencil(ps, params, cl);  F = GridFFT(ps, params);  sc = GridScratch(st.N);  g = GridStats()
-    dt = 0.5 * compute_dt(ps, params, ConformalEOS(1/3, 1.0, 0.2, 0.0); mode = :viscous) * dtfac(v0)
+    dt = 0.5 * compute_dt(ps, params, conformal_eos(default_phys_dim(); η_by_s = 0.2); mode = :viscous) * dtfac(v0)
     step! = etas == 0 ? (p -> grid_step!(p, st, dt, eos, sc, g)) :
             (p -> (viscous_step!(p, params, cl, dt / 2, eos);  grid_step!(p, st, dt, eos, sc, g);  viscous_step!(p, params, cl, dt / 2, eos)))
     M, U0 = grid_linear_map(step!, ps, st, F, eos)

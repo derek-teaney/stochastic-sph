@@ -24,7 +24,7 @@ println("=" ^ 60, "\ntestchangerep.jl — viscous step in the particle represent
 # ── 1 ────────────────────────────────────────────────────────────────────────
 println("\nTest 1: conversion map round trip, S_a(E_a(s_a, m_a), m_a) = s_a")
 let
-    eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.08, 2.5, eos, (x, y) -> 1.0,
                                    (x, y) -> SVector(0.4 * sin(2π * x), 0.3 * cos(2π * y)); L=1.0, lattice=:hex)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
@@ -47,7 +47,7 @@ let
     lat(h, a) = [m * a for m in -ceil(Int, 2h / a):ceil(Int, 2h / a)]
     Bk(k, h, a) = sum(ψ1(r, h) * 2 * (1 - cos(k * r)) for r in lat(h, a)) /
                   (k^2 * sum(ψ1(r, h) * r^2 for r in lat(h, a)))
-    eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.02, 4.0, eos, (x, y) -> 2.0, (x, y) -> SVector(0.0, 0.0);
                                    Lx=1.0, sim_dim=1)
     params.dissipation = :particle
@@ -80,7 +80,7 @@ end
 # ── 3 ────────────────────────────────────────────────────────────────────────
 println("\nTest 3: smooth shear flow — gradient energy and the corrected step")
 let
-    eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
                                    L=1.0, lattice=:hex)
     params.dissipation = :particle
@@ -107,7 +107,7 @@ end
 # ── 4 ────────────────────────────────────────────────────────────────────────
 println("\nTest 4: random momentum field — momentum conservation and entropy production")
 let
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
                                    L=1.0, lattice=:hex)
     @assert params.dissipation === :particle "default dissipation is not :particle"
@@ -131,7 +131,7 @@ end
 println("\nTest 5: default time step — every mode decays monotonically in each viscous half step")
 let
     # 1D: the per-step factor of a mode, measured, lies in [0, 1] for all k
-    eos = ConformalEOS(1/3, 1.0, 0.1, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.02, 4.0, eos, (x, y) -> 2.0, (x, y) -> SVector(0.0, 0.0);
                                    Lx=1.0, sim_dim=1)
     a, N, L = params.a, params.N, params.L[1];  w = ps[1].e + ps[1].p;  s0 = [p.s for p in ps]
@@ -147,7 +147,7 @@ let
     @printf("  1D: per-step factors in [%.3f, %.3f]\n", minimum(gs), maximum(gs))
     @assert all(0 .<= gs .<= 1) "a mode is not damped monotonically"
     # 2D: random field, kinetic energy decreases and entropy increases at every half step
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
                                    L=1.0, lattice=:hex)
     rng = Xoshiro(2)

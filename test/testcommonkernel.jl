@@ -11,7 +11,7 @@ check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 
 function setup(diss, v0; L = 0.6, jitter = 0.0, ha = 2.0)
     withenv("SPH_DISSIPATION" => string(diss)) do
-        eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+        eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
         γ = 1 / sqrt(1 - v0^2)
         _, q, _, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex))
         w0 = q[1].e + q[1].p

@@ -24,7 +24,8 @@ nincomplete = count(r -> haskey(r.meta, :complete) && !r.meta.complete, runs)
 nincomplete > 0 && println("note: $nincomplete of $(length(runs)) runs are still in progress (partial series, complete = false)")
 m = runs[1].meta
 norm0 = m.N * m.V * m.w * m.T
-ν = m.etas / m.Trel;  Γs = 4 / 3 * ν;  cs = sqrt(m.cs2)
+dphys = get(m, :phys_dim, 3)                                      # runs before dimfix: d = 3
+ν = m.etas / m.Trel;  Γs = 2 * (dphys - 1) / dphys * ν;  cs = sqrt(m.cs2)   # sound: 2η(1 − 1/d)/w (ζ = 0)
 @printf("%s: %d realizations, N = %d, t_end = %.1f, ν = η/w = %.3e\n", TAG, length(runs), m.N, runs[1].rec.t[end], ν)
 
 res = Dict{Symbol,Any}()

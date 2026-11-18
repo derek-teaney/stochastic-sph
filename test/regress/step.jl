@@ -19,7 +19,7 @@ const ROOT = joinpath(@__DIR__, "..", "..")
 include(joinpath(ROOT, "src", "load.jl"))
 
 function run_case(λ; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") == "1" ? nothing : StochCache())
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e5, (x, y) -> SVector(0.0, 0.0); L, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 11);  rng = Xoshiro(12);  dotm = zeros(SVector{2,Float64}, N)
     thermal_init!(ps, params, cl, eos; rng = Xoshiro(13))

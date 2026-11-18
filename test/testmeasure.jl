@@ -9,7 +9,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
 println("1. vote entropy")
 e, m, V = 2.0, SVector(0.3, -0.1), 0.7

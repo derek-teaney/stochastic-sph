@@ -14,7 +14,7 @@ const MODE  = ARGS[2]
 const NST   = length(ARGS) > 2 ? parse(Int, ARGS[3]) : 20
 const OUT   = get(ENV, "SR_OUTDIR", ".");  mkpath(OUT)
 
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=LBOX, lattice=:hex)
 N = params.N;  rngs = make_phys_rng(N, 1);  rng = Xoshiro(2);  dotm = zeros(SVector{2,Float64}, N)
 thermal_init!(ps, params, cl, eos; rng = Xoshiro(3))

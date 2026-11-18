@@ -215,7 +215,7 @@ function particle_sweep!(particles::Vector{Particle}, params::SimParams,
         pa  = particles[a]
         rng = rngs[a]
         Va  = pa.s / pa.S_smooth
-        ξa  = draw_xi(rng, pa, eos, cs2v, params.d) ./ sqrt(dt * Va)  # discretized-FDT covariance
+        ξa  = draw_xi(rng, pa, eos, cs2v, params.phys_dim) ./ sqrt(dt * Va)  # discretized-FDT covariance
         u   = rand(rng)
         n_try += 1
 

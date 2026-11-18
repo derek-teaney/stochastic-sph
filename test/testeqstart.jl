@@ -16,7 +16,7 @@ using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 const ROOT = joinpath(@__DIR__, "..")
 include(joinpath(ROOT, "src", "load.jl"))
 check(ok, msg) = (println(ok ? "  ✓ " : "  ✗ FAIL: ", msg); ok || error(msg))
-const eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+const eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
 # ── A. One particle ──────────────────────────────────────────────────────────
 function one_particle(ε̄, v, V; n = 40000, nq = 61, rng = Xoshiro(1))

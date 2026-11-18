@@ -20,7 +20,7 @@ const VOTE  = :bonds
 const DTF   = 0.25                       # Δt / default viscous half step
 
 function setup(dim)
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     params, ps, cl, eos = dim == 1 ?
         setup_ic(0.05, 4.0, eos, (x, y) -> 4e4, (x, y) -> SVector(0.0, 0.0); Lx=1.0, sim_dim=1) :
         setup_ic(0.05, 2.5, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=0.6, lattice=:hex)

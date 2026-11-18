@@ -6,7 +6,7 @@ function initialize_gaussian_1d(h, ha;
                                  Lx=1.0, A=1.0, delta=1e-1,
                                  sigma=0.1, x0=0.0, n_images=1,
                                  cs2v=1.0/3.0, η_by_s=0.002, ζ_by_s=0.0)
-    eos = ConformalEOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
+    eos = ConstantCs2EOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
 
     function e_ic(x, y)
         e = delta

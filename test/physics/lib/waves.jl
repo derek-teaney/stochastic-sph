@@ -16,7 +16,7 @@ using Printf, LinearAlgebra, StaticArrays
 
 function wave_run(kind::Symbol; kh, ha = 3.0, etas = 0.0, L = 1.0, nx = 1, ny = 1, s0 = 2.0,
                   A = 0.01, cs2 = 1/3, periods = 2.0, CFL = 0.2)
-    eos = ConformalEOS(cs2, 1.0, etas, 0.0)
+    eos = ConstantCs2EOS(cs2, 1.0, etas, 0.0)
     quiet(f) = redirect_stdout(f, devnull)
     # box and background at a provisional h (Ly/L depends only on h/a)
     p0, bg, _, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> s0, (x, y) -> SVector(0.0, 0.0); L))

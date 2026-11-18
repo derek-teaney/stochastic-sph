@@ -25,7 +25,7 @@ function initialize_viscous_sound(h, ha, Lx, Ly, s0, A, cs2v, nx, ny, η_by_s, �
     k     = sqrt(kx^2 + ky^2)
     khat  = SVector(kx, ky) / k
 
-    eos = ConformalEOS(cs2v, 1.0, η_by_s, ζ_by_s)
+    eos = ConstantCs2EOS(cs2v, 1.0, η_by_s, ζ_by_s)
 
     # Uniform background → T_rel_0 for IC closure and Γ_s.
     _, bg, _, _ = setup_ic(h, ha, eos, (x, y) -> s0, (x, y) -> SVector(0.0, 0.0); Lx, Ly)

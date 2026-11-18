@@ -4,3 +4,4 @@
 s/dissipation=changerep/dissipation=particle/g
 s/teststochrep_guard/teststochastic_guard/g
 s/(^|[^a-z_])teststochastic\.(jl|log)/\1testparticle_sweep.\2/g
+s/ConformalEOS/ConstantCs2EOS/g

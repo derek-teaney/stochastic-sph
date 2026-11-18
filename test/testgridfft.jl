@@ -2,7 +2,7 @@
 # sum (from the origin R_0, at k and at its first-zone representative), Parseval, the inverse, and |k_min| ≤ the zone corner.
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
-eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.0, 0.0)
 ok = true
 for L in (0.6, 1.2)
     params, ps, cl, _ = redirect_stdout(devnull) do

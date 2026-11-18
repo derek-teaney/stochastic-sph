@@ -27,7 +27,7 @@ end
 
 # κ(k) h of the stencil at every mode (the lattice derivative), for the lattice of the runs
 function kappa_map(L, kmin)
-    eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.0)
     params, ps, cl, _ = redirect_stdout(devnull) do
         setup_ic(H, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex)
     end

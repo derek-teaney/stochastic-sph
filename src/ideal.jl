@@ -179,7 +179,8 @@ function compute_dt(particles, params, eos;
 
     η_s  = eta_by_s(eos)
     ζ_s  = zeta_by_s(eos)
-    visc = 4/3 * η_s + ζ_s
+    d    = params.phys_dim
+    visc = 2 * (d - 1) / d * η_s + ζ_s          # longitudinal viscosity 2η(1 − 1/d) + ζ  (4/3 η + ζ at d = 3)
     visc == 0.0 && return dt_acoustic
 
     if T0 !== nothing
@@ -212,7 +213,7 @@ end
 # the measured rate of the zigzag mode.
 function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     ds = params.kernel isa WendlandC2_1D ? 1 : 2
-    d  = params.d
+    d  = params.phys_dim
     η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
     κb_s = ds == 1 ? 2η_s * (d - 1) / d + ζ_s : 2η_s + ζ_s + 2η_s * (1 / 2 - 1 / d)
     c_d  = ds == 1 ? 15 / 4 : 7 / 2

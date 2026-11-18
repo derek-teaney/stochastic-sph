@@ -10,7 +10,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
 params, ps, cl = withenv("SPH_DISSIPATION" => "moment", "SPH_MEASURE" => "einstein") do
     v0 = 0.5;  γ = 1 / sqrt(1 - v0^2)
@@ -23,7 +23,7 @@ params, ps, cl = withenv("SPH_DISSIPATION" => "moment", "SPH_MEASURE" => "einste
     (P, p, c)
 end
 V = [p.s / p.S_smooth for p in ps];  e = [particle_energy(p, eos) for p in ps];  m = [p.m for p in ps]
-stars = build_stars(ps, params, cl, eos, V);  d = params.d
+stars = build_stars(ps, params, cl, eos, V);  d = params.phys_dim
 
 println("1. star_coef against build_stars")
 let err = 0.0

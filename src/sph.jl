@@ -22,7 +22,7 @@ mutable struct SimParams{K<:AbstractKernel}
     N       :: Int                 # total particle count
     vol     :: Float64             # volume (area in 2D, length in 1D) per particle
     seed    :: Int
-    d       :: Int                 # physical dimension (2 or 3); drives cs²=1/d and kappa
+    phys_dim :: Int                # physical dimension d of the fluid (2 or 3): ζ_eff and the conformal cs² = 1/d (dimension.tex)
     lattice :: Symbol              # :square or :hex
     kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL) or WendlandC2_1D()
     dissipation :: Symbol          # :particle (default), :bond or :two_level — see viscous_step!
@@ -104,7 +104,7 @@ default_measure(sim_dim, hamiltonian) = sim_dim == 2 && hamiltonian === :energy 
 default_hamiltonian(dissipation = setting("SPH_DISSIPATION", default_dissipation())) =
     setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
 
-function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:square, sim_dim=2,
+function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, sim_dim=2, phys_dim=default_phys_dim(sim_dim), lattice=:square,
                    dissipation=setting("SPH_DISSIPATION", default_dissipation(sim_dim)), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
@@ -170,21 +170,31 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, d=3, lattice=:s
     measure === :liouville && (hamiltonian === :energy ||
         error("measure = :liouville needs hamiltonian = :energy (equilibrium_positions.tex, Appendix A)"))
     measure === :liouville && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
-    SimParams(L, a, h, N, vol, seed, d, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
+    SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
 end
+
+# The default physical dimension of a run with simulation dimension sim_dim (dimension.tex).
+default_phys_dim(sim_dim::Integer = 2) = 3
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.
 SimParams(L::Real, h, ha_ratio; kw...) = SimParams(L, L, h, ha_ratio; kw...)
+
+# The simulation dimension d_s: the number of directions the particles span (1 with the 1D kernel, else 2).
+sim_dim(params::SimParams) = params.kernel isa WendlandC2_1D ? 1 : 2
 
 # ── Equation of state ─────────────────────────────────────────────────────────
 
 abstract type AbstractEOS end
 
-struct ConformalEOS <: AbstractEOS
-    cs2_val :: Float64   # sound speed squared (1/3 for ultrarelativistic)
+# The equation of state with a constant speed of sound (dimension.tex):
+#   p = cs² e,   T_rel = T_scale e^(cs²/(1+cs²)),   s_rel = (e+p)/T_rel,
+# thermodynamically consistent (ds/de = 1/T, dp/dT = s) and scale invariant (p ∝ T^(1+1/cs²)) for any cs²;
+# conformal only for cs² = 1/d (conformal_eos).
+struct ConstantCs2EOS <: AbstractEOS
+    cs2_val :: Float64   # sound speed squared
     T_scale :: Float64   # T_rel = T_scale * e^(cs2/(1+cs2)); sets temperature units
     η_by_s  :: Float64   # specific shear viscosity η/s (constant)
-    ζ_by_s  :: Float64   # specific bulk viscosity  ζ/s (0 for conformal EOS)
+    ζ_by_s  :: Float64   # specific bulk viscosity  ζ/s (constant)
 end
 
 # Gluon-gas Stefan-Boltzmann scale: e = (16π²/30) T⁴  →  T_scale = (30/(16π²))^(1/4)
@@ -195,27 +205,35 @@ const T_scale_gluon = (30.0 / (16π^2))^(1/4)
 # (For cs² = 1/3 the analogous value is (4/3)^(1/4).)
 const T_scale_2d_lq1 = (3.0 / 2.0)^(1/3)
 
-# Keyword constructor: cs2 = 1/d for a conformal fluid; gluon-gas T_scale by default.
-ConformalEOS(; d=3, cs2_val=1.0/d, T_scale=T_scale_gluon, η_by_s=0.0, ζ_by_s=0.0) =
-    ConformalEOS(cs2_val, T_scale, η_by_s, ζ_by_s)
+# Keyword constructor.
+ConstantCs2EOS(; cs2_val, T_scale=1.0, η_by_s=0.0, ζ_by_s=0.0) = ConstantCs2EOS(cs2_val, T_scale, η_by_s, ζ_by_s)
 
-pressure(eos::ConformalEOS, e::Float64) = eos.cs2_val * e
+# The conformal fluid in d physical dimensions: cs² = 1/d.  The drivers use conformal_eos(params.phys_dim; …).
+conformal_eos(d::Integer; T_scale=1.0, η_by_s=0.0, ζ_by_s=0.0) = ConstantCs2EOS(1.0 / d, T_scale, η_by_s, ζ_by_s)
+
+# The parameters of the equation of state and the physical dimension, for the run record (.h5 attributes).
+eos_meta(params, eos::ConstantCs2EOS) =
+    (phys_dim = params.phys_dim, sim_dim = sim_dim(params), cs2 = eos.cs2_val, T_scale = eos.T_scale,
+     eta_by_s = eos.η_by_s, zeta_by_s = eos.ζ_by_s)
+
+pressure(eos::ConstantCs2EOS, e::Float64) = eos.cs2_val * e
 
 # Relativistic temperature
-# (exponent 1/4 for c² = 1/3: two square roots, much cheaper than the power)
-Trel(eos::ConformalEOS, e::Float64) = eos.cs2_val == 1/3 ? eos.T_scale * sqrt(sqrt(e)) :
-                                                         eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
+# (exponent 1/4 for c² = 1/3: two square roots; 1/3 for c² = 1/2: cbrt; both much cheaper than the power)
+Trel(eos::ConstantCs2EOS, e::Float64) = eos.cs2_val == 1/3 ? eos.T_scale * sqrt(sqrt(e)) :
+                                        eos.cs2_val == 1/2 ? eos.T_scale * cbrt(e) :
+                                                             eos.T_scale * e^(eos.cs2_val / (1.0 + eos.cs2_val))
 
-# Sound speed squared (two-arg form for generic EOS; one-arg shortcut for ConformalEOS)
-cs2(eos::ConformalEOS,  e::Float64) = eos.cs2_val
-cs2(eos::ConformalEOS)              = eos.cs2_val
+# Sound speed squared (two-arg form for generic EOS; one-arg shortcut for ConstantCs2EOS)
+cs2(eos::ConstantCs2EOS,  e::Float64) = eos.cs2_val
+cs2(eos::ConstantCs2EOS)              = eos.cs2_val
 
 # Specific transport coefficients
-eta_by_s(eos::ConformalEOS)  = eos.η_by_s
-zeta_by_s(eos::ConformalEOS) = eos.ζ_by_s
+eta_by_s(eos::ConstantCs2EOS)  = eos.η_by_s
+zeta_by_s(eos::ConstantCs2EOS) = eos.ζ_by_s
 
 # Relativistic entropy density: s_rel = (e+p)/T_rel  (thermodynamic identity)
-srel(eos::ConformalEOS, e::Float64) = (e + pressure(eos, e)) / Trel(eos, e)
+srel(eos::ConstantCs2EOS, e::Float64) = (e + pressure(eos, e)) / Trel(eos, e)
 
 # ─────────────────────────────────────────────────────────────────────────────
 

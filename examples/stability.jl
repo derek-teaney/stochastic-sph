@@ -68,7 +68,7 @@ function restore_H!(ps, params, cl, eos, Htarget)
 end
 
 function run(kind, seed=1)
-    eos = ConformalEOS(1/3, 1.0, ETAS, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = ETAS)
     params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
                                    L=0.6, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)

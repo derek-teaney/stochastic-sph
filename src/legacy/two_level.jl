@@ -75,7 +75,7 @@ function two_level_dissipative_force!(dotm::Vector{SVector{2,Float64}},
     kernel = params.kernel
 
     # Pre-compute T_rel κ^{ijlm} (without 1/S²) at every particle.
-    km = params.d == 2 ? Kappa2D() : Kappa3D()
+    km = params.phys_dim == 2 ? Kappa2D() : Kappa3D()
     κ  = [kappa_tensor(pa, eos, km) for pa in particles]
 
     # ── Pass 1 ──

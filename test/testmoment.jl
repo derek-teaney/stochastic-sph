@@ -9,7 +9,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
 function setup(diss, v0; L = 0.6, jitter = 0.0, ha = 2.0, poisson = false)
     withenv("SPH_DISSIPATION" => string(diss)) do

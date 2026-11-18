@@ -67,7 +67,7 @@ StochCache() = StochCache(Star[], Vector{Tuple{Int,SVector{2,Float64},Float64}}[
 function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                      eos::AbstractEOS, V::Vector{Float64}; cache = nothing)
     N    = length(particles)
-    h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.d
+    h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.phys_dim
     oneD = params.kernel isa WendlandC2_1D
     v0   = zero(SVector{2,Float64})
     ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
@@ -248,7 +248,7 @@ end
 # Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
 # have positive arguments), so the try block, about 17% of a call, is not needed.
 # Same arithmetic as the general method: bit-identical results.
-function particle_entropy(e, m, V, eos::ConformalEOS)
+function particle_entropy(e, m, V, eos::ConstantCs2EOS)
     ε = e / V;  M = m / V
     (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
     S, v, _ = eos_from_energy(ε, M, eos)
@@ -505,7 +505,7 @@ end
 
 # One checkerboard sweep with the Hastings correction (as color_sweep!).
 function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool, params)
-    nacc = Threads.Atomic{Int}(0);  d = params.d
+    nacc = Threads.Atomic{Int}(0);  d = params.phys_dim
     lsum = Threads.Atomic{Float64}(0.0);  lsq = Threads.Atomic{Float64}(0.0);  lnum = Threads.Atomic{Int}(0)   # ln q′/q of the proposals
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]

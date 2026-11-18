@@ -24,7 +24,7 @@ end
 # EOS-solver mechanics at cs2=1/2, not a physically normalized 2D gas.
 const cs2_val = 0.5
 const Tscale  = 1.0
-const eos = ConformalEOS(cs2_val=cs2_val, T_scale=Tscale)
+const eos = ConstantCs2EOS(cs2_val=cs2_val, T_scale=Tscale)
 
 # ── Helper: momentum density of a fluid moving at speed v ─────────────────────
 # Test states are specified physically: entropy density S and speed v (0 ≤ v < 1).
@@ -44,10 +44,10 @@ function momentum_at(S::Float64, v::Float64, θ::Float64)
     return m * cos(θ), m * sin(θ)
 end
 
-# ── Test 1: ConformalEOS interface ─────────────────────────────────────────────
+# ── Test 1: ConstantCs2EOS interface ─────────────────────────────────────────────
 
 println("=" ^ 55)
-println("Test 1: ConformalEOS interface (cs2_val=$cs2_val, Tscale=$Tscale)")
+println("Test 1: ConstantCs2EOS interface (cs2_val=$cs2_val, Tscale=$Tscale)")
 println("=" ^ 55)
 
 let

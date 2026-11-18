@@ -12,7 +12,7 @@
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const S0 = 1e6;  const H = 0.05
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 # uniform state at S0: temperature, enthalpy density (as the runs use them)
 _, ps, _, _ = setup_ic(H, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)
 const T = ps[1].T;  const w = ps[1].e + ps[1].p;  const ebar_density = ps[1].e

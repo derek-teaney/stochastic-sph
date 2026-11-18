@@ -14,7 +14,7 @@ include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 const LAMS = (1.0, Inf)
 const NENS = 64
 
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps0, cl, eos = setup_ic(0.05, 4.0, eos, (x, y) -> 4e4, (x, y) -> SVector(0.0, 0.0);
                                 Lx=2.0, sim_dim=1)
 N = params.N;  fz = stochastic_frozen(ps0, params, cl, eos)
