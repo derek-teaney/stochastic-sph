@@ -1,0 +1,325 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\setlength{\emergencystretch}{3em}
+\begin{document}
+
+\title{The equal-time statics at rest: entropy, momentum and shear stress.\\ Note and computational plan}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University, Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+Before the dynamics, the equilibrium of the model must be understood at equal times.  At fixed positions the particles are
+independent, which fixes the structure of every equal-time correlation exactly: the momentum and the kinetic stress have no pair
+correlations, and the entropy and the virial stress are correlated only through the positions.  What remains to be computed is the
+single-particle distribution at fixed volume, exactly by quadrature, and the pair correlations of the volumes and of the anisotropy of the
+stars in the Gaussian theory of the positions.  This note states the predictions and the measurements, and plans the hybrid Monte Carlo
+campaign at NERSC that tests them.  The fluid is at rest; the bulk channel is left out.
+\end{abstract}
+\maketitle
+
+%=============================================================================
+\section{Goal and what is known}
+\label{sec:goal}
+
+The equal-time statics are the initial conditions of every correlator the dynamics will be compared with: the susceptibilities of the
+hydrodynamic modes and, for the Helfand separation (\texttt{helfand.tex}), the equal-time pair correlation of the shear stresses of two
+particles at separation $r$.  Hybrid Monte Carlo samples the equilibrium of the model exactly, so the statics can be settled without
+the dynamics.
+
+From \texttt{equilibrium.tex} (nine HMC runs, $L=9h$, $h/a=2,3,4$, $s_a=16,54,541$, i.e.\ $\sigma=p/(T\bar n)=4,13.5,135$):
+\begin{itemize}
+\item the positions follow the Gaussian theory at $\sigma\ge13.5$: $S(k)$, $g(r)$, the volume variance to $6\%$;
+\item at $\sigma=4$ ($s_a=16$) four quantities miss by $14$--$23\%$ at every $h/a$: the volume variance and $S(k)$ (high), the entropy correlator
+  $\avg{|S_{\bm k}|^2}/(L^2C_V)$ (low, at all $k$), and the momentum correlator $\avg{|M_{\bm k}|^2}/(L^2T(e+p))$ (high, flat in $k$, $1.14$--$1.17$).
+\end{itemize}
+The last two are single-particle variances.  The questions are whether the single-particle distribution at fixed volume accounts for all
+four misses, and what the equal-time pair correlations of entropy, momentum and stress are.
+
+%=============================================================================
+\section{The structure: independence at fixed positions}
+\label{sec:structure}
+
+With the Liouville measure (the default) the equilibrium of the model at rest is
+\st
+\pi(\{\bm x,s,\bm m\})\propto\prod_a\exp\Big[s_a-\frac{e_a(s_a,\bm m_a,V_a)}{T}\Big],\qquad V_a=\frac1{n_a(\{\bm x\})},
+\label{joint}
+\stp
+with $T$ the bare temperature of the bath.  At fixed positions it is a product over particles, each depending on its own volume only.  So,
+exactly and at every $s_a$, with $\avg{\cdot|V}$ the average over one particle at fixed volume $V$:
+\begin{enumerate}
+\item every single-particle moment is a function of $V_a$ alone, e.g.\ $\avg{s_a|V_a}$, $\avg{\delta s_a^2|V_a}$, $\avg{m_{a,i}m_{a,j}|V_a}$;
+\item two different particles are correlated only through the positions:
+  \st
+  \avg{X_aY_b}=\Big\langle\avg{X_a|V_a}\,\avg{Y_b|V_b}\Big\rangle_{\{\bm x\}},\qquad a\neq b ;
+  \stp
+\item at rest the weight is even in each $\bm m_a$ and isotropic, so $\avg{\bm m_a|V_a}=0$ and the shear components of any tensor built from one
+  particle's $(s_a,\bm m_a)$ have zero conditional mean.
+\end{enumerate}
+
+\paragraph{Exact consequences.}
+\begin{itemize}
+\item \emph{Momentum}: $\avg{\bm m_a\cdot\bm m_b}=0$ for $a\neq b$, and $\avg{X_a\bm m_b}=0$ for any scalar $X$.  (Hybrid Monte Carlo redraws every momentum
+  in its heat bath, so the total momentum is not fixed; in the dynamics it is, and $\avg{\bm m_a\cdot\bm m_b}=-\avg{\bm m^2}/(N-1)$.)
+\item \emph{Entropy}: $\avg{\delta s_a\,\delta s_b}=\mathrm{Cov}\big(\avg{s|V_a},\avg{s|V_b}\big)$ for $a\neq b$: the pair correlation of the entropies is that of the volumes,
+  mapped by $\avg{s|V}\simeq sV$.
+\item \emph{Kinetic stress}: no pair correlation, and no correlation with the virial stress even for $a=b$ (\Sect{sec:stress}).
+\end{itemize}
+These are tests of the sampler and of the recorder, not of the theory.
+
+%=============================================================================
+\section{One particle at fixed volume}
+\label{sec:single}
+
+The single-particle distribution at volume $V$ is
+\st
+P(s,\bm m\,|\,V)\propto\exp\Big[s-\frac{e(s,\bm m,V)}{T}\Big],
+\stp
+in the variables the code uses, $(e,\bm m)$, with the target $S_a-\ln T_a$ (\texttt{vote\_entropy} with the Liouville flag).  It is computed by
+quadrature on a grid (\texttt{particle\_moments} in \texttt{src/measure.jl} already does this for the mean and the covariance of $(e,\bm m)$).
+Define the ratios to the Gaussian (continuum) values of \texttt{equilibrium.tex}, eq.~(A7) there,
+\begin{keyeq}
+\st
+r_s(s_a)=\frac{\avg{\delta s^2|V}}{C_V\,V},\qquad r_m(s_a)=\frac{\avg{m_i^2|V}}{T(e+p)\,V},\qquad r_\tau(s_a)=\frac{\avg{(\tau^{\rm kin})^2|V}}{T^2},
+\label{ratios}
+\stp
+\end{keyeq}
+with $s_a=sV$ and $\tau^{\rm kin}$ the kinetic shear stress of \Sect{sec:stress}.  Each tends to $1$ as $s_a\to\infty$, with corrections of relative order
+$1/s_a$ from the cubic and quartic terms about the maximum and from the relativistic energy (the light cone cuts off $|\bm v|<1$; at fixed
+bare $T$ the momentum distribution is not Gaussian at $s_a=16$, where $\avg{\bm v^2}\simeq2/s_a\approx0.12$).  The same quadrature gives the
+correction to $\ln Z_a(V)$, the coefficient $c$ of \texttt{equilibrium.tex}, eq.~(A8) there, which shifts the measure term of $S(k)$.
+
+\paragraph{Beyond the saddle point: the weight of the positions.}  The exact weight of the positions is $\prod_aZ_a(V_a)$, of which \texttt{equilibrium.tex}
+uses the saddle point $Z_a\propto V^{\alpha}e^{pV/T}$, with the phase-space exponent $\alpha=(d+1)/2$ (the entropy and the $d$ momentum components) and
+the volume coefficient $\sigma=p/(T\bar n)$.  Keep $\ln Z_a(V)$ exact and fit it near $V=1/\bar n$ by the same form,
+\st
+\ln Z_a(V')\simeq\alpha_{\rm eff}\ln V'+\sigma_{\rm eff}\,\frac{V'}V+\text{const},\qquad
+\alpha_{\rm eff}=-V^2\frac{d^2\ln Z_a}{dV^2},\qquad \sigma_{\rm eff}=V\frac{d\ln Z_a}{dV}+V^2\frac{d^2\ln Z_a}{dV^2} :
+\label{alphasigma}
+\stp
+the effective phase-space exponent and volume coefficient, which tend to $\alpha$ and $\sigma$ as $s_a\to\infty$.  The expansion of \texttt{equilibrium.tex}, Appendix A, goes through unchanged with $V_a=V(1-\delta_a+\delta_a^2)$, and gives
+\begin{keyeq}
+\st
+S(k)=\frac{1}{1+2\alpha_{\rm eff}\,\widetilde W\big(1-\tfrac12\widetilde W\big)+2\sigma_{\rm eff}\,\widetilde W\big(1-\widetilde W\big)},\qquad S(0)=\frac1{1+\alpha_{\rm eff}} ,
+\label{Sexact}
+\stp
+\end{keyeq}
+\texttt{equilibrium.tex}, eq.~(3) there, with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$.  The labels are an ideal gas with $\mu_{\rm label}=(1+\alpha_{\rm eff})T\ln n$.  With the exact
+$Z_a(V)$ the only approximation left in $S(k)$ is the second one, $\bar nh^2\gg1$.  $\alpha_{\rm eff}$ and $\sigma_{\rm eff}$ come from the same quadrature, at $s_a$ and its neighbours (a finite difference in $V$ at
+fixed $T$), so Step 0 of \Sect{sec:plan} gives the improved $S(k)$ and volume variance at $\sigma=4$ with no new run.
+
+\paragraph{Two integrals, two expansion parameters.}  The equilibrium has two layers.
+\begin{enumerate}
+\item \emph{The particle variables at fixed volume}, $Z_a(V)=\int ds\,d^2\bm m\,e^{s-e(s,\bm m,V)/T}$, are integrated exactly by quadrature: no saddle point.  The saddle point,
+  $V^{(d+1)/2}e^{pV/T}$, has corrections of relative order $1/s_a$, and it is what failed at low $s_a$ (the momentum variance is $75\%$ above it at $s(T_0)V=10.5$).
+\item \emph{The positions}, with the exact weight $\prod_aZ_a(V_a)$, are still treated in the Gaussian (random-phase) approximation: the weight is expanded to
+  second order in $\delta_a=\delta n_a/\bar n$ about the uniform density, which needs $\ln Z_a$ only to second order, i.e.\ $\alpha_{\rm eff}$ and $\sigma_{\rm eff}$, and the modes $\delta\rho_{\bm k}$ are
+  integrated as Gaussians.  The neglected terms, the third and higher derivatives of $\ln Z_a$ and the cubic terms in $\delta n$, are of relative order
+  $\delta_a^2\sim1/(\bar nh^2)$.
+\end{enumerate}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+integral & expansion parameter & treatment \\
+\midrule
+$s_a$, $\bm m_a$ at fixed $V_a$ & $1/s_a$ & exact (quadrature) \\
+positions & $1/(\bar nh^2)$ & Gaussian, with $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+After Step 0 the residuals follow the second parameter: the volume variance is $8\%$ above the data at $h/a=2$ ($\bar nh^2=4.6$) and $1$--$2\%$ at $h/a=4$
+($\bar nh^2=18.5$), and the core of $g(r)$ fails at $\sigma=135$, $h/a=2$.
+
+\paragraph{Predictions to compare.}  If the single-particle distribution is the whole story,
+\st
+\frac{\avg{|M_{\bm k}|^2}}{L^2T(e+p)}=r_m\avg{V_a}\bar n,\qquad
+\frac{\avg{|S_{\bm k}|^2}}{L^2C_V}=r_s+\frac{s^2}{\bar nC_V}(1-\widetilde W)^2S(k),
+\stp
+with no free parameter.  The HMC values at $s_a=16$ would require $r_m\approx1.15$ and $r_s\approx0.82$.  The Einstein measure differs by $\prod_aT_a$;
+it changes $r_s,r_m$ at order $1/s_a$, and comparing the two separates the measure from the relativistic shape.
+
+%=============================================================================
+\section{Pair correlations}
+\label{sec:pairs}
+
+\paragraph{Definitions.}  For per-particle quantities $X_a$, $Y_a$, with $\delta X_a=X_a-\frac1N\sum_cX_c$ in each configuration,
+\st
+C_{XY}(r)=g(r)\,\avg{\delta X_a\,\delta Y_b}_r,\qquad \sum_{a\neq b}\delta X_a\delta Y_b=N\bar n\int d^2r\;C_{XY}(r),
+\label{Cdef}
+\stp
+with $\avg{\cdot}_r$ the average over the pairs at separation $r$, as in \texttt{helfand.tex}: $C_{XY}$ is a pair-correlation function in the
+sense of $g(r)$.  For a shear tensor with components $(\tau^{(1)},\tau^{(2)})=(\tau^{xy},\tfrac12(\tau^{xx}-\tau^{yy}))$ the bond angle $\phi_{ab}$ of
+$\bm r_{ab}$ defines the projections
+\st
+\tau_\parallel=\tau^{(2)}\cos2\phi+\tau^{(1)}\sin2\phi,\qquad \tau_\perp=-\tau^{(2)}\sin2\phi+\tau^{(1)}\cos2\phi ,
+\stp
+and the isotropic pair functions are $C_{\tau\tau}=g\avg{\tau_a\cdot\tau_b}_r$ (with $\tau_a\cdot\tau_b=\tau_a^{(1)}\tau_b^{(1)}+\tau_a^{(2)}\tau_b^{(2)}$), its anisotropic
+part $g\avg{\tau_{a\parallel}\tau_{b\parallel}-\tau_{a\perp}\tau_{b\perp}}_r$, and, for a scalar $X$ and a shear tensor, $C_{X\tau}=g\avg{\delta X_a\,\tau_{b\parallel}}_r$; the other
+combinations vanish by isotropy and reflection.
+
+\paragraph{Volumes and entropies.}  By \Sect{sec:structure},
+\st
+C_{ss}(r)\simeq s^2\,C_{VV}(r),\qquad C_{sV}(r)\simeq s\,C_{VV}(r),\qquad
+\avg{\delta s_a^2}=r_s\,C_V\avg{V_a}+s^2\avg{\delta V_a^2} .
+\stp
+$C_{VV}(r)$ is a property of the positions.  In the Gaussian theory it has two parts: the indirect part, the density fluctuations seen by two
+points at separation $r$,
+\st
+C_{VV}^{\rm ind}(r)\simeq g(r)\,\frac{V^2}{\bar n}\int\frac{d^2k}{(2\pi)^2}\,\widetilde W(k)^2S(k)\,J_0(kr),
+\stp
+and the direct part, each particle counting in the other's density, $\delta V_a\supset-V^2W(r)$.  The indirect part is suppressed on the kernel
+scale by $S\sim1/\sigma$; the direct part is not, and their ratio is of order $\sigma/(\bar nh^2\ln\sigma)$, about $6$ at $\sigma=135$, $h/a=2$.  So the
+fixed-point approximation used for the variance in \texttt{equilibrium.tex} is not enough for pair functions at large $\sigma$; the pair-conditioned
+expansion (the two particles held, the rest Gaussian) is the derivation to do.
+
+\paragraph{Momenta.}  $C_{m_im_j}(r)=0$ exactly in hybrid Monte Carlo.
+
+%=============================================================================
+\section{The shear stress and the Helfand moments at $t=0$}
+\label{sec:stress}
+
+\paragraph{The stress of a particle.}  From \texttt{helfand.tex}, eq.~(22) there, $V_aT_a^{ij}=v_a^im_a^j+P_a\,Q_a^{ij}$, with $P_a=p_aV_a^2$ and the
+anisotropy of the star of $a$
+\st
+Q_a^{ij}=\sum_br_{ab}^i\,D_{ab}^j,\qquad Q_a\simeq n_a\one\ \text{(closure)} .
+\stp
+Its shear components are a kinetic and a virial part,
+\st
+\tau_a=\tau_a^{\rm kin}+\tau_a^{\rm vir},\qquad
+\tau_a^{\rm kin}=\big(\tfrac12(v^xm^y+v^ym^x),\ \tfrac12(v^xm^x-v^ym^y)\big)_a,\qquad
+\tau_a^{\rm vir}=P_a\,\mathring Q_a,
+\stp
+with $\mathring Q_a=(\tfrac12(Q^{xy}+Q^{yx}),\tfrac12(Q^{xx}-Q^{yy}))_a$ the shear part of the anisotropy, a function of the positions alone.
+
+\paragraph{What is exact.}  $\tau^{\rm kin}_a$ depends on particle $a$'s own $(s_a,\bm m_a,V_a)$ and has zero conditional mean (\Sect{sec:structure}, item 3); $\tau^{\rm vir}_a$
+has the conditional mean $\avg{P|V_a}\mathring Q_a$.  Therefore
+\st
+C_{\tau^{\rm kin}\tau^{\rm kin}}(r)=0,\qquad \avg{\tau_a^{\rm kin}\cdot\tau_b^{\rm vir}}=0\ \ (\text{all }a,b),\qquad
+C_{\tau\tau}(r)=g(r)\Big\langle\avg{P|V_a}\avg{P|V_b}\,\mathring Q_a\cdot\mathring Q_b\Big\rangle_r .
+\label{stressexact}
+\stp
+The pair correlation of the stresses is entirely positional, the correlation of the anisotropies of two stars, weighted by the pressures.
+The self part has both: $\avg{\tau_a\cdot\tau_a}=\avg{\tau^{\rm kin}\cdot\tau^{\rm kin}}+\avg{(P\mathring Q)^2}$, with, in the Gaussian limit,
+\st
+\avg{(\tau_a^{(1)})^2}_{\rm kin}=\avg{(\tau_a^{(2)})^2}_{\rm kin}=T^2\,r_\tau .
+\stp
+
+\paragraph{The total: the infinite-frequency shear modulus.}  Summed over the box the stress is the momentum flux $J$ of \texttt{helfand.tex}, and the
+equal-time sum rule
+\st
+\frac{\avg{(J^{(1)})^2}}{L^2T}=\frac1{L^2T}\Big[\sum_a\avg{(\tau_a^{(1)})^2}+N\bar n\int d^2r\,\tfrac12C_{\tau\tau}(r)\Big]\equiv G_\infty
+\stp
+defines the infinite-frequency shear modulus of the particles.  The kinetic part is $G_\infty^{\rm kin}=\bar nT\,r_\tau$: an ideal gas of labels.  The
+virial part is the stiffness of the arrangement of the stars; it is the static side of the rigidity question (\texttt{rigidity.tex}), and in the
+Gaussian theory it is a correlation of the anisotropy field $\mathring Q(\bm x)=\int d^2r\,K(\bm r)\,\rho(\bm x+\bm r)$, $K(\bm r)$ the shear part of $\bm r\,\bm D^T$, with a direct
+and an indirect part as for the volumes.  To be derived; the measurement does not wait for it.
+
+\paragraph{The Helfand moments.}  With the local attribution the Helfand displacement of a particle starts at zero, $g_a(0)=0$, so $C_g(r,0)=0$
+identically; at short lags
+\st
+C_g(r,t)=t^2\,\avg{\tau_a\tau_b}_r+O(t^3)\quad(\text{one component}),
+\stp
+plus the stochastic increments, which are independent across particles at $t=0$.  The static input of the Helfand separation is therefore
+$C_{\tau\tau}(r)$ of \Eq{stressexact}, with the self part $\avg{\tau_a^2}$ and the normalization $\avg{(\delta m^y)^2}$ of \texttt{helfand.tex}, $=r_mT(e+p)\avg{V_a}$.
+
+%=============================================================================
+\section{Computational plan}
+\label{sec:plan}
+
+\paragraph{Step 0 (laptop, minutes): the single-particle quadrature.}  A script, \texttt{examples/}\allowbreak\texttt{single\_particle.jl}: for $s_a=8$, $12$, $16$, $24$, $32$, $54$, $135$, $541$
+and both measures, the ratios \Eq{ratios} and $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ of \Eq{alphasigma}, from \texttt{particle\_moments} extended to the moments of $s$, $\bm m^2$,
+$\bm m^4$ and $\tau^{\rm kin}$.  Compared at once with the nine existing runs ($r_m\approx1.15$, $r_s\approx0.82$ at $s_a=16$).  If the quadrature accounts
+for the misses, the campaign below confirms it; if not, the campaign must find where they come from.  Run before the campaign.
+
+\paragraph{Step 0 done (2026-11-17).}  The bath temperature of the runs is $T_0=0.870$, $0.960$, $0.996$ of $T(S_0)$ at the labels $s_a=16$, $54$, $541$, so
+$p(T_0)/(T_0\bar n)=2.63$, $11.96$, $133.7$.  At $T_0$ the exact single particle gives $r_m=1.754$, $1.177$, $1.016$, $r_s=0.944$, $0.972$, $0.997$, $\alpha_{\rm eff}=1.15$, $1.40$, $1.49$,
+$\sigma_{\rm eff}=2.79$, $12.00$, $133.7$, and
+with them the momentum and entropy correlators, $S(k)$ and the volume variance of all nine runs agree with the predictions to $0$--$4\%$ ($8\%$ for the
+volume variance at $h/a=2$).  Details: \texttt{equilibrium.tex}, Appendix B, ``The misses at $\sigma=4$''.  The Einstein set A$'$ is dropped: the measure changes
+$r_m$, $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ by less than $0.3\%$.  The campaign should set the bath temperature, not the start's entropy, as its parameter.
+
+\paragraph{Code.}  \texttt{src/} changes, for the owner's approval; the dynamics and the sampler are untouched, and \texttt{test/run.sh all} must stay
+bit-identical.
+\begin{enumerate}
+\item \texttt{StaticsRecorder} in \texttt{src/measure.jl}, called after each HMC update, recording per update:
+  \begin{itemize}
+  \item \emph{conditional moments} in 24 bins of $V_a\bar n$ ($0.7$--$1.3$): the count and the sums of $s_a$, $s_a^2$, $\bm m_a^2$, $\bm m_a^4$, $\ln T_a$,
+    $(\tau_a^{\rm kin})^2$, $(\tau^{\rm vir}_a)^2$, $P_a$;
+  \item \emph{pair correlations} \Eq{Cdef}, over all pairs with $r<R_{\max}=\min(L/2,10h)$, in bins of $h/20$: $g$; $C_{VV}$, $C_{sV}$, $C_{ss}$; $\avg{\bm m_a\cdot\bm m_b}_r$ and
+    $\avg{(\hat{\bm r}\cdot\bm m_a)(\hat{\bm r}\cdot\bm m_b)}_r$; for $\tau^{\rm kin}$ and $\tau^{\rm vir}$ separately and crossed, the isotropic and the $4\phi$ part; $C_{V\tau}$
+    and $C_{s\tau}$ for $\tau^{\rm vir}$ (the $2\phi$ part).  Brute force over pairs with the minimum image, threaded ($\le2\times10^7$ pairs per update at $N=6000$);
+  \item \emph{modes}: the existing $S_{\bm k}$, $M_{L,T}$, $N_{\bm k}$, plus $E_{\bm k}$, $V_{\bm k}=\sum_aV_ae^{-i\bm k\cdot\bm x_a}$ and the four stress modes (two components, kinetic
+    and virial);
+  \item \emph{totals}: $J^{(1)},J^{(2)}$, kinetic and virial, for $G_\infty$.
+  \end{itemize}
+\item The anisotropy $Q_a$ in the same loop as the smoothing (\texttt{kernel\_gradW}), on the cell list.
+\item A guard in \texttt{hmc\_update!}: a trajectory whose equation-of-state inversion fails (\texttt{eos\_newton} to $e=-\infty$, \texttt{nersc/LOG.md}, 2026-11-16)
+  is rejected instead of stopping the run.  Needed at $s_a\le8$; bit-identical where it does not fire.
+\item \texttt{examples/statics.jl}: the driver, as \texttt{examples/volume\_fluctuations.jl} plus the recorder, honouring \texttt{SR\_SEED0} and \texttt{SR\_OUTDIR}
+  (\texttt{nersc/array.sh}); arguments $L/h$, $h/a$, $s_a$, updates.
+\item Tests (\texttt{test/teststatics.jl}): with $R_{\max}$ covering the box, the pair sums plus the self terms equal $(\sum_aX_a)^2$ to round-off; on the hexagonal
+  lattice $\mathring Q_a=0$ and $\tr Q_a=2n_a$; with independent momenta drawn at fixed positions, $\avg{\bm m_a\cdot\bm m_b}_r$ is zero within its error.
+\item Analysis, \texttt{examples/statics\_analysis.py}: the ratios against Step 0; the conditional moments against $V$; the pair functions against
+  \Sect{sec:pairs}--\ref{sec:stress}; $G_\infty$ and its split.
+\end{enumerate}
+
+\paragraph{The campaign \texttt{statics}.}  Hybrid Monte Carlo only (Liouville measure unless noted), $400$ updates, the first $100$ discarded (the integrated
+autocorrelation time is $2$--$4$ updates), $8$ independent chains per cell except C.
+\begin{center}\small
+\begin{tabular}{lp{0.36\textwidth}p{0.3\textwidth}r}
+\toprule
+set & cells & purpose & core-hours \\
+\midrule
+A & $h/a=2$, $L=9h$; $s_a=8,12,16,24,32,54,135,541$ & single particle against $1/s_a$ & 40 \\
+A$'$ & the same, Einstein measure, $s_a=12,16,32,54$ & the measure against the shape & 20 \\
+B & $L=9h$; $h/a=3,4$ at $s_a=16,54,541$ & the $h/a$ dependence of the pair functions & 140 \\
+B$'$ & $L=9h$; $(h/a,s_a)=(3,240),(4,135)$ & fixed $s\,h^2=2500$ with $(2,541)$ & 50 \\
+C & $L=36h$, $h/a=2$; $s_a=54,541$; 4 chains & the plateau $S(0)$, $\xi$, $g$ and $C_{XY}$ to $10h$ & 170 \\
+\midrule
+ & 160 tasks & & $\approx420$ ($3.3$ node-hours) \\
+\bottomrule
+\end{tabular}
+\end{center}
+The costs scale the laptop timings of the nine runs ($200$ updates at $L=9h$: $1.5$--$3$ min at $h/a=2$, $4$--$14$ min at $3$, $9$--$31$ min at $4$),
+doubled for $400$ updates and by $1.5$ for a Perlmutter core; the cost grows as $(L/h)^3(h/a)^3$, so set C is $64$ times a set-A task.  Allowing a
+factor $3$ for the estimate and for the smaller time step at $s_a\le12$: at most $10$ node-hours.  Sets A, A$'$, B, B$'$ as an array on \texttt{-q shared -c 2}
+($8$ h limit, longest task about $1.5$ h); set C packed with \texttt{nersc/node.sh}, \texttt{THREADS=8}, \texttt{-q regular} (about $11$ core-hours per chain at $2$ threads,
+a few hours of wall time at $8$).  Output $\le10$ MB per task.
+
+\paragraph{What decides what.}
+\begin{itemize}
+\item $r_s$, $r_m$, $r_\tau$ from set A against Step 0: the single-particle distribution, and with A$'$ the measure.  If they match, the $\sigma=4$ misses
+  of the momentum and the entropy are explained, and the shift of $S(0)$ is the coefficient $c$ of \texttt{equilibrium.tex}.
+\item The exact zeros of \Sect{sec:structure} and \Eq{stressexact}: a check of the sampler and the recorder.
+\item $C_{VV}$, $C_{ss}$ against the pair-conditioned Gaussian theory, set B and B$'$; the scaling with $\bar nh^2$ at fixed $\sigma$ and at fixed $s\,h^2$.
+\item $C_{\tau\tau}(r)$ and $G_\infty$: the static input of the Helfand separation, measured, and later against the Gaussian theory of the anisotropy.
+\item Set C: $S(0)=2/5$ and the label-correlation length at $\sigma=13.5$ and $135$, and the pair functions out to $10h$.
+\end{itemize}
+The dynamics waits for these.
+
+\end{document}
