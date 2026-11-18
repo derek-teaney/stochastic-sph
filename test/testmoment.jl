@@ -54,7 +54,7 @@ for (name, kw) in (("jittered 0.3a, v0 = 0.8", (jitter = 0.3,)), ("Poisson, v0 =
     clos = maximum(norm(sum(s.A[k] * s.r[k]' for k in eachindex(s.A)) / s.V - I) for s in st if !isempty(s.A))
     rng = Xoshiro(2);  δ = SVector{2,Float64}[];  vir = 0.0
     for s in st[1:50]
-        resize!(δ, length(s.nb));  propose_resid!(δ, s, 1e-3, 1.0, false, rng)
+        resize!(δ, length(s.nb));  propose_resid!(δ, s, 1e-3, 1.0, rng)
         vir = max(vir, norm(sum(δ[k] * s.r[k]' for k in eachindex(δ))) / maximum(norm, δ))
     end
     wmin = minimum(minimum(s.w) for s in st if !isempty(s.w))

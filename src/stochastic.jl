@@ -68,9 +68,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
                      eos::AbstractEOS, V::Vector{Float64}; cache = nothing)
     N    = length(particles)
     h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.phys_dim
-    oneD = params.kernel isa WendlandC2_1D
-    v0   = zero(SVector{2,Float64})
-    ℓ0, ℓi0, P0, Pℓ0 = comoving_structures(v0, cs2(eos), oneD ? d : 2)   # rest frame
+    check_stochastic_dims(params)
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     stars = cache === nothing ? Vector{Star}(undef, N) : resize!(cache.stars, N)
     nl = neighbor_list!(cl, particles, h)
@@ -86,36 +84,22 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
                 rm < 2h && push!(nb, (b, r, rm))
             end
         end
-        # 2D: comoving forms at the particle's velocity (docs/stochastic.tex, "A moving
-        # fluid"); 1D: rest frame.
-        va = oneD ? v0 : pa.dotx                         # coarse-grained ẋ_a
-        ℓ, ℓi, P, Pℓ = oneD ? (ℓ0, ℓi0, P0, Pℓ0) : comoving_structures(va, cs2(eos), 2)
+        # comoving forms at the particle's velocity (docs/stochastic.tex, "A moving fluid")
+        va = pa.dotx                                     # coarse-grained ẋ_a
+        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2(eos), 2)
         common = lab_weights(params)                     # one kernel (commonkernel.tex): lab weights
         moment = is_moment(params)                       # no Λ_a, inverse-moment faces (inverse_moment.tex)
-        ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
-                  moment ? bond_weights_lab(nb, particles, common_bond_weight(params); ψ0 = ψ0b, Vb = Vbb) :
+        ψs, n_a = moment ? bond_weights_lab(nb, particles, common_bond_weight(params); ψ0 = ψ0b, Vb = Vbb) :
                   common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb,
                                                  ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
         Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
         η  = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
-        if oneD
-            θx = ℓ[1,1] / Pℓ
-            Sx = SMatrix{2,2,Float64}(1.0, 0.0, 0.0, 0.0) - θx * P
-            κ1 = 2η * (tr(ℓ * Sx * ℓ * Sx) + (d - 2) * θx^2 / d^2) + ζ * θx^2
-            κs, κb = κ1, 0.0
-        else
-            κs, κb = η, ζ + 2η * (1 / 2 - 1 / d)
-        end
+        κs, κb = η, ζ + 2η * (1 / 2 - 1 / d)            # ζ_eff (dimension.tex); = ζ for d = d_s = 2
         ℓh = sqrt_comoving(va)
-        if oneD
-            B = (sqrt(κs) * SMatrix{2,2,Float64}(1, 0, 0, 0), zero(SMatrix{2,2,Float64}),
-                 zero(SMatrix{2,2,Float64}))
-        else
-            # E_k = ℓ^{1/2} e_k ℓ^{1/2} − (P:ℓ^{1/2}e_kℓ^{1/2}/⟨Pℓ⟩) ℓ;  bulk ℓ/⟨Pℓ⟩
-            E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
-            B = (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ)
-        end
+        # E_k = ℓ^{1/2} e_k ℓ^{1/2} − (P:ℓ^{1/2}e_kℓ^{1/2}/⟨Pℓ⟩) ℓ;  bulk ℓ/⟨Pℓ⟩
+        E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
+        B = (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ)
         nk = n_a > 0 ? count(>(0), ψs) : 0                 # arrays at their exact size
         if cache !== nothing && isassigned(stars, a)
             o = stars[a]
@@ -131,7 +115,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             (ψs[k] > 0 && n_a > 0) || continue
             wab = V[b] * ψs[k] / n_a;  j += 1
             bs[j] = b;  rs[j] = r;  ws[j] = wab
-            cs[j] = (oneD ? κs : 2κs) * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
+            cs[j] = 2κs * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
             As[j] = common ? V[a] * wab * r : V[a] * wab * (ℓi * r)     # faces: Σ_b A_ab r_abᵀ = V_a 𝟙 either way
         end
         moment && moment_faces!(As, Us, ws, cs, rs)      # faces V_a w_ab 𝓜_a⁻¹ r_ab;  u_ab = c_ab R_a⁻¹ r_ab
@@ -185,10 +169,9 @@ end
 
 # ── Moves ────────────────────────────────────────────────────────────────────
 # Proposed kicks of the move of particle a: δ[k] to bond k (a gives up their sum).
-function propose_stress!(δ, st::Star, dt, oneD, rng)
+function propose_stress!(δ, st::Star, dt, rng)
     amp = sqrt(2dt * st.T / st.V)
-    ξ = oneD ? amp * randn(rng) * st.B[1] :
-               amp * (randn(rng) * st.B[1] + randn(rng) * st.B[2] + randn(rng) * st.B[3])
+    ξ = amp * (randn(rng) * st.B[1] + randn(rng) * st.B[2] + randn(rng) * st.B[3])
     for k in eachindex(st.nb)
         δ[k] = ξ * st.A[k]                          # t^i_ab = ξ^{ik} A_ab,k
     end
@@ -207,26 +190,15 @@ end
     end
 end
 
-function propose_resid!(δ, st::Star, dt, λ, oneD, rng)
+function propose_resid!(δ, st::Star, dt, λ, rng)
     isempty(st.U) || return propose_resid_moment!(δ, st, dt, λ, rng)
-    if oneD
-        Y = 0.0
-        for k in eachindex(st.nb)
-            y = sqrt(2dt * st.c[k] / λ) * randn(rng)
-            δ[k] = SVector(y, 0.0);  Y += y * st.r[k][1]
-        end
-        for k in eachindex(st.nb)
-            δ[k] -= SVector(Y * st.w[k] * st.r[k][1], 0.0)
-        end
-    else
-        Y = zero(SMatrix{2,2,Float64})
-        for k in eachindex(st.nb)
-            y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
-            δ[k] = y;  Y += y * st.r[k]'
-        end
-        for k in eachindex(st.nb)
-            δ[k] -= (Y * st.A[k]) / st.V              # y − (Y/V_a) A_ab
-        end
+    Y = zero(SMatrix{2,2,Float64})
+    for k in eachindex(st.nb)
+        y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
+        δ[k] = y;  Y += y * st.r[k]'
+    end
+    for k in eachindex(st.nb)
+        δ[k] -= (Y * st.A[k]) / st.V              # y − (Y/V_a) A_ab
     end
 end
 
@@ -343,7 +315,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
 end
 
 # One checkerboard sweep of the given kind (:stress or :resid).  Returns the number accepted.
-function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos, rngs, rng, vote, liouville::Bool = false)
+function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, eos, rngs, rng, vote, liouville::Bool = false)
     nacc = Threads.Atomic{Int}(0)
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]
@@ -354,10 +326,10 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD, eos
                 st = stars[a];  n = length(st.nb);  n == 0 && continue
                 resize!(δ, n);  resize!(Snew, n)
                 if kind === :stress
-                    propose_stress!(δ, st, dt, oneD, rngs[a])
+                    propose_stress!(δ, st, dt, rngs[a])
                     ok = ask_star!(m, Sc, e, V, a, st, δ, 1.0, eos, rngs[a], Snew, vote, liouville)
                 else
-                    propose_resid!(δ, st, dt, λ, oneD, rngs[a])
+                    propose_resid!(δ, st, dt, λ, rngs[a])
                     ok = ask_star!(m, Sc, e, V, a, st, δ, λ, eos, rngs[a], Snew, vote, liouville)
                 end
                 ok && Threads.atomic_add!(nacc, 1)
@@ -369,7 +341,7 @@ end
 
 # λ = Inf: the deterministic residual step, Δm from the residual tractions
 # −Δt c_ab δ_ab, δ_ab = Δβ_ab − G_a r_ab, at fixed e_a; exact back map.
-function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
+function resid_deterministic!(m, Sc, e, V, stars, dt, eos)
     N = length(m)
     β = map(1:N) do a
         S, v, T = eos_from_energy(e[a] / V[a], m[a] / V[a], eos);  v / T
@@ -386,7 +358,6 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
 
         for k in eachindex(st.nb)
             δab = β[st.nb[k]] - β[a] - G * st.r[k]
-            oneD && (δab = SVector(δab[1], 0.0))
             t = -dt * st.c[k] * (st.ℓ * δab)
             Δm[st.nb[k]] += t;  Δm[a] -= t
         end
@@ -396,8 +367,8 @@ function resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
     if !all(isfinite, Snew)
         Threads.atomic_add!(GUARD_SUBDIV, 1)
         dt < 1e-6 && error("resid_deterministic!: unphysical state even for dt = $dt")
-        resid_deterministic!(m, Sc, e, V, stars, dt / 2, oneD, eos)
-        resid_deterministic!(m, Sc, e, V, stars, dt / 2, oneD, eos)
+        resid_deterministic!(m, Sc, e, V, stars, dt / 2, eos)
+        resid_deterministic!(m, Sc, e, V, stars, dt / 2, eos)
         return
     end
     for a in 1:N
@@ -622,10 +593,10 @@ function StochOptions(params::SimParams; λ = 1.0, residual::Bool = true, vote::
                       shift::Bool = true, frozen::Bool = false,
                       gradient::Bool = !frozen && params.hamiltonian !== :energy,
                       hastings::Bool = setting("SPH_HASTINGS",
-                          is_moment(params) && λ == 1 && vote === :star && !(params.kernel isa WendlandC2_1D)))
+                          is_moment(params) && λ == 1 && vote === :star))
     gradient && params.hamiltonian === :energy &&
         error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
-    hastings && !(is_moment(params) && λ == 1 && vote === :star && !(params.kernel isa WendlandC2_1D)) &&
+    hastings && !(is_moment(params) && λ == 1 && vote === :star) &&
         error("SPH_HASTINGS=1 needs dissipation = :moment, λ = 1, the single vote and 2D (inverse_moment.tex, stage 2)")
     return StochOptions(Float64(λ), residual, vote, shift, gradient, hastings)
 end
@@ -648,7 +619,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                           frozen = nothing, cache = nothing)
     (; λ, residual, vote, shift, gradient, hastings) = opts
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
-    oneD = params.kernel isa WendlandC2_1D
+    check_stochastic_dims(params)
     fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen
     V, e, stars = fz.V, fz.e, fz.stars
     N  = length(particles)
@@ -671,10 +642,10 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     lqs = Dict(:stress => (NaN, NaN), :resid => (NaN, NaN))   # with hastings: mean and rms of ln q′/q over the proposals
     for kind in kinds
         if kind === :resid && isinf(λ)
-            resid_deterministic!(m, Sc, e, V, stars, dt, oneD, eos)
+            resid_deterministic!(m, Sc, e, V, stars, dt, eos)
         else
             # random shift of the grid for each sweep (1D: along x only)
-            u = shift ? SVector(rand(rng) * cl.cell_size[1], oneD ? 0.0 : rand(rng) * cl.cell_size[2]) :
+            u = shift ? SVector(rand(rng) * cl.cell_size[1], rand(rng) * cl.cell_size[2]) :
                         zero(SVector{2,Float64})
             cells = shifted_cells(particles, cl, u)
             g0 = GUARD_REJECTED[]
@@ -683,7 +654,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                 acc[kind] = nh / N
                 ln > 0 && (lqs[kind] = (ls / ln, sqrt(lq2 / ln)))
             else
-                acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, oneD,
+                acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ,
                                          eos, rngs, rng, vote, liouville) / N
             end
             grj[kind] = (GUARD_REJECTED[] - g0) / N

@@ -1,4 +1,5 @@
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # Kappa3D (legacy/kappa.jl)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
