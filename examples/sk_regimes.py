@@ -33,6 +33,12 @@ ax.loglog(kh, np.full_like(kh, 0.4), ":", color=c, lw=1.3)
 m = (kh > 0.03) & (kh < 1.5); ax.loglog(kh[m], 2 / (s * mu2 * kh[m] ** 2), "--", color=c, lw=1.3)
 m = (kh > 2.5) & (1 / (2 * s * WT) < 0.6); ax.loglog(kh[m], 1 / (2 * s * WT[m]), "--", color=c, lw=1.3)
 ax.axhline(1, color="0.75", lw=0.8)
+# k_*: where S climbs back through 1/2 above the minimum, 2 sigma W~(k_*) = 1 (open circles)
+m = kh > 1; ax.loglog(kh[m], np.full(m.sum(), 0.5), "-", color="0.75", lw=0.8)
+for s_, c_ in zip(sig, cols):
+    S_ = Sk(s_); ks = kh[(kh > khalf) & (S_ > 0.5)][0]
+    ax.plot([ks], [0.5], "o", ms=9, mfc="white", mec=c_, mew=2, zorder=5)
+ax.text(20, 0.13, r"$\circ$ $k_*$: $S=1/2$" + "\n" + r"$2\sigma\widetilde W(k_*)=1$", fontsize=12, color="0.25", ha="left")
 xi = np.sqrt(s * mu2 / 5); ax.axvline(1 / xi, color="0.6", lw=0.8, ls="-.")
 ax.text(1 / xi * 1.08, 1.4, r"$k\xi=1$" + "\n" + r"($\sigma=10^3$)", fontsize=12, color="0.35")
 ax.text(1.3e-3, 0.46, r"$S=2/5$", fontsize=13, color=c)

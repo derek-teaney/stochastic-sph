@@ -115,22 +115,23 @@ bare $T$ the momentum distribution is not Gaussian at $s_a=16$, where $\avg{\bm 
 correction to $\ln Z_a(V)$, the coefficient $c$ of \texttt{equilibrium.tex}, eq.~(A8) there, which shifts the measure term of $S(k)$.
 
 \paragraph{Beyond the saddle point: the weight of the positions.}  The exact weight of the positions is $\prod_aZ_a(V_a)$, of which \texttt{equilibrium.tex}
-uses the saddle point $Z_a\propto V^{\alpha}e^{pV/T}$, with the phase-space exponent $\alpha=(d+1)/2$ (the entropy and the $d$ momentum components) and
-the volume coefficient $\sigma=p/(T\bar n)$.  Keep $\ln Z_a(V)$ exact and fit it near $V=1/\bar n$ by the same form,
+uses the saddle point $Z_a\propto V^{\mathcal K_0}e^{pV/T}$, with $\mathcal K_0=(d+1)/2$ (half the number of conserved densities of a particle, its
+entropy and $d$ momentum components) and $\sigma=p/(T\bar n)$.  The Gaussian theory of the positions needs $\ln Z_a$ only to second order about the mean
+volume: its pressure and its stiffness,
 \st
-\ln Z_a(V')\simeq\alpha_{\rm eff}\ln V'+\sigma_{\rm eff}\,\frac{V'}V+\text{const},\qquad
-\alpha_{\rm eff}=-V^2\frac{d^2\ln Z_a}{dV^2},\qquad \sigma_{\rm eff}=V\frac{d\ln Z_a}{dV}+V^2\frac{d^2\ln Z_a}{dV^2} :
-\label{alphasigma}
+\Pi\equiv V\frac{d\ln Z_a}{dV},\qquad \mathcal K\equiv-V^2\frac{d^2\ln Z_a}{dV^2}\qquad\text{at }V=\frac1{\bar n},
+\label{PiK}
 \stp
-the effective phase-space exponent and volume coefficient, which tend to $\alpha$ and $\sigma$ as $s_a\to\infty$.  The expansion of \texttt{equilibrium.tex}, Appendix A, goes through unchanged with $V_a=V(1-\delta_a+\delta_a^2)$, and gives
+which at the saddle point are $\Pi=\sigma+\mathcal K_0$ and $\mathcal K=\mathcal K_0$ (\texttt{equilibrium.tex}, ``The pressure and the stiffness of a particle'').
+Keep $\ln Z_a(V)$ exact: the expansion of \texttt{equilibrium.tex}, Appendix A, goes through unchanged with $V_a=V(1-\delta_a+\delta_a^2)$, and gives
 \begin{keyeq}
 \st
-S(k)=\frac{1}{1+2\alpha_{\rm eff}\,\widetilde W\big(1-\tfrac12\widetilde W\big)+2\sigma_{\rm eff}\,\widetilde W\big(1-\widetilde W\big)},\qquad S(0)=\frac1{1+\alpha_{\rm eff}} ,
+S(k)=\frac{1}{1+2\Pi\,\widetilde W\big(1-\widetilde W\big)+\mathcal K\,\widetilde W^2},\qquad S(0)=\frac1{1+\mathcal K} ,
 \label{Sexact}
 \stp
 \end{keyeq}
-\texttt{equilibrium.tex}, eq.~(3) there, with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$.  The labels are an ideal gas with $\mu_{\rm label}=(1+\alpha_{\rm eff})T\ln n$.  With the exact
-$Z_a(V)$ the only approximation left in $S(k)$ is the second one, $\bar nh^2\gg1$.  $\alpha_{\rm eff}$ and $\sigma_{\rm eff}$ come from the same quadrature, at $s_a$ and its neighbours (a finite difference in $V$ at
+\texttt{equilibrium.tex}, eq.~(3) there, with the exact $\Pi$ and $\mathcal K$.  The labels are an ideal gas with $\mu_{\rm label}=(1+\mathcal K)T\ln n$.  With the exact
+$Z_a(V)$ the only approximation left in $S(k)$ is the second one, $\bar nh^2\gg1$.  $\Pi$ and $\mathcal K$ come from the same quadrature, at $s_a$ and its neighbours (a finite difference in $V$ at
 fixed $T$), so Step 0 of \Sect{sec:plan} gives the improved $S(k)$ and volume variance at the smallest $\sigma$ with no new run.
 
 \paragraph{Two integrals, two expansion parameters.}  The equilibrium has two layers.
@@ -138,7 +139,7 @@ fixed $T$), so Step 0 of \Sect{sec:plan} gives the improved $S(k)$ and volume va
 \item \emph{The particle variables at fixed volume}, $Z_a(V)=\int ds\,d^2\bm m\,e^{s-e(s,\bm m,V)/T}$, are integrated exactly by quadrature: no saddle point.  The saddle point,
   $V^{(d+1)/2}e^{pV/T}$, has corrections of relative order $1/s_a$, and it is what failed at low $s_a$ (the momentum variance is $57\%$ above it at $s(T_0)V=11.7$, $c_s^2=1/2$; $75\%$ at $s(T_0)V=10.5$ for $c_s^2=1/3$).
 \item \emph{The positions}, with the exact weight $\prod_aZ_a(V_a)$, are still treated in the Gaussian (random-phase) approximation: the weight is expanded to
-  second order in $\delta_a=\delta n_a/\bar n$ about the uniform density, which needs $\ln Z_a$ only to second order, i.e.\ $\alpha_{\rm eff}$ and $\sigma_{\rm eff}$, and the modes $\delta\rho_{\bm k}$ are
+  second order in $\delta_a=\delta n_a/\bar n$ about the uniform density, which needs $\ln Z_a$ only to second order, i.e.\ $\Pi$ and $\mathcal K$, and the modes $\delta\rho_{\bm k}$ are
   integrated as Gaussians.  The neglected terms, the third and higher derivatives of $\ln Z_a$ and the cubic terms in $\delta n$, are of relative order
   $\delta_a^2\sim1/(\bar nh^2)$.
 \end{enumerate}
@@ -148,7 +149,7 @@ fixed $T$), so Step 0 of \Sect{sec:plan} gives the improved $S(k)$ and volume va
 integral & expansion parameter & treatment \\
 \midrule
 $s_a$, $\bm m_a$ at fixed $V_a$ & $1/s_a$ & exact (quadrature) \\
-positions & $1/(\bar nh^2)$ & Gaussian, with $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ \\
+positions & $1/(\bar nh^2)$ & Gaussian, with $\Pi$, $\mathcal K$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -252,20 +253,20 @@ $C_{\tau\tau}(r)$ of \Eq{stressexact}, with the self part $\avg{\tau_a^2}$ and t
 \label{sec:plan}
 
 \paragraph{Step 0 (laptop, minutes): the single-particle quadrature.}  A script, \texttt{examples/}\allowbreak\texttt{single\_particle.jl}: for $s_a=8$, $12$, $16$, $24$, $32$, $54$, $135$, $541$
-and both measures, the ratios \Eq{ratios} and $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ of \Eq{alphasigma}, from \texttt{particle\_moments} extended to the moments of $s$, $\bm m^2$,
+and both measures, the ratios \Eq{ratios} and $\Pi$, $\mathcal K$ of \Eq{PiK}, from \texttt{particle\_moments} extended to the moments of $s$, $\bm m^2$,
 $\bm m^4$ and $\tau^{\rm kin}$.  Compared at once with the nine existing runs ($r_m\approx1.15$, $r_s\approx0.82$ at $s_a=16$).  If the quadrature accounts
 for the misses, the campaign below confirms it; if not, the campaign must find where they come from.  Run before the campaign.
 
 \paragraph{Step 0 done (2026-11-17, before dimfix: $d=3$, $c_s^2=1/3$, $\zeta_{\rm eff}=\eta/3$).}  The bath temperature of the runs is $T_0=0.870$, $0.960$, $0.996$ of $T(S_0)$ at the labels $s_a=16$, $54$, $541$, so
-$p(T_0)/(T_0\bar n)=2.63$, $11.96$, $133.7$.  At $T_0$ the exact single particle gives $r_m=1.754$, $1.177$, $1.016$, $r_s=0.944$, $0.972$, $0.997$, $\alpha_{\rm eff}=1.15$, $1.40$, $1.49$,
-$\sigma_{\rm eff}=2.79$, $12.00$, $133.7$, and
+$p(T_0)/(T_0\bar n)=2.63$, $11.96$, $133.7$.  At $T_0$ the exact single particle gives $r_m=1.754$, $1.177$, $1.016$, $r_s=0.944$, $0.972$, $0.997$, $\mathcal K=1.15$, $1.40$, $1.49$,
+$\Pi=3.94$, $13.40$, $135.2$, and
 with them the momentum and entropy correlators, $S(k)$ and the volume variance of all nine runs agree with the predictions to $0$--$4\%$ ($8\%$ for the
 volume variance at $h/a=2$).  The Einstein set A$'$ is dropped: the measure changes
-$r_m$, $\alpha_{\rm eff}$, $\sigma_{\rm eff}$ by less than $0.3\%$.  The campaign should set the bath temperature, not the start's entropy, as its parameter.
+$r_m$, $\Pi$, $\mathcal K$ by less than $0.3\%$.  The campaign should set the bath temperature, not the start's entropy, as its parameter.
 
 \paragraph{Step 0 redone (2026-11-18, $d=d_s=2$, $c_s^2=1/2$; \texttt{dimension.tex}).}  The nine runs and the quadrature on the fixed code: $T_0/T(S_0)=0.855$,
-$0.955$, $0.996$ at $s_a=16$, $54$, $541$, so $\sigma(T_0)=3.89$, $16.4$, $179$; $r_m=1.568$, $1.140$, $1.013$, $r_s=0.918$, $0.969$, $0.997$, $\alpha_{\rm eff}=1.225$,
-$1.425$, $1.493$, $\sigma_{\rm eff}=4.02$, $16.44$, $178.8$.  The momentum and entropy correlators agree to $1\%$, $S(k)$ to $0$--$3\%$, the volume variance to
+$0.955$, $0.996$ at $s_a=16$, $54$, $541$, so $\sigma(T_0)=3.89$, $16.4$, $179$; $r_m=1.568$, $1.140$, $1.013$, $r_s=0.918$, $0.969$, $0.997$, $\mathcal K=1.225$,
+$1.425$, $1.493$, $\Pi=5.25$, $17.87$, $180.3$.  The momentum and entropy correlators agree to $1\%$, $S(k)$ to $0$--$3\%$, the volume variance to
 $8\%$ at $h/a=2$ and $\pm4\%$ at $h/a=3$, $4$.  Details: \texttt{equilibrium.tex}, Appendix B.
 
 \paragraph{Code.}  \texttt{src/} changes, for the owner's approval; the dynamics and the sampler are untouched, and \texttt{test/run.sh all} must stay

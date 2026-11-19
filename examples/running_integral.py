@@ -20,7 +20,7 @@ K = np.geomspace(1e-4, 300, 60000)
 Kc = np.geomspace(1e-4, 300, 3000); Wc = simpson(2 * np.pi * q * W * j0(np.outer(Kc, q)), x=q, axis=1)
 WT = np.interp(np.log(K), np.log(Kc), Wc)
 Sk = lambda s: 1 / (1 + 3 * WT * (1 - WT / 2) + 2 * s * WT * (1 - WT))
-def Sx(s): e = exact(s); return S_exact(WT, e["alpha"], e["sig"])       # improved: exact single particle at sigma(T0)
+def Sx(s): e = exact(s); return S_exact(WT, e["Pi"], e["K"])       # improved: exact single particle at sigma(T0)
 def NRx(R, s):
     f = Sx(s) - 1
     return np.array([x * simpson(j1(K * x) * f * K, x=np.log(K)) for x in R])

@@ -34,7 +34,7 @@ for f in sys.argv[1:]:
     ku = np.unique(np.round(k, 2)); grp = lambda x: np.array([x[np.round(k, 2) == u].mean() for u in ku])
     Ss, Sp = grp(Ss), grp(Sp); Se = np.array([Sblk[:, np.round(k, 2) == u].mean(1).std() / np.sqrt(nb) for u in ku])
     vn = F["vol_mean"][b:].mean(); lk = lambda W: (rc["s_off"] + rc["b"] * (1 - W)) ** 2 * rc["cs2"] * rc["saT0"]   # (s_off + b(1-W))^2 (sV)^2/(C_V V), C_V = s/c_s^2
-    pred_g = rc["r_s"] * vn + lk(Wt(ku)) * S_exact(Wt(ku), rc["alpha"], rc["sig"])
+    pred_g = rc["r_s"] * vn + lk(Wt(ku)) * S_exact(Wt(ku), rc["Pi"], rc["K"])
     if ha == 2: curves[int(round(sa))] = (rc, vn)
     c = cols[int(round(sa))]; m = mk[int(ha)]
     ax.errorbar(ku * (1 + 0.012 * (ha - 3)), Ss, Se, fmt=m, color=c, ms=7, mfc=c if ha == 2 else "none", mew=1.5, elinewidth=1, capsize=0)
@@ -43,7 +43,7 @@ kk = np.linspace(0.3, 3.2, 300); W = Wt(kk)
 for sa, (rc, vn) in sorted(curves.items()):                      # theory at sigma(T0) of the h/a = 2 run
     c = cols[sa]; x = rc["cs2"] * rc["saT0"]
     ax.plot(kk, 1 + x * (1 - W) ** 2 * S_gauss(W, rc["sigma"]), "-", color=c, lw=2, label=rf"Gaussian theory, $\sigma(T_0)={rc['sigma']:.3g}$")
-    y = rc["r_s"] * vn + (rc["s_off"] + rc["b"] * (1 - W)) ** 2 * x * S_exact(W, rc["alpha"], rc["sig"])
+    y = rc["r_s"] * vn + (rc["s_off"] + rc["b"] * (1 - W)) ** 2 * x * S_exact(W, rc["Pi"], rc["K"])
     ax.plot(kk, y, "--", color=c, lw=2)
 ax.plot([], [], "ko", ms=8, label="HMC $h/a=2$"); ax.plot([], [], "k^", ms=8, mfc="none", label="HMC $h/a=3$")
 ax.plot([], [], "ks", ms=8, mfc="none", label="HMC $h/a=4$")

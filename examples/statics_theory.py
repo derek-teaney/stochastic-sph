@@ -4,8 +4,8 @@
 (docs/dimension.tex), c_s^2 and T_scale from the run attributes (c_s^2 = 1/3, T_scale = 1 for files written before branch dimfix):
 
     e = (T/T_scale)^(1+1/c_s^2),  s = (1+c_s^2) e/T,  w = T s,  C_V = de/dT = s/c_s^2,  sigma(T0) = p V/T = c_s^2/(1+c_s^2) s(T0) V
-    S(k) = 1 / (1 + 2 alpha_eff W~ (1 - W~/2) + 2 sigma_eff W~ (1 - W~))      (statics.tex, eq. Sexact)
-    alpha_eff = -V^2 d^2lnZ/dV^2 (-> alpha = (d+1)/2), sigma_eff = V dlnZ/dV + V^2 d^2lnZ/dV^2 (-> sigma = p/(T nbar)); keys "alpha", "sig"
+    S(k) = 1 / (1 + 2 Pi W~ (1 - W~) + K W~^2)      (equilibrium.tex, eq. Sk; statics.tex, eq. Sexact)
+    Pi = V dlnZ/dV (the pressure of a particle over T, -> sigma + K0), K = -V^2 d^2lnZ/dV^2 (its stiffness, -> K0 = (d+1)/2); keys "Pi", "K"
     r_m = <m_x^2|V> / (T w V),  r_s = Var(s|V) / (C_V V),  <s|V'> = s_off + b V'/V  (s_off, b in units of s(T0) V)
 
 Import: from statics_theory import Wt, S_gauss, S_exact, exact, run_constants
@@ -29,13 +29,13 @@ KH, WT = _KH, _WT
 def Wt(kh): return np.interp(kh, _KH, _WT)                         # Wendland C2, 2D, kh in units of h
 
 def S_gauss(W, sigma): return 1 / (1 + 3 * W * (1 - W / 2) + 2 * sigma * W * (1 - W))
-def S_exact(W, alpha, sig): return 1 / (1 + 2 * alpha * W * (1 - W / 2) + 2 * sig * W * (1 - W))
+def S_exact(W, Pi, K): return 1 / (1 + 2 * Pi * W * (1 - W) + K * W * W)
 
 def exact(sigma):
     """The exact single-particle quantities at sigma(T0), interpolated in log sigma."""
     x = np.log(sigma); lx = np.log(_sig); ip = lambda y: float(np.interp(x, lx, y))
     f1 = sigma + ip(_tab["f1"] - _sig); f2 = ip(_tab["f2"])
-    return dict(alpha=-f2, sig=f1 + f2, r_s=ip(_tab["var_s"] / _tab["CV_V"]),
+    return dict(Pi=f1, K=-f2, r_s=ip(_tab["var_s"] / _tab["CV_V"]),
                 r_m=ip(_tab["mx2"] / _tab["Tw_V"]), r_tau=ip(_tab["tau2"] / _tab["T2"]),
                 s_off=ip(_tab["s_minus"] / _tab["sa_T0"]), b=ip(_tab["dsdV_V"] / _tab["sa_T0"]))
 

@@ -65,8 +65,8 @@ for (T0, V, sal, f) in cases
         row = (basename(f), liou ? "liouville" : "einstein", CS2, T0, V, sal, sT * V, SIGMA_PER_S * sT * V, f1, f2, c.s, c.vars, CV * V,
                c.mx2, T0 * w * V, c.m4, c.tau2, T0^2, c.e, e_of_T(T0) * V, dsdV, c.s - dsdV)
         println(out, join(row, ","))
-        @printf("%-16s %-9s s_a(T0) %7.2f  σ = p/Tn %6.2f  σ_eff = f1+f2 %8.3f  α_eff = −f2 %.3f (α = 1.5)  r_s %.3f  r_m %.3f  r_τ %.3f  ⟨s⟩/s(T0)V %.4f  V d⟨s⟩/dV / s(T0)V %.4f\n",
-                basename(f), row[2], sT * V, SIGMA_PER_S * sT * V, f1 + f2, -f2, c.vars / (CV * V), c.mx2 / (T0 * w * V),
+        @printf("%-16s %-9s s_a(T0) %7.2f  σ = p/Tn %6.2f  Π = f1 %8.3f  𝒦 = −f2 %.3f (𝒦₀ = 1.5)  r_s %.3f  r_m %.3f  r_τ %.3f  ⟨s⟩/s(T0)V %.4f  V d⟨s⟩/dV / s(T0)V %.4f\n",
+                basename(f), row[2], sT * V, SIGMA_PER_S * sT * V, f1, -f2, c.vars / (CV * V), c.mx2 / (T0 * w * V),
                 c.tau2 / T0^2, c.s / (sT * V), dsdV / (sT * V))
     end
 end

@@ -5,7 +5,7 @@ and T_scale from the run attributes (docs/dimension.tex): s = (1+c_s^2) e/T, w =
 
   momentum:   <|M_k|^2>/(L^2 T0 w)  =  r_m <V_a>nbar
   entropy:    <|S_k|^2>/(L^2 C_V)   =  r_s <V_a>nbar + (s_off + b (1 - W~))^2 S(k) / (C_V V),   <s|V'> = s_off + b V'/V near V
-  positions:  S(k) from the Gaussian theory at sigma(label) = c_s^2/(1+c_s^2) s_a, at sigma(T0), and with the exact alpha, sigma (statics.tex, eq. Sexact)
+  positions:  S(k) from the Gaussian theory at sigma(label) = c_s^2/(1+c_s^2) s_a, at sigma(T0), and with the exact Pi, K (statics.tex, eq. Sexact)
   volumes:    var(V_a) nbar^2 from the same S(k), summed over the modes of the box
 
     python3 examples/single_particle_compare.py data/volfluct/vf_*.h5
@@ -24,7 +24,7 @@ q = np.linspace(0, 2, 20001); Wq = 7 / (4 * np.pi) * (1 - q / 2) ** 4 * (1 + 2 *
 KH = np.linspace(0, 80, 8001); WT = simpson(2 * np.pi * q * Wq * j0(np.outer(KH, q)), x=q, axis=1)
 Wt = lambda k: np.interp(k, KH, WT)
 S_g = lambda W, sig: 1 / (1 + 3 * W * (1 - W / 2) + 2 * sig * W * (1 - W))
-S_x = lambda W, f1, f2: 1 / (1 + 2 * (-f2) * W * (1 - W / 2) + 2 * (f1 + f2) * W * (1 - W))   # alpha = -f2, sigma = f1 + f2
+S_x = lambda W, f1, f2: 1 / (1 + 2 * f1 * W * (1 - W) - f2 * W * W)   # Pi = f1, K = -f2
 
 def boxvar(Lx, Ly, h, nbar, Sfun):                      # (1/(nbar L^2)) sum_{k != 0} W~^2 S over the box modes, kh < 60
     nx = int(60 / h * Lx / (2 * np.pi)); ny = int(60 / h * Ly / (2 * np.pi))
@@ -68,7 +68,7 @@ for f in sys.argv[1:]:
 for a, t in zip(ax1, [r"momentum: HMC / ($r_m\langle V_a\rangle\bar n$)", r"entropy: HMC / (intrinsic + leak, exact)"]):
     a.axhline(1, color="0.4", lw=1.5); a.set(xlabel="$kh$", ylim=(0.6, 1.4)); a.set_title(t, fontsize=13)
 for a, t in zip(ax2, [r"$S(k)$: HMC / Gaussian theory at the label's $\sigma$, $c_s^2 s_a/(1+c_s^2)$",
-                      r"$S(k)$: HMC / theory with $\alpha_{\rm eff},\sigma_{\rm eff}$ at $T_0$"]):
+                      r"$S(k)$: HMC / theory with the exact $\Pi,\mathcal{K}$ at $T_0$"]):
     a.axhline(1, color="0.4", lw=1.5); a.set(xlabel="$kh$", ylim=(0.6, 1.6)); a.set_title(t, fontsize=13)
 for fig, ax in ((f1g, ax1), (f2g, ax2)):
     for sa, c in cols.items(): ax[0].plot([], [], "o", color=c, label=rf"$s_a={sa}$ (label)")

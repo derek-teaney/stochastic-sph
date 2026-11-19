@@ -5,7 +5,7 @@
 Prints the volume statistics (mean and variance, after a burn-in of a third) against the theory summed over the box
 modes, and writes docs/figs/equilibrium_{Sk,gr,volvar}.png: S(k), g(r) and the volume variance against the theory.
 Runs are labelled by sigma(T0) = p V/T at the bath temperature T0 of each run (c_s^2 from the run attributes; docs/dimension.tex).
-Solid: the Gaussian theory (alpha = 3/2) at sigma(T0).  Dashed: the exact single particle at sigma(T0) (examples/statics_theory.py).
+Solid: the Gaussian theory at its saddle point (Pi = sigma + 3/2, K = 3/2) at sigma(T0).  Dashed: the exact single particle at sigma(T0) (examples/statics_theory.py).
 """
 import sys, warnings
 import h5py, numpy as np
@@ -23,7 +23,7 @@ WT = np.trapezoid(2 * np.pi * r * Wr * j0(np.outer(KH, r)), r, axis=1)
 def Sk(w, sig):                     # eq. (Sk), the Gaussian theory at σ(T0)
     return S_gauss(w, sig)
 def Sx(w, sig):                     # exact single particle at σ(T0)
-    e = exact(sig); return S_exact(w, e["alpha"], e["sig"])
+    e = exact(sig); return S_exact(w, e["Pi"], e["K"])
 
 def box_modes(Lh):
     n = np.arange(-int(400 * Lh / 2 / np.pi) - 1, int(400 * Lh / 2 / np.pi) + 2)
@@ -112,7 +112,7 @@ for ha, m in [(2, "o"), (3, "^"), (4, "s")]:
     sg = np.geomspace(2.5, 400, 30); Lh = sel[0]["Lh"]                     # sg: sigma(T0)
     ax.plot(sg, [volume_theory(ha, s, Lh)[1] * nh2 for s in sg], "-", lw=1.5, color=hcol[ha])
     ax.plot(sg, [volume_theory(ha, s, Lh, True)[1] * nh2 for s in sg], "--", lw=1.5, color=hcol[ha])
-ax.plot([], [], "k-", lw=1.5, label=r"Gaussian theory, $\alpha=3/2$")
+ax.plot([], [], "k-", lw=1.5, label=r"saddle point, $\Pi=\sigma+3/2$, $\mathcal{K}=3/2$")
 ax.plot([], [], "k--", lw=1.5, label=r"exact single particle")
 ax.set(xscale="log", yscale="log", xlabel=r"$\sigma(T_0)=p/(T_0\bar n)$", ylabel=r"$\bar n h^2\,\bar n^2\langle\delta V_a^2\rangle$")
 ax.legend(frameon=False)
