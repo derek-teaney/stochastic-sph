@@ -27,10 +27,10 @@ function initialize_viscous_sound_1d(h, ha, Lx, s0, A, cs2v, nx, η_by_s, ζ_by_
 
     # Uniform background → T_rel_0 for IC closure and Γ_s.
     _, bg, _, _ = setup_ic(h, ha, eos, (x, y) -> s0, (x, y) -> SVector(0.0, 0.0);
-                            Lx, sim_dim=1)
+                            Lx, sim_dim=1, phys_dim=3)
     T_rel_0 = bg[1].T * bg[1].γ
 
-    Γ_s = (4/3 * η_by_s + ζ_by_s) / T_rel_0
+    Γ_s = (4/3 * η_by_s + ζ_by_s) / T_rel_0          # 2η(1 − 1/d) + ζ at d = 3 (phys_dim = 3 above)
 
     # Exact dispersion: ω = ωR - i Γ_s k²/2,  ωR = (k/2)√(4cs²−Γ_s²k²)
     ωR         = (k/2) * sqrt(max(0.0, 4*cs^2 - (Γ_s*k)^2))
@@ -51,7 +51,7 @@ function initialize_viscous_sound_1d(h, ha, Lx, s0, A, cs2v, nx, η_by_s, ζ_by_
     params, particles, cl, eos = setup_ic(h, ha, eos,
         (x, y) -> s0 + (A / T_rel_0) * cos(kx*x),
         (x, y) -> analytic_M(0.0, x, 0.0, A, k, kx, 0.0, khat, ωR, Γ_s);
-        Lx, sim_dim=1)
+        Lx, sim_dim=1, phys_dim=3)
 
     return params, particles, cl, eos, kx, ky, khat, k, cs, ωR, T_period, T_rel_0, Γ_s
 end

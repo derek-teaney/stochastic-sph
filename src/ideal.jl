@@ -215,7 +215,7 @@ function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     ds = params.kernel isa WendlandC2_1D ? 1 : 2
     d  = params.phys_dim
     η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
-    κb_s = ds == 1 ? 2η_s * (d - 1) / d + ζ_s : 2η_s + ζ_s + 2η_s * (1 / 2 - 1 / d)
+    κb_s = ds == 1 ? 2η_s * (d - 1) / d + ζ_s : 2η_s + zeta_eff_by_s(eos, d)
     c_d  = ds == 1 ? 15 / 4 : 7 / 2
     return 4 * (κb_s / Trel) * c_d / params.bond_h^2
 end

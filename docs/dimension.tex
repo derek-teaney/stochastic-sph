@@ -82,6 +82,20 @@ $d-2$ unresolved directions into the bulk channel,
 With $d=3$ this is $\zeta+\eta/3$: the runs so far had a bulk viscosity $\eta/3$ although $\zeta=0$.  With $d=2$ it is $\zeta$, and the
 conformal default has no bulk viscosity.  The formula stays in the code; only $d$ changes.
 
+\paragraph{A floor on the bulk viscosity.}  The point: the Hastings-corrected stress move of the stochastic step needs noise in all
+three components of the comoving stress, two shear and one bulk.  With $\zeta_{\rm eff}=0$ the bulk column of its Jacobian vanishes,
+the Jacobian is singular, and every stress proposal is rejected.  Restricting the move to the shear subspace is not a quick fix: that
+subspace is defined in the comoving frame, so it moves with the velocity the move changes.  The stochastic step therefore uses
+\st
+\frac{\zeta_{\rm eff}}{s}=\max\!\left(\frac{\zeta}{s}+2\,\frac{\eta}{s}\left(\frac12-\frac1d\right),\ \epsilon\,\frac{\eta}{s}\right),
+\qquad \epsilon=\texttt{SPH\_ZETA\_FLOOR}=0.01 ,
+\label{zetafloor}
+\stp
+so that a given $\zeta/s$ above the floor is unchanged, and at $d=2$, $\zeta=0$ the fluid has a bulk viscosity of $1\%$ of $\eta$.  At
+rest the stress acceptance is $0.6$--$0.8$ for $\epsilon$ from $0.003$ to $1/3$, against $0$ at $\epsilon=0$.  The deterministic viscous
+step has no floor; the time-step bound uses \Eq{zetafloor}.  A Hastings move on the shear subspace, for $\zeta=0$ exactly, is left for
+a later note.
+
 \section{What the runs so far simulated}
 \label{sec:labels}
 
@@ -152,6 +166,9 @@ Check: \texttt{test/run.sh all}, regression bit-identical against \texttt{static
   \texttt{examples/stochastic\_thermalize*.jl} and \texttt{examples/stochastic\_smallk.jl}.  One-dimensional deterministic code
   (\texttt{testgaussian\_1d}, \texttt{testsound\_viscous\_1d}, the rate bound) stays.
 \item \texttt{Kappa3D}/\texttt{Kappa2D} moved to \texttt{src/legacy} with their two tests.
+\item The floor \Eq{zetafloor} on the bulk viscosity of the stochastic step (\texttt{zeta\_eff\_by\_s}, \texttt{SPH\_ZETA\_FLOOR}).
+\item Deterministic tests written for $d=3$ pass \texttt{phys\_dim=3}; the tolerances of the viscous sound wave are reset at
+  $c_s^2=1/2$, where the faster wave has about twice the error at the same $kh$ (it still converges, by $3.0$ and $3.6$ per halving).
 \end{enumerate}
 Check: unit tests (new: thermodynamic consistency at $c_s^2=1/2$, $dp/dT=s$ and $ds/de=1/T$; the guard), every script loads, and a new
 regression baseline for the stochastic paths.  Deterministic regressions run with $d=3$ given explicitly should stay bit-identical.

@@ -82,7 +82,7 @@ for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y))
             A = 1e-6;  β = [A * e * sin(dot(k, p.x)) for p in ps]
             K = bond_dissipation(ps, params, cl, eos, β)
             p = ps[1];  ℓ, ℓi, Pp, Pℓ = comoving_structures(p.dotx, 1/3, 2)
-            Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / 3)
+            Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / params.phys_dim)
             G = A * e * k';  θ = sum(ℓ .* G) / Pℓ;  Y = (G + G') / 2 - θ * Pp
             push!(rs, K / (0.5 * params.L[1] * params.L[2] * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θ^2)))
         end

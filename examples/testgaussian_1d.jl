@@ -18,7 +18,7 @@ function initialize_gaussian_1d(h, ha;
     S_func = (x, y) -> srel(eos, e_ic(x, y))
 
     params, particles, cl, eos = setup_ic(h, ha, eos, S_func,
-                                           (x, y) -> SVector(0.0, 0.0); Lx, sim_dim=1)
+                                           (x, y) -> SVector(0.0, 0.0); Lx, sim_dim=1, phys_dim=3)
     cs = sqrt(cs2v)
     @printf("Gaussian 1D: A=%.4g  δ=%.4g  σ=%.4g  center=%.3g  n_img=%d  cs=%.4g  η/s=%.4g\n",
             A, delta, sigma, x0, n_images, cs, η_by_s)

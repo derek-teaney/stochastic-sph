@@ -94,8 +94,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
                                                  ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
         Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
-        η  = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
-        κs, κb = η, ζ + 2η * (1 / 2 - 1 / d)            # ζ_eff (dimension.tex); = ζ for d = d_s = 2
+        κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η (sph.jl, dimension.tex)
         ℓh = sqrt_comoving(va)
         # E_k = ℓ^{1/2} e_k ℓ^{1/2} − (P:ℓ^{1/2}e_kℓ^{1/2}/⟨Pℓ⟩) ℓ;  bulk ℓ/⟨Pℓ⟩
         E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
@@ -399,9 +398,9 @@ function star_coef(e, m, V, eos, d)
     S_in = s / V;  M = m / V;  Mm = norm(M)
     ε = eos_newton(S_in, Mm, e / V, eos)
     w = ε + pressure(eos, ε);  G, _ = eos_wgamma(w, Mm);  γ = G / w;  v = M * (w / G^2)
-    Ta = (w / S_in) * γ;  sr = srel(eos, ε);  η = eta_by_s(eos) * sr;  ζ = zeta_by_s(eos) * sr
+    Ta = (w / S_in) * γ;  sr = srel(eos, ε)
     ℓ, ℓi, P, Pℓ = comoving_structures(v, cs2(eos), 2)
-    κs, κb = η, ζ + 2η * (1 / 2 - 1 / d)
+    κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η
     ℓh = sqrt_comoving(v)
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)

@@ -176,11 +176,15 @@ end
 # Stochastic runs (the stochastic step, hybrid Monte Carlo) are two-dimensional (dimension.tex).
 function check_stochastic_dims(params::SimParams)
     sim_dim(params) == 2 || error("stochastic runs need sim_dim = 2; one-dimensional stochastic runs were removed (dimension.tex)")
+    params.phys_dim == sim_dim(params) ||
+        error("stochastic runs need phys_dim = sim_dim (= 2), got phys_dim = $(params.phys_dim): with fluctuations the fluid is the " *
+              "one the particles span (dimension.tex); phys_dim ≠ sim_dim is for deterministic runs only")
     return nothing
 end
 
-# The default physical dimension of a run with simulation dimension sim_dim (dimension.tex).
-default_phys_dim(sim_dim::Integer = 2) = 3
+# The default physical dimension of a run with simulation dimension sim_dim (dimension.tex): d = d_s.  Before branch dimfix
+# it was 3 (a z-independent 3D fluid, cs² = 1/3, ζ_eff = ζ + η/3); a deterministic run may still ask for phys_dim = 3.
+default_phys_dim(sim_dim::Integer = 2) = sim_dim
 
 # Square-box convenience wrapper: SimParams(L, h, ha_ratio; kw...) → Lx=Ly=L.
 SimParams(L::Real, h, ha_ratio; kw...) = SimParams(L, L, h, ha_ratio; kw...)
@@ -237,6 +241,14 @@ cs2(eos::ConstantCs2EOS)              = eos.cs2_val
 # Specific transport coefficients
 eta_by_s(eos::ConstantCs2EOS)  = eos.η_by_s
 zeta_by_s(eos::ConstantCs2EOS) = eos.ζ_by_s
+
+# The bulk viscosity of the stochastic step (dimension.tex, "The bulk viscosity").  The in-plane step carries the shear of the d − 2
+# unresolved directions in the bulk channel, ζ_eff = ζ + 2η(1/2 − 1/d) (= ζ at d = d_s = 2), and it is floored at ε η: the
+# Hastings-corrected stress move needs a full-rank noise (shear and bulk), and with ζ_eff = 0 its Jacobian is singular
+# (acceptance 0).  ζ_eff/s = max(ζ/s + 2(η/s)(1/2 − 1/d), ε η/s), ε = SPH_ZETA_FLOOR (default 0.01; 0 removes the floor).
+const ZETA_FLOOR = setting("SPH_ZETA_FLOOR", 0.01)
+zeta_eff_by_s(eos::AbstractEOS, d::Integer) =
+    max(zeta_by_s(eos) + 2eta_by_s(eos) * (1 / 2 - 1 / d), ZETA_FLOOR * eta_by_s(eos))
 
 # Relativistic entropy density: s_rel = (e+p)/T_rel  (thermodynamic identity)
 srel(eos::ConstantCs2EOS, e::Float64) = (e + pressure(eos, e)) / Trel(eos, e)

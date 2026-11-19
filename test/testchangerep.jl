@@ -49,7 +49,7 @@ let
                   (k^2 * sum(ψ1(r, h) * r^2 for r in lat(h, a)))
     eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.02, 4.0, eos, (x, y) -> 2.0, (x, y) -> SVector(0.0, 0.0);
-                                   Lx=1.0, sim_dim=1)
+                                   Lx=1.0, sim_dim=1, phys_dim=3)
     params.dissipation = :particle
     a, N, L, h = params.a, params.N, params.L[1], params.h
     w = ps[1].e + ps[1].p;  κ = 4/3 * 0.1 * srel(eos, ps[1].e)
@@ -133,7 +133,7 @@ let
     # 1D: the per-step factor of a mode, measured, lies in [0, 1] for all k
     eos = ConstantCs2EOS(1/3, 1.0, 0.1, 0.0)
     params, ps, cl, eos = setup_ic(0.02, 4.0, eos, (x, y) -> 2.0, (x, y) -> SVector(0.0, 0.0);
-                                   Lx=1.0, sim_dim=1)
+                                   Lx=1.0, sim_dim=1, phys_dim=3)
     a, N, L = params.a, params.N, params.L[1];  w = ps[1].e + ps[1].p;  s0 = [p.s for p in ps]
     thermalize!(ps, params, cl, eos)
     dt = compute_dt(ps, params, eos; mode=:viscous)

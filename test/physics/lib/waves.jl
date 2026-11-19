@@ -7,25 +7,25 @@
 #     c(t) = Σ_a (m_a·e) e^{−i k·x_a},   e = k̂ (sound) or k̂⊥ (shear),
 # is recorded every step and fitted to c(t) = c₀ e^{−iωt − Γt}: ω from the slope of its phase,
 # Γ from the slope of log|c|.  These are compared with linearized hydrodynamics
-# (d = 3 transport coefficients, as in the library):
-#     sound   ω = √(c_s²k² − (Γ_s k²/2)²),   Γ = Γ_s k²/2,   Γ_s = (4/3 η/s + ζ/s)/T_rel
+# (physical dimension d = phys_dim of the run, = 2 by default since dimfix; cs² = 1/d by default):
+#     sound   ω = √(c_s²k² − (Γ_s k²/2)²),   Γ = Γ_s k²/2,   Γ_s = (2(1 − 1/d) η/s + ζ/s)/T_rel
 #     shear   ω = 0,                          Γ = (η/s) k²/T_rel
 # The sound wave starts as the exact damped eigenmode (testsound_viscous.jl), so c(t) is one
 # exponential; h is set from the requested kh, with h/a fixed.
 using Printf, LinearAlgebra, StaticArrays
 
 function wave_run(kind::Symbol; kh, ha = 3.0, etas = 0.0, L = 1.0, nx = 1, ny = 1, s0 = 2.0,
-                  A = 0.01, cs2 = 1/3, periods = 2.0, CFL = 0.2)
+                  A = 0.01, cs2 = 1 / default_phys_dim(), periods = 2.0, CFL = 0.2)
     eos = ConstantCs2EOS(cs2, 1.0, etas, 0.0)
     quiet(f) = redirect_stdout(f, devnull)
     # box and background at a provisional h (Ly/L depends only on h/a)
     p0, bg, _, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> s0, (x, y) -> SVector(0.0, 0.0); L))
-    Trel = bg[1].T * bg[1].γ;  cs = sqrt(cs2)
+    Trel = bg[1].T * bg[1].γ;  cs = sqrt(cs2);  d = p0.phys_dim
     Ly = L * p0.L[2] / p0.L[1]
     kv = SVector(2π * nx / L, 2π * ny / Ly);  k = norm(kv);  h = kh / k
     kh_ = kv / k;  kp = SVector(-kh_[2], kh_[1])
     if kind === :sound
-        Γs = (4/3 * etas) / Trel;  Γ = Γs * k^2 / 2;  ω = sqrt(max(cs2 * k^2 - Γ^2, 0.0))
+        Γs = (2 * (d - 1) / d * etas) / Trel;  Γ = Γs * k^2 / 2;  ω = sqrt(max(cs2 * k^2 - Γ^2, 0.0))
         S = (x, y) -> s0 + (A / Trel) * cos(dot(kv, SVector(x, y)))
         M = (x, y) -> A * ((ω / k) * cos(dot(kv, SVector(x, y))) + (Γ / k) * sin(dot(kv, SVector(x, y)))) * kh_
         e = kh_;  tend = periods * 2π / ω
