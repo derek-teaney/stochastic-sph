@@ -43,10 +43,9 @@ Stony Brook, New York 11794, USA}
 \date{\today}
 
 \begin{abstract}
-A self-contained account of the scheme the code runs by default (\texttt{main}, tag \texttt{defaults-2026-11-15}).  A relativistic fluid is
-represented by particles that carry energy, momentum and entropy.  They move by a Hamiltonian step, and they exchange momentum by a
-stochastic viscous step built so that its average is the viscous force and its fluctuations are the thermal ones.  Runs start from an exact
-equilibrium sampled by hybrid Monte Carlo.  The main text follows that thread; details, special cases and options are in the appendices.
+A self-contained account of the scheme the code runs by default (\texttt{main}, tag \texttt{defaults-2026-11-15}): particles that carry
+energy, momentum and entropy, a Hamiltonian ideal step, a stochastic viscous step that keeps the thermal equilibrium exactly, and an
+equilibrium start by hybrid Monte Carlo.  The main text states the goals and the steps; details, special cases and options are in the appendices.
 \end{abstract}
 
 \maketitle
@@ -55,19 +54,23 @@ equilibrium sampled by hybrid Monte Carlo.  The main text follows that thread; d
 \section{The idea}
 \label{sec:idea}
 
-Fluctuating hydrodynamics has two parts: the ideal equations, which conserve energy and momentum and are reversible, and dissipation,
-which produces entropy and comes with thermal noise fixed by the fluctuation--dissipation theorem.  The scheme keeps the two apart and
-makes each exact in its own sense.
+The scheme simulates fluctuating relativistic hydrodynamics with particles.  It has three goals:
+\begin{enumerate}
+\item \emph{conserve} energy, momentum and angular momentum exactly;
+\item \emph{dissipate} as a fluid with the given viscosity does;
+\item \emph{fluctuate} thermally: the fluid keeps its equilibrium distribution, at rest and in uniform motion.
+\end{enumerate}
+It meets them with three ingredients, each exact in its own sense.
 \begin{itemize}
-\item \emph{The ideal step} is a Hamiltonian flow of particles.  It conserves the total energy and momentum and preserves phase-space
-  volume, so it leaves the thermal equilibrium of the particles unchanged.
-\item \emph{The viscous step} moves momentum between neighbouring particles at fixed positions and particle energies.  It is a Monte Carlo
-  chain whose proposals are random momentum transfers.  Their size is set by the viscosity, so that on average they are the viscous
-  force; the Metropolis test, with a Hastings factor, makes the thermal equilibrium exactly stationary.
-\item \emph{The start} is a sample of that equilibrium, positions included, drawn by hybrid Monte Carlo with the same Hamiltonian.
+\item \emph{An ideal step}: a Hamiltonian flow of the particles.  It conserves energy and momentum and preserves phase-space volume, so it keeps
+  the equilibrium.
+\item \emph{A viscous step}: a Monte Carlo chain of random momentum transfers between neighbours, sized by the viscosity so that on average they
+  are the viscous force, and accepted by a test that keeps the equilibrium exactly.
+\item \emph{An equilibrium start}: a sample of that equilibrium, positions included, drawn by hybrid Monte Carlo.
 \end{itemize}
-Because each step keeps the same equilibrium, so does the whole: the static fluctuations are right by construction, and the dynamics is
-hydrodynamics.
+Because each step keeps the same equilibrium, the whole run does, and the dynamics in between is hydrodynamics.  The sections follow the
+same order: the particles (\Sect{sec:particles}), their equilibrium (\Sect{sec:equilibrium}), the two steps (\Sect{sec:ideal}, \Sect{sec:viscous}),
+the run (\Sect{sec:run}) and the start (\Sect{sec:start}).
 
 \begin{algobox}{A run}
 \begin{algorithmic}[1]
@@ -110,8 +113,7 @@ with the first law
 de_a=T_a\,ds_a+\bm v_a\cdot d\bm m_a-p_a\,dV_a .
 \label{firstlaw}
 \stp
-The entropy per particle sets how much a particle fluctuates: its thermal velocity is of order $1/\sqrt{s_a}$.  The interesting range is
-$s_a\approx50$--$500$.
+The entropy per particle $s_a$ sets how much a particle fluctuates: its thermal velocity is of order $1/\sqrt{s_a}$.
 
 %=============================================================================
 \section{The equilibrium}
@@ -151,14 +153,10 @@ The $-\ln T_a$ is the change of measure.  It is not extensive: it is of order on
 \end{itemize}
 Both steps keep the same distribution, so the run as a whole does.
 
-\paragraph{What it looks like.}  The momenta of the particles fluctuate thermally about the flow, with a variance of order $V_awT$ per component,
-and the energies fluctuate with them.  The positions are not a lattice: at finite entropy per particle they form a liquid, with a pair
-correlation $g(r)$ and a structure factor that the equilibrium fixes.
-
-\paragraph{What the hydrodynamics must reproduce.}  Since both steps keep this distribution, the equal-time correlations of a run, of the energy
-and momentum densities and of the positions, must be those of \Eq{equilibrium} at the same $s_a$, at rest and in a moving fluid.  This is the
-test of the scheme's fluctuations: the distribution itself is sampled independently by hybrid Monte Carlo (\Sect{sec:start}), and the
-dynamics must agree with it.  It is also how a run starts: from a sample of \Eq{equilibrium}.
+\paragraph{What the hydrodynamics must reproduce.}  In this equilibrium the momenta and energies of the particles fluctuate thermally, and the
+positions form a liquid, not a lattice.  Since both steps keep it, the equal-time correlations of a run, of the energy and momentum densities
+and of the positions, must be those of \Eq{equilibrium} at the same $s_a$.  Hybrid Monte Carlo samples \Eq{equilibrium} independently
+(\Sect{sec:start}), which makes it both the test of the fluctuations and the start of a run.
 
 %=============================================================================
 \section{The ideal step}
@@ -190,8 +188,7 @@ and time-reversible for any $H$:
 \end{aligned}
 \label{glf}
 \stp
-The first two lines are implicit and are solved by iteration.  The energy no longer drifts; the full step costs about $1.7$ times the
-ordinary leapfrog.
+The first two lines are implicit and are solved by iteration (\App{app:numbers}).
 
 %=============================================================================
 \section{The viscous step}
@@ -286,7 +283,7 @@ bond times the bond vector, summed over the bonds:
 \sum_{b\neq a}\pf_{ab}\,\bm r_{ab}^T .
 \stp
 It is the momentum flux the transfers carry across the star, $V_a$ times the stress they exert on the fluid, and its antisymmetric part is
-their torque.  (\texttt{helfand.tex} writes it with the indices in the other order, $r^i\,\mathsf p^j$; for the symmetric stresses here the two agree.)  For the stress move, the closure \Eq{faces} gives
+their torque.  For the stress move, the closure \Eq{faces} gives
 \st
 \sum_{b\neq a}\xi_a\bm A_{ab}\,\bm r_{ab}^T=V_a\,\xi_a :
 \stp
@@ -307,8 +304,7 @@ with $R_a$ the bond moment weighted by the residual coefficients.  The virial of
 \st
 \sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T=V_a\tilde\xi_a-V_a\tilde\xi_a\,R_a^{-1}R_a=0 :
 \stp
-the residual tractions exert no stress and no torque.  They move momentum only in patterns that a linear velocity field cannot have,
-which the fitted gradient does not see, and on average they are the residual viscous force.
+the residual tractions exert no stress and no torque, and on average they are the residual viscous force.
 
 \subsection{The vote}
 
@@ -333,11 +329,9 @@ P=\min\Big(1,\ e^{\Delta\mathbb S}\;\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\
 \label{vote}
 \stp
 \end{keyeq}
-which satisfies \Eq{detbal} exactly (\App{app:mh}).  The ratio is the Hastings factor.  Without it the error does not shrink with the time step:
-the chain becomes a diffusion with a state-dependent strength and no compensating drift, and its equilibrium is wrong by $5$--$20\%$ at
-$s_a\approx50$--$15$.  With it, the coefficients are computed at each proposal from the current and from the proposed momentum, and \Eq{target}
-is exactly stationary.  Because the faces depend on the positions only, the reverse move always exists and the ratio has a closed form
-(\App{app:hastings}).
+which satisfies \Eq{detbal} exactly.  The ratio is the Hastings factor (\App{app:mh}); without it the equilibrium is biased, and the bias does
+not shrink with the time step.  The coefficients are therefore computed at each proposal, from the current and from the proposed momentum.
+Because the faces depend on the positions only, the reverse move always exists and the ratio has a closed form (\App{app:hastings}).
 
 \begin{algobox}{One viscous step of length $\Delta t$ (positions, volumes and energies fixed)}
 \begin{algorithmic}[1]
@@ -381,23 +375,21 @@ liquid only slowly, at a rate set by self-diffusion, which falls as $1/s_a$.
   This is the entropy form \Eq{equilibrium}: the exact flow keeps it, and because the integrator is symplectic and reversible, the test removes
   its error exactly.
 \end{enumerate}
-The trajectories are the fluid's own motion, and they are what moves the positions into the liquid.  A trajectory as long as the time sound
-takes to cross the box, $\tau=L/c_s$, decorrelates the longest modes; the length is drawn at random in $[\tau/2,\tau]$, because a fixed length
-resonates with a sound mode of the box.
+The trajectories are the fluid's own motion, and they are what moves the positions into the liquid.
 
 \begin{algobox}{The equilibrium start}
 \begin{algorithmic}[1]
 \State particles on a hexagonal lattice, with uniform entropy and momentum densities (the flow $\bm v$)
 \State exact draw of every particle's energy and momentum at the $T$ and $\bm v$ of the totals
-\For{200 updates}
+\For{$N_{\rm HMC}$ updates}
   \State heat bath of every particle at the current positions
-  \State trajectory of random length in $[\tau/2,\tau]$, step $0.35$ of the acoustic step; accept or reject
+  \State trajectory of random length $\lesssim L/c_s$; accept or reject
 \EndFor
 \State exact draw of the energies and momenta at the final positions, shifted so that the total energy and momentum are exact
 \end{algorithmic}
 \end{algobox}
 
-The trajectories are accepted $95$--$100\%$ of the time.  For $672$ particles the start takes about two minutes.
+The settings and the cost are in \App{app:numbers}.
 
 %=============================================================================
 \section{What it achieves}
@@ -524,13 +516,28 @@ damping rate $\Gamma_{\max}$ of the shortest modes of the particle representatio
 \Delta t=\frac12\min\Big(\mathrm{CFL}\,\frac h{c_s},\ \ \mathrm{CFL}\,\frac{h^2\,T_{\rm rel,min}}{\frac43\,\eta/s},\ \ \frac2{\Gamma_{\max}}\Big).
 \stp
 
+\section{Numbers: the integrator and the start}
+\label{app:numbers}
+
+\paragraph{The generalized leapfrog.}  The implicit half steps are iterated to a relative tolerance of $10^{-10}$, a few passes.  The ordinary
+drift--kick--drift leapfrog makes the energy drift in proportion to $\Delta t$ ($2\times10^{-4}$ per unit time at $s_a=54$); the generalized
+leapfrog removes the drift ($\sim3\times10^{-6}$), at about $1.7$ times the cost of a full step.
+
+\paragraph{The start.}  $N_{\rm HMC}=200$ updates.  Each trajectory has a length drawn uniformly in $[\tau/2,\tau]$, with $\tau=L/c_s$ the time sound
+takes to cross the box: a trajectory that long decorrelates the longest modes, and a fixed length would resonate with a sound mode of the
+box and freeze it.  The step of the trajectories is $0.35$ of the acoustic step.  The trajectories are accepted $95$--$100\%$ of the time, and for
+$672$ particles the start takes about two minutes.
+
 \section{The light cone and low entropy per particle}
 \label{app:limits}
 
 \paragraph{The cap.}  A state with a Lorentz factor above $\gamma_{\max}=100$ has zero weight; a move or a trajectory that reaches one is rejected.
 Near the light cone the inversion of the equation of state loses accuracy as $10^{-16}\gamma^2$, and nothing in a fluid needs $\gamma\gtrsim10$.
 
-\paragraph{Low entropy per particle.}  Below $s_a\approx12$ the thermal motion of a particle is relativistic: many proposals reach the cap, the
+\paragraph{The bias without the Hastings factor.}  Without it the momentum fluctuations of the dynamics exceed those of the equilibrium by
+$5\%$ at $s_a=54$ and $20\%$ at $s_a=16$, at any time step (\texttt{inverse\_moment.tex}).
+
+\paragraph{Low entropy per particle.}  The useful range is $s_a\approx50$--$500$.  Below $s_a\approx12$ the thermal motion of a particle is relativistic: many proposals reach the cap, the
 residual acceptance falls (to $0.1$ at $s_a=8$), the Hastings log ratios become large, the energy drifts at the $10^{-2}$ level and the shear
 damping departs from hydrodynamics.  The equilibrium is still right; the dynamics is no longer hydrodynamic.
 
