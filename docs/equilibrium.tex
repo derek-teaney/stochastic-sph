@@ -104,9 +104,12 @@ volume; for a gas of quanta it is about the number of quanta in that volume.  At
 \stp
 the last two for a constant speed of sound, $c_s^2=s/C_V$, with $C_V=T\,ds/dT$ the heat capacity per unit volume.  Here $s(T)V$ is the entropy of the bath
 in one particle volume, and $s$ and $C_V$ are also those of the bath, at its temperature $T$.  The hybrid Monte Carlo runs of
-\Sect{sec:test} are labelled by the entropy per particle of their lattice start, $s_a=16$, $54$, $541$, which would give $\sigma=4$, $13.5$, $135$ at
-$c_s^2=1/3$; but the ensemble they sample is at a temperature $T_0$ defined from that initial state, below $T(S_0)$, and their $\sigma$ is $2.63$, $11.96$,
-$133.7$ (\Sect{sec:test}).
+\Sect{sec:test} are for the conformal fluid in $d=2$, $c_s^2=1/2$, so that $\sigma=s(T)V/3$ (\texttt{dimension.tex}; the version of 2026-11-17 had
+$c_s^2=1/3$).  They sample the canonical ensemble at a bath temperature $T_0$, and are labelled by its
+\st
+\sigma(T_0)=\frac{p(T_0)}{T_0\bar n}=3.89,\ 16.4,\ 179 ,
+\stp
+which start from the entropy per particle $s_a=16$, $54$, $541$ on the lattice (\Sect{sec:test}).
 
 \paragraph{The scale.}  In units of $h$ the kernel is fixed, $\widetilde W=\widetilde W(kh)$, so
 \begin{keyeq}
@@ -255,7 +258,7 @@ kernel; the logarithm belongs to the particles.  The estimate $1/\sigma$ of
 smaller by the number of neighbours.
 
 \begin{table}[h]
-\caption{The predictions \Eq{Vfluct}, infinite box; $\sigma=4$, $13.5$, $135$ are $s_a=16$, $54$, $541$ at $c_s^2=1/3$.}
+\caption{The predictions \Eq{Vfluct}, infinite box, at three values of $\sigma$ (the theory depends on $\sigma$ and $\bar nh^2$ only).}
 \label{tab:predict}
 \begin{ruledtabular}
 \begin{tabular}{cc ccc ccc}
@@ -289,7 +292,7 @@ $T(S_0)$ that a continuum fluid with the initial entropy density $S_0$ would hav
   S_0=\frac{\sum_as_a}{L^2}
   \stp
   is the initial entropy density (capital $S$ for an entropy density, as in \App{app:expand} and the code, \texttt{S0}, \texttt{S\_smooth}).  The total initial energy
-  is $L^2e(S_0)$, with $e(S)$ the energy density at rest as a function of the entropy density.  The runs are labelled by this initial entropy per particle, $s_a=16$, $54$, $541$.
+  is $L^2e(S_0)$, with $e(S)$ the energy density at rest as a function of the entropy density.  The initial entropy per particle is $s_a=16$, $54$, $541$.
 \item \emph{Define $T_0$} from these parameters: the temperature at which the canonical mean energy of the particles, on the same lattice, equals the initial energy,
   \begin{keyeq}
   \st
@@ -315,71 +318,71 @@ By $\avg{e_a}=T^2\partial_T\ln Z_a$ and the Gaussian $Z_a$ of \App{app:expand}, 
 =\frac T2\Big[\frac{d\ln C_V}{d\ln T}+d\,\frac{d\ln\big(T(e+p)\big)}{d\ln T}\Big] .
 \label{Deltae}
 \stp
-The widths grow with the temperature, so heating a particle puts energy into its fluctuations as well as into $e_0$.  For $p\propto T^4$ ($C_V\propto T^3$,
-$T(e+p)\propto T^5$) and $d=2$,
+The widths grow with the temperature, so heating a particle puts energy into its fluctuations as well as into $e_0$.  For the conformal fluid in $d=2$,
+$p\propto T^3$ ($C_V\propto T^2$, $T(e+p)\propto T^4$),
 \st
-\Delta e=\frac T2\,(3+2\times5)=\frac{13}2\,T,\qquad \frac{\Delta e}{e_0}=\frac{\tfrac{13}2\,T}{\tfrac34\,s(T)V\,T}\simeq\frac{8.7}{s_a},
+\Delta e=\frac T2\,(2+2\times4)=5\,T,\qquad \frac{\Delta e}{e_0}=\frac{5\,T}{\tfrac23\,s(T)V\,T}\simeq\frac{7.5}{s_a},
 \stp
-a correction of order $1/s_a$ (the exact quadrature, \App{app:misses}, gives $\Delta e=6.5\,T$ at large $s_a$ and $6.1\,T$ at $s(T)V=15$).  It is not a positional
+a correction of order $1/s_a$ (the exact quadrature, \App{app:misses}, gives $\Delta e=5.0\,T$ at large $s_a$ and $4.7\,T$ at $s(T)V=12$).  It is not a positional
 effect: $T_0$ is defined on the lattice, where all the volumes are equal.  Since the initial energy $L^2e(S_0)$ must also supply $N\Delta e$, \Eq{T0def} gives
 $e(T_0)<e(S_0)$:
 \st
-\frac{T_0}{T(S_0)}=0.870,\ 0.960,\ 0.996\qquad(s_a=16,\ 54,\ 541),
+\frac{T_0}{T(S_0)}=0.855,\ 0.955,\ 0.996\qquad(s_a=16,\ 54,\ 541),
 \stp
 most at the smallest $s_a$.
 
-\paragraph{The ensemble at $T_0$.}  Its constants are those of $T_0$:
+\paragraph{The ensemble at $T_0$.}  The point: the theory is a function of $\sigma$ at the temperature of the ensemble, so the runs are labelled by
 \st
-\sigma=\frac{p(T_0)}{T_0\bar n}=2.63,\ 11.96,\ 133.7\qquad(\text{not }s_a/4=4,\ 13.5,\ 135),
+\sigma(T_0)=\frac{p(T_0)}{T_0\bar n}=\frac13\,s(T_0)V=3.89,\ 16.4,\ 179\qquad(s_a=16,\ 54,\ 541),
 \stp
-and its entropy is not that of the initial state.  The entropy density of the continuum at $T_0$, $s(T_0)=S_0\,(T_0/T(S_0))^3$, is $0.658$, $0.885$, $0.988$ of $S_0$;
-the mean entropy per particle of the ensemble, $\avg{s_a}=1.40$, $1.10$, $1.01$ times $s(T_0)V$ (each particle's fluctuations add to its mean, \App{app:misses}), is
-$0.92$, $0.97$, $1.00$ of the initial $S_0V$.  The labels $s_a=16$, $54$, $541$ name the runs by their initial state.
+not by the $\sigma$ of the start, $s_a/3=5.3$, $18$, $180$.  Its entropy is not that of the initial state either.  The entropy density of the continuum at $T_0$,
+$s(T_0)=S_0\,(T_0/T(S_0))^2$, is $0.730$, $0.912$, $0.992$ of $S_0$; the mean entropy per particle of the ensemble, $\avg{s_a}=1.26$, $1.07$, $1.01$ times $s(T_0)V$
+(each particle's fluctuations add to its mean, \App{app:misses}), is $0.92$, $0.97$, $1.00$ of the initial $S_0V$.
 
-\paragraph{The theory in the figures.}  In the figures the solid lines are the first version, \Eq{Sk} at the label's $\sigma=s_a/4$, and the dashed lines (same colour) the improved theory:
-at $T_0$, with the weight of a particle at fixed volume integrated exactly instead of by its saddle point (\App{app:misses}, \texttt{statics.tex}), so that \Eq{Sk}
-keeps its form with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$, the effective phase-space exponent and volume coefficient of a particle, from the exact $\ln Z_a(V)$.  The table gives the improved theory.  Sums over the modes of the box (the box
-lowers the variance by up to $25\%$ at $\sigma=134$, through the logarithm of \Eq{Vlog}).  Analysis: \texttt{examples/volume\_fluctuations.py}, with
-\texttt{examples/statics\_theory.py}.
+\paragraph{The theory in the figures.}  In the figures the solid lines are \Eq{Sk} at $\sigma(T_0)$, with $\alpha=3/2$, and the dashed lines (same colour) the
+improved theory: the weight of a particle at fixed volume integrated exactly instead of by its saddle point (\App{app:misses}, \texttt{statics.tex}), so that
+\Eq{Sk} keeps its form with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$, the effective phase-space exponent and volume coefficient of a particle, from the
+exact $\ln Z_a(V)$.  The table gives both.  Sums over the modes of the box (the box lowers the variance by up to $33\%$ at $\sigma=179$, through the logarithm of
+\Eq{Vlog}).  Analysis: \texttt{examples/volume\_fluctuations.py}, with \texttt{examples/statics\_theory.py}.
 
 \begin{figure}[h]
 \includegraphics[width=0.7\textwidth]{figs/equilibrium_Sk.png}
-\caption{$S(k)$, hybrid Monte Carlo (points), $L=9h$, at $h/a=2$ (filled) and $4$ (open), against \Eq{Sk} at $\sigma=s_a/4$ (solid) and the improved theory at
-$T_0$ with the exact single particle (dashed).  One curve per $\sigma$: the theory does not depend on $h/a$.}
+\caption{$S(k)$, hybrid Monte Carlo (points), $L=9h$, at $h/a=2$ (filled) and $4$ (open), against \Eq{Sk} at $\sigma(T_0)$ (solid) and the improved theory
+with the exact single particle (dashed).  One curve per $\sigma$: the theory does not depend on $h/a$.}
 \label{fig:sk}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=0.7\textwidth]{figs/equilibrium_gr.png}
-\caption{$g(r)$, hybrid Monte Carlo (points) at $h/a=2$ (filled) and $4$ (open), against the Gaussian theory at $\sigma=s_a/4$ (solid; thick $h/a=2$, thin $4$) and the
-improved theory at $T_0$ with the exact single particle (dashed).}
+\caption{$g(r)$, hybrid Monte Carlo (points) at $h/a=2$ (filled) and $4$ (open), against the Gaussian theory at $\sigma(T_0)$ (solid; thick $h/a=2$, thin $4$) and the
+improved theory with the exact single particle (dashed).}
 \label{fig:gr}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=0.7\textwidth]{figs/equilibrium_volvar.png}
-\caption{The volume variance times the number of neighbours, which by \Eq{scaling} depends on $\sigma$ only: hybrid Monte Carlo (points) at the label's $\sigma=s_a/4$
-against \Eq{Vfluct} summed over the box modes, at $\sigma=s_a/4$ (solid) and improved, at the $T_0$ of each label with the exact single particle (dashed).}
+\caption{The volume variance times the number of neighbours, which by \Eq{scaling} depends on $\sigma$ only: hybrid Monte Carlo (points) at $\sigma(T_0)$
+against \Eq{Vfluct} summed over the box modes, with $\alpha=3/2$ (solid) and with the exact single particle (dashed).}
 \label{fig:volvar}
 \end{figure}
 
 \begin{table}[h]
-\caption{Volumes: hybrid Monte Carlo against the theory at $T_0$ with the exact single particle, in the same box ($L=9h$).  The variance is normalized by
-$V=1/\bar n$.  Errors from ten blocks.  In parentheses, the first version (\Eq{Sk} at $\sigma=s_a/4$).}
+\caption{Volumes: hybrid Monte Carlo against the theory with the exact single particle at $\sigma(T_0)$, in the same box ($L=9h$).  The variance is normalized by
+$V=1/\bar n$.  Errors from ten blocks.  In parentheses, \Eq{Sk} with $\alpha=3/2$ at $\sigma(T_0)$.}
 \label{tab:hmc}
 \begin{ruledtabular}
 \begin{tabular}{ccc cc ccc}
-$h/a$ & label $s_a$ & $\sigma(T_0)$ & $\avg{V_a}\bar n$ & theory & $10^3\,\bar n^2\avg{\delta V_a^2}$ & theory & ratio \\
+$h/a$ & start $s_a$ & $\sigma(T_0)$ & $\avg{V_a}\bar n$ & theory & $10^3\,\bar n^2\avg{\delta V_a^2}$ & theory & ratio \\
 \colrule
-2 & 16  & 2.63  & 0.9705(4) & 0.9725 & 18.3(6)  & 19.9 (16.1) & 0.92 (1.14) \\
-2 & 54  & 11.96 & 0.9833(1) & 0.9842 & 9.34(35) & 9.75 (8.95) & 0.96 (1.04) \\
-2 & 541 & 133.7 & 0.9952    & 0.9958 & 1.45(8)  & 1.46 (1.45) & 0.99 (1.00) \\
-3 & 16  & 2.63  & 0.9868(1) & 0.9874 & 8.81(15) & 8.85 (7.16) & 1.00 (1.23) \\
-3 & 54  & 11.95 & 0.9926    & 0.9929 & 4.06(7)  & 4.33 (3.98) & 0.94 (1.02) \\
-3 & 541 & 133.7 & 0.9980    & 0.9981 & 0.61(3)  & 0.65 (0.64) & 0.93 (0.94) \\
-4 & 16  & 2.63  & 0.9927    & 0.9929 & 4.88(7)  & 4.98 (4.03) & 0.98 (1.21) \\
-4 & 54  & 11.95 & 0.9959    & 0.9960 & 2.33(5)  & 2.44 (2.24) & 0.96 (1.04) \\
-4 & 541 & 133.6 & 0.9989    & 0.9989 & 0.35(2)  & 0.37 (0.36) & 0.94 (0.95) \\
+2 & 16  & 3.89  & 0.9737(1) & 0.9755 & 16.40(37) & 17.19 (16.26) & 0.95 (1.01) \\
+2 & 54  & 16.4  & 0.9855(1) & 0.9864 & 7.33(25)  & 7.99 (7.92)   & 0.92 (0.93) \\
+2 & 541 & 178.8 & 0.9959    & 0.9965 & 1.03(4)   & 1.12 (1.12)   & 0.92 (0.92) \\
+3 & 16  & 3.89  & 0.9885(1) & 0.9888 & 7.32(9)   & 7.64 (7.23)   & 0.96 (1.01) \\
+3 & 54  & 16.4  & 0.9937    & 0.9939 & 3.68(13)  & 3.55 (3.52)   & 1.04 (1.05) \\
+3 & 541 & 178.7 & 0.9983    & 0.9984 & 0.50(2)   & 0.50 (0.50)   & 1.00 (1.00) \\
+4 & 16  & 3.89  & 0.9935    & 0.9937 & 4.35(11)  & 4.30 (4.07)   & 1.01 (1.07) \\
+4 & 54  & 16.4  & 0.9964    & 0.9965 & 1.93(8)   & 2.00 (1.98)   & 0.96 (0.97) \\
+4 & 541 & 178.7 & 0.9990    & 0.9991 & 0.29(2)   & 0.28 (0.28)   & 1.04 (1.04) \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
@@ -388,10 +391,11 @@ $h/a$ & label $s_a$ & $\sigma(T_0)$ & $\avg{V_a}\bar n$ & theory & $10^3\,\bar n
 \item \emph{The scale is $h$.}  $S(k)$ at $h/a=2$ and $4$ lies on one curve in $kh$ (\Fig{fig:sk}), and the correlation hole of $g(r)$ has the
   same radius in $r/h$, with a depth smaller in proportion to $1/(\bar nh^2)$ (\Fig{fig:gr}).  The volume variance times $\bar nh^2$ is the same at the
   three $h/a$ (\Fig{fig:volvar}).
-\item \emph{$S(k)$} follows the theory at every $\sigma$, to $0$--$4\%$ on average over the box modes; at $\sigma=2.63$ the first version was $25$--$28\%$ low.
-\item \emph{The volume fluctuations} agree with \Eq{Vfluct} to $0$--$8\%$, the theory slightly high (most at $h/a=2$, $\bar nh^2=4.6$: the few-neighbours
-  approximation, and the fixed-point approximation of the variance).  The mean volume agrees to $0.01$--$0.2\%$.
-\item \emph{The core.}  At $\sigma=134$ and $h/a=2$ the Gaussian theory makes $g(0)<0$; the particles keep $g\approx0.2$.  The core, $r\lesssim0.3h$, is the one
+\item \emph{$S(k)$} follows the improved theory at every $\sigma$, to $0$--$3\%$ on average over the box modes.  \Eq{Sk} with $\alpha=3/2$ is $3$--$8\%$
+  low at $\sigma=3.9$; at the $\sigma$ of the start, $s_a/3=5.3$, it would be $19$--$24\%$ low.
+\item \emph{The volume fluctuations} agree with \Eq{Vfluct} to $0$--$8\%$, the theory high at $h/a=2$, $\bar nh^2=4.6$ (the few-neighbours approximation, and
+  the fixed-point approximation of the variance), within $\pm4\%$ at $h/a=3$ and $4$.  The mean volume agrees to $0.01$--$0.2\%$.
+\item \emph{The core.}  At $\sigma=179$ and $h/a=2$ the Gaussian theory makes $g(0)=-0.36$; the particles keep $g\approx0.1$.  The core, $r\lesssim0.3h$, is the one
   place where the theory is qualitative.
 \end{itemize}
 
@@ -653,8 +657,8 @@ $\xi$ belongs to the labels, not to the fluid:
 \xi^2=\frac{\mu_2}{2(1+\alpha)}\,\frac{p/T}{\bar n}
 \stp
 compares the thermal content of a kernel area with the number of particles in it; refining the particles at a fixed fluid shrinks it.
-In the runs $\xi/h=0.67$, $1.22$, $3.9$ at $\sigma=4$, $13.5$, $135$, in a box $L=9h$ whose smallest mode has $k\xi=0.47$, $0.86$, $2.7$: only
-$\sigma=4$ reaches the plateau $S(0)$.  At $\sigma=135$ it needs a box of about $40h$.
+In the runs $\xi/h=0.66$, $1.35$, $4.5$ at $\sigma=3.9$, $16.4$, $179$, in a box $L=9h$ whose smallest mode has $k\xi=0.46$, $0.94$, $3.1$: only
+$\sigma=3.9$ reaches the plateau $S(0)$.  At $\sigma=179$ it needs a box of about $45h$.
 
 \subsection{The regimes of $S(k)$}
 
@@ -731,7 +735,7 @@ The halo shows in the running integral, the excess number of particles within $R
 N(R)=\bar n\int_{r<R}d^2r\,[g(r)-1]=R\int_0^\infty dk\,J_1(kR)\,[S(k)-1],
 \stp
 which depends on $\sigma$ only (\Fig{fig:running}): it falls to $-1$ across the hole and returns to $-1+S(0)=-\alpha/(1+\alpha)$ across $\xi$.  The
-HMC points for $h/a=2$, $3$, $4$ fall on one curve, as predicted; the return at $\sigma=135$ needs $g(r)$ to $R\approx10h$, and the runs record it
+HMC points for $h/a=2$, $3$, $4$ fall on one curve, as predicted; the return at $\sigma=179$ needs $g(r)$ to $R\approx10h$, and the runs record it
 only to $2h$.
 
 \begin{figure}[h]
@@ -743,8 +747,9 @@ $(9/5\pi)K_0$.  Script: \texttt{examples/gr\_regimes.py}.}
 
 \begin{figure}[h]
 \includegraphics[width=0.7\textwidth]{figs/running_integral.png}
-\caption{The running integral $N(R)$: Gaussian theory (solid; dots at $R=\xi$) and HMC (symbols, to $R=2h$), and for the three runs the improved theory at $T_0$
-with the exact single particle (dashed), whose plateau is $-1+S(0)=-\alpha_{\rm eff}/(1+\alpha_{\rm eff})=-0.54$ at label $s_a=16$.  Script: \texttt{examples/running\_integral.py}.}
+\caption{The running integral $N(R)$: Gaussian theory (solid; dots at $R=\xi$) at $\sigma(T_0)$ of the three runs and at two larger $\sigma$, HMC (symbols, to
+$R=2h$), and for the three runs the improved theory with the exact single particle (dashed), whose plateau is $-1+S(0)=-\alpha_{\rm eff}/(1+\alpha_{\rm eff})=-0.55$
+at $\sigma=3.9$.  Script: \texttt{examples/running\_integral.py}.}
 \label{fig:running}
 \end{figure}
 
@@ -767,7 +772,7 @@ $d$ & integrand & dominated by & variance $\times\,\sigma\bar nh^d$ \\
 \end{tabular}
 \end{center}
 $d=2$ is marginal, as for the two-dimensional Coulomb logarithm.  Because the logarithm reaches out to $\xi$, a box smaller than $\xi$ cuts it
-off: by up to $25\%$ at $\sigma=135$ in $L=9h$.
+off: by up to $33\%$ at $\sigma=179$ in $L=9h$.
 
 \subsection{Does the fluid know about $\xi$?}
 
@@ -785,13 +790,13 @@ and the leak of the positions relative to the fluid's own fluctuations is, at $k
 \stp
 The momentum at rest does not see the positions at all: $\avg{\bm m_a}=0$, and $\avg{|\bm M_{\bm k}|^2}$ per component is $\widetilde W^2(e+p)TL^2$.
 The equal-time hydrodynamic correlators at $kh\ll1$ are those of the continuum, filtered by $\widetilde W^2$.  HMC follows \Eq{leak} within errors
-at $\sigma=13.5$ and $135$ (\Fig{fig:leak}).
+at $\sigma=16.4$ and $179$; at $\sigma=3.9$ it needs the exact single particle (\Fig{fig:leak}).
 
 \begin{figure}[h]
 \includegraphics[width=0.7\textwidth]{figs/entropy_leak.png}
-\caption{$\avg{|S_{\bm k}|^2}/(L^2C_V)$, with $C_V$ of the start, the nine HMC runs (errors from eight blocks) against \Eq{leak} with $c_s^2=1/3$ (solid) and the
-improved theory (dashed): at $T_0$ with the exact single particle, the intrinsic part $r_s\avg{V_a}\bar n$ plus the leak through $\avg{s|V'}=s_{\rm off}+bV'/V$
-(\App{app:misses}), times $C_V(T_0)/C_V$.  The dotted line at $1$ is the fluid alone.  Script: \texttt{examples/entropy\_leak.py}.}
+\caption{$\avg{|S_{\bm k}|^2}/(L^2C_V)$, with $C_V$ at $T_0$, the nine HMC runs (errors from eight blocks) against \Eq{leak} with $c_s^2=1/2$ at $\sigma(T_0)$ (solid)
+and the improved theory (dashed): the exact single particle, the intrinsic part $r_s\avg{V_a}\bar n$ plus the leak through $\avg{s|V'}=s_{\rm off}+bV'/V$
+(\App{app:misses}).  The dotted line at $1$ is the fluid alone.  Script: \texttt{examples/entropy\_leak.py}.}
 \label{fig:leak}
 \end{figure}
 
@@ -803,13 +808,13 @@ improved theory (dashed): at $T_0$ with the exact single particle, the intrinsic
 \stp
 flat in $k$, the same for both projections and every $\sigma$, and below $1$ by at most $3\%$ (Table~\ref{tab:hmc}): the positions do not leak into the
 momentum at all.  HMC (\Fig{fig:mom}) is flat in $k$ and the same for both projections, as predicted, but its level depends on $\sigma$: averaged over
-$k$, $1.14$--$1.17$ at $\sigma=4$, $1.02$--$1.05$ at $\sigma=13.5$, and $0.99$--$1.03$ at $\sigma=135$, the same at every $h/a$.  The miss is in the single-particle
+$k$, $1.49$--$1.58$ at $\sigma=3.9$, $1.11$--$1.14$ at $\sigma=16.4$, and $0.99$--$1.03$ at $\sigma=179$, the same at every $h/a$.  The miss is in the single-particle
 variance, not in the positions: the improved theory (dashed in \Fig{fig:mom}, \App{app:misses}) accounts for it.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/momentum_fluct.png}
-\caption{$\avg{|M_{\bm k}|^2}/(L^2T(e+p))$, with $T=T_0$ and $e+p=T_0S_0$, transverse (left) and longitudinal (right), the nine HMC runs (errors from eight blocks)
-against \Eq{Mpred} (solid) and the improved theory (dashed): the exact single particle at $T_0$, $r_m\avg{V_a}\bar n$, in these units.
+\caption{$\avg{|M_{\bm k}|^2}/(L^2T(e+p))$, with $T=T_0$ and $e+p=T_0s(T_0)$, transverse (left) and longitudinal (right), the nine HMC runs (errors from eight blocks)
+against \Eq{Mpred} (solid) and the improved theory (dashed): the exact single particle at $T_0$, $r_m\avg{V_a}\bar n$.
 Script: \texttt{examples/momentum\_fluct.py}.}
 \label{fig:mom}
 \end{figure}
@@ -842,7 +847,7 @@ between the input and the model's own thermodynamics, which follows from $\ln Z_
 \st
 e_{\rm ren}(T)=\bar n\avg{e_a}_T=e(T)+\bar n\,\Delta e(T),
 \stp
-which is why the bath temperature of the runs is below $T(S_0)$ (\Sect{sec:test}), and the momentum susceptibility is $r_mT(e+p)$, $r_m=1.75$ at $s(T)V=10.5$ (\App{app:misses};
+which is why the bath temperature of the runs is below $T(S_0)$ (\Sect{sec:test}), and the momentum susceptibility is $r_mT(e+p)$, $r_m=1.57$ at $s(T)V=11.7$ (\App{app:misses};
 there from the full single-particle distribution, not from $\alpha$ alone, but of the same order).  A comparison with continuum hydrodynamics is consistent
 either at $s_a\gg1$, where these terms vanish, or against the model's renormalized thermodynamics, as in \App{app:misses}.  In the continuum limit at fixed
 $s\,h^2$ (\App{app:continuum}) $s_a$ falls and the cutoff terms grow, as $T\Lambda^d$ does; holding the renormalized equation of state fixed would need a
@@ -891,30 +896,31 @@ s_a\,\bar nh^2:\qquad (h/a=2,\ s_a=541)\to2500,\qquad (h/a=4,\ s_a=135)\to2500,
 \stp
 the second not run.  The nearest pair in hand is $(h/a=4,\ s_a=16)$ at $296$ and $(h/a=2,\ s_a=54)$ at $249$.
 
-\subsection{The misses at $\sigma=4$: the bath temperature}
+\subsection{The bath temperature and the exact single particle}
 \label{app:misses}
 
-At the label $s_a=16$ four quantities missed by $14$--$23\%$ (Table~\ref{tab:hmc}, \Fig{fig:sk}, \Fig{fig:leak}, \Fig{fig:mom}).  The cause is the
-temperature, not the Gaussian theory (\texttt{statics.tex}, Step 0).
+The point: at small $\sigma$ the saddle point of a particle's weight is not enough, and the constants of the theory must be those of the ensemble's
+temperature.  With both, the theory has no free parameter left (\texttt{statics.tex}, Step 0).  In the first version of this note (at $c_s^2=1/3$) the runs were compared
+with \Eq{Sk} at the $\sigma$ of the start, and at the smallest $\sigma$ four quantities missed by $14$--$23\%$; this appendix is the account of those misses.
 
 \paragraph{The bath temperature.}  The runs start on the lattice with the entropy density $S_0=s_a/V$ at rest, and hybrid Monte Carlo samples
-the canonical ensemble at the temperature $T_0$ whose mean energy is that of the start.  The fluctuations of each particle hold the energy $\Delta e=6.5\,T_0$ of \Eq{Deltae}, so $T_0$ is below $T(S_0)$:
+the canonical ensemble at the temperature $T_0$ whose mean energy is that of the start.  The fluctuations of each particle hold the energy $\Delta e=5\,T_0$
+of \Eq{Deltae}, so $T_0$ is below $T(S_0)$:
 \st
-\frac{T_0}{T(S_0)}=0.870,\ 0.960,\ 0.996\qquad(s_a=16,\ 54,\ 541\ \text{as labelled}).
+\frac{T_0}{T(S_0)}=0.855,\ 0.955,\ 0.996\qquad(s_a=16,\ 54,\ 541\ \text{at the start}).
 \stp
-Every constant of the ensemble belongs to $T_0$: $\sigma=p(T_0)/(T_0\bar n)=2.63$, $11.96$, $133.7$ (not $4$, $13.5$, $135$); $w=T_0s(T_0)$; $C_V(T_0)$.  The labels
-$\sigma=4$, $13.5$, $135$ in the main text and in \Fig{fig:sk}--\Fig{fig:mom} are those of the start.
+Every constant of the ensemble belongs to $T_0$: $\sigma=p(T_0)/(T_0\bar n)=3.89$, $16.4$, $179$ (not $s_a/3=5.3$, $18$, $180$); $w=T_0s(T_0)$; $C_V(T_0)$.
 
 \paragraph{The exact single particle.}  At $T_0$ and $V=1/\bar n$ the quadrature of the single-particle distribution (\texttt{examples/single\_particle.jl},
 Liouville measure) gives, beyond the saddle point,
 \begin{center}
 \begin{tabular}{cccccccc}
 \toprule
-label $s_a$ & $s(T_0)V$ & $\sigma=p(T_0)/(T_0\bar n)$ & $\sigma_{\rm eff}$ & $\alpha_{\rm eff}$ & $r_s$ & $r_m$ & $\avg{s_a}/s(T_0)V$ \\
+$\sigma(T_0)$ & start $s_a$ & $s(T_0)V$ & $\sigma_{\rm eff}$ & $\alpha_{\rm eff}$ & $r_s$ & $r_m$ & $\avg{s_a}/s(T_0)V$ \\
 \midrule
-16 & 10.5 & 2.63 & 2.79 & 1.15 & 0.944 & 1.754 & 1.40 \\
-54 & 47.8 & 11.96 & 12.00 & 1.40 & 0.972 & 1.177 & 1.10 \\
-541 & 535 & 133.7 & 133.74 & 1.49 & 0.997 & 1.016 & 1.01 \\
+3.89 & 16 & 11.7 & 4.02 & 1.225 & 0.918 & 1.568 & 1.26 \\
+16.4 & 54 & 49.2 & 16.44 & 1.425 & 0.969 & 1.140 & 1.07 \\
+179 & 541 & 536 & 178.8 & 1.493 & 0.997 & 1.013 & 1.01 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -923,31 +929,35 @@ near $V=1/\bar n$,
 \st
 \alpha_{\rm eff}=-V^2\frac{d^2\ln Z_a}{dV^2},\qquad\sigma_{\rm eff}=V\frac{d\ln Z_a}{dV}+V^2\frac{d^2\ln Z_a}{dV^2},
 \stp
-the effective phase-space exponent and volume coefficient of a particle, which tend to $\alpha=(d+1)/2=3/2$ and $\sigma=p/(T\bar n)$ at large $s_a$, and $r_s$, $r_m$ the entropy and momentum variances at
-fixed volume over $C_VV$ and $T(e+p)V$.  The momentum variance is $75\%$ above the Gaussian at $s(T_0)V=10.5$: the relativistic tail.  The light cone cuts the momentum off, and the particle has fewer effective phase-space dimensions: $\alpha_{\rm eff}=1.15$ at label $16$.  \Eq{Sk} keeps its form with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$,
+the effective phase-space exponent and volume coefficient of a particle, which tend to $\alpha=(d+1)/2=3/2$ and $\sigma=p/(T\bar n)$ at large $s_a$, and $r_s$, $r_m$
+the entropy and momentum variances at fixed volume over $C_VV$ and $T(e+p)V$.  The momentum variance is $57\%$ above the Gaussian at $s(T_0)V=11.7$: the
+relativistic tail.  The light cone cuts the momentum off, and the particle has fewer effective phase-space dimensions: $\alpha_{\rm eff}=1.225$ at $\sigma=3.9$.
+\Eq{Sk} keeps its form with $\alpha,\sigma\to\alpha_{\rm eff},\sigma_{\rm eff}$,
 \st
-S(k)=\frac1{1+2\alpha_{\rm eff}\,\widetilde W(1-\tfrac12\widetilde W)+2\sigma_{\rm eff}\,\widetilde W(1-\widetilde W)},\qquad S(0)=\frac1{1+\alpha_{\rm eff}}=0.465,\ 0.416,\ 0.401 ,
+S(k)=\frac1{1+2\alpha_{\rm eff}\,\widetilde W(1-\tfrac12\widetilde W)+2\sigma_{\rm eff}\,\widetilde W(1-\widetilde W)},\qquad S(0)=\frac1{1+\alpha_{\rm eff}}=0.449,\ 0.412,\ 0.401 ,
 \stp
 and the labels are an ideal gas with $\mu_{\rm label}=(1+\alpha_{\rm eff})T\ln n$.
 
 \paragraph{Against hybrid Monte Carlo} (\texttt{examples/single\_particle\_compare.py}, \Fig{fig:step0}), with no free parameter:
 \begin{itemize}
-\item the momentum correlator, $r_m\avg{V_a}\bar n$: HMC/prediction $1.00$--$1.02$ at every $s_a$ and $h/a$;
-\item the entropy correlator, the intrinsic part $r_s$ plus the leak through the exact $\avg{s|V}$ (which has an offset, $\avg{s|V'}=s_{\rm off}+bV'/V$, $s_{\rm off}\approx3.6$ at
-  label $16$): $0.97$--$1.03$;
-\item $S(k)$ on the box modes: $1.00$--$1.03$ at label $16$ (it was $1.25$--$1.28$ against the theory at $\sigma=4$), $0.98$--$1.04$ elsewhere;
-\item the volume variance ($10^3\bar n^2\avg{\delta V_a^2}$, data against the exact theory in the box): $18.3/19.9$, $8.81/8.86$, $4.88/4.98$ at label $16$ and $h/a=2,3,4$;
-  $9.34/9.71$, $4.06/4.34$, $2.33/2.44$ at $54$; $1.45/1.45$, $0.61/0.65$, $0.35/0.37$ at $541$.  The theory is now $0$--$8\%$ high, most at $h/a=2$ ($\bar nh^2=4.6$).
+\item the momentum correlator, $r_m\avg{V_a}\bar n$: HMC/prediction $0.99$--$1.01$ at every $\sigma$ and $h/a$;
+\item the entropy correlator, the intrinsic part $r_s$ plus the leak through the exact $\avg{s|V}$ (which has an offset, $\avg{s|V'}=s_{\rm off}+bV'/V$,
+  $s_{\rm off}\approx2.7$ at $\sigma=3.9$): $0.99$--$1.01$;
+\item $S(k)$ on the box modes: $0.98$--$1.03$ (against \Eq{Sk} with $\alpha=3/2$ at $\sigma(T_0)$, $1.03$--$1.08$ at $\sigma=3.9$; at the $\sigma$ of the start, $1.19$--$1.24$);
+\item the volume variance ($10^3\bar n^2\avg{\delta V_a^2}$, data against the exact theory in the box): $16.4/17.2$, $7.32/7.64$, $4.35/4.30$ at $\sigma=3.9$ and $h/a=2,3,4$;
+  $7.33/7.99$, $3.68/3.55$, $1.93/2.00$ at $16.4$; $1.03/1.12$, $0.50/0.50$, $0.29/0.28$ at $179$.  The theory is $8\%$ high at $h/a=2$ ($\bar nh^2=4.6$) and
+  within $\pm4\%$ at $h/a=3$ and $4$.
 \end{itemize}
-So all four misses were the bath temperature and the single-particle distribution; approximation 1 of \App{app:expand} is replaced by the exact
-quadrature, and what is left is approximation 2 (few neighbours) and 3 (the volume variance).  The Einstein measure gives the same $r_m$, $\alpha_{\rm eff}$, $\sigma_{\rm eff}$
-and $r_s$ lower by $3\%$ at label $16$.
+So the misses were the bath temperature and the single-particle distribution; approximation 1 of \App{app:expand} is replaced by the exact
+quadrature, and what is left is approximation 2 (few neighbours) and 3 (the volume variance).  The Einstein measure gives the same $r_m$, $\alpha_{\rm eff}$,
+$\sigma_{\rm eff}$ within $1\%$, and $r_s$ lower by $4\%$ at $\sigma=3.9$.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/step0_positions.png}
 \includegraphics[width=\textwidth]{figs/step0_momentum_entropy.png}
-\caption{The nine HMC runs over the predictions.  Top: $S(k)$ against the Gaussian theory at $\sigma=s_a/4$ of the label (left) and with $\alpha_{\rm eff},\sigma_{\rm eff}$
-at $T_0$ (right).  Bottom: the momentum and entropy correlators against the exact single particle at $T_0$.  Script: \texttt{examples/single\_particle\_compare.py}.}
+\caption{The nine HMC runs over the predictions.  Top: $S(k)$ against the Gaussian theory at the $\sigma$ of the start, $c_s^2s_a/(1+c_s^2)=s_a/3$ (left), and with
+$\alpha_{\rm eff},\sigma_{\rm eff}$ at $T_0$ (right).  Bottom: the momentum and entropy correlators against the exact single particle at $T_0$.  Colours by the
+start's $s_a=16$, $54$, $541$, i.e.\ $\sigma(T_0)=3.9$, $16.4$, $179$.  Script: \texttt{examples/single\_particle\_compare.py}.}
 \label{fig:step0}
 \end{figure}
 

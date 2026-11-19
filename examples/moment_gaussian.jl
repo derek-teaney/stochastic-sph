@@ -16,7 +16,7 @@ const TSNAP = [0.0, 0.5, 1.0, 2.2]
 const L = 1.0;  const SX = 0.1;  const SY = 0.14;  const FLOOR = 0.1
 
 function blob(etas)
-    eos = ConformalEOS(1/3, T_scale_gluon, etas, 0.0)
+    eos = conformal_eos(default_phys_dim(); T_scale = T_scale_gluon, η_by_s = etas)
     e_ic(x, y) = FLOOR + sum(exp(-((x - L/2 - mx * L)^2) / (2SX^2) - ((y - L/2 - my * L)^2) / (2SY^2)) for mx in -1:1, my in -1:1)
     params, ps, cl, eos = redirect_stdout(devnull) do
         setup_ic(H, 2.0, eos, (x, y) -> srel(eos, e_ic(x, y)), (x, y) -> SVector(0.0, 0.0); L)

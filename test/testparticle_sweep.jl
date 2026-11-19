@@ -127,7 +127,7 @@ end
 
 function step1_stencil()
     println("\n[Step 1] neighbor stencil (as used by strain/sweep) vs O(N²) brute force")
-    eos = ConformalEOS(1.0/3.0, 1.0, 0.0, 0.0)
+    eos = ConstantCs2EOS(1.0/3.0, 1.0, 0.0, 0.0)
 
     # (a) exact hex lattice, small 2D box — interior degree must be uniform
     params, particles, cl, _ = setup_ic(0.1, 2.0, eos,
@@ -149,7 +149,7 @@ function step1_stencil()
     check_stencil("hex jitter=0.8", particles, params, cl)
 
     # (d) after a leapfrog_step! the stencil must still match brute force
-    params, particles, cl, eosv = setup_ic(0.1, 2.0, ConformalEOS(1.0/3.0, 1.0, 0.05, 0.0),
+    params, particles, cl, eosv = setup_ic(0.1, 2.0, ConstantCs2EOS(1.0/3.0, 1.0, 0.05, 0.0),
         (x,y)->1.0 + 0.1*cos(2π*x), (x,y)->SVector(0.0, 0.02*sin(2π*x)); L=1.0, lattice=:hex)
     dotm = zeros(SVector{2,Float64}, params.N)
     leapfrog_step!(particles, params, cl, 0.01, eosv, dotm)
@@ -183,13 +183,13 @@ const IDX6 = ((1,1,1,1,"xxxx"), (1,1,1,2,"xxxy"), (1,1,2,2,"xxyy"),
 # a uniform-flow state (all particles identical) with 2-momentum (Mx,My)
 function uniform_flow_particle(eos, Mx, My; d=3)
     _, particles, _, _ = setup_ic(0.1, 3.0, eos,
-        (x,y) -> 1.0, (x,y) -> SVector(Mx, My); L=1.0, lattice=:hex, d)
+        (x,y) -> 1.0, (x,y) -> SVector(Mx, My); L=1.0, lattice=:hex, phys_dim=d)
     return particles[1]
 end
 
 function check_noise_cov(; d, cs2v, kmodel, nsamp=4_000_000, tol=0.01)
     η_by_s = 0.15;  ζ_by_s = 0.04
-    eos    = ConformalEOS(cs2v, 1.0, η_by_s, ζ_by_s)
+    eos    = ConstantCs2EOS(cs2v, 1.0, η_by_s, ζ_by_s)
     rng    = MersenneTwister(20240827)
     @printf("  d=%d  cs²=%.3g  (%s)\n", d, cs2v, nameof(typeof(kmodel)))
     for (Mx, My) in ((0.0, 0.0), (0.6, 0.0), (2.0, 0.0), (1.2, 0.8))
@@ -236,7 +236,7 @@ end
 # the accept/reject has something to bite on.  d=2 / Kappa2D (the 2D fluid).
 function shear_state(; cs2v=1.0/2.0, M_amp=0.05, s0=2.0, η_by_s=0.2, ζ_by_s=0.0, d=2)
     params, particles, cl, eos, _, _ = setup_shear_wave(0.12, 2.5;
-        L=1.0, M_amp, s0, cs2v, η_by_s, ζ_by_s, d)
+        L=1.0, M_amp, s0, cs2v, η_by_s, ζ_by_s, phys_dim=d)
     rebuild_cell_list!(cl, particles)
     return (; params, particles, cl, eos)
 end
@@ -316,7 +316,7 @@ function drift_sweep!(D, particles, params, cl, eos, dt, rngs)
         pa  = particles[a]
         rng = rngs[a]
         Va  = pa.s / pa.S_smooth
-        ξa  = draw_xi(rng, pa, eos, cs2v, params.d) ./ sqrt(dt * Va)
+        ξa  = draw_xi(rng, pa, eos, cs2v, params.phys_dim) ./ sqrt(dt * Va)
         Y   = dt * Va * sum(ξa[i,j] * ε[a][j,i] for i in 1:2, j in 1:2)
         w   = 0.5 * (min(1.0, exp(Y)) - min(1.0, exp(-Y)))
         coeff = dt * pa.s / pa.S_smooth^2
@@ -388,7 +388,7 @@ end
 function step3(; dt=0.002)
     println("\n[Step 3] particle_sweep! unit checks")
     st = shear_state()
-    @printf("  N=%d  dt=%.4g  (d=%d, Kappa2D)\n", st.params.N, dt, st.params.d)
+    @printf("  N=%d  dt=%.4g  (d=%d, Kappa2D)\n", st.params.N, dt, st.params.phys_dim)
     step3_zero_viscosity(dt)
     step3_conservation(st, dt)
     step3_order_independence(st, dt)

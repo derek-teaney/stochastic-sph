@@ -3,6 +3,7 @@
 #   2. a moving fluid: K of a long-wavelength shear and longitudinal mode against the continuum target
 #      V T [η tr(ℓYℓY) + ½ ζ_eff θ²] of its gradient, both schemes, as kh → 0;
 #   3. Σ_a F_a = 0 (momentum) for the new form.
+# Deterministic, written for the z-independent fluid d = 3 (cs² = 1/3, ζ_eff = η/3); phys_dim = 3 given explicitly (dimension.tex).
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
@@ -11,12 +12,12 @@ check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 
 function setup(diss, v0; L = 0.6, jitter = 0.0, ha = 2.0)
     withenv("SPH_DISSIPATION" => string(diss)) do
-        eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+        eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
         γ = 1 / sqrt(1 - v0^2)
-        _, q, _, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex))
+        _, q, _, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex, phys_dim = 3))
         w0 = q[1].e + q[1].p
         params, ps, cl, _ = quiet(() -> setup_ic(0.05, ha, eos, (x, y) -> γ * 1e6, (x, y) -> SVector(w0 * γ^2 * v0, 0.0);
-                                                   L, lattice = :hex, jitter, seed = 3))
+                                                   L, lattice = :hex, jitter, seed = 3, phys_dim = 3))
         smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos);  update_velocities!(ps, params, cl)
         return params, ps, cl, eos
     end
@@ -48,7 +49,7 @@ for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y)), diss 
         K = bond_dissipation(ps, params, cl, eos, β)
         # continuum: G = A e kᵀ cos(k·x), ⟨cos²⟩ = ½; target per volume, summed over the box
         p = ps[1];  va = p.dotx;  ℓ, ℓi, P, Pℓ = comoving_structures(va, 1/3, 2)
-        Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / 3)
+        Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / params.phys_dim)
         G = A * e * k';  θ = sum(ℓ .* G) / Pℓ;  Y = (G + G') / 2 - θ * P
         Ktarget = 0.5 * params.L[1] * params.L[2] * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θ^2)
         push!(rs, K / Ktarget)

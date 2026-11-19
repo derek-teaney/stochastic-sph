@@ -100,10 +100,10 @@ hastings_series(st, on) = on ? (hast_lq_stress_mean = st.lqs_mean, hast_lq_stres
 const CHKMIN    = setting("SR_CHECKPOINT_MIN", 20.0)
 const STOPAFTER = setting("SR_STOP_AFTER", 0)
 
-function run_meta(params, st, n, wall, complete)
+function run_meta(params, st, n, wall, complete, eos)
     (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, dt = st.dt, nsteps = st.nsteps,
      nsteps_done = n, complete = complete,
-     etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = 1/3, seed = st.seed,
+     etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = cs2(eos), phys_dim = params.phys_dim, T_scale = eos.T_scale, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
@@ -140,7 +140,7 @@ end
 
 function one_realization(seed)
     base = joinpath(OUT, "equilibrium_$(TAG)_r$(seed)");  chk = base * ".chk"
-    eos = ConformalEOS(1/3, 1.0, ETAS, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = ETAS)
     if isfile(chk)
         st = load_checkpoint(chk)
         restore_guards!(st.guards)
@@ -296,7 +296,7 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
@@ -304,7 +304,7 @@ function one_realization(seed)
     end
     wall = st.wall + time() - t0
     ndone = gfail ? (st.gstats.steps) : nsteps
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
     runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
     rm(chk; force = true)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",

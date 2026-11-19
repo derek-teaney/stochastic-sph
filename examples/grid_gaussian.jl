@@ -12,7 +12,7 @@ const SMOKE = setting("SR_SMOKE", false)
 const Hs = SMOKE ? 0.05 : 0.015;  const L = 1.0;  const TEND = SMOKE ? 0.1 : 2.2;  const SNAP = (0.0, 0.55, 1.1, 2.2)
 
 function init(etas)
-    eos = ConformalEOS(1/3, T_scale_gluon, etas, 0.0)
+    eos = conformal_eos(default_phys_dim(); T_scale = T_scale_gluon, η_by_s = etas)
     e_ic(x, y) = 0.1 + sum(exp(-(x - L/2 - mx * L)^2 / (2 * 0.1^2) - (y - L/2 - my * L)^2 / (2 * 0.14^2)) for mx in -1:1, my in -1:1)
     params, ps, cl, eos = setup_ic(Hs, 2.0, eos, (x, y) -> srel(eos, e_ic(x, y)), (x, y) -> SVector(0.0, 0.0); L)
     return params, ps, cl, eos

@@ -18,12 +18,12 @@ function residual(pa::Particle, eos::AbstractEOS)
     return G / Trel(eos, e) - pa.S_smooth
 end
 
-const eos = ConformalEOS(1.0/3.0, 1.0, 0.0, 0.0)
+const eos = ConstantCs2EOS(1.0/3.0, 1.0, 0.0, 0.0)
 
-# ── Test 1: ConformalEOS interface ─────────────────────────────────────────────
+# ── Test 1: ConstantCs2EOS interface ─────────────────────────────────────────────
 
 println("=" ^ 55)
-println("Test 1: ConformalEOS interface")
+println("Test 1: ConstantCs2EOS interface")
 println("=" ^ 55)
 
 let
@@ -58,7 +58,7 @@ println("PASS")
 
 # ── Test 3: solve_eos! at rest — exact analytic answer ─────────────────────────
 #
-# For ConformalEOS(1/3) with M=0, γ=1:
+# For ConstantCs2EOS(1/3) with M=0, γ=1:
 #   (4/3)*e^(3/4) = S  →  e_exact = (0.75 * S)^(4/3)
 
 println("\n", "=" ^ 55)
@@ -190,7 +190,7 @@ println("Test 8: dsrel/de = srel/(e+p)  (finite-difference check)")
 println("=" ^ 55)
 
 let
-    eos_b = ConformalEOS(0.2, 7.1, 0.0, 0.0)
+    eos_b = ConstantCs2EOS(0.2, 7.1, 0.0, 0.0)
     δ = 1e-7
     for e_test in [0.1, 1.0, 3.0, 10.0]
         ds_fd  = (srel(eos_b, e_test + δ) - srel(eos_b, e_test - δ)) / (2δ)

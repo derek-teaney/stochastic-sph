@@ -130,11 +130,11 @@ end
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Lattice kwargs: jitter, lattice.  Returns (params, particles, cl, eos).
 function setup_ic(h, ha_ratio, eos, S_func, M_func;
-                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, d=3, seed=42)
+                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, phys_dim=default_phys_dim(sim_dim), seed=42)
     if L !== nothing
         Lx = Float64(L); Ly = Float64(L)
     end
-    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, d, seed)
+    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, phys_dim, seed)
     particles = if sim_dim == 1
         make_1d_particles!(params, 1.0; jitter)
     elseif lattice == :hex
@@ -161,7 +161,7 @@ function setup_gaussian(h, ha_ratio;
                         x0=L/2, y0=L/2,
                         cs2v=1.0/3.0, η_by_s=0.0, ζ_by_s=0.0, T_scale=T_scale_gluon,
                         jitter=0.0, lattice=:hex)
-    eos    = ConformalEOS(cs2v, T_scale, η_by_s, ζ_by_s)
+    eos    = ConstantCs2EOS(cs2v, T_scale, η_by_s, ζ_by_s)
     S_func = (x, y) -> begin
         dx = mod(x - x0 + L/2, L) - L/2
         dy = mod(y - y0 + L/2, L) - L/2
@@ -179,12 +179,12 @@ end
 function setup_shear_wave(h, ha_ratio;
                           L=1.0, M_amp=0.01, s0=1.0,
                           cs2v=1.0/3.0, η_by_s=0.0, ζ_by_s=0.0, T_scale=T_scale_gluon,
-                          jitter=0.0, lattice=:hex, d=3)
+                          jitter=0.0, lattice=:hex, phys_dim=default_phys_dim())
     k   = 4π / L
-    eos = ConformalEOS(cs2v, T_scale, η_by_s, ζ_by_s)
+    eos = ConstantCs2EOS(cs2v, T_scale, η_by_s, ζ_by_s)
     params, particles, cl, eos = setup_ic(h, ha_ratio, eos,
         (x, y) -> s0,
         (x, y) -> SVector(0.0, M_amp * sin(k * x));
-        L, jitter, lattice, d)
+        L, jitter, lattice, phys_dim)
     return params, particles, cl, eos, k, M_amp
 end

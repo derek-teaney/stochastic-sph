@@ -58,9 +58,9 @@ end
 
 # ── B. the hex lattice used by the stochastic runs ──────────────────────────
 println("\n[B] hex lattice h=15, h/a=2.55, L=150 (box comes out 147.1 × 152.8)")
-let eos = ConformalEOS(0.5, T_scale_2d_lq1, 0.0, 0.0)
+let eos = ConstantCs2EOS(0.5, T_scale_2d_lq1, 0.0, 0.0)
     params, ps, cl, eos = setup_ic(15.0, 2.55, eos, (x, y) -> 1.0, (x, y) -> SVector(0.0, 0.0);
-                                   L=150.0, lattice=:hex, d=2)
+                                   L=150.0, lattice=:hex, phys_dim=2)
     nb = length(pairs_brute(ps, params.h, params.L))
     nc = length(pairs_celllist(ps, cl, params.h, params.L))
     S  = [p.S_smooth for p in ps]

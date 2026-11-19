@@ -8,19 +8,21 @@
 # where Γ_k is the damping rate of the bond form and T_eff/T = (K_res + K_resid/λ)/K.
 # λ = 1 (detailed balance), λ = 4 (cold residual), λ = Inf (deterministic residual).
 #
-# Run:  julia -t auto --project examples/stochastic_thermalize.jl [1|2]
-#   → docs/figs/stochrep_thermalize_1d.png (and _2d.png)
+# Run:  julia -t auto --project examples/stochastic_thermalize.jl [2]
+#   → docs/figs/stochrep_thermalize_2d.png.  The 1D case (stochrep_thermalize_1d) was removed with the one-dimensional
+#   stochastic runs (docs/dimension.tex); its figure and the oneD branches below are kept for the record.
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "stochastic_thermalize_common.jl"))     # Kmode
 
-const DIM   = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1
+const DIM   = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 2
 const LAMS  = (1.0, 4.0, Inf)
 const VOTE  = :bonds
 const DTF   = 0.25                       # Δt / default viscous half step
 
 function setup(dim)
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    dim == 1 && error("one-dimensional stochastic runs were removed (docs/dimension.tex)")
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     params, ps, cl, eos = dim == 1 ?
         setup_ic(0.05, 4.0, eos, (x, y) -> 4e4, (x, y) -> SVector(0.0, 0.0); Lx=1.0, sim_dim=1) :
         setup_ic(0.05, 2.5, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=0.6, lattice=:hex)

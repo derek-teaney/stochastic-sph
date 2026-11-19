@@ -9,7 +9,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
 function setup(diss, v0; L = 0.6, jitter = 0.0, ha = 2.0, poisson = false)
     withenv("SPH_DISSIPATION" => string(diss)) do
@@ -54,7 +54,7 @@ for (name, kw) in (("jittered 0.3a, v0 = 0.8", (jitter = 0.3,)), ("Poisson, v0 =
     clos = maximum(norm(sum(s.A[k] * s.r[k]' for k in eachindex(s.A)) / s.V - I) for s in st if !isempty(s.A))
     rng = Xoshiro(2);  δ = SVector{2,Float64}[];  vir = 0.0
     for s in st[1:50]
-        resize!(δ, length(s.nb));  propose_resid!(δ, s, 1e-3, 1.0, false, rng)
+        resize!(δ, length(s.nb));  propose_resid!(δ, s, 1e-3, 1.0, rng)
         vir = max(vir, norm(sum(δ[k] * s.r[k]' for k in eachindex(δ))) / maximum(norm, δ))
     end
     wmin = minimum(minimum(s.w) for s in st if !isempty(s.w))
@@ -82,7 +82,7 @@ for (kind, dir) in ((:shear, :x), (:long, :x), (:shear, :y), (:long, :y))
             A = 1e-6;  β = [A * e * sin(dot(k, p.x)) for p in ps]
             K = bond_dissipation(ps, params, cl, eos, β)
             p = ps[1];  ℓ, ℓi, Pp, Pℓ = comoving_structures(p.dotx, 1/3, 2)
-            Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / 3)
+            Ta = p.T * p.γ;  sr = srel(eos, p.e);  η = 0.2 * sr;  ζeff = 2η * (1 / 2 - 1 / params.phys_dim)
             G = A * e * k';  θ = sum(ℓ .* G) / Pℓ;  Y = (G + G') / 2 - θ * Pp
             push!(rs, K / (0.5 * params.L[1] * params.L[2] * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θ^2)))
         end

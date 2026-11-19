@@ -20,7 +20,7 @@
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
-eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.0, 0.0)
 function solved(S, M::SVector{2,Float64}, e_guess)
     pa = Particle(SVector(0.0, 0.0), 1.0)
     pa.S_smooth = S;  pa.M_smooth = M;  pa.e = e_guess
@@ -66,7 +66,7 @@ end
 
 # ── 3  Hamiltonian velocity on particles ──────────────────────────────────────
 println("\n3  Hamiltonian velocity:  ∂H/∂m_a = ẋ_a  and  ∂H/∂s_a = Teff_a,   H = Σ s_a H_over_S_a")
-params, ps, cl, eos3 = setup_ic(0.1, 2.5, ConformalEOS(1/3, 1.0, 0.0, 0.0), (x, y) -> 1.0,
+params, ps, cl, eos3 = setup_ic(0.1, 2.5, ConstantCs2EOS(1/3, 1.0, 0.0, 0.0), (x, y) -> 1.0,
                                 (x, y) -> SVector(0.4 * sin(2π * x), 0.2 * cos(2π * y)); L=1.0, lattice=:hex)
 thermalize!(ps, params, cl, eos3)
 Hof(ps) = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos3); sum(p.s * p.H_over_S for p in ps))

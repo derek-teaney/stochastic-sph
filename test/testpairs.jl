@@ -10,7 +10,7 @@ quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 1.2, lattice = :hex))
 N = params.N;  a = params.a;  A = params.L[1] * params.L[2];  n0 = N / A
 ks = box_wavevectors(params, 1.0)

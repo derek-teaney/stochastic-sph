@@ -9,7 +9,8 @@ using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const OUT = length(ARGS) > 0 ? ARGS[1] : joinpath(@__DIR__, "..", "data", "grid_bare");  mkpath(OUT)
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
-const S0 = 1e6;  const H = 0.05;  const HA = 2.0;  const LBOX = 1.2;  const CS = sqrt(1/3)
+const S0 = 1e6;  const H = 0.05;  const HA = 2.0;  const LBOX = 1.2
+const PHYSD = default_phys_dim();  const CS = sqrt(cs2(conformal_eos(PHYSD)))     # the default fluid (dimension.tex)
 quiet(f) = redirect_stdout(f, devnull)
 dtfac(v0) = v0 == 0 ? 1.0 : CS * (1 + v0 * CS) / (v0 + CS)
 
@@ -31,16 +32,16 @@ function gamma_hydro(isshear, ω, k, v0, etas, Trel)
     etas == 0 && return 0.0
     ν = etas / Trel;  γ = 1 / sqrt(1 - v0^2);  Ω = γ * (ω - v0 * k[1]);  kx = γ * (k[1] - v0 * ω);  k2 = kx^2 + k[2]^2
     isshear && return ν * k2 / γ
-    return 0.5 * (4 / 3) * ν * k2 / (γ * (1 + v0 * (1 / 3) * kx / Ω))
+    return 0.5 * (2 * (PHYSD - 1) / PHYSD) * ν * k2 / (γ * (1 + v0 * CS^2 * kx / Ω))     # longitudinal 2η(1 − 1/d), ζ = 0
 end
 
 function bare(v0, etas)
-    eos = ConformalEOS(1/3, 1.0, etas, 0.0)
+    eos = conformal_eos(PHYSD; η_by_s = etas)
     _, q, _, _ = quiet(() -> setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex))
     w0 = q[1].e + q[1].p;  Trel = q[1].T * q[1].γ;  γ = 1 / sqrt(1 - v0^2)
     params, ps, cl, _ = quiet(() -> setup_ic(H, HA, eos, (x, y) -> γ * S0, (x, y) -> SVector(w0 * γ^2 * v0, 0.0); L = LBOX, lattice = :hex))
     st = GridStencil(ps, params, cl);  F = GridFFT(ps, params);  sc = GridScratch(st.N);  g = GridStats()
-    dt = 0.5 * compute_dt(ps, params, ConformalEOS(1/3, 1.0, 0.2, 0.0); mode = :viscous) * dtfac(v0)
+    dt = 0.5 * compute_dt(ps, params, conformal_eos(PHYSD; η_by_s = 0.2); mode = :viscous) * dtfac(v0)
     step! = etas == 0 ? (p -> grid_step!(p, st, dt, eos, sc, g)) :
             (p -> (viscous_step!(p, params, cl, dt / 2, eos);  grid_step!(p, st, dt, eos, sc, g);  viscous_step!(p, params, cl, dt / 2, eos)))
     M, U0 = grid_linear_map(step!, ps, st, F, eos)

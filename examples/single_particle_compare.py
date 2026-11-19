@@ -1,18 +1,20 @@
 """single_particle_compare.py — Step 0 of docs/statics.tex: the nine HMC runs (examples/volume_fluctuations.jl) against the exact
 single-particle quadrature (examples/single_particle.jl, data/volfluct/single_particle.csv), everything at the bath temperature T0 of
-each run (not at the temperature of the start's entropy density S0).  Continuum at T0 (c_s^2 = 1/3, T_scale = 1): s = 4T^3/3,
-w = T s, C_V = 4T^3, sigma = s V/4.
+each run (not at the temperature of the start's entropy density S0).  Continuum at T0 for the constant-c_s^2 equation of state, c_s^2
+and T_scale from the run attributes (docs/dimension.tex): s = (1+c_s^2) e/T, w = T s, C_V = s/c_s^2, sigma = c_s^2/(1+c_s^2) s V.
 
   momentum:   <|M_k|^2>/(L^2 T0 w)  =  r_m <V_a>nbar
   entropy:    <|S_k|^2>/(L^2 C_V)   =  r_s <V_a>nbar + (s_off + b (1 - W~))^2 S(k) / (C_V V),   <s|V'> = s_off + b V'/V near V
-  positions:  S(k) from the Gaussian theory at sigma(label) = s_a/4, at sigma(T0), and with the exact alpha, sigma (statics.tex, eq. Sexact)
+  positions:  S(k) from the Gaussian theory at sigma(label) = c_s^2/(1+c_s^2) s_a, at sigma(T0), and with the exact alpha, sigma (statics.tex, eq. Sexact)
   volumes:    var(V_a) nbar^2 from the same S(k), summed over the modes of the box
 
     python3 examples/single_particle_compare.py data/volfluct/vf_*.h5
 Writes docs/figs/step0_momentum_entropy.png and docs/figs/step0_positions.png.
 """
 import sys, csv, warnings; warnings.filterwarnings("ignore")
-import h5py, numpy as np
+import os, h5py, numpy as np
+sys.path.insert(0, os.path.dirname(__file__))
+from statics_theory import thermo
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from scipy.special import j0
 from scipy.integrate import simpson
@@ -40,7 +42,8 @@ for f in sys.argv[1:]:
     F = h5py.File(f); A = {k: F.attrs[k] for k in F.attrs}; sa = round(float(A["s_a"])); ha = round(float(A["ha"]))
     h = float(A["h"]); Lx, Ly = A["L"]; L2 = Lx * Ly; N = float(A["N"]); nbar = N / L2; V = 1 / nbar; T0 = float(A["T0"])
     r = {k: float(v) for k, v in rows[sa].items() if k not in ("file", "measure")}
-    sT = 4 * T0 ** 3 / 3; w = T0 * sT; CV = 4 * T0 ** 3; sigT = sT * V / 4
+    cs2 = float(A.get("cs2", 1 / 3)); th = thermo(T0, cs2, float(A.get("T_scale", 1.0))); fs = cs2 / (1 + cs2)
+    sT = th["s"]; w = th["w"]; CV = th["CV"]; sigT = fs * sT * V; sig_l = fs * sa
     rm = r["mx2"] / r["Tw_V"]; rs = r["var_s"] / r["CV_V"]
     # rescale the per-particle offsets to this run's V (they are dimensionless in units of s(T0)V)
     soff = r["s_minus"] / r["sa_T0"] * sT * V; bsl = r["dsdV_V"] / r["sa_T0"] * sT * V
@@ -51,10 +54,10 @@ for f in sys.argv[1:]:
     Sp = grp((np.abs(F["part_Nk"][b:]) ** 2).mean(0) / N)
     W = Wt(ku); Mpred = rm * vn
     Spred = rs * vn + (soff + bsl * (1 - W)) ** 2 * Sp / (CV * V)
-    th_l, th_t, th_x = S_g(W, sa / 4), S_g(W, sigT), S_x(W, r["f1"], r["f2"])
+    th_l, th_t, th_x = S_g(W, sig_l), S_g(W, sigT), S_x(W, r["f1"], r["f2"])
     vv = F["vol_var"][b:].mean() * vn ** 2 * 1e3
     vl, vt, vx = [1e3 * boxvar(Lx, Ly, h, nbar, fn) for fn in
-                  (lambda W: S_g(W, sa / 4), lambda W: S_g(W, sigT), lambda W: S_x(W, r["f1"], r["f2"]))]
+                  (lambda W: S_g(W, sig_l), lambda W: S_g(W, sigT), lambda W: S_x(W, r["f1"], r["f2"]))]
     print(f"{ha:3d} {sa:4d} {sigT:6.2f} | {Mk.mean():7.3f} {Mpred:6.3f} | {np.mean(Sk / Spred):22.3f} | "
           f"{np.mean(Sp / th_l):12.3f} {np.mean(Sp / th_t):11.3f} {np.mean(Sp / th_x):11.3f} | {vv:16.2f} {vl:6.2f} {vt:6.2f} {vx:6.2f}")
     c = cols[sa]; m = mk[ha]; fill = c if ha == 2 else "none"; dx = 1 + 0.012 * (ha - 3)
@@ -64,7 +67,7 @@ for f in sys.argv[1:]:
     ax2[1].plot(ku * dx, Sp / th_x, m, color=c, mfc=fill, ms=7, mew=1.5)
 for a, t in zip(ax1, [r"momentum: HMC / ($r_m\langle V_a\rangle\bar n$)", r"entropy: HMC / (intrinsic + leak, exact)"]):
     a.axhline(1, color="0.4", lw=1.5); a.set(xlabel="$kh$", ylim=(0.6, 1.4)); a.set_title(t, fontsize=13)
-for a, t in zip(ax2, [r"$S(k)$: HMC / Gaussian theory at $\sigma=s_a/4$ (as in equilibrium.tex)",
+for a, t in zip(ax2, [r"$S(k)$: HMC / Gaussian theory at the label's $\sigma$, $c_s^2 s_a/(1+c_s^2)$",
                       r"$S(k)$: HMC / theory with $\alpha_{\rm eff},\sigma_{\rm eff}$ at $T_0$"]):
     a.axhline(1, color="0.4", lw=1.5); a.set(xlabel="$kh$", ylim=(0.6, 1.6)); a.set_title(t, fontsize=13)
 for fig, ax in ((f1g, ax1), (f2g, ax2)):

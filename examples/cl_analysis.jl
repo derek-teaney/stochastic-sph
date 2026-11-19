@@ -29,9 +29,10 @@ function series(f, name)
     h5open(f, "r") do h;  haskey(h, name) ? read(h[name]) : Float64[];  end
 end
 # all runs of one set; partial (checkpointed) runs are included, cut to a common length
+pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
 function loadset(d)
     fs = files(d);  isempty(fs) && return nothing
-    rs = [read_equilibrium(f) for f in fs]
+    rs = [read_equilibrium(f) for f in fs];  foreach(r -> pre_dimfix(get(r.meta, :cs2, 1 / 3)), rs)   # campaign cl, before dimfix
     ex = Dict(k => [series(f, k) for f in fs] for k in ("sspr", "Vspr", "acc_s", "acc_r", "grej_s", "grej_r", "vmax"))
     nk = minimum(length(r.KE) for r in rs);  nk < 4 && return nothing
     (; rs, ex, nk, t = rs[1].rec.t[1:nk], m = rs[1].meta, n = length(rs),

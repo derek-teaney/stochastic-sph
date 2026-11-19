@@ -7,7 +7,7 @@ function initialize_gaussian(h, ha;
                               sigmax=0.1, sigmay=0.14,
                               x0=0.0, y0=0.0, n_images=1,
                               cs2v=1.0/3.0, η_by_s=0.002, ζ_by_s=0.0)
-    eos = ConformalEOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
+    eos = ConstantCs2EOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
 
     # Energy density: small floor + Gaussian at (x0,y0) plus periodic images.
     # sigmay=Inf → flat in y (no y-images needed).

@@ -17,7 +17,7 @@ const NENS    = 8
 const NSTEPS  = 4000
 
 function setup_moving(vt)
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     params, ps, cl, eos = setup_ic(0.05, 2.5, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0);
                                    L=0.6, lattice=:hex)
     # momentum density M = (e+p) γ² v at the rest-frame state; iterate to hit |v| = vt

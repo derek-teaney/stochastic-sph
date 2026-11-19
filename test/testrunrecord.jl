@@ -26,7 +26,7 @@ for (driver, args, env) in (("equilibrium.jl", ["0.6", "2.0", "0.05", "1", "2", 
                             ("stability.jl", ["2.0", "0.05", "1", "full", "star"], Dict{String,String}()))
     println(driver)
     rec = runrecord(driver, args, env)
-    for (sec, T) in (("sim", SimParams), ("eos", ConformalEOS), ("stochastic", StochOptions))
+    for (sec, T) in (("sim", SimParams), ("eos", ConstantCs2EOS), ("stochastic", StochOptions))
         missing = setdiff(string.(fieldnames(T)), keys(get(rec, sec, Dict())))
         check(isempty(missing), "[$sec] has every field of $T" * (isempty(missing) ? "" : ", missing $(collect(missing))"))
     end

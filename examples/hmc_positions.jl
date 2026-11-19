@@ -24,7 +24,7 @@ const BOOST  = setting("SR_BOOST", 0.0);  const GAMMA = 1 / sqrt(1 - BOOST^2)
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0            # the energy modes E_k too
 
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 _, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
 const MX0 = (ps0[1].e + ps0[1].p) * GAMMA^2 * BOOST            # the momentum density of the boosted state
 params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(MX0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
@@ -50,7 +50,7 @@ for n in 1:NUPD
                 n, sum(acc) / n, sum(hb) / n, sum(abs, dH) / n, sum(its) / n, prec.psi6[end], prec.psi6loc[end], Ht[end], time() - t0)
 end
 mkpath(OUTDIR)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = GAMMA * S0 * params.vol, T0 = start.T, boost = BOOST,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = GAMMA * S0 * params.vol, T0 = start.T, eos_meta(params, eos)..., boost = BOOST,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt, tau = τ, acceptance = sum(acc) / NUPD,
         heatbath = sum(hb) / NUPD, seed = SEED)
 write_equilibrium_h5(joinpath(OUTDIR, "equilibrium_$(TAG)_r$(SEED).h5"), meta, rec, Ht, zeros(length(Ht)); prec,

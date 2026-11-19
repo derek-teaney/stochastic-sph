@@ -13,7 +13,7 @@ const SAS  = envlist("MF_SA", "16,54,541")
 const NUPD = parse(Int, get(ENV, "MF_NUPD", "60"));  const BURN = NUPD ÷ 3
 const HA   = parse(Float64, get(ENV, "MF_HA", "2"));  const LBOX = parse(Float64, get(ENV, "MF_L", "0.6"))
 const H    = 0.05
-eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 
 # per-particle moment statistics of the present positions
 function moment_stats(ps, params, cl)

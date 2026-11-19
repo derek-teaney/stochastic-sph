@@ -9,7 +9,8 @@ using PyPlot, HDF5, Printf, StaticArrays, LinearAlgebra
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const ROOT = joinpath(ENV["SCRATCH"], "sph", "grid_spectra")
 const DIRS = length(ARGS) > 0 ? ARGS : [joinpath(ROOT, "sp_v0"), joinpath(ROOT, "sp_v0.8")]
-const FIGD = joinpath(@__DIR__, "..", "docs", "figs");  const CS2 = 1 / 3;  const H = 0.05
+const FIGD = joinpath(@__DIR__, "..", "docs", "figs");  const CS2 = 1 / 3;  const H = 0.05     # campaign grid_spectra, before dimfix
+pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
 
 function Uof(θ)                     # θ = (−β⁰, β^x, β^y) → (ε, M_x, M_y), e = T⁴ (T_scale = 1)
     β0 = -θ[1];  b = SVector(θ[2], θ[3]);  T = 1 / sqrt(β0^2 - dot(b, b));  v = b / β0
@@ -27,7 +28,7 @@ end
 
 # κ(k) h of the stencil at every mode (the lattice derivative), for the lattice of the runs
 function kappa_map(L, kmin)
-    eos = ConformalEOS(1/3, 1.0, 0.0, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.0)
     params, ps, cl, _ = redirect_stdout(devnull) do
         setup_ic(H, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex)
     end
@@ -42,7 +43,7 @@ for d in DIRS
     for f in fs
         h5open(f) do h
             haskey(h, "grid_Ck_re") || return
-            at = attributes(h);  n = read(h["grid_Cn"])[1];  n == 0 && return
+            at = attributes(h);  pre_dimfix(haskey(at, "cs2") ? read(at["cs2"]) : 1 / 3);  n = read(h["grid_Cn"])[1];  n == 0 && return
             push!(runs, (C = (read(h["grid_Ck_re"]) .+ im .* read(h["grid_Ck_im"])) ./ n, n = n, V = read(h["grid_V"])[1],
                          kmin = read(h["grid_kmin"]), Trel = read(at["Trel"]), v = read(at["boost"]), L = read(at["L"])))
         end

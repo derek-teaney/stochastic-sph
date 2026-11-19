@@ -14,7 +14,7 @@ quiet(f) = redirect_stdout(f, devnull)
 function run_case(diss, v0, kind, dir, nk)
     begin
         @assert ENV["SPH_DISSIPATION"] == string(diss)
-        eos = ConformalEOS(1/3, 1.0, 0.2, 0.0);  γ = 1 / sqrt(1 - v0^2)
+        eos = conformal_eos(default_phys_dim(); η_by_s = 0.2);  γ = 1 / sqrt(1 - v0^2)
         _, q, _, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 1.2, lattice = :hex))
         w0 = q[1].e + q[1].p
         params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> γ * 1e6, (x, y) -> SVector(w0 * γ^2 * v0, 0.0);
