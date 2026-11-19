@@ -6,7 +6,7 @@ function initialize_gaussian_1d(h, ha;
                                  Lx=1.0, A=1.0, delta=1e-1,
                                  sigma=0.1, x0=0.0, n_images=1,
                                  cs2v=1.0/3.0, η_by_s=0.002, ζ_by_s=0.0)
-    eos = ConformalEOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
+    eos = ConstantCs2EOS(cs2v, T_scale_gluon, η_by_s, ζ_by_s)
 
     function e_ic(x, y)
         e = delta
@@ -18,7 +18,7 @@ function initialize_gaussian_1d(h, ha;
     S_func = (x, y) -> srel(eos, e_ic(x, y))
 
     params, particles, cl, eos = setup_ic(h, ha, eos, S_func,
-                                           (x, y) -> SVector(0.0, 0.0); Lx, sim_dim=1)
+                                           (x, y) -> SVector(0.0, 0.0); Lx, sim_dim=1, phys_dim=3)
     cs = sqrt(cs2v)
     @printf("Gaussian 1D: A=%.4g  δ=%.4g  σ=%.4g  center=%.3g  n_img=%d  cs=%.4g  η/s=%.4g\n",
             A, delta, sigma, x0, n_images, cs, η_by_s)

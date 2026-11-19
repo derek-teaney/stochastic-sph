@@ -1,0 +1,591 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{algpseudocode}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\pf}{\bm{\mathsf p}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+% algorithms: a titled, tinted box
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+% the central equations: a tinted panel with an accent rule on the left
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The scheme: relativistic stochastic SPH in the density frame}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+A self-contained account of the scheme the code runs by default (\texttt{main}, tag \texttt{defaults-2026-11-15}): particles that carry
+energy, momentum and entropy, a Hamiltonian ideal step, a stochastic viscous step that keeps the thermal equilibrium exactly, and an
+equilibrium start by hybrid Monte Carlo.  The main text states the goals and the steps; details, special cases and options are in the appendices.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The idea}
+\label{sec:idea}
+
+The scheme simulates fluctuating relativistic hydrodynamics with particles.  It has three goals:
+\begin{enumerate}
+\item \emph{conserve} energy, momentum and angular momentum exactly;
+\item \emph{dissipate} as a fluid with the given viscosity does;
+\item \emph{fluctuate} thermally: the fluid keeps its equilibrium distribution, at rest and in uniform motion.
+\end{enumerate}
+It meets them with three ingredients, each exact in its own sense.
+\begin{itemize}
+\item \emph{An ideal step}: a Hamiltonian flow of the particles.  It conserves energy and momentum and preserves phase-space volume, so it keeps
+  the equilibrium.
+\item \emph{A viscous step}: a Monte Carlo chain of random momentum transfers between neighbours, sized by the viscosity so that on average they
+  are the viscous force, and accepted by a test that keeps the equilibrium exactly.
+\item \emph{An equilibrium start}: a sample of that equilibrium, positions included, drawn by hybrid Monte Carlo.
+\end{itemize}
+Because each step keeps the same equilibrium, the whole run does, and the dynamics in between is hydrodynamics.  The sections follow the
+same order: the particles (\Sect{sec:particles}), their equilibrium (\Sect{sec:equilibrium}), the two steps (\Sect{sec:ideal}, \Sect{sec:viscous}),
+the run (\Sect{sec:run}) and the start (\Sect{sec:start}).
+
+\begin{algobox}{A run}
+\begin{algorithmic}[1]
+\State draw an equilibrium state: positions, energies and momenta (\Sect{sec:start})
+\State viscous step of length $\Delta t/2$
+\For{each time step}
+  \State ideal step of length $\Delta t$ (\Sect{sec:ideal})
+  \State viscous step of length $\Delta t$ (\Sect{sec:viscous}) \Comment{two half steps merged}
+  \State record the observables
+\EndFor
+\end{algorithmic}
+\end{algobox}
+
+%=============================================================================
+\section{The particles}
+\label{sec:particles}
+
+\paragraph{The continuum.}  A relativistic fluid in two space dimensions, written in the density frame: the conserved densities are the energy
+density $\varepsilon$ and the momentum density $\bm M$, and the entropy density $S$ is carried along.  The equation of state gives
+\st
+\varepsilon=h(S,\bm M),\qquad T=\frac{\partial h}{\partial S},\qquad \bm v=\frac{\partial h}{\partial\bm M},\qquad \beta=\frac{\bm v}T .
+\stp
+$T$ is the bare temperature; the rest-frame temperature is
+\st
+T_{\rm rel}=\gamma\,T ,
+\stp
+and appears only with the viscosities.  The equation of state is conformal, and the input is the shear viscosity as $\eta/s$.
+
+\paragraph{The particles.}  Each particle $a$ has a position $\bm x_a$, a momentum $\bm m_a$ and an entropy $s_a$.  Its volume is set by the number
+density of particles around it,
+\st
+V_a=\frac1{n_a},\qquad n_a=\sum_bW(\bm x_a-\bm x_b),
+\stp
+with $W$ the SPH kernel of size $h$.  The particle's densities are its own entropy and momentum divided by its volume, and its energy is
+\st
+e_a=V_a\,h\Big(\frac{s_a}{V_a},\frac{\bm m_a}{V_a}\Big),
+\stp
+with the first law
+\st
+de_a=T_a\,ds_a+\bm v_a\cdot d\bm m_a-p_a\,dV_a .
+\label{firstlaw}
+\stp
+The entropy per particle $s_a$ sets how much a particle fluctuates: its thermal velocity is of order $1/\sqrt{s_a}$.
+
+%=============================================================================
+\section{The equilibrium}
+\label{sec:equilibrium}
+
+At temperature $T$, for a fluid at rest or moving uniformly with velocity $\bm v$, the particles have a definite equilibrium distribution.  It can be
+written in two equivalent forms, one in the entropies of the particles and one in their energies.  Each is the natural form for one of the
+two steps of the scheme.
+
+\paragraph{In the entropies.}  With the positions, momenta and entropies as variables, and the measure $\prod_ad\bm x_a\,d\bm m_a\,ds_a$,
+\begin{keyeq}
+\st
+\pi\propto\exp\sum_a\Big[s_a-\frac{e_a(s_a,\bm m_a,V_a)-\bm v\cdot\bm m_a}{T}\Big] .
+\label{equilibrium}
+\stp
+\end{keyeq}
+The sum of the particle energies is the Hamiltonian $H$ and that of the momenta the total momentum $\bm P$, so the exponent is
+$\sum_as_a-(H-\bm v\cdot\bm P)/T$.
+
+\paragraph{In the energies.}  At fixed positions and momenta, change the variable of each particle from its entropy to its energy.  By the first
+law \Eq{firstlaw}, at fixed $\bm m_a$ and $V_a$, $ds_a=de_a/T_a$, and the entropy becomes the function $S_a(e_a,\bm m_a,V_a)$.  With the
+measure $\prod_ad\bm x_a\,d\bm m_a\,de_a$,
+\begin{keyeq}
+\st
+\pi\propto\exp\sum_a\Big[S_a(e_a,\bm m_a,V_a)-\ln T_a-\frac{e_a-\bm v\cdot\bm m_a}{T}\Big] .
+\label{equilibriume}
+\stp
+\end{keyeq}
+The $-\ln T_a$ is the change of measure.  It is not extensive: it is of order one per particle, against an entropy of tens to hundreds.
+
+\paragraph{One form for each step.}
+\begin{itemize}
+\item \emph{The ideal step} moves the positions and momenta at fixed entropies.  It conserves $H$ and $\bm P$ and preserves $\prod_ad\bm x_a\,d\bm m_a$, so it
+  keeps \Eq{equilibrium}.
+\item \emph{The viscous step} moves the momenta at fixed positions and energies, and conserves $\bm P$.  On that surface \Eq{equilibriume} is a
+  distribution of the momenta alone, \Eq{target}, which the step must keep (\Sect{sec:viscous}).
+\end{itemize}
+Both steps keep the same distribution, so the run as a whole does.
+
+\paragraph{What the hydrodynamics must reproduce.}  In this equilibrium the momenta and energies of the particles fluctuate thermally, and the
+positions form a liquid, not a lattice.  Since both steps keep it, the equal-time correlations of a run, of the energy and momentum densities
+and of the positions, must be those of \Eq{equilibrium} at the same $s_a$.  Hybrid Monte Carlo samples \Eq{equilibrium} independently
+(\Sect{sec:start}), which makes it both the test of the fluctuations and the start of a run.
+
+%=============================================================================
+\section{The ideal step}
+\label{sec:ideal}
+
+\paragraph{The Hamiltonian} is the total energy,
+\st
+H(\bm x,\bm m)=\sum_ae_a ,
+\stp
+at fixed entropies.  It depends on the positions only through the volumes.  With \Eq{firstlaw}, Hamilton's equations are
+\begin{keyeq}
+\st
+\dot{\bm x}_a=\bm v_a,\qquad
+\dot{\bm m}_a=-\sum_b\big(p_aV_a^2+p_bV_b^2\big)\,\bm D_{ab},\qquad
+\bm D_{ab}=\frac{\partial W(\bm x_a-\bm x_b)}{\partial\bm x_a} :
+\stp
+\end{keyeq}
+each particle moves with its own velocity, pushed by the symmetric SPH pressure force.  Energy, momentum and angular momentum are
+conserved, and the flow preserves the phase-space volume.
+
+\paragraph{The integrator.}  The energy of a particle depends on both its momentum and the positions, so $H$ is not a kinetic plus a potential
+energy, and the ordinary leapfrog is then neither symplectic nor second order: the energy drifts.  The generalized leapfrog is symplectic
+and time-reversible for any $H$:
+\st
+\begin{aligned}
+\bm m^{1/2}&=\bm m-\frac{\Delta t}2\,\frac{\partial H}{\partial\bm x}\big(\bm x,\bm m^{1/2}\big),\\
+\bm x'&=\bm x+\frac{\Delta t}2\Big[\frac{\partial H}{\partial\bm m}\big(\bm x,\bm m^{1/2}\big)+\frac{\partial H}{\partial\bm m}\big(\bm x',\bm m^{1/2}\big)\Big],\\
+\bm m'&=\bm m^{1/2}-\frac{\Delta t}2\,\frac{\partial H}{\partial\bm x}\big(\bm x',\bm m^{1/2}\big).
+\end{aligned}
+\label{glf}
+\stp
+The first two lines are implicit and are solved by iteration (\App{app:numbers}).
+
+%=============================================================================
+\section{The viscous step}
+\label{sec:viscous}
+
+\subsection{What it must do}
+
+During the viscous step the positions, the volumes and the particle energies are fixed; only the momenta change.  The entropy of a particle
+is then a function of its momentum,
+\st
+S_a(\bm m_a)\equiv S_a(e_a,\bm m_a,V_a),\qquad \frac{\partial S_a}{\partial\bm m_a}=-\beta_a .
+\stp
+The step must do two things.
+\begin{itemize}
+\item \emph{On average}, move momentum as viscosity does: the entropy grows at the rate $2K$, with $K$ the dissipative function.
+\item \emph{In its fluctuations}, keep the thermal equilibrium.  At fixed energies and positions the equilibrium \Eq{equilibriume} is
+\begin{keyeq}
+  \st
+  \pi(\bm m)\propto\exp\sum_a\big[S_a(\bm m_a)-\ln T_a\big]
+  \label{target}
+  \stp
+\end{keyeq}
+  (\Sect{sec:equilibrium}; the flow term drops out because the step conserves the total momentum).
+\end{itemize}
+A Metropolis chain does both.  A random momentum transfer, drawn from a zero-mean Gaussian with covariance $\Sigma$ and accepted with the
+Metropolis probability, drifts on average by
+\st
+\avg{\Delta\bm m}\simeq\frac12\,\Sigma\,\frac{\partial\ln\pi}{\partial\bm m}=-\frac12\,\Sigma\,\beta .
+\stp
+The viscous force is $-\Delta t\,\mathcal K\beta$, with $\mathcal K$ the quadratic form of $K$.  The two agree for
+\begin{keyeq}
+\st
+\Sigma=2\Delta t\,\mathcal K :
+\stp
+\end{keyeq}
+the fluctuation--dissipation theorem.  So the noise is read off from $K$, and the Metropolis test keeps the equilibrium.
+
+\subsection{The dissipative function}
+
+\paragraph{Geometry from the kernel, physics from the metric.}  Each particle $a$ has a star, its neighbours within the kernel support.  The
+kernel fixes the geometry of the star, from the positions alone: bond weights $w_{ab}$, the bond moment
+\st
+\mathcal M_a=\sum_{b\neq a}w_{ab}\,\bm r_{ab}\bm r_{ab}^T,\qquad \bm r_{ab}=\bm x_b-\bm x_a ,
+\stp
+the fitted gradient of $\beta$, and the faces,
+\st
+(\nabla\beta)_a=\sum_{b\neq a}w_{ab}\,\Delta\beta_{ab}\,\bm r_{ab}^T\mathcal M_a^{-1},\qquad
+\bm A_{ab}=V_a\,w_{ab}\,\mathcal M_a^{-1}\bm r_{ab},\qquad
+\sum_{b\neq a}\bm A_{ab}\,\bm r_{ab}^T=V_a\one ,
+\label{faces}
+\stp
+with $\Delta\beta_{ab}=\beta_b-\beta_a$.  The last identity, the closure of the faces, holds for any arrangement of the neighbours.  The physics is in
+the coefficients: the viscosities and $T_{\rm rel}$, and the comoving metric
+\st
+\ell_a=\one-\bm v_a\bm v_a^T ,
+\stp
+which measures the strain in the rest frame of the moving fluid.
+
+\paragraph{The two parts of $K$.}  A linear fit sees the smooth part of the flow; what it misses is the residual of each bond.  $K$ is the sum of
+the dissipation of each:
+\begin{keyeq}
+\st
+K=\sum_a\big(K_a^{\rm res}+K_a^{\rm resid}\big).
+\stp
+\end{keyeq}
+The resolved part is the continuum viscous dissipation of the fitted gradient,
+\st
+K_a^{\rm res}=V_a\,T_{{\rm rel},a}\Big[\eta_a\tr\big(\ell_a\mathring S_a\ell_a\mathring S_a\big)+\tfrac12\zeta_{\rm eff}\,\theta_a^2\Big],
+\stp
+with $\mathring S_a$ the traceless comoving strain and $\theta_a$ the expansion, both built from $(\nabla\beta)_a$ and $\ell_a$.  The residual part damps the
+bond differences left over after the best linear fit,
+\st
+K_a^{\rm resid}=\frac12\min_X\sum_{b\neq a}c_{ab}\,\big(\Delta\beta_{ab}-X\bm r_{ab}\big)\cdot\ell_a\big(\Delta\beta_{ab}-X\bm r_{ab}\big),
+\qquad c_{ab}=2\,V_aT_{{\rm rel},a}\eta_a\,w_{ab}\,f_{ab} ,
+\stp
+with $f_{ab}$ a factor that gives bonds along the flow the weight of the comoving frame (\App{app:residual}).
+
+\subsection{The two moves}
+
+Each part of $K$ becomes one Monte Carlo move, made by every particle in turn.
+
+\paragraph{The stress move} is the noise of $K^{\rm res}$.  Particle $a$ draws a random symmetric stress $\xi_a$ with covariance $2\Delta t$ times the
+Onsager matrix of $K_a^{\rm res}$ (\App{app:hastings}) and gives each bond the traction
+\st
+\pf_{ab}=\xi_a\bm A_{ab}\qquad(\text{momentum particle }a\text{ gives particle }b),
+\stp
+giving up their sum itself.
+
+\paragraph{The virial.}  For a set of momentum transfers $\pf_{ab}$ from particle $a$ to its neighbours, the virial is the momentum sent along each
+bond times the bond vector, summed over the bonds:
+\st
+\sum_{b\neq a}\pf_{ab}\,\bm r_{ab}^T .
+\stp
+It is the momentum flux the transfers carry across the star, $V_a$ times the stress they exert on the fluid, and its antisymmetric part is
+their torque.  For the stress move, the closure \Eq{faces} gives
+\st
+\sum_{b\neq a}\xi_a\bm A_{ab}\,\bm r_{ab}^T=V_a\,\xi_a :
+\stp
+the tractions exert exactly the drawn stress, which is symmetric.  The move conserves momentum and angular momentum, and on average it is the
+resolved viscous force.
+
+\paragraph{The residual move} is the noise of $K^{\rm resid}$.  Particle $a$ draws an independent Gaussian vector $\mathfrak p_{ab}$ on each bond, with
+covariance $2\Delta t\,c_{ab}\,\ell_a$.  Independent draws carry, by chance, a stress of their own, the stress of the draws:
+\st
+\tilde\xi_a=\frac1{V_a}\sum_{c\neq a}\mathfrak p_{ac}\,\bm r_{ac}^T .
+\stp
+That stress belongs to the stress move, not to the residual, so it is removed: the draws are conditioned on zero virial.  Each bond gives
+back a share of $\tilde\xi_a$ in proportion to its coefficient and its bond vector,
+\st
+\vec p_{ab}=\mathfrak p_{ab}-c_{ab}\,V_a\tilde\xi_a\,R_a^{-1}\bm r_{ab},\qquad R_a=\sum_{b\neq a}c_{ab}\,\bm r_{ab}\bm r_{ab}^T ,
+\stp
+with $R_a$ the bond moment weighted by the residual coefficients.  The virial of the residual tractions is then zero for any draw,
+\st
+\sum_{b\neq a}\vec p_{ab}\,\bm r_{ab}^T=V_a\tilde\xi_a-V_a\tilde\xi_a\,R_a^{-1}R_a=0 :
+\stp
+the residual tractions exert no stress and no torque, and on average they are the residual viscous force.
+
+\subsection{The vote}
+
+A proposed move changes the momenta of a star, $\bm m\to\bm m'$, and with them $\sum_a(S_a-\ln T_a)$ by $\Delta\mathbb S$.  The chain keeps the equilibrium
+\Eq{target} if every move is balanced by its reverse, detailed balance:
+\st
+\pi(\bm m)\,q(\bm m\to\bm m')\,P(\bm m\to\bm m')=\pi(\bm m')\,q(\bm m'\to\bm m)\,P(\bm m'\to\bm m),
+\label{detbal}
+\stp
+where $q$ is the probability density of proposing a move and $P$ the probability of accepting it.
+
+\paragraph{Why the Hastings factor: the noise strength depends on the state.}  The covariance of a proposal is set by the coefficients of the
+star, $T_{\rm rel}$, $\eta$, $\zeta$ and the metric $\ell$, and these are functions of the momentum of its particle.  The move $\bm m\to\bm m'$ is proposed with
+the noise strength of $\bm m$; the move back, $\bm m'\to\bm m$, with that of $\bm m'$.  So the two proposal densities differ,
+\st
+q(\bm m\to\bm m')\neq q(\bm m'\to\bm m),
+\stp
+and the plain Metropolis test, which assumes they are equal, violates \Eq{detbal}.  The cure is to put their ratio into the test:
+\begin{keyeq}
+\st
+P=\min\Big(1,\ e^{\Delta\mathbb S}\;\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}\Big),
+\label{vote}
+\stp
+\end{keyeq}
+which satisfies \Eq{detbal} exactly.  The ratio is the Hastings factor (\App{app:mh}); without it the equilibrium is biased, and the bias does
+not shrink with the time step.  The coefficients are therefore computed at each proposal, from the current and from the proposed momentum.
+Because the faces depend on the positions only, the reverse move always exists and the ratio has a closed form (\App{app:hastings}).
+
+\begin{algobox}{One viscous step of length $\Delta t$ (positions, volumes and energies fixed)}
+\begin{algorithmic}[1]
+\State for every particle, its star: bonds, $w_{ab}$, $\mathcal M_a$, faces $\bm A_{ab}$ \Comment{geometry}
+\For{the stress sweep and the residual sweep}
+  \For{every particle $a$, in a random order} \Comment{parallel: \App{app:sweeps}}
+    \State coefficients of $a$ from its current momentum
+    \State propose tractions, $\xi_a\bm A_{ab}$ or $\vec p_{ab}$, and the new momenta $\bm m'$ of the star
+    \State coefficients at $\bm m'_a$; the Hastings factor; $\Delta\mathbb S$
+    \State accept with probability \Eq{vote}
+  \EndFor
+\EndFor
+\State set each particle's entropy to $S_a(e_a,\bm m_a)$
+\end{algorithmic}
+\end{algobox}
+
+%=============================================================================
+\section{The run}
+\label{sec:run}
+
+The ideal and the viscous step are combined symmetrically: a viscous half step, an ideal step, a viscous half step.  The two half steps
+between consecutive ideal steps are merged into one, as in the box of \Sect{sec:idea}.  The ideal step keeps the equilibrium because it is
+Hamiltonian and volume-preserving; the viscous step because it is in detailed balance; so the combination keeps it too.  The time step is
+set by the sound speed, the viscosity and the shortest modes of the particles (\App{app:dt}).
+
+%=============================================================================
+\section{The start: hybrid Monte Carlo}
+\label{sec:start}
+
+A run starts from a sample of the equilibrium, \Eq{equilibrium}, positions included.  Started on a lattice instead, it would relax to the
+liquid only slowly, at a rate set by self-diffusion, which falls as $1/s_a$.
+
+\paragraph{Hybrid Monte Carlo} samples it by alternating two exact steps.
+\begin{enumerate}
+\item \emph{Heat bath} at fixed positions, with the energy form \Eq{equilibriume}.  Each particle draws its energy and momentum from its own
+  factor of \Eq{equilibriume}, independently of the others, and its entropy follows, $s_a=S_a(e_a,\bm m_a,V_a)$.
+\item \emph{Hamiltonian trajectory} at fixed entropies.  The generalized leapfrog \Eq{glf} runs for a time $\tau$, and the end point is accepted with
+  \st
+  \min\Big(1,\ e^{-(\Delta H-\bm v\cdot\Delta\bm P)/T}\Big) .
+  \stp
+  This is the entropy form \Eq{equilibrium}: the exact flow keeps it, and because the integrator is symplectic and reversible, the test removes
+  its error exactly.
+\end{enumerate}
+The trajectories are the fluid's own motion, and they are what moves the positions into the liquid.
+
+\begin{algobox}{The equilibrium start}
+\begin{algorithmic}[1]
+\State particles on a hexagonal lattice, with uniform entropy and momentum densities (the flow $\bm v$)
+\State exact draw of every particle's energy and momentum at the $T$ and $\bm v$ of the totals
+\For{$N_{\rm HMC}$ updates}
+  \State heat bath of every particle at the current positions
+  \State trajectory of random length $\lesssim L/c_s$; accept or reject
+\EndFor
+\State exact draw of the energies and momenta at the final positions, shifted so that the total energy and momentum are exact
+\end{algorithmic}
+\end{algobox}
+
+The settings and the cost are in \App{app:numbers}.
+
+%=============================================================================
+\section{What it achieves}
+\label{sec:achieves}
+
+\begin{itemize}
+\item \emph{Conservation}: the total momentum exactly, the energy to $10^{-5}$ over $t=100$ at $s_a\gtrsim50$.
+\item \emph{Equilibrium}: the equal-time fluctuations of the energy and momentum densities agree with hybrid Monte Carlo of the same model
+  to $1$--$2\%$, at rest and in a fluid moving at $v=0.8$.
+\item \emph{Dissipation}: shear and sound waves damp at the hydrodynamic rates as $kh\to0$, at rest and moving.
+\end{itemize}
+The known limits are in \App{app:limits}.
+
+%=============================================================================
+\appendix
+
+\section{Detailed balance and the Hastings factor}
+\label{app:mh}
+
+\paragraph{Metropolis.}  To sample a distribution $\pi(x)$, propose a move $x\to x'$ with density $q(x\to x')$ and accept it with probability $P(x\to x')$.
+The chain keeps $\pi$ if every move is balanced by its reverse,
+\st
+\pi(x)\,q(x\to x')\,P(x\to x')=\pi(x')\,q(x'\to x)\,P(x'\to x).
+\stp
+If the proposal is symmetric, $q(x\to x')=q(x'\to x)$, the choice
+\st
+P(x\to x')=\min\Big(1,\frac{\pi(x')}{\pi(x)}\Big)
+\stp
+works: of the two moves one is accepted with probability one and the other with $\pi'/\pi$, and both sides equal $\min(\pi,\pi')\,q$.
+
+\paragraph{Hastings.}  If the proposal is not symmetric, the same argument works with the ratio of the proposals included,
+\st
+P(x\to x')=\min\Big(1,\frac{\pi(x')\,q(x'\to x)}{\pi(x)\,q(x\to x')}\Big):
+\stp
+both sides of detailed balance are now $\min\big(\pi(x)\,q(x\to x'),\ \pi(x')\,q(x'\to x)\big)$.  The only requirement is that the reverse move can be
+proposed at all, $q(x'\to x)>0$.
+
+\paragraph{An example: noise whose strength depends on the state.}  Take a Gaussian proposal of width $\sigma(x)$,
+\st
+q(x\to x')=\frac1{\sqrt{2\pi}\,\sigma(x)}\exp\Big[-\frac{(x'-x)^2}{2\sigma(x)^2}\Big].
+\stp
+Forward and back differ through $\sigma$, and the Hastings factor is
+\st
+\frac{q(x'\to x)}{q(x\to x')}=\frac{\sigma(x)}{\sigma(x')}\exp\Big[-\frac{(x'-x)^2}{2\sigma(x')^2}+\frac{(x'-x)^2}{2\sigma(x)^2}\Big].
+\stp
+Without it, in the limit of small steps the chain is a diffusion with strength $\sigma(x)^2$ evaluated at the start of each step (It\^o), and its
+stationary density is not $\pi$ but
+\st
+\rho(x)\propto\frac{\pi(x)}{\sigma(x)^2} .
+\stp
+The bias is set by how much $\sigma$ varies over the distribution, not by the step size, which is why it does not go away with $\Delta t$.  In the
+viscous step $x$ is the momentum of a star, $\sigma$ is set by $T_{\rm rel}$, $\eta$ and $\ell$ of its particle, and the many dimensions of the residual
+move make the effect larger.
+
+\section{The basis stresses and the Hastings ratios}
+\label{app:hastings}
+
+\paragraph{The stress draw.}  With $z_k$ independent standard normal numbers,
+\st
+\xi_a=\sqrt{\frac{2\Delta t\,T_{{\rm rel},a}}{V_a}}\;\sum_{k=1}^3z_k\,B_k ,
+\stp
+where $B_1$, $B_2$ are the two traceless symmetric unit matrices dressed with $\ell_a^{1/2}$ on both sides and projected off the scalar, times
+$\sqrt{2\eta_a}$, and $B_3\propto\sqrt{\zeta_{\rm eff}}\,\ell_a$.  This gives the covariance $2\Delta t$ times the Onsager matrix of $K_a^{\rm res}$
+(\texttt{commonkernel.tex}).
+
+\paragraph{The stress ratio.}  A symmetric $2\times2$ stress has three components; write it as the vector $(\xi^{xx},\xi^{xy},\xi^{yy})$.  Collect the three standard
+normal numbers of the draw into a vector
+\st
+z=(z_1,z_2,z_3),
+\stp
+and let $J$ be the $3\times3$ matrix whose columns are the scaled basis stresses $\sqrt{2\Delta t\,T_{{\rm rel},a}/V_a}\;B_k$ in these components.  Then
+the draw is a linear map of $z$,
+\st
+\xi_a=J\,z ,
+\stp
+and the density of proposing $\xi_a$ is that of $z$, a standard Gaussian, divided by the Jacobian $|\det J|$.  The reverse move starts from the
+proposed momentum, where the coefficients give $J'$, and must propose the opposite stress, $-\xi_a$.  The numbers it would need are
+\st
+z'=-J'^{-1}J\,z ,
+\stp
+and the ratio of the two densities is
+\st
+\ln\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}=-\frac12|z'|^2+\frac12|z|^2+\ln|\det J|-\ln|\det J'| .
+\stp
+If the coefficients did not depend on the momentum, $J'=J$, $z'=-z$, and the ratio would be one.
+
+\paragraph{The residual ratio.}  The density of a Gaussian conditioned on zero virial is the density of the draws divided by that of their
+virial at zero.  With $n$ bonds and primes for the proposed state,
+\st
+\begin{aligned}
+\ln\frac{q(\bm m'\to\bm m)}{q(\bm m\to\bm m')}={}&\sum_b\ln\frac{c_{ab}}{c'_{ab}}+\Big(\frac n2-1\Big)\ln\frac{\det\ell_a}{\det\ell'_a}+\ln\frac{\det R'_a}{\det R_a}\\
+&-\frac1{4\Delta t}\sum_b\vec p_{ab}\cdot\Big(\frac{\ell_a'^{-1}}{c'_{ab}}-\frac{\ell_a^{-1}}{c_{ab}}\Big)\vec p_{ab} .
+\end{aligned}
+\stp
+Both ratios are checked against direct evaluations of the Gaussian densities in the unit test \texttt{testhastings.jl}.  Each run
+records their mean and rms per sweep.
+
+\section{The residual factor and the comoving coefficients}
+\label{app:residual}
+
+For a smooth field the residual of a bond is the curvature, weighted by the fourth moment of the star.  With weights round in the lab, bonds
+along the flow lack the factor the comoving frame would give them; the residual factor restores it,
+\st
+f_{ab}=\big(\hat{\bm r}_{ab}\cdot\ell_a\,\hat{\bm r}_{ab}\big)^2 ,
+\stp
+which is $1/\gamma^4$ for a bond along the flow, $1$ across it, and $1$ at rest.  The viscosities are $\eta_a=(\eta/s)\,s_{\rm rel}$ at the particle's
+rest-frame state, and $\zeta_{\rm eff}$ includes the bulk viscosity of the unresolved third dimension.
+
+\section{The sweeps}
+\label{app:sweeps}
+
+A move of particle $a$ changes only its star, so moves more than $4h$ apart commute.  The cells of the cell list, at least $2h$ wide, are
+coloured so that cells of one colour are at least $4h$ apart.  A sweep visits the colours in random order, the cells of a colour in parallel,
+and the particles of a cell in random order, after a random shift of the grid of cells.  The stress and the residual sweep alternate their
+order from step to step.  The random numbers of a move come from its particle's own stream, so the result does not depend on the number of
+threads.
+
+\section{The time step}
+\label{app:dt}
+
+With $\mathrm{CFL}=0.2$, the time step is half the smallest of three limits: sound crossing a kernel, viscous diffusion across a kernel, and the
+damping rate $\Gamma_{\max}$ of the shortest modes of the particle representation,
+\st
+\Delta t=\frac12\min\Big(\mathrm{CFL}\,\frac h{c_s},\ \ \mathrm{CFL}\,\frac{h^2\,T_{\rm rel,min}}{\frac43\,\eta/s},\ \ \frac2{\Gamma_{\max}}\Big).
+\stp
+
+\section{Numbers: the integrator and the start}
+\label{app:numbers}
+
+\paragraph{The generalized leapfrog.}  The implicit half steps are iterated to a relative tolerance of $10^{-10}$, a few passes.  The ordinary
+drift--kick--drift leapfrog makes the energy drift in proportion to $\Delta t$ ($2\times10^{-4}$ per unit time at $s_a=54$); the generalized
+leapfrog removes the drift ($\sim3\times10^{-6}$), at about $1.7$ times the cost of a full step.
+
+\paragraph{The start.}  $N_{\rm HMC}=200$ updates.  Each trajectory has a length drawn uniformly in $[\tau/2,\tau]$, with $\tau=L/c_s$ the time sound
+takes to cross the box: a trajectory that long decorrelates the longest modes, and a fixed length would resonate with a sound mode of the
+box and freeze it.  The step of the trajectories is $0.35$ of the acoustic step.  The trajectories are accepted $95$--$100\%$ of the time, and for
+$672$ particles the start takes about two minutes.
+
+\section{The light cone and low entropy per particle}
+\label{app:limits}
+
+\paragraph{The cap.}  A state with a Lorentz factor above $\gamma_{\max}=100$ has zero weight; a move or a trajectory that reaches one is rejected.
+Near the light cone the inversion of the equation of state loses accuracy as $10^{-16}\gamma^2$, and nothing in a fluid needs $\gamma\gtrsim10$.
+
+\paragraph{The bias without the Hastings factor.}  Without it the momentum fluctuations of the dynamics exceed those of the equilibrium by
+$5\%$ at $s_a=54$ and $20\%$ at $s_a=16$, at any time step (\texttt{inverse\_moment.tex}).
+
+\paragraph{Low entropy per particle.}  The useful range is $s_a\approx50$--$500$.  Below $s_a\approx12$ the thermal motion of a particle is relativistic: many proposals reach the cap, the
+residual acceptance falls (to $0.1$ at $s_a=8$), the Hastings log ratios become large, the energy drifts at the $10^{-2}$ level and the shear
+damping departs from hydrodynamics.  The equilibrium is still right; the dynamics is no longer hydrodynamic.
+
+\paragraph{Finite $kh$.}  At fixed spacing the shear damping exceeds hydrodynamics by about $0.05\,h/a$ (\texttt{hbya.tex}); whether this is the
+renormalization by the thermal fluctuations or a discretization effect is open (\texttt{helfand.tex}).
+
+\section{Options and earlier schemes}
+\label{app:options}
+
+Every choice is a setting, recorded in each run's record.
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+setting & default & alternatives \\ \midrule
+\texttt{SPH\_IDEAL} & \texttt{generalized} & \texttt{particle}, \texttt{grid} \\
+\texttt{SPH\_DISSIPATION} & \texttt{moment} & \texttt{common}, \texttt{particle} \\
+\texttt{SPH\_HASTINGS} & on where it applies & \texttt{0} \\
+\texttt{SPH\_MEASURE} & \texttt{liouville} & \texttt{einstein} \\
+\texttt{SPH\_GAMMA\_MAX} & $100$ & \\
+\texttt{SR\_POSITIONS} & \texttt{hmc} & \texttt{lattice}, \texttt{poisson} \\
+\bottomrule
+\end{tabular}
+\end{center}
+The alternatives:
+\begin{itemize}
+\item ideal step: \texttt{particle} is the drift--kick--drift leapfrog, \texttt{grid} the step on a fixed lattice;
+\item viscous step: \texttt{common} corrects the weights of each star instead of inverting its moment, \texttt{particle} uses weights round in
+  the rest frame;
+\item measure: \texttt{einstein} is flat in the energies and momenta instead of the entropies; it differs from \Eq{equilibrium} by $\prod_aT_a$, an
+  effect of relative size $1/s_a$, and the ideal step does not keep it exactly.
+\end{itemize}
+Earlier runs are reproduced with
+\begin{itemize}
+\item 2026-11-14/15: \texttt{SPH\_DISSIPATION=common}, \texttt{SPH\_HASTINGS=0};
+\item before 2026-11-14: \texttt{SPH\_DISSIPATION=particle}, \texttt{SPH\_IDEAL=particle},\\
+  \texttt{SPH\_MEASURE=einstein}, \texttt{SR\_POSITIONS=lattice}.
+\end{itemize}
+
+\section{Further reading}
+\label{app:reading}
+
+\begin{itemize}
+\item \texttt{energystep.tex}, \texttt{volume\_n.tex}: the Hamiltonian, the particle energy, the number volume.
+\item \texttt{equilibrium\_positions.tex}: the equilibrium of the positions, hybrid Monte Carlo, the generalized leapfrog, the measure.
+\item \texttt{bond\_dissipation.tex}, \texttt{commonkernel.tex}: the bond form of $K$, the comoving metric, the residual factor.
+\item \texttt{stochastic.tex}: the moves, the vote, the sweeps.
+\item \texttt{inverse\_moment.tex}: the inverse-moment faces, the conditioned residual, the Hastings correction, and their tests.
+\item \texttt{helfand.tex}: the viscosity from Helfand moments and its renormalization.
+\end{itemize}
+
+\end{document}

@@ -31,7 +31,7 @@ function energy!(ps, params, cl, eos, x0, ê, q, ε)
 end
 
 for ha in HAS
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
   for seed in 1:NSEED
     params, ps, cl, eos = setup_ic(0.05, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex,
                                    jitter = JITTER, seed = 100 + seed)

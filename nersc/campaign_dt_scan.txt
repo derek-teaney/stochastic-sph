@@ -1,0 +1,44 @@
+# Campaign `dt_scan` (2026-11-16, NERSC): the time step that keeps the residual acceptance of the stochastic step (with the Hastings correction)
+# at or above 1/2, and the light-cone rejections, against s_a = 16, 12, 8, 4 at v0 = 0 and 0.8.  Short runs (t = 5, L = 0.6) from the lattice
+# (SR_POSITIONS=lattice: no HMC, which can fail at low s_a); acceptances read from the windows after the lattice has melted (t > 1).
+# SR_DTFAC halved four times from the campaign values (1 at rest, 0.6 at v0 = 0.8).  2 runs per point; 80 tasks of 4 cores.
+dt16_v0_f0          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0 SR_DTFAC=1 SR_KHMAX=1.6 SR_SEEDOFFSET=0  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0_f0
+dt16_v0_f1          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0 SR_DTFAC=0.5 SR_KHMAX=1.6 SR_SEEDOFFSET=100  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0_f1
+dt16_v0_f2          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0 SR_DTFAC=0.25 SR_KHMAX=1.6 SR_SEEDOFFSET=200  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0_f2
+dt16_v0_f3          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0 SR_DTFAC=0.125 SR_KHMAX=1.6 SR_SEEDOFFSET=300  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0_f3
+dt16_v0_f4          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0 SR_DTFAC=0.0625 SR_KHMAX=1.6 SR_SEEDOFFSET=400  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0_f4
+dt16_v0.8_f0        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0.8_f0
+dt16_v0.8_f1        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0.8 SR_DTFAC=0.3 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0.8_f1
+dt16_v0.8_f2        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0.8 SR_DTFAC=0.15 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0.8_f2
+dt16_v0.8_f3        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0.8 SR_DTFAC=0.075 SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0.8_f3
+dt16_v0.8_f4        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.956e+04 SR_BOOST=0.8 SR_DTFAC=0.0375 SR_KHMAX=1.6 SR_SEEDOFFSET=900  -- examples/equilibrium.jl 0.6 2 5 1 4 dt16_v0.8_f4
+dt12_v0_f0          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0 SR_DTFAC=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1000  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0_f0
+dt12_v0_f1          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0 SR_DTFAC=0.5 SR_KHMAX=1.6 SR_SEEDOFFSET=1100  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0_f1
+dt12_v0_f2          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0 SR_DTFAC=0.25 SR_KHMAX=1.6 SR_SEEDOFFSET=1200  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0_f2
+dt12_v0_f3          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0 SR_DTFAC=0.125 SR_KHMAX=1.6 SR_SEEDOFFSET=1300  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0_f3
+dt12_v0_f4          2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0 SR_DTFAC=0.0625 SR_KHMAX=1.6 SR_SEEDOFFSET=1400  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0_f4
+dt12_v0.8_f0        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=1500  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0.8_f0
+dt12_v0.8_f1        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.3 SR_KHMAX=1.6 SR_SEEDOFFSET=1600  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0.8_f1
+dt12_v0.8_f2        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.15 SR_KHMAX=1.6 SR_SEEDOFFSET=1700  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0.8_f2
+dt12_v0.8_f3        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.075 SR_KHMAX=1.6 SR_SEEDOFFSET=1800  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0.8_f3
+dt12_v0.8_f4        2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=2.217e+04 SR_BOOST=0.8 SR_DTFAC=0.0375 SR_KHMAX=1.6 SR_SEEDOFFSET=1900  -- examples/equilibrium.jl 0.6 2 5 1 4 dt12_v0.8_f4
+dt8_v0_f0           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0 SR_DTFAC=1 SR_KHMAX=1.6 SR_SEEDOFFSET=2000  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0_f0
+dt8_v0_f1           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0 SR_DTFAC=0.5 SR_KHMAX=1.6 SR_SEEDOFFSET=2100  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0_f1
+dt8_v0_f2           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0 SR_DTFAC=0.25 SR_KHMAX=1.6 SR_SEEDOFFSET=2200  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0_f2
+dt8_v0_f3           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0 SR_DTFAC=0.125 SR_KHMAX=1.6 SR_SEEDOFFSET=2300  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0_f3
+dt8_v0_f4           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0 SR_DTFAC=0.0625 SR_KHMAX=1.6 SR_SEEDOFFSET=2400  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0_f4
+dt8_v0.8_f0         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=2500  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0.8_f0
+dt8_v0.8_f1         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.3 SR_KHMAX=1.6 SR_SEEDOFFSET=2600  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0.8_f1
+dt8_v0.8_f2         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.15 SR_KHMAX=1.6 SR_SEEDOFFSET=2700  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0.8_f2
+dt8_v0.8_f3         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.075 SR_KHMAX=1.6 SR_SEEDOFFSET=2800  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0.8_f3
+dt8_v0.8_f4         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=1.478e+04 SR_BOOST=0.8 SR_DTFAC=0.0375 SR_KHMAX=1.6 SR_SEEDOFFSET=2900  -- examples/equilibrium.jl 0.6 2 5 1 4 dt8_v0.8_f4
+dt4_v0_f0           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0 SR_DTFAC=1 SR_KHMAX=1.6 SR_SEEDOFFSET=3000  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0_f0
+dt4_v0_f1           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0 SR_DTFAC=0.5 SR_KHMAX=1.6 SR_SEEDOFFSET=3100  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0_f1
+dt4_v0_f2           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0 SR_DTFAC=0.25 SR_KHMAX=1.6 SR_SEEDOFFSET=3200  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0_f2
+dt4_v0_f3           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0 SR_DTFAC=0.125 SR_KHMAX=1.6 SR_SEEDOFFSET=3300  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0_f3
+dt4_v0_f4           2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0 SR_DTFAC=0.0625 SR_KHMAX=1.6 SR_SEEDOFFSET=3400  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0_f4
+dt4_v0.8_f0         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=3500  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0.8_f0
+dt4_v0.8_f1         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.3 SR_KHMAX=1.6 SR_SEEDOFFSET=3600  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0.8_f1
+dt4_v0.8_f2         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.15 SR_KHMAX=1.6 SR_SEEDOFFSET=3700  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0.8_f2
+dt4_v0.8_f3         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.075 SR_KHMAX=1.6 SR_SEEDOFFSET=3800  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0.8_f3
+dt4_v0.8_f4         2  SPH_DISSIPATION=moment SPH_HASTINGS=1 SR_POSITIONS=lattice SR_S0=7390 SR_BOOST=0.8 SR_DTFAC=0.0375 SR_KHMAX=1.6 SR_SEEDOFFSET=3900  -- examples/equilibrium.jl 0.6 2 5 1 4 dt4_v0.8_f4

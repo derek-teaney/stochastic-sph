@@ -1,4 +1,5 @@
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+include(joinpath(@__DIR__, "..", "src", "legacy", "load.jl"))   # Kappa3D (legacy/kappa.jl)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -7,7 +8,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 # S is treated as the rest-frame entropy density (= srel); pa.e is obtained by inverting
 # srel(e) = (1+cs²)/T_scale · e^(1/(1+cs²)) = S  →  e = (S·T_scale/(1+cs²))^(1+cs²).
 # Fields left unevaluated (require kernel sums): x, s, M, dotx, Teff.
-function make_test_particle(vx, vy, T_rel, S, eos::ConformalEOS)
+function make_test_particle(vx, vy, T_rel, S, eos::ConstantCs2EOS)
     v2  = vx^2 + vy^2
     γ   = 1 / sqrt(1 - v2)
     v   = SVector(vx, vy)
@@ -48,7 +49,7 @@ end
 cs2v   = 1.0/3.0
 η_by_s = 0.2
 ζ_by_s = 0.0
-eos    = ConformalEOS(cs2v, 1.0, η_by_s, ζ_by_s)
+eos    = ConstantCs2EOS(cs2v, 1.0, η_by_s, ζ_by_s)
 T_rel  = 1.5
 S      = 2.0
 η      = η_by_s * S   # = 0.4
@@ -146,7 +147,7 @@ end
 println("\nTest 5: bulk tensor = L^{ij}L^{lm} × T_rel ζ / (1−cs²v²)² (vx=0.5, vy=0.3)")
 let
     ζ_test = 0.3
-    eos_b  = ConformalEOS(cs2v, 1.0, 0.0, ζ_test)
+    eos_b  = ConstantCs2EOS(cs2v, 1.0, 0.0, ζ_test)
     vx, vy = 0.5, 0.3
     pa     = make_test_particle(vx, vy, T_rel, S, eos_b)
 

@@ -5,7 +5,8 @@
 using HDF5, Printf, StaticArrays, LinearAlgebra, Statistics
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const WINDOWS = [(0.0, 5.0), (5.0, 20.0), (20.0, 50.0), (50.0, 100.0), (100.0, 300.0)]
-const CS2 = 1 / 3
+const CS2 = 1 / 3                                    # runs before dimfix
+pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
 
 function Uof(θ)
     β0 = -θ[1];  b = SVector(θ[2], θ[3]);  T = 1 / sqrt(β0^2 - dot(b, b));  v = b / β0
@@ -24,7 +25,7 @@ end
 for d in ARGS
     fs = filter(f -> endswith(f, ".h5"), readdir(d; join = true));  isempty(fs) && continue
     runs = [read_equilibrium(f) for f in fs]
-    r1 = runs[1];  m = r1.meta;  χ = chi(m.Trel, m.boost);  NV = m.N * m.V
+    r1 = runs[1];  m = r1.meta;  pre_dimfix(get(m, :cs2, 1 / 3));  χ = chi(m.Trel, m.boost);  NV = m.N * m.V
     ks = r1.rec.ks
     js = sort([j for j in eachindex(ks) if abs(ks[j][2]) < 1e-9 && ks[j][1] > 0], by = j -> ks[j][1])[1:min(3, end)]
     @printf("%s  (v = %.1f, %d runs)\n", basename(d), m.boost, length(runs))

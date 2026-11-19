@@ -108,6 +108,7 @@ end
 # One update: heat bath, trajectory, accept or reject.  Returns (accepted, ΔH/H, Δ ln π, heat-bath acceptance,
 # iterations per leapfrog step).  Leaves the smoothed state current.
 function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, dt::Float64, nmh::Int = 10)
+    check_stochastic_dims(params)
     params.hamiltonian === :energy && params.volume === :number || error("hmc_update!: needs hamiltonian = :energy, volume = :number")
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     hb = hmc_heatbath!(ps, params, cl, eos, tg, rng; nmh)

@@ -1,0 +1,198 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+\setlength{\emergencystretch}{3em}
+\begin{document}
+
+\title{The physical dimension of a stochastic run.\\ Plan for the fix (branch \texttt{dimfix})}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University, Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The code distinguishes the simulation dimension $d_s$, the number of directions the particles span, from the physical dimension $d$ of
+the fluid.  A fluid that is independent of the unresolved directions makes sense for deterministic flow, but not with thermal
+fluctuations: the noise, the statics and the long-time tails are all $d_s$-dimensional.  The stochastic runs so far had $d_s=2$ and
+$d=3$, with $c_s^2=1/3$, so they simulated a two-dimensional fluid with $p=e/3$ and a bulk viscosity $\eta/3$.  This note states the rule,
+lists where $d$ and $c_s^2$ enter the code, and plans the change, the tests and the reruns.
+\end{abstract}
+\maketitle
+
+\section{The rule}
+
+\paragraph{The point.}  With fluctuations, the fluid that is simulated is the fluid that the particles span.  The rule is
+\begin{keyeq}
+\st
+\text{stochastic run (stochastic step or hybrid Monte Carlo):}\qquad d=d_s=2 .
+\label{rule}
+\stp
+\end{keyeq}
+A physical dimension $d\neq d_s$ (the $z$-independent fluid) is allowed only in deterministic runs.  One-dimensional stochastic runs are
+dropped: $d_s=1$ remains for deterministic tests only.
+
+\paragraph{The equation of state.}  The code uses an equation of state with a constant speed of sound,
+\st
+p=c_s^2\,e,\qquad T=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad s=\frac{e+p}{T},
+\label{eos}
+\stp
+which is thermodynamically consistent for any $c_s^2$: it gives $ds/de=1/T$ and $dp/dT=s$.  It is a power law,
+\st
+p\propto T^{1+1/c_s^2},
+\stp
+so it is scale invariant for every $c_s^2$; that, not conformality, is what makes a constant $\eta/s$ natural.  It is conformal
+(traceless) only when
+\st
+c_s^2=\frac1d .
+\label{conformal}
+\stp
+The default becomes the conformal fluid in $d=2$, $c_s^2=1/2$, for which
+\st
+e=\left(\frac{T}{T_{\rm scale}}\right)^{3},\qquad s=\frac32\,\frac{T^2}{T_{\rm scale}^3} .
+\stp
+Other values of $c_s^2$ stay available as a parameter, named as such.
+
+\paragraph{The bulk viscosity.}  The viscous and stochastic steps use the in-plane projector with $d_s=2$, and put the shear of the
+$d-2$ unresolved directions into the bulk channel,
+\st
+\zeta_{\rm eff}=\zeta+2\eta\left(\frac12-\frac1d\right) .
+\label{zetaeff}
+\stp
+With $d=3$ this is $\zeta+\eta/3$: the runs so far had a bulk viscosity $\eta/3$ although $\zeta=0$.  With $d=2$ it is $\zeta$, and the
+conformal default has no bulk viscosity.  The formula stays in the code; only $d$ changes.
+
+\paragraph{A floor on the bulk viscosity.}  The point: the Hastings-corrected stress move of the stochastic step needs noise in all
+three components of the comoving stress, two shear and one bulk.  With $\zeta_{\rm eff}=0$ the bulk column of its Jacobian vanishes,
+the Jacobian is singular, and every stress proposal is rejected.  Restricting the move to the shear subspace is not a quick fix: that
+subspace is defined in the comoving frame, so it moves with the velocity the move changes.  The stochastic step therefore uses
+\st
+\frac{\zeta_{\rm eff}}{s}=\max\!\left(\frac{\zeta}{s}+2\,\frac{\eta}{s}\left(\frac12-\frac1d\right),\ \epsilon\,\frac{\eta}{s}\right),
+\qquad \epsilon=\texttt{SPH\_ZETA\_FLOOR}=0.01 ,
+\label{zetafloor}
+\stp
+so that a given $\zeta/s$ above the floor is unchanged, and at $d=2$, $\zeta=0$ the fluid has a bulk viscosity of $1\%$ of $\eta$.  At
+rest the stress acceptance is $0.6$--$0.8$ for $\epsilon$ from $0.003$ to $1/3$, against $0$ at $\epsilon=0$.  The deterministic viscous
+step has no floor; the time-step bound uses \Eq{zetafloor}.  A Hastings move on the shear subspace, for $\zeta=0$ exactly, is left for
+a later note.
+
+\section{What the runs so far simulated}
+\label{sec:labels}
+
+\paragraph{Labelling.}  The stochastic and hybrid Monte Carlo runs up to this branch are a consistent two-dimensional fluid,
+\st
+d_s=2,\qquad p=\frac{e}{3},\qquad \frac{\eta}{s}=\text{const},\qquad \zeta_{\rm eff}=\frac{\eta}{3},
+\stp
+not the intended conformal fluid.  They remain valid tests of the algorithm (detailed balance, the Hastings correction, the statics of
+the positions) and are not deleted; the notes that report them (\texttt{fullruns.tex}, \texttt{inverse\_moment.tex},
+\texttt{equilibrium.tex}, \texttt{statics.tex}) get one line saying so.  We are in the experimental period: old runs need not be
+reproducible after this branch, and the final results will be rerun.
+
+\paragraph{The statics.}  The Gaussian theory of the positions (\texttt{equilibrium.tex}) does not change form: $\alpha=(d_s+1)/2=3/2$
+already counts the particle variables in $d_s=2$.  Its numbers change through the equation of state:
+\st
+\sigma=\frac{pV}{T}=\frac{c_s^2}{1+c_s^2}\,s V=\begin{cases}sV/4, & c_s^2=1/3,\\ sV/3, & c_s^2=1/2,\end{cases}
+\stp
+and the excess energy of a particle that sets the bath temperature,
+\st
+\Delta e=\frac{T}{2}\left[\frac{d\ln C_V}{d\ln T}+d_s\,\frac{d\ln\bigl(T(e+p)\bigr)}{d\ln T}\right]=
+\begin{cases}\frac T2\,(3+2\times5), & c_s^2=1/3,\\[2pt] \frac T2\,(2+2\times4)=5T, & c_s^2=1/2 .\end{cases}
+\stp
+
+\section{Where $d$ and $c_s^2$ enter the code}
+
+\begin{center}
+\begin{tabular}{p{0.34\linewidth}p{0.58\linewidth}}
+\toprule
+place & what \\
+\midrule
+\texttt{src/sph.jl}: \texttt{SimParams(\dots; d=3, sim\_dim=2)} & the physical dimension, default 3 \\
+\texttt{src/setup.jl}: \texttt{setup\_ic}, \texttt{setup\_shear\_wave} & \texttt{d=3}, \texttt{cs2v=1/3} defaults \\
+\texttt{src/sph.jl}: \texttt{ConformalEOS} & \Eq{eos}; keyword form has \texttt{d=3}; a fast path for $c_s^2=1/3$ \\
+49 calls \texttt{ConformalEOS(1/3,\,\dots)} & every driver and most tests hard-code $c_s^2=1/3$, independently of $d$ \\
+\texttt{src/viscous.jl}, \texttt{src/stochastic.jl} & $\zeta_{\rm eff}$, \Eq{zetaeff}; \texttt{oneD} branches use $d$ in the projector \\
+\texttt{src/ideal.jl}: time step, rate bound & longitudinal viscosity $\tfrac43\eta+\zeta$ (that is $2\eta(1-1/d)+\zeta$ at $d=3$); $\zeta_{\rm eff}$ \\
+\texttt{src/sph.jl}: \texttt{Kappa3D}, \texttt{Kappa2D} & the old noise tensors, used only by \texttt{src/legacy} and two tests \\
+analysis scripts & \texttt{statics\_theory.py}, \texttt{single\_particle.jl} and the plots assume $s=4T^3/3$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The change}
+
+The change is made in two commits, so that the restructuring can be checked against the old numerics before the numerics change.
+
+\paragraph{Commit A: names and plumbing, numerics unchanged.}
+\begin{enumerate}
+\item \texttt{ConformalEOS} $\to$ \texttt{ConstantCs2EOS} (the constant-speed-of-sound equation of state, \Eq{eos}), with the fields
+  $c_s^2$, $T_{\rm scale}$, $\eta/s$, $\zeta/s$, and a constructor \texttt{conformal\_eos(d; T\_scale, eta\_by\_s, zeta\_by\_s)} with
+  $c_s^2=1/d$.  A fast path for $c_s^2=1/2$ ($T\propto e^{1/3}$, \texttt{cbrt}).
+\item \texttt{SimParams.d} $\to$ \texttt{phys\_dim}, beside \texttt{sim\_dim}.  The notes keep $d$ and $d_s$.
+\item The drivers build the equation of state from the parameters (one helper instead of 49 literals), keeping $c_s^2=1/3$, $d=3$ for
+  now.  Tests of the equation of state at a given $c_s^2$ keep their explicit values.
+\item The longitudinal viscosity in \texttt{src/ideal.jl} written as $2\eta(1-1/d)+\zeta$.
+\item Every run record (\texttt{.h5} attributes) gets \texttt{phys\_dim}, \texttt{cs2}, \texttt{T\_scale}, \texttt{eta\_by\_s},
+  \texttt{zeta\_by\_s}; the analysis scripts read them instead of assuming $c_s^2=1/3$.
+\end{enumerate}
+Check: \texttt{test/run.sh all}, regression bit-identical against \texttt{statics}.
+
+\paragraph{Commit B: the rule, numerics change.}
+\begin{enumerate}
+\item \texttt{phys\_dim} defaults to \texttt{sim\_dim}; the drivers default to \texttt{conformal\_eos(phys\_dim)}, so $c_s^2=1/2$ and
+  $\zeta_{\rm eff}=\zeta$.
+\item A guard: the stochastic step and hybrid Monte Carlo throw an error if \texttt{phys\_dim} $\neq$ \texttt{sim\_dim} or if
+  \texttt{sim\_dim} $=1$.
+\item The \texttt{oneD} branches of \texttt{src/stochastic.jl} removed, and the one-dimensional modes of
+  \texttt{examples/stochastic\_thermalize*.jl} and \texttt{examples/stochastic\_smallk.jl}.  One-dimensional deterministic code
+  (\texttt{testgaussian\_1d}, \texttt{testsound\_viscous\_1d}, the rate bound) stays.
+\item \texttt{Kappa3D}/\texttt{Kappa2D} moved to \texttt{src/legacy} with their two tests.
+\item The floor \Eq{zetafloor} on the bulk viscosity of the stochastic step (\texttt{zeta\_eff\_by\_s}, \texttt{SPH\_ZETA\_FLOOR}).
+\item Deterministic tests written for $d=3$ pass \texttt{phys\_dim=3}; the tolerances of the viscous sound wave are reset at
+  $c_s^2=1/2$, where the faster wave has about twice the error at the same $kh$ (it still converges, by $3.0$ and $3.6$ per halving).
+\end{enumerate}
+Check: unit tests (new: thermodynamic consistency at $c_s^2=1/2$, $dp/dT=s$ and $ds/de=1/T$; the guard), every script loads, and a new
+regression baseline for the stochastic paths.  Deterministic regressions run with $d=3$ given explicitly should stay bit-identical.
+
+\section{Reruns}
+
+\paragraph{Laptop.}
+\begin{enumerate}
+\item The single-particle quadrature (\texttt{examples/single\_particle.jl}, normal and grid modes) at $c_s^2=1/2$: minutes.
+\item The nine hybrid Monte Carlo runs of \texttt{equilibrium.tex} (\texttt{examples/volume\_fluctuations.jl}), the figures redone, and
+  Appendix~B of \texttt{equilibrium.tex} rewritten with the new numbers.  The runs are labelled by $\sigma(T_0)$, the parameter of the
+  theory, rather than by the entropy per particle of the lattice start.
+\item A short stochastic run at rest, $\sigma\approx 15$: the sound speed rises from $1/\sqrt3$ to $1/\sqrt2$, so the time-step criterion,
+  the residual acceptance and the light-cone rejections are checked again.
+\end{enumerate}
+
+\paragraph{NERSC.}
+\begin{enumerate}
+\item The \texttt{statics} campaign (\texttt{statics.tex}) on the fixed code; it has not been launched, so the fix costs no reruns there.
+\item When the dynamics resumes: a small repeat of \texttt{dt\_scan} and the first Helfand case.  Older campaigns are left as they are,
+  labelled as in \Sect{sec:labels}.
+\end{enumerate}
+
+\paragraph{Order.}  This note $\to$ commit A $\to$ commit B $\to$ laptop reruns $\to$ merge \texttt{dimfix} into \texttt{statics}
+$\to$ the \texttt{statics} campaign.
+
+\end{document}

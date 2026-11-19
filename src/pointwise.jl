@@ -67,7 +67,7 @@ function rest_energy(ε::Float64, M2::Float64, eos::AbstractEOS; tol=1e-15, maxi
 end
 # Conformal, p = c² e: the fixed point solves c² e² + (1 − c²) ε e + |M|² − ε² = 0; the
 # positive root, written without cancellation (agrees with the iteration to roundoff).
-function rest_energy(ε::Float64, M2::Float64, eos::ConformalEOS; tol=1e-15, maxiter=500)
+function rest_energy(ε::Float64, M2::Float64, eos::ConstantCs2EOS; tol=1e-15, maxiter=500)
     c2 = eos.cs2_val
     return 2 * (ε^2 - M2) / ((1 - c2) * ε + sqrt((1 + c2)^2 * ε^2 - 4c2 * M2))
 end

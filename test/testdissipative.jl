@@ -188,9 +188,9 @@ let
                                     (0.5, 2, 0.0, SVector(0.52, 0.30), 1e-12),
                                     (1/3, 3, 0.0, SVector(0.40, 0.23), 1e-12),
                                     (1/3, 3, 0.5, SVector(0.52, 0.30), 1e-12))
-        eosb = ConformalEOS(cs2b, T_scale_2d_lq1, 1.0, ζb)
+        eosb = ConstantCs2EOS(cs2b, T_scale_2d_lq1, 1.0, ζb)
         pb, ps, clb, eosb = setup_ic(15.0, 2.55, eosb, (x, y) -> 1.0, (x, y) -> M0;
-                                     L=150.0, lattice=:hex, d=db)
+                                     L=150.0, lattice=:hex, phys_dim=db)
         pb.dissipation = :bond
         Nb = pb.N;  xc = pb.L / 2
         vb = ps[1].v_over_S * ps[1].S_smooth
@@ -239,9 +239,9 @@ end
 #  (c) f = −∂K/∂b by finite differences.
 println("\nTest 7: dissipation = :bond, jittered + moving — exact fit: linear fields, rotation blindness, FD")
 let
-    eosb = ConformalEOS(1/3, T_scale_2d_lq1, 1.0, 0.3)
+    eosb = ConstantCs2EOS(1/3, T_scale_2d_lq1, 1.0, 0.3)
     pb, ps, clb, eosb = setup_ic(5.0, 2.55, eosb, (x, y) -> 1.0, (x, y) -> SVector(0.40, 0.23);
-                                 L=150.0, lattice=:hex, d=3, jitter=0.3)
+                                 L=150.0, lattice=:hex, phys_dim=3, jitter=0.3)
     pb.dissipation = :bond
     Nb = pb.N;  xc = pb.L / 2
     inner = [i for i in 1:Nb if norm(minimum_image(ps[i].x - xc, pb.L)) < minimum(pb.L) / 2 - 4pb.h]

@@ -23,7 +23,7 @@ const NRUN = parse(Int, get(ENV, "HB_NRUN", "8"))
 const H, HA, L = 0.05, 2.0, 0.6
 
 function setup_moving(sa, vt)
-    eos = ConformalEOS(1/3, 1.0, 0.2, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     vol = (H / HA)^2 * sqrt(3) / 2
     params, ps, cl, eos = redirect_stdout(devnull) do
         setup_ic(H, HA, eos, (x, y) -> sa / vol, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex)

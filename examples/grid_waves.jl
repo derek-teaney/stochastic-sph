@@ -18,7 +18,7 @@ const OUT  = length(ARGS) > 0 ? ARGS[1] : joinpath(@__DIR__, "..", "data", "grid
 const S0   = 1e6;  const H = 0.05;  const HA = setting("SR_HA", 2.0);  const LBOX = 1.2
 const AMP  = 1e-4                                   # δU amplitude relative to ε0
 const PERIODS = setting("SR_PERIODS", setting("SR_SMOKE", false) ? 0.3 : 10.0)        # run length in sound periods 2π/(c_s k)
-const EOS0 = ConformalEOS(1/3, 1.0, 0.0, 0.0);  const CS = sqrt(1/3)
+const EOS0 = conformal_eos(default_phys_dim(); η_by_s = 0.0);  const CS = sqrt(cs2(EOS0))
 quiet(f) = redirect_stdout(f, devnull)
 
 # ── ideal hydrodynamics of U = (ε, M_x, M_y) ─────────────────────────────────
@@ -85,7 +85,7 @@ dtfac(v0) = v0 == 0 ? 1.0 : CS * (1 + v0 * CS) / (v0 + CS)      # c_s / v_signal
 densities(ps) = [SVector(p.s * p.H_over_S, p.m[1], p.m[2]) * (p.S_smooth / p.s) for p in ps]
 
 function wave(scheme::Symbol, mode::Symbol, dir::Symbol, v0::Float64, nk::Int; dtmul = 1.0, periods = PERIODS, etas = 0.0)
-    eos = ConformalEOS(1/3, 1.0, etas, 0.0)
+    eos = conformal_eos(default_phys_dim(); η_by_s = etas)
     U0 = background(v0)
     params0, _, _, _ = quiet(() -> setup_ic(H, HA, EOS0, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex))
     k = dir === :x ? SVector(2π * nk / params0.L[1], 0.0) : SVector(0.0, 2π * nk / params0.L[2])

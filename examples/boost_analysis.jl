@@ -104,7 +104,8 @@ const T0BURN = parse(Float64, get(ENV, "BOOST_BURN", "5.0"))   # burn-in (BOOST_
 const DTS = 0.05;  const TAUMAX = 100.0
 # with a burn-in other than 5 the figures get the suffix _burn<t>
 const SUFFIX = (GROUP == "L12" ? "" : "_" * GROUP) * (T0BURN == 5.0 ? "" : "_burn$(round(Int, T0BURN))")
-const CS2 = 1 / 3
+const CS2 = 1 / 3                                    # the runs of campaign boost, before dimfix
+pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
 mean_(v) = sum(v) / length(v)
 
 # ── thermodynamics of the boosted conformal fluid (e = T⁴ in code units) ─────────────────
@@ -207,7 +208,7 @@ for (run, dirs, v, col) in SETS
     fs = vcat([files(joinpath(DIR, d)) for d in dirs]...);  isempty(fs) && continue
     rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000 && get(r.meta, :complete, true), rs)   # complete runs only (not checkpoints of runs in progress)
     isempty(rs) && continue
-    m = rs[1].meta;  ks = rs[1].rec.ks;  NV = m.N * m.V
+    m = rs[1].meta;  pre_dimfix(get(m, :cs2, 1 / 3));  ks = rs[1].rec.ks;  NV = m.N * m.V
     ipar = sort([i for i in eachindex(ks) if abs(ks[i][2]) < 1e-9 && ks[i][1] > 0], by = i -> ks[i][1])
     iperp = sort([i for i in eachindex(ks) if abs(ks[i][1]) < 1e-9 && ks[i][2] > 0], by = i -> ks[i][2])
     C = Dict{Tuple{Symbol,Int},Any}()

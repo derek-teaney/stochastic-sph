@@ -197,7 +197,9 @@ Then
 J^{ij}=\sum_a\dot x_a^i\,m_a^j+\sum_ax_a^i\,\dot m_a^j=\sum_a\dot x_a^i\,m_a^j+\sum_{\rm pairs}r_{ab}^i\,f_{ab}^j,\qquad \bm r_{ab}=\bm x_b-\bm x_a :
 \label{Jgeneral}
 \stp
-a convective term and the virial of the transfers.  The second form depends only on the bond vectors.
+a convective term and the virial of the transfers.  The virial of a set of momentum transfers is the momentum sent along each bond times
+the bond vector, summed over the bonds: the momentum flux the transfers carry, the volume times the stress they exert (\texttt{scheme.tex},
+``The virial'').  The second form depends only on the bond vectors.
 
 \paragraph{Periodic boxes.}  With unwrapped positions the naive $\sum_ax_a^im_a^j$ is wrong for the viscosity: momentum exchanged between two
 particles on opposite sides of a boundary enters with the wrong lever arm.  Erpenbeck showed that the Einstein--Helfand relations
@@ -251,7 +253,10 @@ The viscous stress of the particles is therefore the accepted stress noise,
 V_aT^{ij}_{a,\rm visc}\,\Delta t=V_a\,\xi_a^{ij}\quad\text{(if accepted)},\qquad
 \avg{V_a\,\xi_a^{ij}\,P(\xi_a)}=V_a\,\Pi_a^{ij}\,\Delta t ,
 \stp
-whose mean is the viscous stress of the fitted gradient (\texttt{stochastic.tex}, ``Mean of the accepted stress'').
+whose mean is the viscous stress of the fitted gradient (\texttt{stochastic.tex}, ``Mean of the accepted stress'').  So in the viscous part of the momentum flux only the stress move appears; the
+residual move damps the lattice-scale modes without carrying any flux.  The split of the dissipative function into a resolved and a
+residual part therefore decides what viscosity the Helfand moment measures: the resolved part is the viscosity of the scheme, and the
+residual part is a regulator that leaves no trace in the flux.
 
 \paragraph{The Helfand moment per step.}  Altogether
 \st

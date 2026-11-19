@@ -4,6 +4,21 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-16 (NERSC): hastings_low, s_a = 4 done** (61376873, 37 min): 49/128 tasks stopped in HMC (eos_newton, see below); survivors at rest
+7 nh / 10 h / 5 chains, at v0 = 0.8 14 / 14 / 13.  Indicative: at rest residual acceptance 5% (nh) / 0.8% (h), light cone 90% of residual and 60%
+of stress proposals, shear Γ/Γ_hyd ≈ 2.6–2.7 in both, KE/2VwT ≈ 0.6; spectra / HMC: nh +3–9% at rest and M_T +6–11% at v0 = 0.8, h ≈ 1.
+**Note on the new defaults (a82ccdc, moment + Hastings by default):** the hastings campaign files' "nh" lines set SPH_DISSIPATION=moment but
+not SPH_HASTINGS=0 — run at or after a82ccdc they would get the correction.  Add SPH_HASTINGS=0 before reusing them.  (campaign_hastings_dt.txt,
+9e4bf68, written but NOT run — cancelled before it started; it needs that fix too.)
+
+**2026-11-16 (NERSC): hastings_low, s_a = 12 and 8 done** (61376871: 128/128; 61376872: 96/96 dynamics, 29/32 HMC chains).  docs/inverse_moment.tex,
+Stage 2, new subsection "Lower entropy per particle".  With the correction the dynamics matches HMC down to s_a = 8; without it the excess at rest
+is +15–21% at s_a = 12 and +5–12% at 8 (smaller: at s_a = 8 the light cone rejects 65% of the residual and 31% of the stress proposals).  The
+method degrades below s_a ≈ 12 (ΔH/H ~1e-2, advection 0.77 instead of 0.80 at s_a = 8).
+**New failure at s_a ≤ 8 (≈ 40% of the s_a = 4 tasks so far, 3 HMC chains at s_a = 8):** `DomainError with -Inf: sqrt` in Trel (src/sph.jl:204)
+from eos_newton (:359) — the Newton iteration runs to e = −∞.  Call chain: solve_eos (sph.jl:375–401) ← hmc.jl:61 ← :78 ← :104 ← :116
+(hmc_update!), from equilibrium.jl:185 (the HMC start) and hmc_positions.jl:44 (the chains).  Needs a guard there (reject the HMC step).
+
 **2026-11-16 (NERSC): campaign `hastings_low` submitted** (owner: "let's go wild"): the hastings runs at s_a = 12, 8, 4 with the γ cap,
 nersc/campaign_hastings_low.txt (77cf74f), 384 tasks, worktree ~/stochastic-sph-hs.  Three packed 4-node regular jobs: s_a = 12 **61376871**
 (tasks 1–128, -t 1:30), s_a = 8 **61376872** (129–256, -t 3:00), s_a = 4 **61376873** (257–384, -t 5:00); ≈ 20 node-hours at most.  Smoke test
