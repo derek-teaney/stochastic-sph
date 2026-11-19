@@ -1,4 +1,4 @@
-"""running_integral.py (dashed: the improved theory at the bath temperature T0 with the exact single particle, examples/statics_theory.py) — where the scales of the positions appear in real space: the running integral of the pair correlation,
+"""running_integral.py (runs labelled by sigma(T0); dashed: the exact single particle at sigma(T0), examples/statics_theory.py) — where the scales of the positions appear in real space: the running integral of the pair correlation,
 
     N(R) = n̄ ∫_{r<R} d²r [g(r) - 1] = R ∫_0^∞ dk J1(kR) [S(k) - 1],
 
@@ -9,7 +9,7 @@ not on n̄h²), against the HMC runs (g recorded to r = 2h).  N → -1 + S(0) = 
 """
 import sys, os, warnings; warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(__file__))
-from statics_theory import S_exact, exact, from_label
+from statics_theory import S_exact, exact, run_constants
 import h5py, numpy as np
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from scipy.special import j0, j1
@@ -31,22 +31,28 @@ def NR(R, s):
 plt.rcParams.update({"font.size": 14, "axes.labelsize": 16})
 fig, ax = plt.subplots(figsize=(11, 7))
 R = np.geomspace(0.05, 300, 400)
-sig = {4: "#1f5fa8", 13.5: "#c0462a", 135: "#2b8a3e", 1350: "#7a4fa0", 13500: "#e08a1e"}
-for s, c in sig.items():
-    ax.semilogx(R, NR(R, s), "-", color=c, lw=2.5, label=rf"$\sigma={s:g}$")
-    xi = np.sqrt(s * 5 / 9 / 5); ax.plot([xi], [np.interp(xi, R, NR(R, s))], "o", color=c, ms=9, mec="white", mew=1.5)
+# theory at sigma(T0) of the h/a = 2 runs (solid: Gaussian, dashed: exact single particle), and two larger sigma
+runs = []
 for f in sys.argv[1:]:
-    F = h5py.File(f); A = {k: F.attrs[k] for k in F.attrs}; h = float(A["h"]); nbar = float(A["N"]) / float(np.prod(A["L"]))
-    s = float(A["s_a"]) / 4; b = len(F["t"]) // 3; g = F["part_g"][b:].mean(0); rb = F["part_rbins"][:]
+    F = h5py.File(f); runs.append((F, run_constants(F.attrs)["sigma"]))
+sig2 = sorted(sg for F, sg in runs if int(round(float(F.attrs["ha"]))) == 2)
+pal = ["#1f5fa8", "#c0462a", "#2b8a3e", "#7a4fa0", "#e08a1e"]
+sig = dict(zip(sig2 + [10 * sig2[-1], 100 * sig2[-1]] if sig2 else [4, 13.5, 135, 1350, 13500], pal))
+for s, c in sig.items():
+    ax.semilogx(R, NR(R, s), "-", color=c, lw=2.5, label=rf"$\sigma={s:.3g}$")
+    xi = np.sqrt(s * 5 / 9 / 5); ax.plot([xi], [np.interp(xi, R, NR(R, s))], "o", color=c, ms=9, mec="white", mew=1.5)
+for F, s in runs:
+    A = {k: F.attrs[k] for k in F.attrs}; h = float(A["h"]); nbar = float(A["N"]) / float(np.prod(A["L"]))
+    b = len(F["t"]) // 3; g = F["part_g"][b:].mean(0); rb = F["part_rbins"][:]
     rc = 0.5 * (rb[1:] + rb[:-1]); dA = np.pi * (rb[1:] ** 2 - rb[:-1] ** 2); NRd = np.cumsum(nbar * (g - 1) * dA)
     c = sig[min(sig, key=lambda x: abs(x - s))]; ha = int(round(float(A["ha"])))
     ax.plot(rb[1:] / h, NRd, {2: "o", 3: "^", 4: "s"}[ha], color=c, ms=4, mfc=c if ha == 2 else "none", alpha=0.8)
 ax.axhline(-1, color="0.6", lw=0.8, ls=":"); ax.axhline(-0.6, color="0.6", lw=0.8, ls=":")
 ax.text(200, -0.97, "$-1$: one particle", ha="right", fontsize=12, color="0.4")
 ax.text(200, -0.57, r"$-1+S(0)=-3/5$", ha="right", fontsize=12, color="0.4")
-for s in (4, 13.5, 135):                     # improved theory for the three runs (labelled by the start), dashed
-    ax.semilogx(R, NRx(R, from_label(4 * s)["sigma"]), "--", color=sig[s], lw=2)
-ax.plot([], [], "k--", lw=2, label=r"improved: bath $T_0$, exact single particle")
+for s in sig2:                               # exact single particle at sigma(T0) of the h/a = 2 runs, dashed
+    ax.semilogx(R, NRx(R, s), "--", color=sig[s], lw=2)
+ax.plot([], [], "k--", lw=2, label=r"exact single particle")
 ax.plot([], [], "o", color="0.3", ms=9, mec="white", label=r"$R=\xi$")
 ax.plot([], [], "ko", ms=4, label="HMC $h/a=2$"); ax.plot([], [], "k^", ms=4, mfc="none", label="HMC $h/a=3$")
 ax.plot([], [], "ks", ms=4, mfc="none", label="HMC $h/a=4$")

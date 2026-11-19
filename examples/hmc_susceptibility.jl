@@ -3,7 +3,8 @@
 #   (1) the initial states of the HMC-start runs of hmc_liou2 (first record, t ≈ 0.03, after the HMC start): E, M_x, M_y, along x and y;
 #   (2) the HMC chains of hmc_eq (after a burn-in of 100 updates): M_L, M_T in bands of kh (energies not recorded there).
 include(joinpath(@__DIR__, "..", "src", "load.jl"));  using Statistics, Printf, StaticArrays, LinearAlgebra
-const CS2 = 1 / 3
+const CS2 = 1 / 3                                    # campaigns hmc_liou2, hmc_eq, before dimfix
+pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
 function Uof(θ)
     β0 = -θ[1];  b = SVector(θ[2], θ[3]);  T = 1 / sqrt(β0^2 - dot(b, b));  v = b / β0
     γ2 = 1 / (1 - dot(v, v));  e = T^4;  p = CS2 * e;  w = e + p
@@ -25,7 +26,7 @@ for v in ("0", "0.8")
         d = "$D/hmc_liou2/hl2_$(c)_hmc_v$v"
         for f in readdir(d; join = true)
             endswith(f, ".h5") || continue
-            r = read_equilibrium(f);  rec = r.rec;  m = r.meta
+            r = read_equilibrium(f);  rec = r.rec;  m = r.meta;  pre_dimfix(get(m, :cs2, 1 / 3))
             push!(rs, (E = [x for x in rec.E[1]], ML = [x for x in rec.ML[1]], MT = [x for x in rec.MT[1]], ks = rec.ks, NV = m.N * m.V, Trel = m.Trel, v = m.boost, h = m.h))
             r = nothing
         end
@@ -49,7 +50,7 @@ for set in ("hq12_s54", "hq12_s135", "hq12_s541", "hq24_s541")
     per = []
     for f in readdir(d; join = true)
         endswith(f, ".h5") || continue
-        r = read_equilibrium(f);  rec = r.rec;  m = r.meta;  V = m.s_a / (m.S0 * (m.boost == 0 ? 1 : 1 / sqrt(1 - m.boost^2)))
+        r = read_equilibrium(f);  rec = r.rec;  m = r.meta;  pre_dimfix(get(m, :cs2, 1 / 3));  V = m.s_a / (m.S0 * (m.boost == 0 ? 1 : 1 / sqrt(1 - m.boost^2)))
         n = length(rec.t);  it = 101:n;  χ = chi(m.T0, m.boost)
         kh = [norm(k) * m.h for k in rec.ks]
         push!(per, (kh = kh, L = [mean(abs2(rec.ML[s][i]) for s in it) / (m.N * V) / χ[2, 2] for i in eachindex(rec.ks)],
