@@ -613,6 +613,15 @@ plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); re
    correction, which should scale as 1/(n h^2); the renormalized S(k) in the L = 0.9 boxes should rise at small k).
 6. Commit the figures, the csv, gravity.tex and this log entry on `statics` (no .h5 or .jls), and push.
 
+**Done so far (NERSC session, 2026-11-21):**
+- Pulled `statics` at 1914653; `julia --project=nersc` precompiled (julia/1.12.1, depot /global/common/software/m3722).
+- Smoke test, debug job **61747894** (`$SCRATCH/sph/eos_smoke`, the two runs cut to 24 updates, since a full L = 0.9, h/a = 3 task does
+  not fit in 30 min): both COMPLETED, .txt and .h5 written, acceptance 0.96.  eos_ren_s16_ha4 (N = 1512, σ = 5.16 — h/a = 4 at
+  s_a = 16 is not σ = 3.9): 11 s per update, E/e−1 = +0.039, P/p−1 = +0.030, c_s² = 0.49; eos_tree_s541_ha3_L0.9: 17 s per update,
+  E/e−1 = +0.012, P/p−1 = +0.009, c_s² = 0.50 (24 updates, 8 kept after the burn: indicative only).  Output files are `<tag>_seed0..15`
+  (SR_SEED0 = seed − 1).
+- Campaign submitted from `$SCRATCH/sph`: job **61748587** (480 tasks, shared QOS, -c 2, -t 8 h).  Output `$SCRATCH/sph/eos_renorm/`.
+
 Known: the regression's equilibrium-driver comparison differs only in hast_lq_* (thread-order sums; also between two runs of the
 same commit) — not a failure of SPH_RENORM.
 
