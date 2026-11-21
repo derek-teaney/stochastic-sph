@@ -1,0 +1,2 @@
+run,sigma,T0,ha,nh2,nseeds,Eerr,Eerr_sd,Perr,Perr_sd,trace,trace_sd,Pkin,Pkin_sd,Pvir,Pvir_sd,dEdT,dEdT_sd,dPdT,dPdT_sd,c2,c2_sd
+eos_tree_s16_ha2,3.89478,119.964,2,4.6188,16,0.576196,0.000549855,0.520253,0.000536178,-0.217885,0.000371579,1.00007,0.000694639,1.02621,0.00229023,0.211465,0.0288398,0.172002,0.0279431,0.483701,0.0014452
