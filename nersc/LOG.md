@@ -621,6 +621,9 @@ plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); re
   E/e−1 = +0.012, P/p−1 = +0.009, c_s² = 0.50 (24 updates, 8 kept after the burn: indicative only).  Output files are `<tag>_seed0..15`
   (SR_SEED0 = seed − 1).
 - Campaign submitted from `$SCRATCH/sph`: job **61748587** (480 tasks, shared QOS, -c 2, -t 8 h).  Output `$SCRATCH/sph/eos_renorm/`.
+- (laptop session, 2026-11-21) docs/gravity.tex now has the section "Results" with the four figures and a table for the first run
+  (tree, s_a = 16, h/a = 2): agreement to 0.2% with the exact single particle plus the positions.  When more runs finish, rerun
+  eos_measure.py and **extend that section** (table rows, the bullet list), do not start a new one.
 
 Known: the regression's equilibrium-driver comparison differs only in hast_lq_* (thread-order sums; also between two runs of the
 same commit) — not a failure of SPH_RENORM.

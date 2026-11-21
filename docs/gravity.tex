@@ -338,6 +338,74 @@ correction of the positions ($\propto1/\bar nh^2$) from the single-particle term
 $1/\delta\klab$ (\nolinkurl{partition_v2.tex}, ``The positions back in the thermodynamics'').
 
 %=============================================================================
+\section{Results}
+\label{sec:results}
+
+Campaign \texttt{eos\_renorm} (NERSC job 61748587, \texttt{nersc/LOG.md}); figures and table from \texttt{examples/eos\_measure.py}.  \emph{Status: partial.}
+So far one run is complete, the tree-level Hamiltonian at the lattice start $s_a=16$ ($\sigma_{\rm p}=3.89$), $h/a=2$, sixteen seeds of 400 updates;
+this section will be extended as the other runs arrive.
+
+\paragraph{The predictions at $\sigma_{\rm p}=3.89$.}  At this small entropy per particle the one-loop values are not enough, and the exact single particle
+(quadrature of $F_1$, \texttt{partition.tex}, ``Small entropy per particle'') gives $\Pi-\sigma_{\rm p}=1.35$ in place of $\mathcal K_0=3/2$ and $\Delta e=4.7\,T$ in place of $5\,T$.
+With the correction of the positions at $h/a=2$ ($\delta p=-0.32\,\bar nT$, $\delta e_a=-0.20\,T$, \texttt{partition\_v2.tex}),
+\st
+\frac{\pr_{\rm model}}{\pr}-1=\frac{1+(\Pi-\sigma_{\rm p})+\delta p/\bar nT}{\sigma_{\rm p}},\qquad
+\frac{E}{\er}-1=\frac{\Delta e/T+\delta e_a/T}{2\sigma_{\rm p}} .
+\stp
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+quantity & one loop & exact single particle $+$ positions & measured (tree level) \\
+\midrule
+$E/\er(T_0)-1$ & $0.643$ & $0.578$ & $0.5762\pm0.0005$ \\
+$\pr_{\rm model}/\pr(T_0)-1$ & $0.643$ & $0.522$ & $0.5203\pm0.0005$ \\
+kinetic stress $/\bar nT$ & $1$ & $1$ & $1.0001\pm0.0007$ \\
+(virial $-\pr$)$/\bar nT$ & $1.5$ & $1.03$ & $1.026\pm0.002$ \\
+$(\pr_{\rm model}-E/2)/\bar nT$ & $0$ & $-0.22$ & $-0.2179\pm0.0004$ \\
+$(\partial E/\partial T)/(de/dT)-1$ & $0.214$ & & $0.21\pm0.03$ \\
+$(\partial\pr/\partial T)/(dp/dT)-1$ & $0.214$ & & $0.17\pm0.03$ \\
+$c_s^2$ at fixed $\bar n$ & $0.5$ & & $0.4837\pm0.0014$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{What it shows so far.}
+\begin{itemize}
+\item The energy density and the pressure of the tree-level model are $58\%$ and $52\%$ above the target at $\sigma_{\rm p}=3.9$, and the theory with the exact
+  single particle and the correction of the positions accounts for both to $0.2\%$, with no free parameter.
+\item The kinetic stress is the label pressure $\bar nT$ to $0.1\%$ (equipartition), and the virial stress exceeds $\pr$ by the particle's own share
+  $\Pi-\sigma_{\rm p}$ less the correction of the positions, $1.35-0.32=1.03$, measured $1.026$.
+\item The trace $\pr_{\rm model}-E/2=-0.22\,\bar nT$ is the departure from the conformal relation, as predicted; at one loop it would vanish.
+\item The temperature derivatives from the canonical fluctuations agree with the one-loop $5/(6\sigma_{\rm p})$ within their $15\%$ errors.  $c_s^2$ at fixed density
+  is below $1/2$ by $0.016\pm0.0014$, a significant departure, beyond one loop: the share $\Pi-\sigma_{\rm p}$, the fluctuation energy $\Delta e$ and the correction of
+  the positions all depend on $\sigma_{\rm p}\propto T^2$ at fixed density.  The comparison with the renormalized Hamiltonian will say how much of it is from
+  the labels.
+\end{itemize}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/eos_EP.png}
+\caption{$E/\er(T_0)-1$ (left) and $\pr_{\rm model}/\pr(T_0)-1$ (right) against $\sigma_{\rm p}$; filled, tree level; open, renormalized; colours by $h/a$.  Dashed: the
+one-loop tree-level value $2.5/\sigma_{\rm p}$.  (Partial: one run.)}
+\label{fig:EP}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/eos_derivs.png}
+\caption{$\partial E/\partial T$ and $\partial\pr/\partial T$ at fixed density over the target, and $c_s^2$ at fixed density, from the canonical fluctuations; black diamonds,
+finite differences from the runs at $s_a\times0.9$, $1.1$ (when available).  Dashed: one loop, tree level.  (Partial.)}
+\label{fig:derivs}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth]{figs/eos_trace.png}\hfill
+\includegraphics[width=0.48\textwidth]{figs/eos_Sk.png}
+\caption{Left: the trace times the number of neighbours, $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$, which collapses the correction of the positions across $h/a$.
+Right: $S(k)$ in the $L=0.9$ boxes, tree level against renormalized.  (Partial; empty until those runs finish.)}
+\label{fig:traceSk}
+\end{figure}
+
+%=============================================================================
 \section{The equilibrium partition function as a generating functional}
 \label{sec:jensen}
 
