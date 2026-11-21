@@ -1,0 +1,392 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+% the central equations: a tinted panel with an accent rule on the left
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+% a result derived in discussion and not yet checked against a run or the code
+\newcommand{\unv}{\textsuperscript{$\dagger$}}
+
+\begin{document}
+
+\title{Fluctuations, measure and renormalization in the stochastic SPH model}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The entropy of a system with conserved quantities $\Psi$ is the number of states at the mean plus the volume of the peak,
+$S_{\rm eq}=S_0+\tfrac12\tr\log2\pi G$.  The note works this formula out in two-state systems and oscillators, identifies it with the
+one-loop effective action of a field theory.  Its application to the particles of the stochastic SPH model, where the correction is the
+factor $V_a^{\alpha}$ in the weight of the positions, is in \texttt{partition.tex} and \nolinkurl{renormalization_sph.tex}.  The Liouville and the Einstein
+measure are two schemes for the same theory.  Results marked \unv\ were derived in discussion and have not been checked against a run.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The formula in simple models}
+\label{sec:models}
+
+\subsection{The statement}
+\label{sec:statement}
+
+Let $\Psi$ be a set of conserved quantities and $e^{S_0[\Psi]}$ the number of states in a shell of fixed width $\Delta\Psi$ (the Boltzmann
+entropy; notes of G.~Ba\c{s}ar \cite{basar}).  With a source $J$,
+\st
+Z[J]=\int D\Psi\;e^{S_0[\Psi]+J\cdot\Psi}\equiv e^{W[J]},\qquad D\Psi=\frac{d\Psi}{\Delta\Psi},\qquad
+\bar\Psi=\frac{\partial W}{\partial J},\qquad S_{\rm eq}[\bar\Psi]=W-J\cdot\bar\Psi .
+\stp
+$S_{\rm eq}$ is the Gibbs entropy of the distribution $P_{\rm eq}=e^{J\cdot\Psi}/Z$ over the states.  Expanding about the peak,
+$S_0'[\bar\Psi]=-J$, and doing the Gaussian integral,
+\begin{keyeq}
+\st
+S_{\rm eq}[\bar\Psi]=S_0[\bar\Psi]+\tfrac12\tr\log2\pi G,\qquad G=-\Big(\frac{\partial^2S_0}{\partial\Psi\,\partial\Psi}\Big)^{-1}_{\bar\Psi}=\avg{\delta\Psi\,\delta\Psi} .
+\label{main}
+\stp
+\end{keyeq}
+The sign is plus: the Gaussian integral gives $\sqrt{\det G}$ in the numerator, and a broader peak holds more states.  (Eq.~(12) of
+\cite{basar} has a minus; the transcriber's remark there corrects it.)  $G$ is measured in units of $\Delta\Psi^2$.  $S_0$ is of the order of the
+volume; the correction is $\tfrac12\log V$ for each conserved quantity.
+
+\subsection{Two-state modes}
+\label{sec:fermi}
+
+\paragraph{The model.}  Take $N_1$ fermion modes of frequency $\omega_1$ and $N_2$ of frequency $\omega_2$, each empty or full, with
+$\omega_1/\omega_2$ irrational.  With $M_a$ the number of full modes of type $a$,
+\st
+E=M_1\omega_1+M_2\omega_2 .
+\stp
+Because the ratio is irrational, the energy fixes both $M_1$ and $M_2$: a sharp energy shell conserves them separately, and
+$\Psi=(M_1,M_2)$.  The thermal case is $J_a=-\omega_a/T$.
+
+\paragraph{Everything is exact.}  The shells are counted by binomial coefficients, $\Delta\Psi=1$, and the sum over shells is the binomial theorem:
+\st
+e^{S_0}=\binom{N_1}{M_1}\binom{N_2}{M_2},\qquad W=\sum_aN_a\log(1+e^{J_a}),\qquad \bar M_a=N_af_a,\qquad f_a=\frac{e^{J_a}}{1+e^{J_a}},
+\stp
+\st
+S_{\rm eq}=\sum_aN_a\big[-f_a\log f_a-(1-f_a)\log(1-f_a)\big],\qquad G=\mathrm{diag}\big(N_af_a(1-f_a)\big) .
+\stp
+Stirling's formula to next order is
+\st
+\log\binom NM=N\big[-x\log x-(1-x)\log(1-x)\big]-\tfrac12\log\big(2\pi Nx(1-x)\big)+O(1/N),\qquad x=\frac MN,
+\stp
+so $S_0[\bar\Psi]$ falls short of $S_{\rm eq}$ by exactly $\tfrac12\tr\log2\pi G$, \Eq{main}.  The second derivative of the leading term gives the
+same $G$ as $\partial^2W/\partial J^2$.  Table~\ref{tab:fermi} is the numerical check.  With only two modes, $N_1=N_2=1$, every shell holds one state,
+$S_0=0$, and all of $S_{\rm eq}$ is the spread over the four shells: the extreme finite-size case.
+
+\begin{table}[h]
+\caption{Two-state modes, $N_1=N_2=N$, $\omega=(1,\sqrt2)$, $T=1$.}
+\label{tab:fermi}
+\begin{ruledtabular}
+\begin{tabular}{rcccc}
+$N$ & $S_{\rm eq}$ (exact) & $S_0[\bar\Psi]$ & $\tfrac12\tr\log2\pi G$ & sum \\
+\colrule
+10 & 10.764 & 8.283 & 2.403 & 10.686 \\
+100 & 107.640 & 102.927 & 4.705 & 107.632 \\
+1000 & 1076.403 & 1069.395 & 7.008 & 1076.402 \\
+10000 & 10764.030 & 10754.720 & 9.310 & 10764.030 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\paragraph{Fluctuations.}  $\avg{\delta E^2}=\bm\omega^TG\,\bm\omega=\sum_aN_a\omega_a^2f_a(1-f_a)=T^2C_V$, a sum of two Schottky heat capacities.
+
+\subsection{Energy shells and the width $\Delta E$}
+\label{sec:shells}
+
+Bin the same states by energy alone.  A shell $[E,E+\Delta E]$ is a strip in the $(M_1,M_2)$ lattice, $\Delta\Gamma\simeq\rho(E)\Delta E$, and
+\begin{keyeq}
+\st
+S_{\rm eq}=S_0[\bar E]+\tfrac12\log\frac{2\pi\sigma_E^2}{\Delta E^2}=\log\Big[\rho(\bar E)\sqrt{2\pi\sigma_E^2}\Big],\qquad \sigma_E^2=T^2C_V .
+\label{shellE}
+\stp
+\end{keyeq}
+The logarithm of $\Delta E$ in $S_0$ cancels against that in the correction: $S_{\rm eq}$, a sum over states, does not depend on the binning;
+the split between $S_0$ and the correction does.  The shell width must lie in a window,
+\st
+\delta_{\rm spacing}\ll\Delta E\ll T .
+\stp
+Below the spacing of the lattice points on the energy axis ($\sim1/\sqrt N$ for an irrational ratio; fixed at $\omega_1/q$ for a rational
+ratio $p/q$) the shells are empty or hold one point.  Above $T$ the density of states varies across a shell, with the error
+$\log(\sinh x/x)$, $x=\Delta E/2T$.  Table~\ref{tab:shells} and \Fig{fig:shells}.
+
+\begin{table}[h]
+\caption{Energy shells, $N=200$ modes of each type, $\omega=(1,\sqrt2)$, $T=1$: $\bar E=109.1$, $\sigma_E=10.1$, exact $S_{\rm eq}=215.281$.}
+\label{tab:shells}
+\begin{ruledtabular}
+\begin{tabular}{rcccc}
+$\Delta E$ & $S_0[\bar E]$ & $\tfrac12\log(2\pi\sigma_E^2/\Delta E^2)$ & sum & error \\
+\colrule
+0.01 & $-\infty$ (empty) & 7.84 & --- & --- \\
+0.1 & 208.81 & 5.54 & 214.34 & grainy, $\pm0.4$ \\
+0.5 & 211.39 & 3.93 & 215.31 & 0.03 \\
+1 & 212.11 & 3.23 & 215.34 & 0.06 \\
+5 & 214.54 & 1.62 & 216.16 & 0.88 \\
+20 & 221.63 & 0.24 & 221.87 & 6.6 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/renormalization_energy_shells.png}
+\caption{The weight $\Delta\Gamma(E)\,e^{-E/T}$ of the energy shells for three widths, $N=200$.}
+\label{fig:shells}
+\end{figure}
+
+The count in one variable and in two agree,
+\st
+\rho(\bar E)\sqrt{2\pi\sigma_E^2}=e^{S_0[\bar M_1,\bar M_2]}\;2\pi\sqrt{\det G}=e^{S_{\rm eq}},
+\stp
+by integrating the Gaussian over a strip of constant $E$.
+
+\subsection{Oscillators}
+\label{sec:bose}
+
+\paragraph{Two oscillators.}  With $n_a=0,1,2,\dots$ the states are the points of a quarter lattice, and the number below $E$ is the number of
+points in a triangle,
+\st
+\mathcal N(E)\simeq\frac{E^2}{2\omega_1\omega_2}+\frac E2\Big(\frac1{\omega_1}+\frac1{\omega_2}\Big),\qquad \rho(E)=\frac{d\mathcal N}{dE}
+\stp
+(at $E=100$, $1000$: $3621$, $354407$ exactly against $3620.9$, $354406.9$).  The weight of a shell is $\propto E\,e^{-E/T}$, a gamma
+distribution as wide as its mean.  \Eq{shellE} then gives $\log(T^2/\omega_1\omega_2)+2.305$ against the exact $+2$: the cancellation of
+$\Delta E$ still holds, but the error is of order one and does not shrink with $T$.  Two degrees of freedom are not a thermodynamic system
+(\Fig{fig:osc}).  For $k$ oscillators the error is Stirling's for $(k-1)!$: $0.305$, $0.123$, $0.0215$, $0.0042$ at $k=2$, $4$, $20$, $100$.
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/renormalization_two_oscillators.png}
+\caption{Two oscillators, $\omega_2/\omega_1=\sqrt2$.  Left: the states in one energy shell.  Right: the shell weights at $T=10\,\omega_1$.}
+\label{fig:osc}
+\end{figure}
+
+\paragraph{Many oscillators.}  Take $N_1$ oscillators at $\omega_1$ and $N_2$ at $\omega_2$, with $M_a$ the total number of quanta of type $a$,
+so that $\avg E=N_1b_1\omega_1+N_2b_2\omega_2$.  The binomial coefficient becomes the count of stars and bars:
+\st
+e^{S_0}=\prod_a\binom{M_a+N_a-1}{M_a},\qquad W=-\sum_aN_a\log(1-e^{J_a}),\qquad \bar M_a=N_ab_a,\qquad b_a=\frac1{e^{-J_a}-1},
+\stp
+\st
+S_{\rm eq}=\sum_aN_a\big[(1+b_a)\log(1+b_a)-b_a\log b_a\big],\qquad G=\mathrm{diag}\big(N_ab_a(1+b_a)\big),
+\stp
+and $\avg{\delta E^2}=\sum_aN_a\omega_a^2b_a(1+b_a)=T^2C_V$.  Table~\ref{tab:bose}.
+
+\begin{table}[h]
+\caption{Oscillators, $N_1=N_2=N$, $\omega=(1,\sqrt2)$, $T=1$ ($b=0.582$, $0.321$).  $N=1$ is the two-oscillator case.}
+\label{tab:bose}
+\begin{ruledtabular}
+\begin{tabular}{rcccc}
+$N$ & $S_{\rm eq}$ (exact) & $S_0[\bar\Psi]$ & $\tfrac12\tr\log2\pi G$ & sum \\
+\colrule
+1 & 1.774 & 0 & 1.368 & 1.368 \\
+10 & 17.735 & 14.019 & 3.671 & 17.689 \\
+100 & 177.345 & 171.368 & 5.973 & 177.341 \\
+1000 & 1773.454 & 1765.178 & 8.276 & 1773.454 \\
+10000 & 17734.544 & 17723.966 & 10.578 & 17734.544 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\paragraph{Blocks.}  Group the oscillators into blocks of $B$ sites and take $\Psi$ to be the block occupations.  With $b$ the mean
+occupation, the entropy density $\sigma(b)=(1+b)\log(1+b)-b\log b$ is then written as
+\st
+\sigma(b)=\underbrace{\sigma(b)-\frac1{2B}\log\big(2\pi B\,b(1+b)\big)}_{\text{bare, depends on the block size}}
++\underbrace{\frac1{2B}\log\big(2\pi B\,b(1+b)\big)}_{\text{one loop}}+O(1/B^2) .
+\label{blocks}
+\stp
+The bare entropy density runs with the block size; the physical one does not.  The remainder is the error of the $N=10$ row of
+Table~\ref{tab:bose}.
+
+\subsection{Out of equilibrium}
+\label{sec:noneq}
+
+Two examples from Sects.~III--V of \cite{basar}, for the two-state modes with $N_1=400$, $N_2=600$.
+
+\paragraph{The wrong temperature.}  A state with $J_a=-\omega_a/T_a$, $T_1\neq T_2$, does not relax, since $M_1$ and $M_2$ are separately conserved.
+Its relative entropy to the equilibrium of the same energy is
+\st
+S[P|P_{\rm eq}]=\sum_aN_a\Big[f_a\log\frac{f_a}{f_a^e}+(1-f_a)\log\frac{1-f_a}{1-f_a^e}\Big]\simeq\tfrac12\,\delta J^TG_e\,\delta J ,
+\stp
+of order $N$ ($0.4766$ and $6.982$ at $T_1=1.10$ and $1.50$, against $0.4709$ and $6.781$ for the quadratic form).
+
+\paragraph{A finite reservoir.}  A bath of heat capacity $C_R$ gives $f[\Psi]=\tfrac12\Psi K\Psi$ with $K=-\kappa\,\bm\omega\bm\omega^T$,
+$\kappa=1/T^2C_R$, of rank one.  Then $G^{-1}=G_e^{-1}+\kappa\bm\omega\bm\omega^T$,
+\st
+\avg{\delta E^2}=T^2\frac{C\,C_R}{C+C_R},\qquad S[P|P_{\rm eq}]=\tfrac12\big(r-1-\log r\big),\qquad r=\frac{C_R}{C+C_R},
+\stp
+of order one, and the two species become anticorrelated.  The exact sums give $0.00220$, $0.0966$, $0.4049$ at $C_R/C=10$, $1$, $0.25$ against
+$0.00220$, $0.0966$, $0.4047$, and the entropy of the deformed state is $S=S_e-S[P|P_{\rm eq}]$, largest at $G=G_e$.
+
+%=============================================================================
+\section{The one-loop effective action}
+\label{sec:oneloop}
+
+\subsection{$\tfrac12\tr\log G$ at one loop}
+
+Conventions: the weight is $e^{-S}$, so $-S$ plays the role of $S_0$.
+
+\paragraph{One variable.}  $Z(J)=\int dx\,e^{-S(x)+Jx}$.  About the saddle $S'(x_*)=J$, with $G=1/S''(x_*)$,
+\st
+W(J)\simeq-S(x_*)+Jx_*+\tfrac12\log2\pi G .
+\stp
+The effective action is the Legendre transform, $\Gamma(\bar x)=J\bar x-W$, $\bar x=W'(J)$.  A small change of $W$ changes $\Gamma$ by its negative at
+the same point, because $\Gamma$ is defined at a stationary point in $J$.  So, dropping a constant,
+\begin{keyeq}
+\st
+\Gamma(\bar x)=S(\bar x)+\tfrac12\log S''(\bar x) .
+\stp
+\end{keyeq}
+$S(\bar x)$ is the cost of sitting at $\bar x$; $\tfrac12\log S''$ accounts for the room to fluctuate about it.
+
+\paragraph{Many variables.}  $S''$ is a matrix, and $\Gamma=S+\tfrac12\tr\log S''=S-\tfrac12\tr\log G$: one $\tfrac12\log$ for each direction of fluctuation.
+
+\paragraph{A field.}  For $S=\int d^dx\,[\tfrac12(\partial\phi)^2+V(\phi)]$ and a constant $\bar\phi$ the modes are plane waves with
+$S''=k^2+M^2$, $M^2\equiv V''(\bar\phi)$, and
+\begin{keyeq}
+\st
+V_{\rm eff}(\bar\phi)=V(\bar\phi)+\frac12\int\frac{d^dk}{(2\pi)^d}\,\log\big(k^2+V''(\bar\phi)\big) .
+\label{Veff}
+\stp
+\end{keyeq}
+Each mode is a Gaussian variable of variance $G(k)=1/(k^2+M^2)$ and contributes $-\tfrac12\log G(k)$.  Expanding the logarithm in $\bar\phi$
+gives the rings of $n$ propagators: \Eq{Veff} is the sum of the one-loop diagrams with any number of legs, the first term being the circle
+with none.
+
+\subsection{Divergences and the operator $\one$}
+\label{sec:one}
+
+With a cutoff $\Lambda$, in $d=3$,
+\st
+\frac12\int^\Lambda\frac{d^3k}{(2\pi)^3}\log(k^2+M^2)=c\,\Lambda^3+\frac{\Lambda}{4\pi^2}\,M^2-\frac{M^3}{12\pi}+O(1/\Lambda) .
+\stp
+With $M^2=m^2+\tfrac\lambda2\bar\phi^2$: the first term and $\Lambda m^2/4\pi^2$ do not depend on the field and are the coefficient of the
+operator $\one$; $\Lambda\lambda\bar\phi^2/8\pi^2$ renormalizes the mass; the last term is finite, nonanalytic, and is the content of the loop.
+(In $d=4$: $\Lambda^4$, $\Lambda^2M^2$ and $\tfrac{M^4}{64\pi^2}\log(M^2/\Lambda^2)$.)  The bare potential depends on $\Lambda$ so that
+$V_{\rm eff}$ does not.  Changing the normalization of the measure changes the coefficient of $\one$ and nothing else.
+
+\begin{table}[h]
+\caption{The dictionary.}
+\label{tab:dict}
+\begin{ruledtabular}
+\begin{tabular}{lll}
+field theory & notes of \cite{basar} & oscillators; SPH particle \\
+\colrule
+$-S[\phi]$ & $S_0[\Psi]$ & $\log\binom{M+N-1}{M}$; $s_a$ \\
+$-\Gamma[\bar\phi]$ & $S_{\rm eq}[\bar\Psi]$ & $N\sigma$; $\ln Z_1$ at the saddle \\
+$-\tfrac12\tr\log S''$ & $+\tfrac12\tr\log G$ & $\tfrac12\log2\pi Nb(1+b)$; $\alpha\ln V_a$ \\
+$c\Lambda^d$, coefficient of $\one$ & dependence on $\Delta\Psi$ & block-size term of \Eq{blocks}; $\tfrac12\ln\det2\pi\chi$ \\
+loop expansion & saddle-point corrections & $1/N$, $1/B$; $1/s_a$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+Sects.~IV--V of \cite{basar} promote $G$ to an independent variable: the two-particle-irreducible effective action, whose one-loop form is
+$S[\bar\Psi,G]=S_e[\bar\Psi]-\tfrac12\tr(GG_e^{-1}-1)+\tfrac12\tr\log GG_e^{-1}$.  It depends only on the ratio $GG_e^{-1}$, so the shell width and
+the coefficient of $\one$ drop out.
+
+%=============================================================================
+\section{The measure}
+\label{sec:measure}
+
+\subsection{Liouville and Einstein}
+
+The equilibrium of the particles (\texttt{scheme.tex}) has two forms.  With the variables $(\bm x_a,\bm m_a,s_a)$ and a flat measure, the
+\emph{Liouville} measure,
+\st
+\pi\propto\exp\sum_a\Big[s_a-\frac{e_a(s_a,\bm m_a,V_a)}T\Big]\;\prod_ad\bm x_a\,d\bm m_a\,ds_a .
+\label{liouville}
+\stp
+The \emph{Einstein} measure is flat in the conserved variables $(e_a,\bm m_a)$; the two differ by $\prod_aT_a$, since $de_a=T_a\,ds_a$.
+
+\paragraph{What $s_a$ counts.}  In \Eq{liouville} the number of states in a cell is $e^{s_a}ds_a\,d\bm m_a\,d\bm x_a=d(e^{s_a})\,d\bm m_a\,d\bm x_a$, so
+\begin{keyeq}
+\st
+e^{s_a}\,\Delta^dm\,\Delta^dx=\#\big\{\text{states with energy below }e_a,\ \text{momentum in }\Delta^dm,\ \text{position in }\Delta^dx\big\} :
+\stp
+\end{keyeq}
+$s_a=\ln\Gamma$, cumulative in the energy and a density in $(\bm x_a,\bm m_a)$.  Here $e_a$ is the energy of the particle on a slice of the
+foliation, $T^{00}$ integrated over $V_a$, with $H=\sum_ae_a$; the count is tied to the foliation and is not a statement about the rest frame.
+At fixed $\bm m_a$ it starts at $e_a=|\bm m_a|$.  The ideal step changes $V_a$ and $\bm m_a$ at fixed $s_a$: it preserves the number of states
+below the energy, the adiabatic invariant.  With the Einstein measure the same symbol would be the logarithm of the density of states,
+$\rho=\partial\Gamma/\partial e=\Gamma/T_a$.  The two-oscillator example has both: $\mathcal N=E^2/2\omega_1\omega_2$ and $\rho=E/\omega_1\omega_2$.
+
+\subsection{The measure as a scheme}
+\label{sec:scheme}
+
+In the variables $(e_a,\bm m_a)$ with a flat measure the two are (\texttt{scheme.tex})
+\st
+\text{Einstein:}\ \exp\sum_a\Big[S_a-\frac{e_a}T\Big],\qquad
+\text{Liouville:}\ \exp\sum_a\Big[S_a-\ln T_a-\frac{e_a}T\Big] .
+\stp
+So the Liouville measure with the entropy function $S_a$ is the Einstein measure with $S_a-\ln T_a$, exactly.  The measure and the bare
+equation of state are one choice.  The difference is of order one per particle, per unit volume
+\st
+\delta s=-\bar n\,\ln T(e) :
+\stp
+local, proportional to the cutoff $\bar n$, and suppressed by $1/s_a$: a counterterm.  It is the field-theory statement that a change of
+variable $y=f(x)$ shifts the action by $-\ln f'(x)$, one factor per mode.
+
+\paragraph{What changes.}  At leading order in $1/s_a$, from Liouville to Einstein at the same input equation of state\unv:
+\begin{itemize}
+\item $\mathcal K_0$, $S(k)$ and $T\,\partial\ln Z/\partial\mathcal V$ do not change, because at the saddle $T_a=T$ whatever the volume.
+\item The mean rest energy and the fluctuation energy $\Delta e$ grow by $T$ per particle; in the mean rest energy and the temperature labels of \nolinkurl{renormalization_sph.tex}, $\mathcal K_0\to\mathcal K_0+c_s^2$.
+\item The mean pressure of a particle, and with it the virial stress, grows by $c_s^2\,T/V_a$: the Einstein weight depends on the volume through
+  $T_a$, so the virial is no longer $T\,\partial\ln Z/\partial\mathcal V$.
+\end{itemize}
+The relation between the measured pressure and the measured energy (\nolinkurl{renormalization_sph.tex}) is the same in both.
+
+\paragraph{The dynamics.}  The Hamiltonian step preserves $\prod_ad\bm x_a\,d\bm m_a\,ds_a$ for whatever equation of state is in $H$, and
+$\prod_aT_a$ is not conserved by it.  The dynamics therefore produces the Liouville ensemble of its own equation of state.
+
+\paragraph{The reverse construction.}  The Einstein ensemble of $S_a$ is the Liouville ensemble of a modified Hamiltonian $H'=\sum_ae_a'$ whose
+entropy function $s'(e)$, the inverse of $e'(s)$, satisfies $s'+\ln(\partial s'/\partial e)=S$, that is
+\st
+s_a'(e,\bm m,V)=\ln\int^ed\varepsilon\;e^{S_a(\varepsilon,\bm m,V)}=S_a+\ln T_a+O(1/s_a),\qquad H'=H-\sum_aT_a\ln T_a+O(1/s_a) :
+\stp
+the entropy that counts the states below the energy.  With $H'$ the viscous target loses its $-\ln T_a$, but $e_a'$ is no longer
+$V_ah(s_a/V_a,\bm m_a/V_a)$ and the two steps use different thermodynamic functions.  More generally any Jacobian $J(e)$ can be absorbed,
+$s'=\ln\int^ed\varepsilon\,J\,e^{S}$, and used to impose a renormalization condition\unv.
+
+\paragraph{The choice.}  Keep the Liouville measure.  The interpretation $s_a=\ln\Gamma$ is the one it already has, it is what the ideal
+step preserves, and the change would buy a shift of order $1/s_a$ that is computed on paper.  To reproduce a prescribed physical equation
+of state at small $s_a$, adjust the bare equation of state: the same freedom, and already an input of the code.
+
+%=============================================================================
+\section{The particle model}
+\label{sec:sph}
+
+The application to the particles of the stochastic SPH model, formerly this section, is in two notes: \texttt{partition.tex} computes the partition
+function of the model (the factor $V_a^{\mathcal K_0}$, $\mathcal K_0=(d+1)/2$, in the weight of the positions, the label pressure and the fluctuation energy
+$\Delta e$, the structure factor), and \nolinkurl{renormalization_sph.tex} takes up the bare equation of state, with the comparison with hydro-kinetic theory
+in its appendix.
+
+\begin{thebibliography}{9}
+\bibitem{basar} G.~Ba\c{s}ar, \emph{Equilibrium and non-equilibrium entropy and fluctuations}, notes (transcribed November 2026).
+\bibitem{amt} Y.~Akamatsu, A.~Mazeliauskas and D.~Teaney, \emph{Bulk viscosity from hydrodynamic fluctuations with relativistic hydro-kinetic theory}, arXiv:1708.05657.
+\end{thebibliography}
+
+\end{document}

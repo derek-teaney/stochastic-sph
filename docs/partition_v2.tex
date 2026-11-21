@@ -1,0 +1,802 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\newcommand{\klab}{\mathcal B}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+% algorithms: a titled, tinted box
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+% the central equations: a tinted panel with an accent rule on the left
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{The partition function of the particle model\\ and its renormalized equation of state}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The equilibrium of the particle model, its thermodynamics and the statistics of its positions, depends on the Hamiltonian only through one function, the
+free energy $F_1(T,V)$ of a single particle held at the volume $V$.  We compute it from the Hamiltonian by a Legendre transform and its one-loop correction,
+and from it the pressure, the energy, the chemical potential of the particles and the structure factor of their positions.  The particles are an ideal gas
+of labels with a bulk modulus $\klab$ (in units of $\bar nT$), which sets both the long-wavelength fluctuations of their number, $S(0)=1/\klab$, and the dependence of the pressure on
+their density.  Since $F_1$ can be chosen, we choose it: the free energy that reproduces the target equation of state and has $\klab\to0$, so that the
+particles, like the grid points they are, can be placed anywhere at no cost.  For the conformal fluid this is achieved at one loop by evaluating the energy of
+each particle at its entropy shifted by $(1+\mathcal K_0)\ln s_a$, the logarithm of its own phase-space volume.  The positions then fluctuate as
+$S(k)\propto1/k^2$, the Goldstone mode of the freedom to choose the resolution, which the fluid fields see only at the order of a gradient.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+The particle model carries a fluid on $N$ particles.  Each particle has a position, an entropy and a momentum.  Its volume is not a variable of its own:
+it follows from the positions of its neighbours through the kernel.  In equilibrium at a temperature $T$ the thermodynamics of the model and the statistics of
+its positions follow from one object, the canonical partition function.  This note computes it, and uses it to choose the Hamiltonian.
+
+\paragraph{The strategy.}  Three steps.
+\begin{enumerate}
+\item \emph{From the Hamiltonian to one function.}  At fixed positions the particles are independent, so everything depends on the Hamiltonian $H(S,\bm M,V)$
+  only through the free energy of one particle at fixed volume, $F_1(T,V)$: the Legendre transform of $H$ over the entropy and the momentum, plus the
+  free energy of the particle's own fluctuations (\Sect{sec:one}).
+\item \emph{From that function to the equation of state and the structure factor} (\Sect{sec:uniform}, \Sect{sec:modes}).  With every particle at the mean volume,
+  $F_1$ gives the thermodynamics: the input fluid, an ideal gas of labels, and the fluctuations of each particle.  The density modes of the positions then
+  give the structure factor $S(k)$.
+\item \emph{Choosing the function} (\Sect{sec:target}).  $F_1$ can be adjusted by adjusting $H$.  We choose the $F_1$ whose equation of state is the target
+  one and whose labels cost nothing to compress, and find the Hamiltonian that produces it.
+\end{enumerate}
+
+\paragraph{The result in brief.}  The target free energy of a particle is
+\begin{keyeq}
+\st
+\frac{F_1(T,V)}T=-\frac{p(T)\,V}T+(1-\klab)\ln V+1,\qquad \klab\to0 ,
+\label{target0}
+\stp
+\end{keyeq}
+with $p(T)$ the target pressure, $\klab$ the bulk modulus of the labels, and $V$ in the units of the code (the constant $1$ is a normalization, chosen so
+that the labels have no chemical potential, \Sect{sec:targetF}).  It gives the target pressure and energy at every density of particles.  For the
+conformal fluid in $d$ dimensions it is produced, at one loop, by the Hamiltonian
+\begin{keyeq}
+\st
+H=\sum_ae_a\big(s_a+\Delta s_a,\ \bm m_a,\ V_a\big),\qquad \Delta s_a=\frac{d+3}2\ln s_a-\klab\ln V_a+1+c_\chi ,
+\label{H0}
+\stp
+\end{keyeq}
+with $e_a$ the energy of a particle of the target fluid and $c_\chi$ a constant of the equation of state, \Eq{cchi}.  The positions then have the structure factor of a massless field, $S(k)\simeq2/(\sigma\mu_2k^2)$
+at long wavelength.
+
+\paragraph{Two expansions.}  The calculation is organized by two large numbers,
+\st
+s_a\gg1\qquad\text{and}\qquad\bar nh^2\gg1 ,
+\stp
+the entropy per particle and the number of neighbours in a kernel.  The first controls the integral over the entropy and the momentum of one particle (it
+plays the role of $1/\hbar$, and its one-loop term is the origin of the corrections to the thermodynamics).  The second controls the integral over the
+positions.  The positions see a particle only through how $F_1$ depends on $V$.
+
+\paragraph{Notation.}  The simulations are in $d=2$, with the conformal equation of state of the same dimension.
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+symbol & meaning \\
+\midrule
+$T$ & temperature of the ensemble, $\partial H/\partial s$ \\
+$p(T)$, $e(T)$, $s(T)$, $C_V=T\,ds/dT$ & the equation of state of the fluid at rest \\
+$\bar n=N/L^2$, $\bar V=1/\bar n$ & mean density of particles, mean particle volume \\
+$V_a=1/n_a$ & volume of particle $a$; $n_a$ the kernel density there \\
+$W(r)$, $\widetilde W(k)$ & the kernel and its Fourier transform, $\widetilde W(0)=1$ \\
+$h$, $\mu_2=\int d^2r\,r^2W$ & the size and the second moment of the kernel \\
+$\sigma=p(T)\bar V/T$ & the fluid's pressure in one particle volume, over $T$ \\
+$Z_1(T,V)$, $F_1=-T\ln Z_1$ & one particle at fixed volume \\
+$\Pi$, $\mathcal K$ & pressure and stiffness of a particle, \Eq{PiK} \\
+$\mathcal K_0=(d+1)/2$ & half the number of conserved densities of a particle \\
+$\mu$, $\klab$ & chemical potential and bulk modulus of the labels \\
+\bottomrule
+\end{tabular}
+\end{center}
+For the conformal fluid in $d=2$
+\st
+p\propto T^3,\qquad e=2p,\qquad Ts=3p,\qquad C_V=2s,\qquad \sigma=\frac{s(T)\bar V}3 .
+\stp
+
+%=============================================================================
+\section{The model and its partition function}
+\label{sec:Z}
+
+\paragraph{The Hamiltonian.}  The energy is a sum over particles,
+\st
+H=\sum_ae_a(s_a,\bm m_a,V_a),\qquad V_a=\frac1{n_a},\qquad n_a=\sum_bW(\bm x_a-\bm x_b),
+\stp
+the sum including $b=a$.  The energy of a particle is its volume times an energy density, a function of the entropy density $S=s_a/V_a$, the (density-frame)
+momentum density $\bm M=\bm m_a/V_a$ and, in general, the density of particles $n=1/V_a$:
+\st
+e_a(s_a,\bm m_a,V_a)=V_a\,\varepsilon\big(S,\bm M;n\big) .
+\stp
+
+\paragraph{The ensemble.}  In the canonical ensemble with the Liouville measure, flat in the positions, the entropies and the momenta, a configuration has
+the weight
+\st
+\prod_a\exp\Big[s_a-\frac{e_a}T\Big]\;\prod_ad^2\bm x_a\,ds_a\,d^2\bm m_a .
+\stp
+The factor $e^{s_a}$ counts the microscopic states that a particle with entropy $s_a$ stands for.  The Hamiltonian step preserves this measure for any $H$.
+
+\paragraph{The partition function.}  The positions enter only through the volumes, so at fixed positions the particles are independent.  Integrating the
+entropy and the momentum of each particle,
+\begin{keyeq}
+\st
+\begin{aligned}
+\mathcal Z_N&=\frac1{N!}\int\prod_ad^2\bm x_a\;\prod_ae^{-F_1(T,V_a)/T},\\
+e^{-F_1(T,V)/T}&\equiv Z_1(T,V)=\int ds\,d^2\bm m\;\exp\Big[s-\frac{e(s,\bm m,V)}T\Big] .
+\end{aligned}
+\label{ZN}
+\stp
+\end{keyeq}
+$F_1$ is \emph{one} function, the same for every particle: the free energy of a single particle held at the volume $V$.  In the ensemble its argument is the
+fluctuating volume $V_a$, set by the positions.  The model's equilibrium depends on $H$ only through $F_1$.
+
+\paragraph{Only derivatives matter.}  A constant factor $\lambda$ in the measure of each particle multiplies $\mathcal Z_N$ by $\lambda^N$, and changes no average at
+fixed $N$.  So only the derivatives of $F_1$ with respect to $V$ and $T$ are physical.
+
+%=============================================================================
+\section{One particle: from the Hamiltonian to the free energy}
+\label{sec:one}
+
+\subsection{Tree level: the Legendre transform}
+\label{sec:tree}
+
+In the densities,
+\st
+ds\,d^d\bm m=V^{d+1}\,dS\,d^d\bm M,\qquad s-\frac eT=V\,\psi(S,\bm M),\qquad \psi=S-\frac{\varepsilon(S,\bm M;n)}T ,
+\stp
+with $\psi$ the Massieu density.  At large $s_a$ the integral is dominated by the maximum of $\psi$, at $\partial\varepsilon/\partial S=T$ and $\bm M=0$: the fluid at rest
+at the temperature $T$.  The maximum is the Legendre transform of the energy density over the entropy and the momentum,
+\begin{keyeq}
+\st
+F_1\big|_{\rm tree}=V\,f\Big(T,\frac1V\Big),\qquad f(T,n)=\min_{S,\bm M}\big[\varepsilon(S,\bm M;n)-TS\big] ,
+\label{Ftree}
+\stp
+\end{keyeq}
+the free-energy density of the input fluid.  (For a bath moving with the velocity $\bm v$ the Massieu function gains $\bm v\cdot\bm m/T$, and the transform over
+$\bm M$ gives $F(T,\bm v,V)$; at rest $\bm v=0$.)  For an input without a dependence on the density of particles,
+\st
+f=-p(T),\qquad \ln Z_1\big|_{\rm tree}=\frac{p(T)\,V}T ,
+\stp
+the one-particle form of the thermodynamic potential $\Phi^\mu=s^\mu+\beta_\nu T^{\mu\nu}=p\beta^\mu$, whose time component is $p/T$.
+
+\subsection{One loop: the fluctuations of the particle}
+\label{sec:oneloop}
+
+At the maximum the second derivatives of $\psi$ are
+\st
+\frac{\partial^2\psi}{\partial S^2}=-\frac1{C_V},\qquad \frac{\partial^2\psi}{\partial M_i\partial M_j}=-\frac{\delta_{ij}}{T(e+p)} .
+\stp
+The exponent is $V\psi$, so each of the $d+1$ variables has a Gaussian width proportional to $V^{-1/2}$, and
+\begin{keyeq}
+\st
+\frac{F_1(T,V)}T=\underbrace{\frac{V f}T}_{\text{tree}}-\underbrace{\tfrac12\ln\det\big(2\pi V\chi\big)}_{\text{one loop}}+O\Big(\frac1{s_a}\Big),
+\qquad \chi={\rm diag}\big(C_V,\ T(e+p)\,\delta_{ij}\big) .
+\label{F1loop}
+\stp
+\end{keyeq}
+$\chi$ holds the susceptibilities of the conserved densities a particle carries, its entropy and its $d$ momentum components, which fluctuate at fixed volume with
+\st
+\avg{\delta s_a^2}=C_V\,V,\qquad \avg{m_{a,i}\,m_{a,j}}=\delta_{ij}\,T(e+p)\,V .
+\label{intrinsic}
+\stp
+The one-loop term is the Einstein fluctuation entropy of these densities.  For an input without a dependence on $n$, $\chi$ does not depend on $V$, and
+\st
+\tfrac12\ln\det\big(2\pi V\chi\big)=\mathcal K_0\ln V+\tfrac12\ln\det(2\pi\chi),\qquad \mathcal K_0=\frac{d+1}2 :
+\stp
+a larger volume gives each conserved density more room.  The exponent $V\psi$ is of order $s_a$, so the relative fluctuations are of order $s_a^{-1/2}$, and each
+further order is smaller by $1/s_a$ (\App{app:single}).
+
+\subsection{The thermodynamics of a particle}
+\label{sec:particlethermo}
+
+The pressure and the bulk modulus of a particle are
+\st
+p_1=-\frac{\partial F_1}{\partial V}\Big|_T=\avg{p_a}_V,\qquad B_1=-V\frac{\partial p_1}{\partial V}\Big|_T ,
+\stp
+the first the canonical average at fixed volume of the mechanical pressure $p_a=-\partial e_a/\partial V$ (the Liouville measure does not depend on $V$).  The
+positions need their dimensionless forms at the mean volume,
+\begin{keyeq}
+\st
+\Pi\equiv\frac{p_1V}T=-\frac VT\frac{\partial F_1}{\partial V},\qquad
+\mathcal K\equiv\frac{VB_1}T=\frac{V^2}T\frac{\partial^2F_1}{\partial V^2}\qquad\text{at }V=\bar V .
+\label{PiK}
+\stp
+\end{keyeq}
+For the input without a dependence on $n$, at one loop,
+\st
+\Pi=\sigma+\mathcal K_0,\qquad \mathcal K=\mathcal K_0 :
+\label{PiKloop}
+\stp
+a piece of fluid has a pressure but no stiffness, and the fluctuations add $\mathcal K_0$ to both, like an ideal gas of $\mathcal K_0$ particles.  The mean energy of a
+particle at fixed volume is
+\st
+\avg{e_a}_V=-T^2\frac{\partial(F_1/T)}{\partial T}=V\,e(T)+\Delta e,\qquad
+\Delta e=\frac T2\Big[\frac{d\ln C_V}{d\ln T}+d\,\frac{d\ln T(e+p)}{d\ln T}\Big] ,
+\label{Deltae}
+\stp
+since the widths \Eq{intrinsic} grow with $T$.  For the conformal fluid in $d=2$, $\Delta e=5T$.
+
+\paragraph{Small entropy per particle.}  At small $s_a$ the saddle point is not enough (the light cone cuts off the momentum), and $F_1$ is computed by quadrature,
+with $\Pi$ and $\mathcal K$ by finite differences in $V$.  At $s(T)\bar V=11.7$, $49$, $536$ the quadrature gives $\mathcal K=1.23$, $1.43$, $1.49$, approaching
+$\mathcal K_0=3/2$.  Everything below holds with the exact $\Pi$ and $\mathcal K$.
+
+%=============================================================================
+\section{The thermodynamics of the model}
+\label{sec:uniform}
+
+The point: with every particle at the mean volume, $\mathcal Z_N$ is an ideal gas of labels times $N$ independent particles.  This is exact in the particle
+variables and neglects only the density modes of the positions, of relative order $1/(\bar nh^2)$ (\Sect{sec:back}).
+
+\subsection{Pressure and energy}
+\label{sec:pe}
+
+With $V_a=\bar V$ the positions give $L^{2N}/N!$, and
+\begin{keyeq}
+\st
+\frac{\ln\mathcal Z_N}N=\underbrace{\ln\bar V+1}_{\text{labels}}-\underbrace{\frac{F_1(T,\bar V)}T}_{\text{one particle}} .
+\label{lnZuniform}
+\stp
+\end{keyeq}
+The pressure (the derivative with respect to the area at fixed $N$, $T$) and the energy density are the label gas plus one particle:
+\begin{keyeq}
+\st
+p_{\rm model}=\bar nT+p_1(T,\bar V),\qquad E=\bar n\,\avg{e_a}_{\bar V} .
+\label{pE}
+\stp
+\end{keyeq}
+The term $\bar nT$ is the kinetic stress of the particles' thermal motion.  With the velocity $\bm v_a=\partial e_a/\partial\bm m_a$, equipartition holds for any
+energy function, $\avg{\bm m_a\cdot\bm v_a}=d\,T$, and the momentum flux of the model contains $\sum_a\bm m_a\bm v_a$.  A particle of vanishing volume does not drop
+out: its momentum density diverges, it becomes ultrarelativistic, and it carries the stress $T$ like a massless quantum.
+
+\subsection{The labels}
+\label{sec:labels}
+
+The model conserves the number of particles; the fluid it represents has no such number.  So the model is a fluid with a charge, the labels, with the chemical
+potential
+\st
+-\frac\mu T=\frac{\partial\ln\mathcal Z_N}{\partial N}\Big|_{T,L}=\ln\bar V-\frac{F_1}T-\Pi ,
+\label{mu}
+\stp
+and the Euler and Gibbs--Duhem relations of a fluid with one charge,
+\st
+E+p_{\rm model}=Ts_{\rm model}+\mu\bar n,\qquad dp_{\rm model}=s_{\rm model}\,dT+\bar n\,d\mu .
+\label{GD}
+\stp
+The value of $\mu$ moves with the normalization of the measure; its derivatives do not.
+
+\paragraph{The bulk modulus of the labels.}  At fixed temperature the pressure depends on the density of particles.  Differentiating \Eq{pE}, the label gas gives $T$
+and the particle its bulk modulus, $\partial p_1/\partial\bar n=\bar VB_1=T\mathcal K$:
+\begin{keyeq}
+\st
+\klab\equiv\frac1{\bar nT}\,\bar n\frac{\partial p_{\rm model}}{\partial\bar n}\Big|_T=\frac{\bar n}T\frac{\partial\mu}{\partial\bar n}\Big|_T=1+\mathcal K,\qquad
+S(0)=T\frac{\partial\bar n}{\partial p_{\rm model}}\Big|_T=\frac1{\klab} .
+\label{klab}
+\stp
+\end{keyeq}
+The second relation is the compressibility sum rule: the long-wavelength fluctuations of the number of particles are Poisson reduced by $\klab$.  The $1$ is the
+entropy of placing the points, the $\mathcal K$ the stiffness of each particle.
+
+\subsection{Thermodynamics with the tree-level model}
+\label{sec:present}
+
+The tree-level model is the Hamiltonian in use: the energy of each particle is that of the target fluid, $e_a=V_a\,\varepsilon(S,\bm M)$ with no dependence on
+$n$, so that its free energy is the target one at tree level, $F_1=-p(T)V$.  At one loop \Eq{pE} and \Eq{klab} are
+\st
+p_{\rm model}=p(T)+(1+\mathcal K_0)\,\bar nT,\qquad E=e(T)+\bar n\,\Delta e,\qquad \klab=1+\mathcal K_0=\frac{d+3}2 .
+\label{present}
+\stp
+The labels and the fluctuations add terms of order $T$ per particle, the cutoff terms of fluctuating hydrodynamics with the density of particles as the
+cutoff.  Relative to the fluid they are of order $1/\sigma$: for the conformal fluid in $d=2$
+\st
+\frac{(1+\mathcal K_0)\,\bar nT}p=\frac{\bar n\,\Delta e}e=\frac{2.5}\sigma ,
+\stp
+$64\%$, $15\%$ and $1.4\%$ at $\sigma=3.9$, $16.4$, $179$.  They are the terms that hydro-kinetic theory finds for the modes below a cutoff \cite{amt}, with one
+particle per mode: the kinetic stress (here the $1$ in $1+\mathcal K_0$), the kinetic energy of the momentum fluctuations, and the curvature of the equation of
+state acting on the energy fluctuations.
+
+The pressure depends on the density at fixed temperature, through $\klab=5/2$.  So elements of the fluid with different entropy per particle have different
+equations of state, and $S(0)=2/5$: the thermodynamics pins the particles to a preferred density.
+
+%=============================================================================
+\section{The equation of state we want}
+\label{sec:target}
+
+The point: everything depends on $H$ only through $F_1$, so we may choose $F_1$, and then find an $H$ that produces it.
+
+\subsection{Requirements}
+\label{sec:requirements}
+
+\begin{enumerate}
+\item \emph{The target equation of state at every density of particles}: $p_{\rm model}=p(T)$ and $E=e(T)$, with $p(T)$, $e(T)$ the target.  Then every element of the
+  fluid has the same equation of state, whatever its entropy per particle, and nothing needs to be tuned along the flow.
+\item \emph{Neutral labels.}  By \Eq{klab} the first requirement is $\klab=0$: the labels cost nothing to compress at long wavelength.  The particles are grid points,
+  and where they are put should not matter.  Their arrangement is still held on the scale of the kernel (\Sect{sec:goldstone}), and a small $\klab$ can be kept as a
+  regulator.
+\end{enumerate}
+
+\subsection{The target free energy}
+\label{sec:targetF}
+
+\Eq{pE} with $p_{\rm model}=p(T)+\klab\,\bar nT$ requires $p_1=p(T)-(1-\klab)\,T/V$, and $E=e(T)$ requires that $F_1/T$ have no other dependence on $T$.  So
+\begin{keyeq}
+\st
+\frac{F_1(T,V)}T=-\frac{p(T)\,V}T+(1-\klab)\ln V+1 .
+\label{target}
+\stp
+\end{keyeq}
+Its thermodynamics follows from \Eq{pE}--\Eq{klab}:
+\st
+p_{\rm model}=p(T)+\klab\,\bar nT,\qquad E=e(T),\qquad \frac\mu T=-\klab\big(\ln\bar V-1\big),\qquad S(0)=\frac1\klab ,
+\label{targetthermo}
+\stp
+with $\Pi=\sigma-(1-\klab)$ and $\mathcal K=\klab-1$.  The volume is measured in the units of the code, and the constant, the same for every particle, is
+the one freedom of normalization.  It must not depend on $T$ (a constant $c(T)$ would add $\bar n\,(c-Tc')\,T$ to the energy), and at fixed $N$ it enters no
+average.  It sets only the value of $\mu/T$; the choice $1$ gives the labels no chemical potential at $\klab=0$, as the target fluid has no conserved number.  The
+value would matter only if the number of particles could change, as the fugacity of such moves.  At $\klab=0$ the model's thermodynamics is the target's: the label term $(1-\klab)\ln V$ cancels the entropy of
+placing the points, $\ln\bar V$ in \Eq{lnZuniform}, and the chemical potential does not depend on the density.
+
+\subsection{What must change}
+\label{sec:counterterm}
+
+The tree-level model has, at one loop, \Eq{F1loop} with $f=-p(T)$.  The difference from the target is
+\begin{keyeq}
+\st
+\frac{\delta F_1}T=(1-\klab)\ln V+\tfrac12\ln\det\big(2\pi V\chi(T)\big) .
+\label{deltaF}
+\stp
+\end{keyeq}
+The bare pressure needs no change: the counterterm is entirely in the logarithms.  Its $V$-dependent part, $(1+\mathcal K_0-\klab)\ln V$, removes the label pressure and
+the fluctuation share; its $T$-dependent part, $\tfrac12\ln\det(2\pi\chi(T))$, removes the fluctuation energy $\Delta e$.
+
+\subsection{A Hamiltonian that does it}
+\label{sec:newH}
+
+\paragraph{A shift of the entropy variable.}  Evaluate the target energy of each particle at a shifted entropy,
+\st
+e_a^{\rm bare}(s,\bm m,V)=e_a\big(s+\Delta s(s,V),\ \bm m,\ V\big) .
+\stp
+In \Eq{ZN}, change variables to $u=s+\Delta s$.  The target energy is then a function of $u$, and
+\st
+Z_1^{\rm bare}=\int du\,d^2\bm m\;\exp\Big[u-\frac{e(u,\bm m,V)}T\Big]\,\frac{e^{-\Delta s}}{1+\partial\Delta s/\partial s} .
+\stp
+At the saddle point, $u=s(T)V$, the extra factor is $e^{-\Delta s}$ up to corrections of relative order $1/s_a$, so
+\st
+\frac{\delta F_1}T=\Delta s\big|_{\rm saddle}+O\Big(\frac{\ln s_a}{s_a}\Big) .
+\stp
+Matching \Eq{deltaF} with the particle's own temperature $T_a$ in place of $T$ (equal at the saddle),
+\begin{keyeq}
+\st
+\Delta s_a=\ln\Big[V_a^{\,1-\klab}\,\det\big(2\pi V_a\chi(T_a)\big)^{1/2}\Big]+1 .
+\label{Deltas}
+\stp
+\end{keyeq}
+The constant $1$ here is the constant $1$ of \Eq{target}: at the saddle the logarithm cancels the one-loop term of \Eq{F1loop} exactly, so the two
+constants are the same.
+
+\paragraph{The conformal fluid.}  With $s\propto T^d$, $C_V=d\,s$ and $T(e+p)=T^2s$, $\det\chi\propto T^{d(d+3)}\propto s^{d+3}$, and with $s=s_a/V_a$
+\st
+\tfrac12\ln\det\big(2\pi V_a\chi\big)=\frac{d+3}2\ln s_a-\ln V_a+c_\chi ,
+\stp
+with $c_\chi$ a constant of the equation of state; in $d=2$, with $s=aT^2$,
+\st
+c_\chi=\tfrac12\ln\frac{16\pi^3}{a^2} .
+\label{cchi}
+\stp
+so the shift is \Eq{H0},
+\begin{keyeq}
+\st
+\Delta s_a=\frac{d+3}2\ln s_a-\klab\ln V_a+1+c_\chi\qquad\Big(=\tfrac52\ln s_a+1+c_\chi\ \text{ for }d=2,\ \klab=0\Big).
+\label{Deltasconf}
+\stp
+\end{keyeq}
+At $\klab=0$ it depends on the particle's own entropy only, not on its volume.
+
+\paragraph{What it means.}  $e^{\Delta s_a}$ is the phase-space volume of a particle: the room $V_a$ for its position times the widths of its $d+1$ conserved
+densities.  The particle carries the target entropy $u_a=s_a+\Delta s_a$, and the code's variable $s_a$ is that entropy less the logarithm of the particle's own
+phase-space volume.  The integrals over the position and over the fluctuations count those states; the shift keeps them from being counted twice, as the $N!$
+and the size of the phase-space cell do for a classical gas.
+
+\paragraph{What it changes in the dynamics.}  The temperature of a particle is $T_a=\partial e^{\rm bare}/\partial s=T(u_a)\,(1+\partial\Delta s/\partial s)$, larger than
+the target temperature at the entropy $u_a$ by a relative $(d+3)/(2s_a)$.  At $\klab=0$ the pressure of a particle at fixed $s_a$ is that of the target at the entropy
+$u_a$, so the forces have the target form.  The stochastic step uses the entropy function of the same $H$, and needs no separate change.
+
+\begin{algobox}{The renormalized Hamiltonian}
+\begin{algorithmic}[1]
+\State Keep the target equation of state $\varepsilon(S,\bm M)$: no change of the bare pressure.
+\State For each particle, evaluate the energy at the shifted entropy $u_a=s_a+\Delta s_a$, with $\Delta s_a$ from \Eq{Deltasconf} (conformal) or \Eq{Deltas} (general).
+\State Report $u_a/V_a$ as the entropy density of the fluid.
+\State At small $s_a$, replace $\Delta s_a$ by the function that makes the exact $F_1$, from quadrature, equal to \Eq{target}.
+\State Choose $\klab$: $0$, or a small regulator (\Sect{sec:goldstone}); the positions add a bulk modulus of their own at order $1/(\bar nh^2)$ (\Sect{sec:back}).
+\end{algorithmic}
+\end{algobox}
+
+%=============================================================================
+\section{The positions: density modes and the structure factor}
+\label{sec:modes}
+
+The point: the volumes fluctuate with the positions.  To second order in the density of points the weight of the positions is Gaussian, with $\Pi$ and
+$\mathcal K$ as its only input, and the structure factor follows in closed form.
+
+\subsection{The weight as a functional of the density}
+\label{sec:functional}
+
+With the density of points and the kernel density,
+\st
+\rho(\bm x)=\sum_a\delta(\bm x-\bm x_a),\qquad n(\bm x)=(W*\rho)(\bm x),\qquad n_a=n(\bm x_a) ,
+\stp
+a sum over particles is an integral against $\rho$, and the weight of the positions in \Eq{ZN} is
+\st
+\ln Z_{\rm part}[\rho]\equiv-\sum_a\frac{F_1(T,V_a)}T=-\int d^2x\;\rho(\bm x)\,\frac{F_1\big(T,1/n(\bm x)\big)}T .
+\stp
+Fourier components in the box are $\rho_{\bm k}=\sum_ae^{-i\bm k\cdot\bm x_a}$ and $n_{\bm k}=\widetilde W(k)\,\rho_{\bm k}$.
+
+\subsection{From positions to density modes}
+\label{sec:Phi}
+
+\paragraph{The measure.}  A function of the positions that depends on them only through the density can be integrated over the modes instead:
+\st
+\int\frac{\prod_ad^2\bm x_a}{N!}\;G[\rho]=\int\mathcal D\rho\;\Omega[\rho]\;G[\rho],\qquad \mathcal D\rho=\prod_{\bm k\neq0}{}^{'}\,d^2\rho_{\bm k} ,
+\stp
+with one complex variable per pair $\pm\bm k$ (since $\rho_{-\bm k}=\rho_{\bm k}^*$; $\bm k=0$ is fixed by $N$).  $\Omega[\rho]$ counts the arrangements of the $N$ points
+that have the given modes, and $\ln\Omega$ is the entropy of the arrangement.  For points placed independently each mode is a sum of $N$ unit phases, by the
+central limit theorem a complex Gaussian of variance $N$, so
+\st
+\ln\Omega[\rho]=-\frac1{2N}\sum_{\bm k\neq0}|\delta\rho_{\bm k}|^2+\text{const},\qquad \int\mathcal D\rho\;\Omega[\rho]=\frac{L^{2N}}{N!} ,
+\stp
+the sum over all $\bm k\neq0$ counting each pair twice.
+
+\paragraph{The averages.}  The partition function and the averages over the positions are then integrals over the density with the weight $e^{\Phi}$,
+\begin{keyeq}
+\st
+\begin{aligned}
+&\mathcal Z_N=\int\mathcal D\rho\;e^{\Phi[\rho]},\qquad \avg{G}=\frac1{\mathcal Z_N}\int\mathcal D\rho\;e^{\Phi[\rho]}\,G[\rho],\\
+&\Phi[\rho]=\underbrace{\ln\Omega[\rho]}_{\text{arrangement}}+\underbrace{\ln Z_{\rm part}[\rho]}_{\text{particles}} .
+\end{aligned}
+\label{Phi}
+\stp
+\end{keyeq}
+$\Phi$ is the logarithm of the weight of a density profile, the Massieu functional of the density, as $s-e/T$ is that of a particle.
+
+\subsection{Second order}
+\label{sec:second}
+
+Write $\delta_a=\delta n(\bm x_a)/\bar n$.  As a function of $\ln V$ the first two derivatives of $-F_1/T$ are $\Pi$ and $\Pi-\mathcal K$, and
+$\delta\ln V_a=-\delta_a+\tfrac12\delta_a^2$, so
+\st
+\ln Z_{\rm part}=-\frac{NF_1(\bar V)}T-\Pi\sum_a\delta_a+\Big(\Pi-\frac{\mathcal K}2\Big)\sum_a\delta_a^2+\dots
+\stp
+Both sums are quadratic in the modes (\App{app:second}),
+\st
+\sum_a\delta_a=\frac1{\bar nL^2}\sum_{\bm k}\widetilde W\,|\delta\rho_{\bm k}|^2,\qquad \sum_a\delta_a^2=\frac1{\bar nL^2}\sum_{\bm k}\widetilde W^2\,|\delta\rho_{\bm k}|^2 ,
+\stp
+the first because the density seen from a particle is correlated with the particle being there.  With $N=\bar nL^2$,
+\begin{keyeq}
+\st
+\Phi[\rho]=-\frac{NF_1(\bar V)}T-\frac1{2N}\sum_{\bm k\neq0}\big[1+A(k)\big]\,|\delta\rho_{\bm k}|^2+\text{const},\qquad
+A(k)=2\Pi\,\widetilde W\big(1-\widetilde W\big)+\mathcal K\,\widetilde W^2 .
+\label{Ak}
+\stp
+\end{keyeq}
+The $1$ is the entropy of the arrangement, which alone would make the points an ideal gas; $A(k)$ is the weight of the particles.  Its $\Pi$ term vanishes at both
+ends: at $kh\to0$ the kernel resolves the density and the total volume of the particles is the area of the box; at $kh\to\infty$ the kernel averages the
+fluctuation away.
+
+\subsection{The structure factor}
+\label{sec:Sk}
+
+The structure factor is the correlator of the density modes in the ensemble \Eq{Phi}.  Each pair $\pm\bm k$ is a complex Gaussian with the weight
+$\exp[-(1+A)|\delta\rho_{\bm k}|^2/N]$, so
+\begin{keyeq}
+\st
+S(k)\equiv\frac{\avg{\rho_{\bm k}\,\rho_{-\bm k}}}N=\frac1{1+A(k)}
+=\frac1{\big(1-\widetilde W\big)\big[1+(1+2\Pi)\,\widetilde W\big]+\klab\,\widetilde W^2},\qquad \bm k\neq0 .
+\label{Sk}
+\stp
+\end{keyeq}
+The second form, with $\klab=1+\mathcal K$, separates the bulk modulus of the labels.  The first term is positive for $0\le\widetilde W<1$, which holds for the Wendland
+kernels (\App{app:kernels}), so every mode is stable for $\klab\ge0$.  At $k\to0$, $\widetilde W\to1$ and $S(0)=1/\klab$, the sum rule \Eq{klab}.  The pair correlation
+is the Fourier transform,
+\st
+\bar n\,\big[g(r)-1\big]=\int\frac{d^2k}{(2\pi)^2}\,e^{i\bm k\cdot\bm r}\,\big[S(k)-1\big] .
+\stp
+
+\subsection{The partition function}
+\label{sec:posloop}
+
+Relative to the ideal gas each pair contributes the ratio of Gaussian integrals $1/(1+A)=S(k)$, so \Eq{lnZuniform} becomes
+\begin{keyeq}
+\st
+\frac{\ln\mathcal Z_N}N=\underbrace{\ln\bar V+1}_{\text{labels}}-\underbrace{\frac{F_1(T,\bar V)}T}_{\text{one particle}}
++\underbrace{\frac1{2\bar n}\int\frac{d^2k}{(2\pi)^2}\,\ln S(k)}_{\text{positions, one loop}} .
+\label{lnZN}
+\stp
+\end{keyeq}
+The last term is the determinant of the density modes.  It is negative, since correlating the positions lowers their entropy, and of order $1/(\bar nh^2)$ per particle.
+
+%=============================================================================
+\section{What the structure factor says}
+\label{sec:predict}
+
+\subsection{The scale of the pair correlation}
+\label{sec:scale}
+
+In units of $h$ the kernel is fixed, $\widetilde W=\widetilde W(kh)$, so $S$ depends on $kh$, $\sigma$ and $\klab$ only, and
+\st
+g(r)-1=\frac1{\bar nh^2}\,F\Big(\frac rh;\sigma,\klab\Big),\qquad \bar nh^2=\frac2{\sqrt3}\Big(\frac ha\Big)^2 .
+\stp
+The pair correlation has the range of the kernel, $h$, not the spacing $a$; the spacing sets only its depth, through the number of neighbours.
+
+\subsection{Long wavelengths: Ornstein--Zernike and the massless limit}
+\label{sec:OZ}
+
+At $kh\ll1$, $\widetilde W\simeq1-\mu_2k^2/4$, and with $1+\Pi\simeq\sigma$,
+\begin{keyeq}
+\st
+S(k)\simeq\frac1{\klab+\sigma\mu_2k^2/2}=\frac{1/\klab}{1+\xi^2k^2},\qquad \xi^2=\frac{\sigma\mu_2}{2\klab} .
+\label{OZ}
+\stp
+\end{keyeq}
+In the tree-level model, $\klab=5/2$, the label-correlation length is $\xi=0.66h$, $1.35h$, $4.5h$ at $\sigma=3.9$, $16.4$, $179$.  For neutral labels $\xi\to\infty$ and
+\st
+S(k)\simeq\frac2{\sigma\mu_2k^2} :
+\stp
+the points are held at long wavelength not by counting but by the fluid's pressure acting through the kernel.
+
+\subsection{The symmetry and its Goldstone mode}
+\label{sec:goldstone}
+
+$S\propto1/k^2$ is the correlator of a massless field.  The field is the density of grid points, and the symmetry is the freedom to choose the resolution.
+
+\paragraph{The symmetry.}  At fixed temperature and fixed fluid fields, change the density of points by a constant, $\rho\to\rho+c$.  This changes the weight by the
+free energy of the labels, whose dependence on the density is $\klab$, \Eq{klab}.  For neutral labels the free energy is linear in the number of points, the shift
+changes $\Phi$ only by a constant at fixed $N$, and every resolution has the same weight.  This is the compressional half of the relabelling symmetry of a fluid,
+the freedom to move the grid points without changing the fluid.  The other half, moves at fixed local density (transverse displacements), costs nothing at any
+$\klab$.
+
+\paragraph{The Goldstone mode.}  The resolution is then a modulus: the run picks $N/L^2$, but nothing pins it locally.  Its slow variations cost a gradient, the
+fluid's pressure acting on the volume that the kernel fails to assign across a gradient of resolution,
+\st
+\sum_aV_a-L^2=-\frac1{\bar n^2L^2}\sum_{\bm k}\widetilde W\big(1-\widetilde W\big)\,|\delta\rho_{\bm k}|^2,\qquad \widetilde W\big(1-\widetilde W\big)\simeq\frac{\mu_2k^2}4 ,
+\stp
+weighted by $p/T$.  At long wavelength, from \Eq{Ak},
+\begin{keyeq}
+\st
+\Phi[\rho]\simeq\text{const}-\frac1{2\bar n}\int d^2x\,\Big[\klab\,\delta\rho^2+\frac{\sigma\mu_2}2\,(\nabla\delta\rho)^2\Big] :
+\label{goldstone}
+\stp
+\end{keyeq}
+a scalar with the stiffness $\sigma\mu_2/2$ and the mass squared $\klab$.  The shift symmetry forbids the mass; the gradient term is allowed.
+
+\paragraph{Not an elastic rigidity.}  In terms of the displacement of the points, $\delta\rho=-\bar n\,\nabla\!\cdot\bm u$, the gradient term is
+$(\sigma\mu_2\bar n/4)(\nabla\nabla\!\cdot\bm u)^2\propto k^4|u_{L,\bm k}|^2$, a bending-type term two powers of $k$ softer than the $k^2|\bm u|^2$ of an elastic solid.  In the
+Gaussian theory the points have no elastic modulus; a rigidity of the arrangement can only come from beyond it, from the core of $g(r)$ (\Sect{sec:core}).
+
+\paragraph{The regulator and a Gell-Mann--Oakes--Renner relation.}  $\klab$ breaks the symmetry explicitly, and $\xi=1/m$ is the inverse mass.  In units of $T$ the
+stiffness of the mode (the analogue of $f_\pi^2$) and the curvature of the free energy along the symmetry direction (the analogue of $(m_u+m_d)|\avg{\bar qq}|$) are
+\st
+f_\rho^2=\frac{T\sigma\mu_2}{2\bar n}=\frac{p\,\mu_2}{2\bar n^2},\qquad \frac{\partial\mu}{\partial\bar n}\Big|_T=\frac{T\klab}{\bar n}=\frac T{\bar nS(0)} ,
+\stp
+and \Eq{OZ} is
+\begin{keyeq}
+\st
+m^2f_\rho^2=\frac{\partial\mu}{\partial\bar n}\Big|_T=\frac{T\,\klab}{\bar n} ,
+\label{gmor}
+\stp
+\end{keyeq}
+as $m_\pi^2f_\pi^2=(m_u+m_d)|\avg{\bar qq}|$: the mass squared is linear in the explicit breaking, and the stiffness does not depend on it at leading order.  The sum rule
+\Eq{klab} plays the role of the Ward identity.  The tree-level model, $\klab=5/2$, is the analogue of heavy quarks; neutral labels with a small regulator, of light ones.
+
+\paragraph{As in two dimensions.}  Without the mass the fluctuations grow as the logarithm of the box, as for a condensate in $d=2$: the number of points in a region of
+size $R$ fluctuates by
+\st
+\frac{\avg{\delta N_R^2}}{N_R^2}\simeq\frac{\ln(L/R)}{\pi\,\sigma\,\bar n\mu_2} ,
+\stp
+about $10\%$ at $\sigma=16$ and $h/a=2$, and $3\%$ at $\sigma=179$.  The regulator replaces $L$ by $\xi$.  In a superfluid the massless field is the phase of a physical
+order; here it is the density of grid points, a redundancy of the description, and nothing physical is attached to it.
+
+\subsection{The volume fluctuations}
+\label{sec:Vfluct}
+
+The mean density at a particle, its self term plus its neighbours, and the mean volume, the response of $\ln\mathcal Z_N$ to $p/T$ (which enters as $(p/T)\sum_aV_a$),
+are
+\st
+\frac{\avg{n_a}}{\bar n}=1+\frac1{\bar n}\int\frac{d^2k}{(2\pi)^2}\,\widetilde W\,S,\qquad
+\avg{V_a}\bar n=1-\frac1{\bar n}\int\frac{d^2k}{(2\pi)^2}\,\widetilde W\big(1-\widetilde W\big)\,S ,
+\stp
+the first exact.  Treating the density seen by a particle as that seen by a fixed point, the variance is the density fluctuation filtered twice by the kernel,
+\begin{keyeq}
+\st
+\frac{\avg{\delta V_a^2}}{\bar V^2}=\frac1{\bar n}\int\frac{d^2k}{(2\pi)^2}\,\widetilde W(k)^2\,S(k) .
+\label{Vvar}
+\stp
+\end{keyeq}
+In $d=2$ it carries a logarithm from the long wavelengths, cut off at $\xi$ or by the box: $\sim\ln(\xi/h)/(\pi\sigma\bar n\mu_2)$.
+
+\subsection{What the fluid sees}
+\label{sec:leak}
+
+\paragraph{The entropy.}  At fixed positions each particle's entropy is its share of the bath plus an intrinsic fluctuation, $s_a=s\,V_a+\delta s_a$ with
+\Eq{intrinsic}.  For the point sum $S_{\bm k}=\sum_as_ae^{-i\bm k\cdot\bm x_a}$ the intrinsic part gives $C_VL^2$ whatever the positions, and the mean part,
+$s\int(\rho/n)\,e^{-i\bm k\cdot\bm x}$, gives to first order $s\,(1-\widetilde W)\,\delta\rho_{\bm k}/\bar n$, the entropy misplaced because the volumes do not tile the box.
+With $s^2/(\bar nC_V)=(1+c_s^2)\,\sigma$,
+\begin{keyeq}
+\st
+\frac{\avg{|S_{\bm k}|^2}}{L^2C_V}=1+(1+c_s^2)\,\sigma\,\big(1-\widetilde W\big)^2S(k)
+\;\simeq\;1+(1+c_s^2)\,\frac{\mu_2k^2}8\,\frac{\xi^2k^2}{1+\xi^2k^2} .
+\label{leak}
+\stp
+\end{keyeq}
+The leak is largest for neutral labels, $(1+c_s^2)\mu_2k^2/8$: a relative correction of the order of the kernel's own smoothing of the fluid fields,
+$\widetilde W^2\simeq1-\mu_2k^2/2$.  So even when the points fluctuate as $1/k^2$ the fluid sees them only at the order of a gradient, and not at all as $k\to0$.
+
+\paragraph{The momentum.}  The mean momentum is zero, so there is no mean part:
+\st
+\frac{\avg{|M_{\bm k}|^2}}{L^2\,T(e+p)}=\avg{V_a}\bar n ,
+\stp
+flat in $k$ and the same for both projections, for any $\klab$.
+
+\subsection{Short distances}
+\label{sec:core}
+
+At large $k$ the kernel is too weak to hold the points apart.  The shortest ordered scale is where the two terms of $1+A\simeq1+2\sigma\widetilde W$ are equal,
+\st
+2\sigma\,\widetilde W(k_*)=1,\qquad S(k_*)=\frac12 .
+\stp
+Below $k_*$, $S-1\approx-1$, so at contact $\bar nh^2[g(0)-1]\approx-(k_*h)^2/4\pi$, and the Gaussian theory holds in the core only if $\bar nh^2\gtrsim(k_*h)^2/4\pi$.  At
+$\sigma=179$ and $h/a=2$ it gives $g(0)=-0.36$, while hybrid Monte Carlo keeps $g\approx0.1$: the core, $r\lesssim0.3h$, is where the theory is qualitative, and where any
+local order of the points lives.  None of this depends on $\klab$.
+
+%=============================================================================
+\section{The positions back in the thermodynamics}
+\label{sec:back}
+
+The point: the one-loop term of the positions in \Eq{lnZN} is the next correction to the equation of state, of order $1/(\bar nh^2)$, and it gives the labels a small
+bulk modulus of their own.
+
+\paragraph{Pressure and energy.}  At fixed $h$ the term depends on the density through $\sigma$ and on $T$ through $\sigma$.  Differentiating as in \Sect{sec:pe}
+(with $\Pi$ and $\mathcal K$ depending on $\sigma$ only through $\Pi=\sigma+\text{const}$),
+\begin{keyeq}
+\st
+\frac{\delta p}T=\frac12\int\frac{d^2k}{(2\pi)^2}\ln S-\sigma\int\frac{d^2k}{(2\pi)^2}\,\widetilde W\big(1-\widetilde W\big)\,S,\qquad
+\delta e_a=e\,\bar V\,\big(\avg{V_a}\bar n-1\big) .
+\label{labelloop}
+\stp
+\end{keyeq}
+Both integrals converge for neutral labels.
+
+\paragraph{A bulk modulus from the positions.}  $\delta p/T=c(\sigma)/h^2$ depends on the density only through $\sigma\propto1/\bar n$, so it adds to the bulk modulus of the labels
+\st
+\delta\klab=\frac1T\frac{\partial\,\delta p}{\partial\bar n}\Big|_T=-\frac{\sigma\,c'(\sigma)}{\bar nh^2} .
+\label{dklab}
+\stp
+
+\paragraph{Numbers.}  For neutral labels, $\klab=0$ ($\Pi=\sigma-1$, $\mathcal K=-1$), Wendland C2, $d=2$, $c_s^2=1/2$, at $h/a=2$ ($\bar nh^2=4.62$):
+\begin{center}
+\begin{tabular}{ccccccc}
+\toprule
+$\sigma$ & $I_0$ & $\sigma I_1$ & $\delta p/\bar nT$ & $\delta e_a/T$ & $(\delta p-\tfrac12\delta E)/\bar nT$ & $\delta\klab$ \\
+\midrule
+3.89 & $-0.98$ & 0.69 & $-0.26$ & $-0.30$ & $-0.11$ & 0.21 \\
+16.4 & $-3.65$ & 1.21 & $-0.66$ & $-0.52$ & $-0.39$ & 0.36 \\
+179  & $-13.32$ & 3.15 & $-2.12$ & $-1.36$ & $-1.44$ & 0.95 \\
+\bottomrule
+\end{tabular}
+\end{center}
+with $I_0=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\ln S$ and $I_1=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\widetilde W(1-\widetilde W)S$.  All columns but the first three scale as
+$1/(\bar nh^2)$.  (With the tree-level model, $\klab=5/2$, the pressure correction and $\delta\klab$ are within a few per cent of these at $\sigma\ge16$, and within $25\%$ at $\sigma=3.9$, where the energy correction is smaller by a third: the corrections depend only weakly on the label stiffness.)  Three conclusions:
+\begin{enumerate}
+\item \emph{The positions supply a regulator.}  $\delta\klab>0$: even for neutral labels the label free energy is convex at order $1/(\bar nh^2)$, and the Goldstone mode
+  acquires a small mass, $\xi^2=\sigma\mu_2/(2\delta\klab)$, about $(3.6h)^2$ at $\sigma=16.4$ and $h/a=2$.  It falls as the number of neighbours grows.
+\item \emph{A trace anomaly.}  At fixed $h$ the correction is not conformal: $P-E/2\simeq-0.4\,\bar nT$ at $\sigma=16.4$, about $2.4\%$ of $P$ at $h/a=2$.  The kernel
+  is a scale.
+\item \emph{The next counterterm.}  Both are measured rather than computed beyond this order, and folded into $F_1$ by the same construction: the target \Eq{target}
+  fixes the sum of the particle term and this one.
+\end{enumerate}
+
+%=============================================================================
+\section{Summary and next steps}
+\label{sec:summary}
+
+The equilibrium of the particle model is fixed by one function, the free energy $F_1(T,V)$ of a particle at fixed volume.  The Hamiltonian enters only through it,
+by a Legendre transform and the one-loop free energy of the particle's fluctuations.  The thermodynamics of the model is the input fluid plus an ideal gas of
+labels and the fluctuations of each particle; the structure factor is \Eq{Sk}.  Both depend on $F_1$ through two numbers, the pressure and the stiffness of a particle,
+and the bulk modulus of the labels, $\klab=1+\mathcal K$, sets both the long-wavelength fluctuations of the points and the dependence of the pressure on their density.
+
+Choosing $F_1$ by \Eq{target} with $\klab\to0$ makes the model's thermodynamics the target's at every density, and the labels neutral: the points can be placed anywhere at
+no cost at long wavelength, held only by a gradient stiffness on the scale of the kernel.  For the conformal fluid the Hamiltonian that does it at one loop is a shift
+of each particle's entropy by $(d+3)/2\,\ln s_a$, the logarithm of its own phase-space volume.
+
+Next:
+\begin{itemize}
+\item implement \Eq{H0} as an option, and check with hybrid Monte Carlo that the pressure at fixed $T$ does not depend on the density of particles, that the energy is $e(T)$,
+  and that $S(k)$ follows \Eq{Sk} with $\klab=\delta\klab$ of \Eq{dklab};
+\item the exact shift at small $s_a$, from the quadrature of $F_1$;
+\item the comparison of long runs with the tree-level and the renormalized Hamiltonian: the spread of the entropy per particle, the arrangement, and the correlators.
+\end{itemize}
+The theory with the tree-level Hamiltonian agrees with hybrid Monte Carlo for $S(k)$, $g(r)$ and the volume moments, with the exact single particle at small $s_a$;
+those comparisons will be repeated with the renormalized one.
+
+%=============================================================================
+\appendix
+
+\section{The single-particle integral beyond one loop}
+\label{app:single}
+
+The exponent is $V\psi$, with $V\psi_{\max}$ of order $s_a$.  The cubic and quartic derivatives of $\psi$ at the maximum change $F_1$ at the next order,
+\st
+\frac{F_1}T=-\frac{pV}T-\mathcal K_0\ln V-\tfrac12\ln\det(2\pi\chi)-\frac{c}{s\,V}+O\Big(\frac1{s_a^2}\Big),
+\stp
+with $c$ a number of order one fixed by the equation of state.  The correction depends on $V$, so it enters $\Pi$ and $\mathcal K$; at small $s_a$ the quadrature replaces
+the series.  The same order contains the corrections to the shift of the entropy: the Jacobian $1+\partial\Delta s/\partial s=1+(d+3)/(2s_a)$, and the difference between
+$\Delta s$ at $s_a$ and at the saddle.
+
+\section{The second-order expansion}
+\label{app:second}
+
+Write $\rho=\bar n+\delta\rho$ and $n=\bar n+\delta n$, $\delta n=W*\delta\rho$; $\int\delta\rho=\int\delta n=0$.  Then
+\st
+\sum_a\delta_a=\frac1{\bar n}\int d^2x\,\rho\,\delta n=\frac1{\bar n}\int d^2x\,\delta\rho\,\delta n=\frac1{\bar nL^2}\sum_{\bm k}\widetilde W\,|\delta\rho_{\bm k}|^2 ,
+\stp
+using $\int f\,g=L^{-2}\sum_{\bm k}f_{\bm k}g_{\bm k}^*$, and to the same order
+\st
+\sum_a\delta_a^2=\frac1{\bar n^2}\int d^2x\,\bar n\,\delta n^2=\frac1{\bar nL^2}\sum_{\bm k}\widetilde W^2\,|\delta\rho_{\bm k}|^2 .
+\stp
+The derivatives of $-F_1/T$ in $\ln V$ are $\Pi$ and $V\partial_V\Pi=\Pi-\mathcal K$, by \Eq{PiK}.
+
+\section{The kernels}
+\label{app:kernels}
+
+For small $k$,
+\st
+\widetilde W(k)=1-\frac{\mu_2k^2}{4}+O(k^4),\qquad \mu_2=\int d^2r\,r^2\,W(r),
+\stp
+the $1/4$ being $1/(2d)$.  For the Wendland kernels $\mu_2/h^2=5/9$, $0.424$, $0.343$ (C2, C4, C6), and $0\le\widetilde W\le1$ at every $k$ (\Fig{fig:wft}), so every mode
+of \Eq{Sk} is stable for $\klab\ge0$.
+
+\begin{figure}[h]
+\includegraphics[width=0.6\textwidth]{figs/wendland_ft.png}
+\caption{The Fourier transforms of the Wendland kernels.}
+\label{fig:wft}
+\end{figure}
+
+\begin{thebibliography}{9}
+\bibitem{amt} Y.~Akamatsu, A.~Mazeliauskas and D.~Teaney, \emph{Bulk viscosity from hydrodynamic fluctuations with relativistic hydro-kinetic theory},
+  Phys.\ Rev.\ C \textbf{97}, 024902 (2018), arXiv:1708.05657.
+\end{thebibliography}
+
+\end{document}

@@ -110,6 +110,7 @@ end
 function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, dt::Float64, nmh::Int = 10)
     check_stochastic_dims(params)
     params.hamiltonian === :energy && params.volume === :number || error("hmc_update!: needs hamiltonian = :energy, volume = :number")
+    RENORM && params.measure !== :liouville && error("hmc_update!: SPH_RENORM needs the Liouville measure")
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     hb = hmc_heatbath!(ps, params, cl, eos, tg, rng; nmh)
     H0, P0, lnT0 = hmc_measure!(ps, params, cl, eos)

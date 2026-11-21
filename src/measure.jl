@@ -631,3 +631,41 @@ function read_equilibrium(path::AbstractString)
         return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]), part = part)
     end
 end
+
+# ── Energy density and pressure of the model (docs/gravity.tex, "The energy density and the stress") ──────────
+# The responses of ln Z to the lapse and to the spatial metric: the energy density E = Σ_a e_a / L^d, and the stress
+#   S^{ij} = (1/L^d) Σ_a (v_a^i m_a^j + P_a V_a² Q_a^{ij}),   Q_a^{ij} = Σ_b r_ab^i D_ab^j,  D_ab = −W'(r_ab) r̂_ab,
+# whose trace over d is the mechanical pressure, the kinetic (label) part plus the virial part.  Needs hamiltonian = :energy,
+# volume = :number; smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the shear-stress
+# components of the sum, (Sxy, (Sxx − Syy)/2), for the record.
+function energy_pressure(particles::Vector{Particle}, params::SimParams, cl::CellList2D, eos::AbstractEOS)
+    params.hamiltonian === :energy && params.volume === :number ||
+        error("energy_pressure: needs hamiltonian = :energy, volume = :number")
+    smooth_to_particles!(particles, params, cl);  update_thermodynamics!(particles, eos)
+    nl = neighbor_list!(cl, particles, params.h)
+    n = length(particles)
+    ea = zeros(n);  kin = zeros(SMatrix{2,2,Float64}, n);  vir = zeros(SMatrix{2,2,Float64}, n)
+    Threads.@threads for a in 1:n
+        pa = particles[a]
+        ea[a] = particle_energy(pa, eos)
+        v = pa.v_over_S * pa.S_smooth
+        kin[a] = v * pa.m'
+        PV2 = pa.p * (pa.s / pa.S_smooth)^2
+        Q = zero(SMatrix{2,2,Float64})
+        for b in neighbors(nl, a)
+            b == a && continue
+            r_vec = minimum_image(particles[b].x - pa.x, params.L)          # r_ab = x_b − x_a
+            r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
+            r_mag >= 2params.h && continue
+            D = -kernel_gradW(r_vec, r_mag, params.h, params.kernel)        # −W'(r) r̂
+            Q += r_vec * D'
+        end
+        vir[a] = PV2 * Q
+    end
+    A = prod(params.L)
+    K = sum(kin) / A;  Vr = sum(vir) / A
+    Pkin = (K[1, 1] + K[2, 2]) / 2;  Pvir = (Vr[1, 1] + Vr[2, 2]) / 2
+    St = K + Vr
+    return (E = sum(ea) / A, P = Pkin + Pvir, Pkin = Pkin, Pvir = Pvir,
+            Sxy = (St[1, 2] + St[2, 1]) / 2, Sxxyy = (St[1, 1] - St[2, 2]) / 2)
+end

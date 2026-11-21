@@ -240,7 +240,34 @@ function particle_entropy_lnT(e, m, V, eos)
     S, v, T = r
     return (isfinite(S) && dot(v, v) <= V2MAX && T > 0) ? V * S - log(T) : -Inf
 end
-vote_entropy(e, m, V, eos, liouville::Bool) = liouville ? particle_entropy_lnT(e, m, V, eos) : particle_entropy(e, m, V, eos)
+# SPH_RENORM (default off; docs/partition_v2.tex, "A Hamiltonian that does it"): the renormalized Hamiltonian, whose single-particle
+# free energy is the target one, F_1/T = −pV/T + ln V + const (bulk modulus of the labels B = 0).  The energy of a particle is that of
+# the target fluid at the entropy u_a, and the code's variable is s_a = u_a − Δs(u_a), Δs = (α/2) ln u, α = 1 + d + 2d c_s² (the
+# logarithm of the particle's own phase-space volume; conformal fluid with d c_s² = 1, so Δs does not depend on V).  pa.s keeps the
+# target entropy u_a, so the energy, the forces, the smoothing and the noise are unchanged; only the weight changes: with the
+# Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
+# T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
+# HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
+const RENORM = setting("SPH_RENORM", false)
+@noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
+    S, v, T = eos_from_energy(ε, M, eos)
+    (isfinite(S) && dot(v, v) <= V2MAX && T > 0) || return -Inf
+    d = 2;  c2 = cs2(eos, ε)
+    abs(d * c2 - 1) < 1e-12 || error("SPH_RENORM: implemented for the conformal fluid, d c_s² = 1 (got c_s² = $c2)")
+    α = 1 + d + 2d * c2
+    u = V * S
+    u > α / 2 || return -Inf                                   # the shift is monotonic only for u > α/2
+    s = u - (α / 2) * log(u)
+    return liouville ? s - log(T / (1 - α / (2u))) : s
+end
+# the method is chosen at load time, so that with SPH_RENORM off the code is exactly that of before (bit-identical regression)
+if RENORM
+    vote_entropy(e, m, V, eos, liouville::Bool) = renorm_vote_entropy(e, m, V, eos, liouville)
+else
+    vote_entropy(e, m, V, eos, liouville::Bool) = liouville ? particle_entropy_lnT(e, m, V, eos) : particle_entropy(e, m, V, eos)
+end
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
@@ -627,6 +654,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
     liouville = params.measure === :liouville
     liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
+    RENORM && !liouville && error("SPH_RENORM needs the Liouville measure (SPH_MEASURE=liouville)")
     Sc = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N
         Sc[a] = vote_entropy(e[a], m[a], V[a], eos, liouville)

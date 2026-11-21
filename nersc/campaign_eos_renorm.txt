@@ -1,0 +1,44 @@
+# Campaign `eos_renorm` (2026-11-21, branch statics, docs/gravity.tex "Measurement plan: flat space first", docs/partition_v2.tex):
+# the equation of state of the model in canonical ensembles (hybrid Monte Carlo, examples/eos_measure.jl): the energy density and
+# the mechanical pressure (kinetic + virial) against the target e(T0), p(T0), with the tree-level Hamiltonian and with the
+# renormalized one (SPH_RENORM=1, the entropy shift (5/2) ln s_a).  Lattice starts s_a = 16, 54, 541 (sigma(T0) ~ 3.9, 16.4, 179),
+# h/a = 2, 3, 4 in the box L = 9h = 0.45; and the box L = 0.9 at h/a = 2, 3 for S(k) at small k (renormalized: S(k) should rise
+# towards 1/delta B from the positions).  400 HMC updates each (one third discarded).  Each task writes <run>/<tag>_seed<k>.{txt,h5}.
+# Laptop timing (2 threads): 0.5 s per update at N = 360; per task ~3 min (L=0.45, h/a=2) to ~2 h (L=0.9, h/a=3).
+# Each task also gives dE/dT, dP/dT and c_s^2 at fixed density from the canonical fluctuations (A Var E, A Cov(P,E)).
+# Check runs: s_a x 0.9 and x 1.1 at h/a = 2 for a finite-difference cross-check of the fluctuation derivatives.
+# 480 tasks on 2 threads, estimate ~2 node-hours.
+eos_tree_s16_ha2       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 400 eos_tree_s16_ha2
+eos_tree_s16_ha3       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 400 eos_tree_s16_ha3
+eos_tree_s16_ha4       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 16 400 eos_tree_s16_ha4
+eos_tree_s54_ha2       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 400 eos_tree_s54_ha2
+eos_tree_s54_ha3       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 400 eos_tree_s54_ha3
+eos_tree_s54_ha4       16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 54 400 eos_tree_s54_ha4
+eos_tree_s541_ha2      16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 400 eos_tree_s541_ha2
+eos_tree_s541_ha3      16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 400 eos_tree_s541_ha3
+eos_tree_s541_ha4      16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 541 400 eos_tree_s541_ha4
+eos_ren_s16_ha2        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 400 eos_ren_s16_ha2
+eos_ren_s16_ha3        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 400 eos_ren_s16_ha3
+eos_ren_s16_ha4        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 16 400 eos_ren_s16_ha4
+eos_ren_s54_ha2        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 400 eos_ren_s54_ha2
+eos_ren_s54_ha3        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 400 eos_ren_s54_ha3
+eos_ren_s54_ha4        16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 54 400 eos_ren_s54_ha4
+eos_ren_s541_ha2       16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 400 eos_ren_s541_ha2
+eos_ren_s541_ha3       16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 400 eos_ren_s541_ha3
+eos_ren_s541_ha4       16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 4 541 400 eos_ren_s541_ha4
+eos_tree_s54_ha2_L0.9  8                 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 2 54 400 eos_tree_s54_ha2_L0.9
+eos_tree_s54_ha3_L0.9  8                 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 3 54 400 eos_tree_s54_ha3_L0.9
+eos_tree_s541_ha2_L0.9 8                 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 2 541 400 eos_tree_s541_ha2_L0.9
+eos_tree_s541_ha3_L0.9 8                 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 3 541 400 eos_tree_s541_ha3_L0.9
+eos_ren_s54_ha2_L0.9   8   SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 2 54 400 eos_ren_s54_ha2_L0.9
+eos_ren_s54_ha3_L0.9   8   SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 3 54 400 eos_ren_s54_ha3_L0.9
+eos_ren_s541_ha2_L0.9  8   SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 2 541 400 eos_ren_s541_ha2_L0.9
+eos_ren_s541_ha3_L0.9  8   SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.9 3 541 400 eos_ren_s541_ha3_L0.9
+eos_tree_s48.6_ha2     16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 48.6 400 eos_tree_s48.6_ha2
+eos_tree_s59.4_ha2     16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 59.4 400 eos_tree_s59.4_ha2
+eos_tree_s486.9_ha2    16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 486.9 400 eos_tree_s486.9_ha2
+eos_tree_s595.1_ha2    16                SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 595.1 400 eos_tree_s595.1_ha2
+eos_ren_s48.6_ha2      16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 48.6 400 eos_ren_s48.6_ha2
+eos_ren_s59.4_ha2      16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 59.4 400 eos_ren_s59.4_ha2
+eos_ren_s486.9_ha2     16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 486.9 400 eos_ren_s486.9_ha2
+eos_ren_s595.1_ha2     16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 595.1 400 eos_ren_s595.1_ha2
