@@ -589,6 +589,34 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
+
+The equation of state of the model with the tree-level and the renormalized Hamiltonian (`SPH_RENORM=1`, docs/partition_v2.tex
+"A Hamiltonian that does it"), in canonical HMC ensembles (`examples/eos_measure.jl`): the energy density and the mechanical
+pressure (kinetic + virial, `energy_pressure` in src/measure.jl) against the target e(T0), p(T0), the derivatives dE/dT, dP/dT and
+c_s^2 at fixed density from the canonical fluctuations, and S(k).  480 tasks, 2 threads, estimate ~2 node-hours (longest task
+~1-2 h; laptop 0.5 s per HMC update at N = 360).  Expected (docs/gravity.tex, "What to expect"): tree level E/e-1, P/p-1 = 2.5/sigma
+plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); renormalized: only the correction of the positions
+(-0.016, -0.040 there); c_s^2 = 1/2 at one loop for both.  Laptop smoke runs agree (commit message of a6992de).
+
+**What to do (the owner asked the NERSC session to do all of it):**
+1. `git pull` on `statics` (needs a6992de or later); precompile `julia --project=nersc`.
+2. Smoke test in `-q debug`: one task of `eos_ren_s16_ha4` and one of `eos_tree_s541_ha3_L0.9` (check the .txt and .h5 appear).
+3. Submit from `$SCRATCH/sph`:
+   `sbatch --array=1-480 -A m3722 --export=ALL,SR_REPO=$HOME/stochastic-sph $HOME/stochastic-sph/nersc/array.sh $HOME/stochastic-sph/nersc/campaign_eos_renorm.txt eos_renorm`
+   and record the job ID here.
+4. When done: `module load python; python3 examples/eos_measure.py $SCRATCH/sph/eos_renorm docs/figs` (writes docs/figs/eos_EP.png,
+   eos_trace.png, eos_derivs.png, eos_Sk.png, eos_table.csv).
+5. Add a section "Results" to docs/gravity.tex (before "The equilibrium partition function as a generating functional"), with the
+   four figures and a short table from eos_table.csv: E/e-1, P/p-1, the trace, dE/dT, dP/dT and c_s^2 for both Hamiltonians against
+   the predictions of "What to expect"; say plainly where they agree and where not (the h/a dependence separates the positions'
+   correction, which should scale as 1/(n h^2); the renormalized S(k) in the L = 0.9 boxes should rise at small k).
+6. Commit the figures, the csv, gravity.tex and this log entry on `statics` (no .h5 or .jls), and push.
+
+Known: the regression's equilibrium-driver comparison differs only in hast_lq_* (thread-order sums; also between two runs of the
+same commit) — not a failure of SPH_RENORM.
+
+
 ### `grid` — the grid step (gridstep.tex), 2026-11-12, branch `gridcode`
 
 **Option (2026-11-13):** the grid step is `SimParams.ideal = :grid`, set by `SPH_IDEAL=grid` (default
