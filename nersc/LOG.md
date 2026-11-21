@@ -621,11 +621,12 @@ plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); re
   E/e−1 = +0.012, P/p−1 = +0.009, c_s² = 0.50 (24 updates, 8 kept after the burn: indicative only).  Output files are `<tag>_seed0..15`
   (SR_SEED0 = seed − 1).
 - Campaign submitted from `$SCRATCH/sph`: job **61748587** (480 tasks, shared QOS, -c 2, -t 8 h).  Output `$SCRATCH/sph/eos_renorm/`.
-- Repacked at 13:30 (the owner asked for dedicated nodes): the pending array tasks cancelled (`scancel -t PENDING`), tasks 25–122 left
-  running in 61748587; tasks 123–480 in one packed job **61751219** (`node.sh`, -q regular -N 2 -t 4 h, THREADS=2, 128 slots), started
-  longest first (`TASKS` = `$SCRATCH/sph/eos_renorm/tasklist_packed.txt`: L = 0.9 h/a = 3, then h/a = 4, h/a = 3, L = 0.9 h/a = 2, h/a = 2).
-  Run checkout `~/stochastic-sph-eos` (worktree, detached at e3f4307).  Task times on 2 threads: h/a = 2 ~10 min, h/a = 3 ~38 min,
-  h/a = 4 ~75 min, L = 0.9 h/a = 3 ~2 h; ~245 task-hours remaining, wall ~2.5 h on 2 nodes.
+- 13:20: pending tasks of 61748587 cancelled (tasks 25–122 left running) to pack the rest on 2 regular nodes (job 61751219, `node.sh`
+  with the new `TASKS` list); it sat in the queue (Resources, no start estimate) and was cancelled unstarted.  Back to shared arrays,
+  run checkout `~/stochastic-sph-eos` (worktree, detached at e3f4307, same code): the S(k) boxes L = 0.9 first, tasks 289–352, job
+  **61751343**; the rest, tasks 123–288 and 353–480, job **61751345**.  Lesson: for 2-thread tasks of ≤ 2 h the shared QOS starts ~70
+  at once within minutes; dedicated nodes only add queue wait.  Task times on 2 threads: h/a = 2 ~10 min, h/a = 3 ~38 min,
+  h/a = 4 ~75 min, L = 0.9 h/a = 3 ~2 h (estimate).
 - (laptop session, 2026-11-21) docs/gravity.tex now has the section "Results" with the four figures and a table for the first run
   (tree, s_a = 16, h/a = 2): agreement to 0.2% with the exact single particle plus the positions.  When more runs finish, rerun
   eos_measure.py and **extend that section** (table rows, the bullet list), do not start a new one.
