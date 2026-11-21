@@ -398,11 +398,49 @@ finite differences from the runs at $s_a\times0.9$, $1.1$ (when available).  Das
 \end{figure}
 
 \begin{figure}[h]
-\includegraphics[width=0.48\textwidth]{figs/eos_trace.png}\hfill
-\includegraphics[width=0.48\textwidth]{figs/eos_Sk.png}
-\caption{Left: the trace times the number of neighbours, $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$, which collapses the correction of the positions across $h/a$.
-Right: $S(k)$ in the $L=0.9$ boxes, tree level against renormalized.  (Partial; empty until those runs finish.)}
-\label{fig:traceSk}
+\centering
+\includegraphics[width=0.55\textwidth]{figs/eos_trace.png}
+\caption{The trace times the number of neighbours, $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$, which collapses the correction of the positions across $h/a$.  (Partial.)}
+\label{fig:trace}
+\end{figure}
+
+\paragraph{The structure factor.}  In the boxes $L=0.9=18h$ at $h/a=2$ ($N=1512$, eight seeds each), $S(k)$ of the positions, averaged over shells of $|\bm k|$, against
+the Ornstein--Zernike form of \texttt{partition\_v2.tex},
+\st
+S(k)\simeq\frac1{\klab+\delta\klab+\sigma_{\rm p}\mu_2k^2/2},\qquad \mu_2=\tfrac59h^2\ \ \text{(Wendland C2)},
+\label{SkOZ}
+\stp
+with $\klab=5/2$ at tree level and $0$ renormalized, and $\delta\klab$ the bulk modulus supplied by the positions ($0.36$ at $\sigma_{\rm p}=16.4$, $0.95$ at $179$,
+\texttt{partition\_v2.tex}): no free parameter.
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+ & $\sigma_{\rm p}$ & $S(0)$ predicted & $kh=0.35$ & $kh=0.49$ & $kh=0.70$ \\
+\midrule
+tree, $s_a=54$ & 16.4 & 0.35 & $0.316\pm0.012$ (0.293) & $0.271\pm0.014$ (0.253) & $0.209\pm0.005$ (0.196) \\
+renormalized, $s_a=54$ & 18.0 & 2.6 & $1.05\pm0.04$ (1.00) & $0.67\pm0.04$ (0.63) & $0.390\pm0.013$ (0.353) \\
+tree, $s_a=541$ & 179 & 0.29 & $0.101\pm0.006$ (0.105) & $0.066\pm0.004$ (0.065) & $0.040\pm0.003$ (0.036) \\
+renormalized, $s_a=541$ & 180 & 1.05 & $0.123\pm0.010$ (0.141) & $0.085\pm0.006$ (0.077) & $0.044\pm0.002$ (0.039) \\
+\bottomrule
+\end{tabular}
+\end{center}
+(in brackets, \Eq{SkOZ}).
+\begin{itemize}
+\item At $s_a=54$ the renormalized $S(k)$ rises at small $k$ as predicted: three times the tree-level value at $kh=0.35$, on the curve \Eq{SkOZ} with
+  $\klab=\delta\klab$ to $5\%$.  The labels of the renormalized Hamiltonian are neutral, and the positions are held at long wavelength only by the pressure through
+  the kernel and by $\delta\klab$; the correlation length is $\xi=3.6h$ against $1.3h$ at tree level.
+\item At $s_a=541$ the two Hamiltonians differ only below $kh\approx0.3$ ($\xi=7.3h$ against $3.8h$), which this box ($kh_{\rm min}=0.35$) does not reach; both agree
+  with \Eq{SkOZ} at the $k$ it has.  To see $S(0)\to1/\delta\klab\approx1$ needs $kh\lesssim0.15$, a box $L\gtrsim40h$.
+\item The tree-level $S(k)$ is below $1$ everywhere, $S(0)=1/(\klab+\delta\klab)$: the counting term holds the particles at the preferred density.
+\item Above $kh\approx0.8$ the data lie above \Eq{SkOZ} by $10$--$30\%$, as expected of a small-$k$ form; the full $S(k)=1/(1+A(k))$ is not compared here.
+\end{itemize}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/eos_Sk.png}
+\caption{$S(k)$ of the positions in the boxes $L=0.9$, averaged over shells of $|\bm k|$; filled, tree level; open, renormalized.  Lines: Ornstein--Zernike,
+\Eq{SkOZ}, with $\delta\klab$ from \texttt{partition\_v2.tex} (solid, tree level; dashed, renormalized).  Left $s_a=54$, right $s_a=541$; $h/a=2$ (the $h/a=3$ boxes are
+still running).}
+\label{fig:Sk}
 \end{figure}
 
 %=============================================================================

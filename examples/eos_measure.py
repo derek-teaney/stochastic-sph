@@ -143,13 +143,28 @@ for kind, mk in (("tree", "D"), ("ren", "d")):
 ax[0].legend(fontsize=7, ncol=2)
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "eos_derivs.png"), dpi=150)
 
-# 4. S(k) in the large boxes
-fig, ax = plt.subplots(figsize=(6, 4.2))
-for kind, ls in (("tree", "-"), ("ren", "--")):
-    for name, v in sel(kind, big=True):
-        o = np.argsort(v["kh"])
-        ax.plot(v["kh"][o], v["Sk"][o], ls, marker=".", label=f"{name.replace('eos_', '')}")
-ax.set_yscale("log"); ax.set_xlabel("kh"); ax.set_ylabel("S(k)"); ax.legend(fontsize=7)
+# 4. S(k) in the large boxes, averaged over shells of |k|, against Ornstein-Zernike (docs/partition_v2.tex, Eq. OZ):
+#    S(k) = 1/(B + sigma mu2 k^2/2), mu2 = 5h^2/9 (Wendland C2, support 2h), B = B_label + dB; B_label = 5/2 at tree level, 0
+#    renormalized; dB from the positions, the table of partition_v2.tex at h/a = 2 (n h^2 = 4.62) scaled by 4.62/(n h^2).
+MU2 = 5 / 9
+def dB(sig, nh2):
+    return np.interp(np.log(sig), np.log([3.89, 16.4, 179.0]), [0.21, 0.36, 0.95]) * 4.62 / nh2
+fig, axs = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+kk = np.linspace(0.05, 1.6, 200)
+for ax, sa in zip(axs, ("54", "541")):
+    for kind, mk in (("tree", "o"), ("ren", "s")):
+        for name, v in sel(kind, big=True):
+            m = pat.match(name)
+            if m.group(2) != sa:
+                continue
+            ha = int(m.group(3)); c = cols[ha]
+            kr = np.round(v["kh"], 2); sh = np.unique(kr); sh = sh[sh <= 1.6]
+            ax.plot(sh, [v["Sk"][kr == q].mean() for q in sh], mk, color=c, mfc=c if kind == "tree" else "none", ms=5,
+                    label=f"{'tree' if kind == 'tree' else 'renorm.'}, h/a={ha}, σ={v['sigma']:.3g}")
+            B = (2.5 if kind == "tree" else 0.0) + dB(v["sigma"], v["nh2"])
+            ax.plot(kk, 1 / (B + v["sigma"] * MU2 * kk**2 / 2), "-" if kind == "tree" else "--", color=c, lw=1)
+    ax.set_yscale("log"); ax.set_xlabel("kh"); ax.set_title(f"s_a = {sa}"); ax.legend(fontsize=7)
+axs[0].set_ylabel("S(k)")
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "eos_Sk.png"), dpi=150)
 
 # 5. the table
