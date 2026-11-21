@@ -10,6 +10,8 @@
 #          $R/nersc/node.sh $R/nersc/<file> <name> [first last]
 #
 # THREADS = Julia threads (= physical cores) per task (default 4); NSLOT = 128·nodes/THREADS.
+# TASKS = an explicit list of task numbers, in the order to start them (e.g. longest first);
+# overrides [first last].
 # Perlmutter CPU nodes have 128 physical cores with 2 hardware threads each, and Slurm's -c
 # counts hardware threads: -c 2·THREADS with --cpu-bind=cores gives THREADS physical cores.
 # A task that does not finish leaves its .chk; rerun the same command to resume.
@@ -23,10 +25,10 @@ NSLOT=$(( 128 * ${SLURM_NNODES:-1} / T ))
 OUTROOT=${SR_OUTROOT:-$SCRATCH/sph/$NAME};  mkdir -p "$OUTROOT/slurm"
 command -v julia >/dev/null || module load ${SR_JULIA_MODULE:-julia/1.12.1}
 export JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH:-/global/common/software/m3722/$USER/julia_depot}
-echo "node.sh: job $SLURM_JOB_ID on $SLURM_JOB_NODELIST, tasks $FIRST-$LAST of $NT, $NSLOT slots x $T cores, $(date)"
+echo "node.sh: job $SLURM_JOB_ID on $SLURM_JOB_NODELIST, tasks ${TASKS:+(list) }$FIRST-$LAST of $NT, $NSLOT slots x $T cores, $(date)"
 
 running=0
-for i in $(seq "$FIRST" "$LAST"); do
+for i in ${TASKS:-$(seq "$FIRST" "$LAST")}; do
     if [ "$running" -ge "$NSLOT" ]; then wait -n; running=$((running - 1)); fi
     SLURM_ARRAY_TASK_ID=$i SLURM_ARRAY_JOB_ID=$SLURM_JOB_ID SR_THREADS=$T \
         srun --exact -N1 -n1 -c $((2 * T)) --cpu-bind=cores \
