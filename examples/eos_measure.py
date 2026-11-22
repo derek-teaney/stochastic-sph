@@ -61,7 +61,7 @@ for d in sorted(glob.glob(os.path.join(ROOT, "*"))):
     if files:
         runs[os.path.basename(d)] = combine([per_seed(p) for p in files])
 print(f"{len(runs)} runs")
-pat = re.compile(r"eos_(tree|ren)_s([\d.]+)_ha(\d)(_L0\.9)?$")
+pat = re.compile(r"eos_(tree|ren)_s([\d.]+)_ha(\d)(_L(?:0\.9|1\.8))?$")
 
 
 def sel(kind, ha=None, big=False, sa=None):

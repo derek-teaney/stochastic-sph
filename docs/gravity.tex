@@ -341,9 +341,12 @@ $1/\delta\klab$ (\nolinkurl{partition_v2.tex}, ``The positions back in the therm
 \section{Results}
 \label{sec:results}
 
-Campaign \texttt{eos\_renorm} (NERSC job 61748587, \texttt{nersc/LOG.md}); figures and table from \texttt{examples/eos\_measure.py}.  \emph{Status: partial.}
-So far one run is complete, the tree-level Hamiltonian at the lattice start $s_a=16$ ($\sigma_{\rm p}=3.89$), $h/a=2$, sixteen seeds of 400 updates;
-this section will be extended as the other runs arrive.
+Campaign \texttt{eos\_renorm} (NERSC jobs 61748587, 61751343, 61751345, \texttt{nersc/LOG.md}); figures and \texttt{docs/figs/eos\_table.csv} from
+\texttt{examples/eos\_measure.py}.  Complete: both Hamiltonians at the lattice starts $s_a=16$, $54$, $541$ and $h/a=2$, $3$, $4$ in the box $L=9h$, sixteen seeds of
+400 hybrid Monte Carlo updates each (one third discarded); the runs at $s_a\times0.9$, $1.1$ at $h/a=2$ for finite differences; and the boxes $L=18h$ at $h/a=2$, $3$
+for $S(k)$, eight seeds each.  The statistical errors of $E/\er-1$ and $\pr_{\rm model}/\pr-1$ are $1$--$5\times10^{-4}$ (between seeds).  Pending: the boxes
+$L=36h$ for $S(k)$ at small $k$ (job 61762047).  The renormalized Hamiltonian shifts the temperature of a lattice start, so its $\sigma_{\rm p}$ are $5.16$, $18.0$ and
+$180$ in place of $3.89$, $16.4$ and $179$.
 
 \paragraph{The predictions at $\sigma_{\rm p}=3.89$.}  At this small entropy per particle the one-loop values are not enough, and the exact single particle
 (quadrature of $F_1$, \texttt{partition.tex}, ``Small entropy per particle'') gives $\Pi-\sigma_{\rm p}=1.35$ in place of $\mathcal K_0=3/2$ and $\Delta e=4.7\,T$ in place of $5\,T$.
@@ -369,77 +372,137 @@ $c_s^2$ at fixed $\bar n$ & $0.5$ & & $0.4837\pm0.0014$ \\
 \bottomrule
 \end{tabular}
 \end{center}
+At $h/a=3$ and $4$ the two entries rise to $0.593$, $0.598$ ($E$) and $0.568$, $0.584$ ($\pr_{\rm model}$); linear in $1/(\bar nh^2)$ both extrapolate to $0.604$, which is
+the exact single particle alone, $(1+1.35)/3.89=4.7/(2\times3.89)=0.604$.
 
-\paragraph{What it shows so far.}
+\paragraph{The equation of state at $\sigma_{\rm p}=16$--$180$.}  Against \Sect{sec:expect}: the predictions (in brackets) are the table there at $h/a=2$, with the
+correction of the positions scaled by $4.62/(\bar nh^2)$ at $h/a=3$, $4$ ($\bar nh^2=10.4$, $18.5$); for the renormalized runs, the entries at $\sigma_{\rm p}=16.4$ and
+$179$.  Trace in units of $\bar nT$.
+\begin{center}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+ & $\sigma_{\rm p}$ & $h/a$ & $E/\er-1$ & $\pr_{\rm model}/\pr-1$ & $(\pr_{\rm model}-E/2)/\bar nT$ & $\times\,\bar nh^2$ \\
+\midrule
+tree & 16.4 & 2 & $+0.135$ ($+$0.140) & $+0.107$ ($+$0.110) & $-0.463$ ($-$0.390) & $-2.14$ \\
+tree & 16.4 & 3 & $+0.144$ ($+$0.147) & $+0.131$ ($+$0.134) & $-0.202$ ($-$0.173) & $-2.09$ \\
+tree & 16.4 & 4 & $+0.147$ ($+$0.149) & $+0.140$ ($+$0.142) & $-0.113$ ($-$0.098) & $-2.08$ \\
+tree & 179 & 2 & $+0.0099$ ($+$0.0100) & $+0.0009$ ($+$0.0020) & $-1.595$ ($-$1.440) & $-7.37$ \\
+tree & 179 & 3 & $+0.0123$ ($+$0.0122) & $+0.0086$ ($+$0.0086) & $-0.671$ ($-$0.640) & $-6.97$ \\
+tree & 179 & 4 & $+0.0130$ ($+$0.0130) & $+0.0109$ ($+$0.0110) & $-0.371$ ($-$0.360) & $-6.85$ \\
+renorm. & 18 & 2 & $-0.015$ ($-$0.016) & $-0.039$ ($-$0.040) & $-0.437$ ($-$0.390) & $-2.02$ \\
+renorm. & 18 & 3 & $-0.006$ ($-$0.007) & $-0.017$ ($-$0.018) & $-0.190$ ($-$0.173) & $-1.97$ \\
+renorm. & 18 & 4 & $-0.003$ ($-$0.004) & $-0.009$ ($-$0.010) & $-0.106$ ($-$0.098) & $-1.96$ \\
+renorm. & 180 & 2 & $-0.0041$ ($-$0.0040) & $-0.0129$ ($-$0.0120) & $-1.588$ ($-$1.440) & $-7.33$ \\
+renorm. & 180 & 3 & $-0.0017$ ($-$0.0018) & $-0.0054$ ($-$0.0053) & $-0.668$ ($-$0.640) & $-6.95$ \\
+renorm. & 180 & 4 & $-0.0009$ ($-$0.0010) & $-0.0030$ ($-$0.0030) & $-0.370$ ($-$0.360) & $-6.83$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Temperature derivatives: finite differences.}  The runs at $s_a\times0.9$ and $1.1$ have the same lattice, hence the same density, at temperatures $\pm5\%$ apart;
+$\partial E/\partial T\simeq\Delta E/\Delta T$ and $c_s^2=\Delta\pr_{\rm model}/\Delta E$ at fixed $\bar n$ are fifteen times more precise than the canonical fluctuations
+(\Fig{fig:derivs}, in brackets), with which they agree.  At fixed density $\sigma_{\rm p}\propto T^2$, so a term $c/\sigma_{\rm p}$ in $E/\er-1$ adds $c/(3\sigma_{\rm p})$ to
+$(\partial E/\partial T)/(d\er/dT)-1$: the one-loop $5/(6\sigma_{\rm p})$ at tree level.
+\begin{center}
+\small
+\resizebox{\textwidth}{!}{\begin{tabular}{lcccc}
+\toprule
+ & $\sigma_{\rm p}$ & $(\partial E/\partial T)/(d\er/dT)-1$ & $(\partial\pr_{\rm model}/\partial T)/(d\pr/dT)-1$ & $c_s^2$ at fixed $\bar n$ \\
+\midrule
+tree & 16.4 & $+0.042\pm0.001$ ($+0.07\pm0.02$) & $+0.023\pm0.001$ ($+0.05\pm0.02$) & $0.4906\pm0.0008$ ($0.4900\pm0.0013$) \\
+tree & 179 & $+0.0004\pm0.0003$ ($-0.03\pm0.02$) & $-0.0056\pm0.0003$ ($-0.04\pm0.02$) & $0.4970\pm0.0002$ ($0.4963\pm0.0008$) \\
+renorm. & 18.0 & $-0.011\pm0.001$ ($-0.03\pm0.02$) & $-0.030\pm0.001$ ($-0.05\pm0.02$) & $0.4906\pm0.0009$ ($0.4892\pm0.0010$) \\
+renorm. & 180 & $-0.0043\pm0.0003$ ($-0.02\pm0.02$) & $-0.0102\pm0.0003$ ($-0.02\pm0.02$) & $0.4970\pm0.0002$ ($0.4964\pm0.0005$) \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\paragraph{What it shows.}
 \begin{itemize}
-\item The energy density and the pressure of the tree-level model are $58\%$ and $52\%$ above the target at $\sigma_{\rm p}=3.9$, and the theory with the exact
-  single particle and the correction of the positions accounts for both to $0.2\%$, with no free parameter.
-\item The kinetic stress is the label pressure $\bar nT$ to $0.1\%$ (equipartition), and the virial stress exceeds $\pr$ by the particle's own share
-  $\Pi-\sigma_{\rm p}$ less the correction of the positions, $1.35-0.32=1.03$, measured $1.026$.
-\item The trace $\pr_{\rm model}-E/2=-0.22\,\bar nT$ is the departure from the conformal relation, as predicted; at one loop it would vanish.
-\item The temperature derivatives from the canonical fluctuations agree with the one-loop $5/(6\sigma_{\rm p})$ within their $15\%$ errors.  $c_s^2$ at fixed density
-  is below $1/2$ by $0.016\pm0.0014$, a significant departure, beyond one loop: the share $\Pi-\sigma_{\rm p}$, the fluctuation energy $\Delta e$ and the correction of
-  the positions all depend on $\sigma_{\rm p}\propto T^2$ at fixed density.  The comparison with the renormalized Hamiltonian will say how much of it is from
-  the labels.
+\item \emph{The renormalization works.}  The renormalized Hamiltonian removes the tree-level excess $2.5/\sigma_{\rm p}$ (\Fig{fig:EP}): what remains is the correction of the
+  positions, as predicted to $10\%$ or better at $\sigma_{\rm p}=18$ and $180$ and every $h/a$, and it falls as $1/(\bar nh^2)$ (at $\sigma_{\rm p}=18$,
+  $\bar nh^2(\pr_{\rm model}/\pr-1)=-0.180$, $-0.172$, $-0.161$ at $h/a=2$, $3$, $4$).
+\item The tree-level entries are $2.5/\sigma_{\rm p}$ plus the same correction, to $\pm0.005$ at $\sigma_{\rm p}=16.4$ and $\pm0.001$ at $179$.  At $\sigma_{\rm p}=3.9$ the
+  exact single particle is needed (above).
+\item The kinetic stress is $\bar nT$ to $0.1\%$ in every run (equipartition).
+\item \emph{The trace is the positions'.}  $\pr_{\rm model}-E/2$ is nearly the same for both Hamiltonians ($6\%$ at $\sigma_{\rm p}\approx17$, $1\%$ at $180$), and $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$ collapses across
+  $h/a$ (\Fig{fig:trace}): $-2.0$ to $-2.1$ at $\sigma_{\rm p}\approx17$, $-6.8$ to $-7.4$ at $\sigma_{\rm p}\approx180$.  It is larger than the one-loop
+  correction of the positions ($-1.80$, $-6.65$), by $9$--$19\%$ at $\sigma_{\rm p}\approx17$ and $3$--$11\%$ at $180$, most at $h/a=2$: the next order in $1/(\bar nh^2)$.
+\item \emph{So is the departure of $c_s^2$ from $1/2$.}  The finite differences give the same $c_s^2$ for both Hamiltonians, $0.4906$ at $\sigma_{\rm p}\approx17$ and $0.4970$ at
+  $180$, and the fluctuation values approach $1/2$ as $1/(\bar nh^2)$ ($1/2-c_s^2=0.016$, $0.007$, $0.005$ at $s_a=16$, $h/a=2$, $3$, $4$, tree level): the labels
+  contribute nothing to it, the kernel does.  The slopes are additive: the tree-level $+0.042$ at $\sigma_{\rm p}=16.4$ is the one-loop $5/(6\sigma_{\rm p})=0.051$ plus the
+  positions' $-0.011$ (the renormalized value).
+\item \emph{Renormalized at small entropy per particle} ($s_a=16$, $\sigma_{\rm p}=5.16$): $E/\er-1=+0.026$, $+0.038$, $+0.042$ and $\pr_{\rm model}/\pr-1=-0.009$,
+  $+0.023$, $+0.034$ at $h/a=2$, $3$, $4$, both extrapolating to $+0.048$ at $\bar nh^2\to\infty$, with the trace going to zero.  The one-loop counterterm leaves
+  a single-particle remainder of about $0.25/\sigma_{\rm p}$ here, the counterpart of the tree level's $-0.038$ at $\sigma_{\rm p}=3.9$ (above); it is not in the
+  predictions of \Sect{sec:expect}, and a quadrature of the renormalized single particle at $\sigma_{\rm p}=5.2$ would check it.  The temperature derivatives
+  there, $-0.11$, $-0.07$, $-0.08$ (canonical fluctuations, $\pm0.02$), carry the same remainder.
 \end{itemize}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/eos_EP.png}
 \caption{$E/\er(T_0)-1$ (left) and $\pr_{\rm model}/\pr(T_0)-1$ (right) against $\sigma_{\rm p}$; filled, tree level; open, renormalized; colours by $h/a$.  Dashed: the
-one-loop tree-level value $2.5/\sigma_{\rm p}$.  (Partial: one run.)}
+one-loop tree-level value $2.5/\sigma_{\rm p}$.}
 \label{fig:EP}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/eos_derivs.png}
 \caption{$\partial E/\partial T$ and $\partial\pr/\partial T$ at fixed density over the target, and $c_s^2$ at fixed density, from the canonical fluctuations; black diamonds,
-finite differences from the runs at $s_a\times0.9$, $1.1$ (when available).  Dashed: one loop, tree level.  (Partial.)}
+finite differences from the runs at $s_a\times0.9$, $1.1$ ($h/a=2$; filled, tree; open, renormalized).  Dashed: one loop, tree level.}
 \label{fig:derivs}
 \end{figure}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.55\textwidth]{figs/eos_trace.png}
-\caption{The trace times the number of neighbours, $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$, which collapses the correction of the positions across $h/a$.  (Partial.)}
+\caption{The trace times the number of neighbours, $\bar nh^2(\pr_{\rm model}-E/2)/\bar nT$, which collapses the correction of the positions across $h/a$; filled, tree level; open, renormalized.}
 \label{fig:trace}
 \end{figure}
 
-\paragraph{The structure factor.}  In the boxes $L=0.9=18h$ at $h/a=2$ ($N=1512$, eight seeds each), $S(k)$ of the positions, averaged over shells of $|\bm k|$, against
+\paragraph{The structure factor.}  In the boxes $L=0.9=18h$ at $h/a=2$ and $3$ ($N=1512$ and $3402$, eight seeds each), $S(k)$ of the positions, averaged over shells of $|\bm k|$, against
 the Ornstein--Zernike form of \texttt{partition\_v2.tex},
 \st
 S(k)\simeq\frac1{\klab+\delta\klab+\sigma_{\rm p}\mu_2k^2/2},\qquad \mu_2=\tfrac59h^2\ \ \text{(Wendland C2)},
 \label{SkOZ}
 \stp
-with $\klab=5/2$ at tree level and $0$ renormalized, and $\delta\klab$ the bulk modulus supplied by the positions ($0.36$ at $\sigma_{\rm p}=16.4$, $0.95$ at $179$,
-\texttt{partition\_v2.tex}): no free parameter.
+with $\klab=5/2$ at tree level and $0$ renormalized, and $\delta\klab$ the bulk modulus supplied by the positions ($0.36$ at $\sigma_{\rm p}=16.4$, $0.95$ at $179$ for
+$h/a=2$, \texttt{partition\_v2.tex}, scaled by $4.62/(\bar nh^2)$ at $h/a=3$): no free parameter.
 \begin{center}
-\begin{tabular}{lccccc}
+\resizebox{\textwidth}{!}{\begin{tabular}{lccccc}
 \toprule
  & $\sigma_{\rm p}$ & $S(0)$ predicted & $kh=0.35$ & $kh=0.49$ & $kh=0.70$ \\
 \midrule
+\multicolumn{6}{l}{$h/a=2$} \\
 tree, $s_a=54$ & 16.4 & 0.35 & $0.316\pm0.012$ (0.293) & $0.271\pm0.014$ (0.253) & $0.209\pm0.005$ (0.196) \\
 renormalized, $s_a=54$ & 18.0 & 2.6 & $1.05\pm0.04$ (1.00) & $0.67\pm0.04$ (0.63) & $0.390\pm0.013$ (0.353) \\
 tree, $s_a=541$ & 179 & 0.29 & $0.101\pm0.006$ (0.105) & $0.066\pm0.004$ (0.065) & $0.040\pm0.003$ (0.036) \\
 renormalized, $s_a=541$ & 180 & 1.05 & $0.123\pm0.010$ (0.141) & $0.085\pm0.006$ (0.077) & $0.044\pm0.002$ (0.039) \\
+\multicolumn{6}{l}{$h/a=3$} \\
+tree, $s_a=54$ & 16.4 & 0.38 & $0.312\pm0.011$ (0.311) & $0.276\pm0.013$ (0.266) & $0.223\pm0.003$ (0.204) \\
+renormalized, $s_a=54$ & 18.0 & 5.9 & $1.39\pm0.12$ (1.28) & $0.685\pm0.025$ (0.730) & $0.423\pm0.013$ (0.382) \\
+tree, $s_a=541$ & 179 & 0.34 & $0.112\pm0.012$ (0.111) & $0.067\pm0.004$ (0.067) & $0.041\pm0.001$ (0.037) \\
+renormalized, $s_a=541$ & 180 & 2.4 & $0.159\pm0.012$ (0.152) & $0.078\pm0.007$ (0.080) & $0.042\pm0.003$ (0.040) \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{center}
 (in brackets, \Eq{SkOZ}).
 \begin{itemize}
 \item At $s_a=54$ the renormalized $S(k)$ rises at small $k$ as predicted: three times the tree-level value at $kh=0.35$, on the curve \Eq{SkOZ} with
-  $\klab=\delta\klab$ to $5\%$.  The labels of the renormalized Hamiltonian are neutral, and the positions are held at long wavelength only by the pressure through
-  the kernel and by $\delta\klab$; the correlation length is $\xi=3.6h$ against $1.3h$ at tree level.
+  $\klab=\delta\klab$ to $5\%$; at $h/a=3$, where $\delta\klab$ is smaller, it rises further ($1.39\pm0.12$, predicted $1.28$).  The labels of the renormalized Hamiltonian are neutral, and the positions are held at long wavelength only by the pressure through
+  the kernel and by $\delta\klab$; the correlation length is $\xi=3.6h$ ($5.4h$ at $h/a=3$) against $1.3h$ at tree level.
 \item At $s_a=541$ the two Hamiltonians differ only below $kh\approx0.3$ ($\xi=7.3h$ against $3.8h$), which this box ($kh_{\rm min}=0.35$) does not reach; both agree
-  with \Eq{SkOZ} at the $k$ it has.  To see $S(0)\to1/\delta\klab\approx1$ needs $kh\lesssim0.15$, a box $L\gtrsim40h$.
+  with \Eq{SkOZ} at the $k$ it has.  To see $S(k)$ turn over towards $S(0)=1/\delta\klab\approx1$ needs $kh\lesssim0.2$: the boxes $L=36h$ ($kh_{\rm min}=0.175$, predicted $S=0.40$
+  renormalized against $0.20$ at tree level) are running (job 61762047).
 \item The tree-level $S(k)$ is below $1$ everywhere, $S(0)=1/(\klab+\delta\klab)$: the counting term holds the particles at the preferred density.
 \item Above $kh\approx0.8$ the data lie above \Eq{SkOZ} by $10$--$30\%$, as expected of a small-$k$ form; the full $S(k)=1/(1+A(k))$ is not compared here.
 \end{itemize}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/eos_Sk.png}
-\caption{$S(k)$ of the positions in the boxes $L=0.9$, averaged over shells of $|\bm k|$; filled, tree level; open, renormalized.  Lines: Ornstein--Zernike,
-\Eq{SkOZ}, with $\delta\klab$ from \texttt{partition\_v2.tex} (solid, tree level; dashed, renormalized).  Left $s_a=54$, right $s_a=541$; $h/a=2$ (the $h/a=3$ boxes are
-still running).}
+\caption{$S(k)$ of the positions in the boxes $L=0.9=18h$, averaged over shells of $|\bm k|$; filled, tree level; open, renormalized.  Lines: Ornstein--Zernike,
+\Eq{SkOZ}, with $\delta\klab$ from \texttt{partition\_v2.tex} (solid, tree level; dashed, renormalized).  Left $s_a=54$, right $s_a=541$; colours by $h/a$.}
 \label{fig:Sk}
 \end{figure}
 
