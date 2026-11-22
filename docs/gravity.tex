@@ -75,7 +75,7 @@ what couples to the spatial metric.  Small, static changes of the metric are eno
 \toprule
 symbol & meaning \\
 \midrule
-$N=e^{\sigma}$, $N^i=0$, $\gamma_{ij}=g_{ij}$ & lapse, shift and spatial metric \\
+$N=e^{\sigma}$, $N^i=0$, $g_{ij}$ & lapse, shift and spatial metric \\
 $n^\mu$, $\ve{i}{\mu}$ & normal (fiducial observer), spatial basis \\
 $\edense$, $\pdense^i$, $\Sstress^{ij}$ & fiducial energy, momentum, stress densities \\
 $\er(T)$, $\pr(T)$, $s(T)$ & rest-frame energy density, pressure, entropy density \\
@@ -99,7 +99,7 @@ We use a static metric without shift,
 \stp
 \end{keyeq}
 the Kaluza--Klein form of Jensen \emph{et al.}\ \cite{Jensen:2012jh} with no Kaluza--Klein field, and in the language of the $3+1$ split a lapse $N=e^\sigma$ and a spatial
-metric $\gamma_{ij}=g_{ij}$.  Both vary slowly, on scales long compared with the kernel size $h$.  The extrinsic curvature of the slices vanishes, $K_{ij}=0$.
+metric $g_{ij}$.  Both vary slowly, on scales long compared with the kernel size $h$.  The extrinsic curvature of the slices vanishes, $K_{ij}=0$.
 
 The lapse sets the rate of the clocks, $\dd\tau=N\,\dd t$, and is the Newtonian potential: a slow particle falls with $\ddot{\bm x}\simeq-\nabla\sigma$.  A uniform change of
 the spatial metric changes the proper volume of the box at fixed coordinates, $\sqrt g\,L^d$.  With $g_{ij}=\delta_{ij}$ the conservation laws of the Density Frame
@@ -338,6 +338,95 @@ correction of the positions ($\propto1/\bar nh^2$) from the single-particle term
 $1/\delta\klab$ (\nolinkurl{partition_v2.tex}, ``The positions back in the thermodynamics'').
 
 %=============================================================================
+\section{Implementation plan: a static lapse in the code}
+\label{sec:implementation}
+
+The point: the flat-space runs test the equation of state in uniform equilibrium.  A static lapse tests the dynamics and the inhomogeneous equilibrium: whether
+the ideal and stochastic steps relax to Tolman's profile, how the particles distribute themselves, and the gradient corrections that no counterterm in $F_1$ can
+capture.  The field is the lapse alone, with flat slices, \Eq{metric} with $g_{ij}=\delta_{ij}$:
+\st
+N(\bm x)=1+\Phi_0\cos\frac{2\pi m_\Phi x}{L},\qquad |\Phi_0|\ll1 ,
+\stp
+with $m_\Phi$ the number of wavelengths in the box.  The option is off by default, and with it off the code must be unchanged (bit-identical regression), as for
+\texttt{SPH\_RENORM}.
+
+\subsection{The equations}
+\label{sec:impl_eqs}
+
+\paragraph{The ideal step.}  With $H=\sum_aN_ae_a(s_a,\bm m_a,V_a)$, $N_a=N(\bm x_a)$, and the number volume $V_a=1/n_a$,
+\st
+\dot{\bm x}_a=\frac{\partial H}{\partial\bm m_a}=N_a\,\bm v_a,\qquad
+\dot{\bm m}_a=-\frac{\partial H}{\partial\bm x_a}=-e_a\,\nabla N\big|_{\bm x_a}-\sum_b\big(N_a\,p_aV_a^2+N_b\,p_bV_b^2\big)\,\nabla_aW_{ab} ,
+\label{lapseforce}
+\stp
+using $\partial e_b/\partial V_b=-p_b$ and $\partial V_b/\partial\bm x_a=-V_b^2\,\partial n_b/\partial\bm x_a$.  So the flat-space loop changes in two places: the pressure factors
+$p_aV_a^2$ are weighted by the lapse at each particle, and each particle feels the gravitational force $-e_a\nabla N$.  $H$ depends on both $\bm x$ and $\bm m$, as it
+already does, so the generalized leapfrog applies unchanged; it conserves $H$, the Killing energy, to its tolerance.
+
+\paragraph{The stochastic step.}  Its moves hold the energies $e_a$ fixed, so they hold $H$ fixed, and their acceptance is unchanged.  Its time is the proper time: the
+noise and the drift of a star centred on $a$ use $N_a\Delta t$ in place of $\Delta t$.  With flat slices the parallel transport of a momentum transfer is trivial.
+
+\paragraph{Hybrid Monte Carlo.}  The canonical weight is $\prod_a\exp[s_a-N_ae_a/T_0]$: each particle is in a bath at its own Tolman temperature $T_0/N_a$.  The heat
+bath of particle $a$ uses $\beta_0N_a$ in place of $\beta_0$ (and a proposal centred on the most probable state at that temperature); the trajectory is accepted on
+$-\beta_0\Delta H$ with the $H$ above.
+
+\subsection{Where it goes in the code}
+\label{sec:impl_code}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.38\textwidth}p{0.58\textwidth}}
+\toprule
+piece & place \\
+\midrule
+the lapse $N(\bm x)$, $\nabla N$, the settings & \texttt{src/sph.jl} (\texttt{SPH\_LAPSE\_PHI0}, \texttt{SPH\_LAPSE\_MODE}; off when $\Phi_0=0$) \\
+$\dot{\bm m}_a$, \Eq{lapseforce} & \texttt{hamiltonian\_force\_energy!} (\texttt{src/ideal.jl}) \\
+$\dot{\bm x}_a=N_a\bm v_a$ & \texttt{update\_velocities\_energy!} (\texttt{src/ideal.jl}), read by the leapfrogs \\
+$H=\sum_aN_ae_a$ & \texttt{hmc\_measure!} (\texttt{src/hmc.jl}) and the energy diagnostics \\
+heat bath at $\beta_0N_a$ & \texttt{hmc\_heatbath!} (\texttt{src/hmc.jl}) \\
+proper time $N_a\Delta t$ & the star coefficients of the stochastic step (\texttt{src/stochastic.jl}) \\
+time step & \texttt{compute\_dt}: the largest coordinate speed is $(1+|\Phi_0|)$ times the flat one \\
+profiles in slabs of constant $N$ & a new \texttt{lapse\_profiles} in \texttt{src/measure.jl} \\
+\bottomrule
+\end{tabular}
+\end{center}
+As for \texttt{SPH\_RENORM}, the lapse-aware methods are chosen at load time, so that with the option off the compiled code is exactly the present one.  One caution:
+\texttt{pa.dotx} becomes the coordinate velocity $N_a\bm v_a$; code that reads it as the fluid velocity (the deterministic viscous step, $\beta=\dot{\bm x}/T$) must use
+$\bm v_a$ instead.
+
+\subsection{The measurements}
+\label{sec:impl_meas}
+
+\begin{algobox}{Static lapse: equilibrium and relaxation}
+\begin{algorithmic}[1]
+\State \textbf{Equilibrium (HMC).}  Sample the canonical ensemble of $H=\sum_aN_ae_a$ at $T_0$, for the tree-level and the renormalized Hamiltonian.
+\State Bin the particles in slabs of constant $N$; in each slab record the density of particles $\bar n$, the energy density $\sum_ae_a$ per area, the stress
+  $\sum_aV_aT_a^{ij}$ per area (kinetic and virial), the mean entropy per particle, and the mean temperature that the code reads, $T_{\rm eos}$.
+\State Compare with Tolman, $T(\bm x)=T_0/N$: $E$ against $e(T(\bm x))$ and $\pr_{\rm model}$ against $\pr(T(\bm x))$ slab by slab; the hydrostatic equation
+  $\nabla\pr_{\rm model}=-(E+\pr_{\rm model})\nabla\ln N$; and the density of particles, $\bar n\propto N^{-d}$ at tree level, nearly uniform renormalized (held only by
+  $\delta\klab$ from the positions).
+\State \textbf{Relaxation (dynamics).}  Start from flat-space equilibrium, switch the lapse on over a time long compared with the sound crossing time, and run the ideal and
+  stochastic steps.  Record the same profiles against time: the approach to Tolman, the redistribution of the particles, and the entropy per particle.
+\State \textbf{Gradient corrections.}  Repeat at two wavenumbers $m_\Phi$; the departures from the local equation of state scale as $(kh)^2$ and measure the hydrostatic
+  coefficient of $(\nabla T)^2$ (\Sect{sec:jensen}).
+\end{algorithmic}
+\end{algobox}
+
+\paragraph{Sizes.}  $\Phi_0=0.05$ spans $\pm5\%$ in $T$ and $\pm15\%$ in $\pr\propto T^3$, against slab errors of order $10^{-3}$; at $L=18h$ and $m_\Phi=1$, $kh=0.35$, so the
+gradient corrections are of order $10^{-1}$ of the variation, and at $m_\Phi=2$ four times larger.  The renormalized model's particle density is nearly a flat direction,
+so in the relaxation run it should change only slowly.
+
+\subsection{Tests}
+\label{sec:impl_tests}
+
+\begin{itemize}
+\item Hamilton's equations: on a jittered lattice with $\Phi_0\neq0$, the force and the velocity against finite differences of $H$.
+\item The ideal step alone: $H$ conserved to the leapfrog tolerance; at $\Phi_0=0$ bit-identical to the present code.
+\item Hybrid Monte Carlo in a lapse: the slab temperatures from the single-particle distribution reproduce $T_0/N$.
+\item \texttt{test/run.sh all}: unchanged with the option off.
+\end{itemize}
+
+%=============================================================================
 \section{Results}
 \label{sec:results}
 
@@ -413,9 +502,10 @@ S(k)\simeq\frac1{\klab+\delta\klab+\sigma_{\rm p}\mu_2k^2/2},\qquad \mu_2=\tfrac
 with $\klab=5/2$ at tree level and $0$ renormalized, and $\delta\klab$ the bulk modulus supplied by the positions ($0.36$ at $\sigma_{\rm p}=16.4$, $0.95$ at $179$,
 \texttt{partition\_v2.tex}): no free parameter.
 \begin{center}
+\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lccccc}
 \toprule
- & $\sigma_{\rm p}$ & $S(0)$ predicted & $kh=0.35$ & $kh=0.49$ & $kh=0.70$ \\
+ & $\sigma_{\rm p}$ & $S(0)$ theory & $kh=0.35$ & $kh=0.49$ & $kh=0.70$ \\
 \midrule
 tree, $s_a=54$ & 16.4 & 0.35 & $0.316\pm0.012$ (0.293) & $0.271\pm0.014$ (0.253) & $0.209\pm0.005$ (0.196) \\
 renormalized, $s_a=54$ & 18.0 & 2.6 & $1.05\pm0.04$ (1.00) & $0.67\pm0.04$ (0.63) & $0.390\pm0.013$ (0.353) \\
@@ -444,6 +534,64 @@ still running).}
 \end{figure}
 
 %=============================================================================
+\section{Boosted equilibrium: the momentum}
+\label{sec:boost}
+
+The point: in an equilibrium moving with the velocity $\bm v$ the model carries a momentum density, and a relativistic fluid fixes it in terms of its energy and
+pressure.  Measuring it at $v=0.8$ says how the momentum depends on the temperature in the model, and whether the model's inertia is the enthalpy, as Lorentz
+invariance requires.
+
+\paragraph{The identity.}  For a perfect fluid moving along $x$, in the density frame,
+\st
+\pdense=w\gamma^2v,\qquad T^{00}=w\gamma^2-\pr,\qquad T^{yy}=\pr,\qquad\text{so}\qquad \pdense=v\,\big(T^{00}+T^{yy}\big),
+\label{lorentzid}
+\stp
+with $w=\er+\pr$ at the rest-frame temperature $T_{\rm rel}=\gamma T$; equivalently $T^{xx}-T^{yy}=\pdense v$.  In the boosted canonical ensemble, with the weight
+$\exp[\sum_as_a-(H-\bm v\cdot\bm P)/T_0]$,
+\st
+\pdense=\bar nT\,\frac{\partial\ln Z_1}{\partial v}\Big|_{T,V} ,
+\stp
+because the entropy of the labels, $\ln\bar V+1$, does not depend on $v$.  The labels carry pressure (the kinetic stress $\bar nT$ is in $T^{yy}$) but no momentum of their
+own, so \Eq{lorentzid} need not hold.
+
+\paragraph{The single particle at small $v$.}  At small $v$, $\pdense/v$ is the momentum susceptibility, $\chi_{MM}=\avg{m_x^2}/T$ per particle.  The quadrature at fixed
+volume (\texttt{partition\_v2.tex}, Appendix D, with $\avg{m_x^2}$ added) gives, with $w$ the target enthalpy and $R=\chi_{MM}\big/\big[(E+\pr_{\rm model})/\bar n\big]-1$ the
+violation of \Eq{lorentzid}:
+\begin{center}
+\begin{tabular}{c ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{tree level} & \multicolumn{3}{c}{renormalized} \\
+$s(T)\bar V$ & $\chi_{MM}/wV$ & $(E+\pr)/\bar nwV$ & $R$ & $\chi_{MM}/wV$ & $(E+\pr)/\bar nwV$ & $R$ \\
+\midrule
+11.7 & 1.567 & 1.603 & $-0.023$ & 1.087 & 1.119 & $-0.029$ \\
+49.2 & 1.140 & 1.150 & $-0.0085$ & 0.991 & 1.001 & $-0.0097$ \\
+200  & 1.035 & 1.037 & $-0.0024$ & 0.998 & 1.000 & $-0.0025$ \\
+536  & 1.013 & 1.014 & $-0.0009$ & 0.999 & 1.000 & $-0.0009$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Two conclusions.  The momentum response follows the renormalization: $14\%$ high at tree level at $s_a\approx50$, on target to $1\%$ with the renormalized
+Hamiltonian.  The identity is violated in both, by the same amount, $R\simeq-1/(2s(T)\bar V)$ for $s_a\gtrsim50$: per particle
+\st
+\chi_{MM}=e_1+p_1V+\tfrac12T ,
+\stp
+the labels' kinetic stress $T$ counting only half as inertia.  The entropy shift does not touch it (the labels do not depend on $v$); removing it would need a term in
+the energy that depends on the momentum.  It is $1\%$ at $s_a\approx50$ and $0.1\%$ at $500$.
+
+\paragraph{The plan at $v=0.8$.}
+\begin{enumerate}
+\item \emph{Theory}: the same quadrature with the boosted weight $\exp[s-e/T+\bm v\cdot\bm m/T]$ at $v=0.8$ ($\gamma=5/3$), for both Hamiltonians: per particle
+  $\avg{m_x}$, $\avg{e}$, the longitudinal and transverse pressures.  Whether $R$ grows with $\gamma$: the particle at fixed volume is not Lorentz contracted.
+\item \emph{Code} (small): \texttt{energy\_pressure} also returns $\pdense=\sum_a\bm m_a/L^d$ and the components $\Sstress^{xx}$, $\Sstress^{yy}$; \texttt{eos\_measure.jl} gets a
+  boost (\texttt{SR\_BOOST}), drawing the initial state at the total momentum of the boosted fluid and passing its $\beta$ to hybrid Monte Carlo, as
+  \texttt{examples/equilibrium.jl} does.
+\item \emph{Runs}: $v=0.8$, both Hamiltonians, $s_a=54$ and $541$, $h/a=2$ and $3$, with the $\pm10\%$ runs for $\partial\pdense/\partial T$ at fixed $v$; the cost of the
+  flat-space ones.
+\item \emph{Observables}: the momentum against the target, $\pdense/(w\gamma^2v)-1$ at $T_{\rm rel}=\gamma T_0$; the identity, $\pdense/[v(E+\Sstress^{yy})]-1$; the anisotropy of
+  the stress, $\Sstress^{xx}-\Sstress^{yy}-\pdense v$; and $\partial\pdense/\partial T$ at fixed $v$ from the fluctuations, $A\,\mathrm{Cov}(\pdense,E-v\pdense)/T_0^2$ (the weight is $e^{-(H-vP)/T_0}$).
+\end{enumerate}
+
+%=============================================================================
 \section{The equilibrium partition function as a generating functional}
 \label{sec:jensen}
 
@@ -469,6 +617,196 @@ A metric that changes in time drives the system out of equilibrium.
   is $\Sstress^{xy}=-\pr\,h_{xy}-\eta\,\dot h_{xy}$ at low frequency: the Kubo formula for the shear viscosity, with \Eq{Sop} as the operator.  The trace part measures $\zeta$.
 \end{itemize}
 These are the subject of the next part.
+
+%=============================================================================
+\appendix
+
+\section{The $3+1$ split and weak fields: formulas}
+\label{app:adm}
+
+The point: the formulas used for small changes of the metric, collected in one place, in the sign conventions of the Density Frame paper.  One change of
+notation: the spatial metric, $\gamma_{ij}$ there, is $g_{ij}$ here, with inverse $g^{ij}$ and determinant $g$, and the spacetime metric is $G_{\mu\nu}$ (not the
+Einstein tensor, which these notes never need), so that $\gamma$ is kept for the Lorentz factor.  The
+spatial dimension is $d$ ($d=2$ in the simulations); Greek indices run over $0,\dots,d$, Latin over $1,\dots,d$.
+
+\subsection{The metric and its inverse}
+
+The $3+1$ (here $2+1$) form, with the lapse $N$, the shift $N^i$ and the spatial metric $g_{ij}$,
+\st
+\dd s^2=-N^2\dd t^2+g_{ij}\,(\dd x^i+N^i\dd t)(\dd x^j+N^j\dd t),\qquad N_i\equiv g_{ij}N^j .
+\stp
+The components and the inverse,
+\st
+G_{00}=-N^2+N_iN^i,\qquad G_{0i}=N_i,\qquad G_{ij}=g_{ij},
+\stp
+\st
+G^{00}=-\frac1{N^2},\qquad G^{0i}=\frac{N^i}{N^2},\qquad G^{ij}=g^{ij}-\frac{N^iN^j}{N^2},\qquad \sqrt{-G}=N\sqrt g ,
+\stp
+with $g^{ij}$ the inverse of $g_{ij}$; $G^{ij}$, the spatial part of the inverse of the spacetime metric, is not $g^{ij}$.  The unit normal to the slices (the fiducial observer) and the spatial basis are
+\st
+n_\mu=(-N,\bm 0),\qquad n^\mu=\Big(\frac1N,-\frac{N^i}N\Big),\qquad \ve{i}{\mu}=(0,\delta^\mu_i),\qquad \bot^\mu{}_\nu=\delta^\mu_\nu+n^\mu n_\nu ,
+\stp
+the last the projector onto the slices.
+
+\paragraph{The extrinsic curvature} (sign of the Density Frame paper, $K_{ij}=-N\Gamma^t_{ij}$, so that $K_{\eta\eta}=-\tau$ in Bjorken coordinates):
+\st
+K_{ij}=-\frac1{2N}\Big(\partial_tg_{ij}-D_iN_j-D_jN_i\Big),
+\stp
+with $D_i$ the covariant derivative of $g_{ij}$.  It vanishes for a static metric without shift.
+
+\subsection{The stress tensor as the response to the metric}
+
+With $S_{\rm m}$ the action of the matter, $T^{\mu\nu}=(2/\sqrt{-G})\,\delta S_{\rm m}/\delta G_{\mu\nu}$, and the decomposition of the Density Frame paper,
+$T^{\mu\nu}=\edense\,n^\mu n^\nu+2\pdense^in^{(\mu}\ve{i}{\nu)}+\Sstress^{ij}\ve{i}{\mu}\ve{j}{\nu}$, the variations with respect to the $3+1$ variables, each at fixed values of
+the other two (the shift with an upper index held fixed), are
+\begin{keyeq}
+\st
+\frac{\delta S_{\rm m}}{\delta N}=-\sqrt g\,\edense,\qquad
+\frac{\delta S_{\rm m}}{\delta N^i}=\sqrt g\,\pdense_i,\qquad
+\frac{\delta S_{\rm m}}{\delta g_{ij}}\Big|_{N,N^k}=\tfrac12\,N\sqrt g\,\Sstress^{ij} .
+\label{admresponse}
+\stp
+\end{keyeq}
+(Holding $N_i$ fixed instead of $N^i$ changes the last to $\tfrac12N\sqrt g\,(T^{ij}-N^iN^jT^{00})$.)  In equilibrium in a stationary background the logarithm of the
+partition function plays the role of $S_{\rm m}$ over the thermal circle, $W=\ln Z$, and with $T(\bm x)=T_0/N$,
+\st
+\edense=-\frac{T}{\sqrt g}\,\frac{\delta W}{\delta\ln N},\qquad \pdense_i=\frac{T_0}{\sqrt g}\,\frac{\delta W}{\delta N^i},\qquad
+\Sstress^{ij}=\frac{2T}{\sqrt g}\,\frac{\delta W}{\delta g_{ij}} ,
+\stp
+the definitions \Eq{defs} of the main text.  A variation of $g_{ij}$ alone, at fixed lapse and shift, gives the stress.
+
+\subsection{Weak fields}
+
+Write $G_{\mu\nu}=\eta_{\mu\nu}+h_{\mu\nu}$, $|h_{\mu\nu}|\ll1$.  To first order the $3+1$ variables are
+\st
+N=1+\phi,\qquad h_{00}=-2\phi,\qquad h_{0i}=N_i,\qquad h_{ij}=g_{ij}-\delta_{ij},
+\stp
+and
+\st
+G^{\mu\nu}=\eta^{\mu\nu}-h^{\mu\nu},\qquad \sqrt{-G}=1+\phi+\tfrac12h,\qquad h\equiv h_{kk},\qquad
+K_{ij}=\tfrac12\big(\partial_iN_j+\partial_jN_i-\partial_th_{ij}\big) .
+\stp
+
+\paragraph{Christoffel symbols to first order.}
+\st
+\Gamma^0_{00}=\partial_t\phi,\qquad \Gamma^0_{0i}=\partial_i\phi,\qquad \Gamma^0_{ij}=-K_{ij},\qquad
+\Gamma^i_{00}=\partial_i\phi+\partial_tN_i,
+\stp
+\st
+\Gamma^i_{0j}=\tfrac12\big(\partial_th_{ij}+\partial_jN_i-\partial_iN_j\big),\qquad
+\Gamma^i_{jk}=\tfrac12\big(\partial_jh_{ik}+\partial_kh_{ij}-\partial_ih_{jk}\big) .
+\stp
+
+\paragraph{Slow geodesics.}  To first order in the fields and in the velocity $\bm v$,
+\st
+\ddot x^i=-\Gamma^i_{00}-2\Gamma^i_{0j}v^j=\mathcal E_g^i+\big(\bm v\times\mathcal B_g\big)^i-\partial_th_{ij}v^j,\qquad
+\mathcal E_g=-\nabla\phi-\partial_t\bm N,\qquad \mathcal B_g=\nabla\times\bm N ,
+\stp
+the gravitoelectric and gravitomagnetic fields ($\mathcal B_g$ a pseudoscalar in $d=2$), and the strain rate $\partial_th_{ij}$.
+
+\subsection{Gauge freedom}
+
+An infinitesimal change of coordinates $x^\mu\to x^\mu+\xi^\mu$ changes the weak field by $h_{\mu\nu}\to h_{\mu\nu}-\partial_\mu\xi_\nu-\partial_\nu\xi_\mu$
+($\xi_0=-\xi^0$, $\xi_i=\xi^i$):
+\begin{keyeq}
+\st
+\delta\phi=-\partial_t\xi^0,\qquad \delta N_i=-\partial_t\xi^i+\partial_i\xi^0,\qquad \delta h_{ij}=-\partial_i\xi^j-\partial_j\xi^i .
+\label{gauge}
+\stp
+\end{keyeq}
+So a weak field has $(d+1)(d+2)/2$ components and $d+1$ gauge functions of $(t,\bm x)$; in $d=2$, six components and three gauge functions, leaving three.
+
+\paragraph{The decomposition in $d=2$.}  Split the shift and the spatial metric into scalar and transverse parts,
+\st
+N_i=\partial_iB+S_i,\qquad h_{ij}=2\psi\,\delta_{ij}+2\partial_i\partial_jE+\partial_iF_j+\partial_jF_i,\qquad \partial_iS_i=\partial_iF_i=0 :
+\stp
+in two dimensions there is no transverse-traceless part.  With $\xi^i=\partial_i\xi+\xi^i_T$, \Eq{gauge} gives $\delta B=\xi^0-\partial_t\xi$, $\delta E=-\xi$,
+$\delta\bm F=-\bm\xi_T$, $\delta\bm S=-\partial_t\bm\xi_T$, $\delta\psi=0$, and three gauge-invariant combinations,
+\begin{keyeq}
+\st
+\Phi=\phi+\partial_t\big(B-\partial_tE\big),\qquad \Psi=\psi,\qquad \bm N_\perp=\bm S-\partial_t\bm F :
+\stp
+\end{keyeq}
+the Newtonian potential, the curvature of the slices ($^{(2)}\!R=-2\nabla^2\psi$ to first order), and the transverse (gravitomagnetic) shift.  The static lapse of the main
+text is $\Phi=\phi$, $\Psi=0$, $\bm N_\perp=0$; the uniform metric change that defines the pressure is a constant $\psi$, a change of the proper volume of the box, which is not a
+gauge mode on a torus of fixed coordinate size.
+
+\paragraph{Common gauges.}
+\begin{itemize}
+\item \emph{Static (Killing) gauge}, for a time-independent field: $\partial_t$ is a Killing vector and all components are time independent.  The natural gauge for
+  equilibrium; the residual freedom is time-independent spatial diffeomorphisms and a constant rescaling of $t$.
+\item \emph{Longitudinal (Newtonian) gauge}: $B=E=0$, $\bm F=0$, leaving $\phi=\Phi$, $\psi=\Psi$ and $\bm S=\bm N_\perp$.  Fixed completely.
+\item \emph{Synchronous gauge}: $N=1$ and $N^i=0$, everything in $g_{ij}(t,\bm x)$; reached with $\xi^0=\int\phi\,dt$ and $\xi^i=\int(N_i+\partial_i\xi^0)\,dt$, residual
+  freedom time-independent $\xi^i(\bm x)$ and a constant $\xi^0$.  Any weak field can be written as a time-dependent spatial metric alone; a static Newtonian potential
+  then appears as $h_{ij}=-t^2\,\partial_i\partial_j\phi$, growing in time.
+\end{itemize}
+So to vary only $g_{ij}$ is general at linear order, if one accepts time dependence (synchronous gauge); for equilibrium the static gauge with the lapse is the
+natural one, since it keeps the Killing vector manifest.
+
+\subsection{The Newtonian gauge}
+\label{app:newtonian}
+
+The longitudinal gauge, $B=E=0$ and $\bm F=0$, is fixed completely, keeps a static field static, and gives each of the three gauge-invariant fields a separate role.
+In $d=2$, to first order,
+\begin{keyeq}
+\st
+N=1+\Phi,\qquad N^i\ \ (\partial_iN^i=0),\qquad g_{ij}=(1+2\Psi)\,\delta_{ij},
+\stp
+\st
+\dd s^2=-(1+2\Phi)\,\dd t^2+2N_i\,\dd x^i\dd t+(1+2\Psi)\,\delta_{ij}\,\dd x^i\dd x^j .
+\stp
+\end{keyeq}
+In two dimensions the transverse shift is the curl of a stream function, $N_i=\epsilon_{ij}\partial_j\chi$.  The inverse and the volume elements are
+\st
+g^{00}=-(1-2\Phi),\qquad g^{0i}=N_i,\qquad g^{ij}=(1-2\Psi)\,\delta_{ij},
+\stp
+\st
+\sqrt g=1+d\,\Psi,\qquad \sqrt{-G}=1+\Phi+d\,\Psi .
+\stp
+
+\paragraph{The extrinsic curvature.}  From the weak-field form of $K_{ij}$,
+\begin{keyeq}
+\st
+K_{ij}=\tfrac12\big(\partial_iN_j+\partial_jN_i\big)-\partial_t\Psi\;\delta_{ij} .
+\stp
+\end{keyeq}
+Its trace is
+\st
+K\equiv K_{ii}=-d\,\partial_t\Psi ,
+\stp
+since $\partial_iN_i=0$: the trace comes only from $\Psi$, and the shift gives a symmetric, traceless part.  That part is not zero in two dimensions.  With
+$N_x=\partial_y\chi$, $N_y=-\partial_x\chi$,
+\st
+\tfrac12\big(\partial_iN_j+\partial_jN_i\big)=\begin{pmatrix}\partial_x\partial_y\chi & \tfrac12\big(\partial_y^2-\partial_x^2\big)\chi\\[0.5ex]
+\tfrac12\big(\partial_y^2-\partial_x^2\big)\chi & -\partial_x\partial_y\chi\end{pmatrix} ,
+\stp
+the two components of a shear, from the one function $\chi$.  It vanishes only for $\chi$ with $\partial_x\partial_y\chi=0$ and $\partial_x^2\chi=\partial_y^2\chi$, i.e.
+$\chi\propto x^2+y^2$ (plus linear terms): a rigid rotation, $\bm N=\omega\,\hat{\bm z}\times\bm x$, which is a Killing motion and strains nothing.  The antisymmetric part,
+$\partial_xN_y-\partial_yN_x=-\nabla^2\chi$, is the gravitomagnetic field.
+
+\paragraph{The roles of the three fields.}
+\begin{itemize}
+\item $\Phi$, the Newtonian potential: the force $-\edense\nabla N$ and the clocks.  Static, it sets the Tolman temperature $T_0/N$ (the thermometer of \Sect{sec:measurement}); in
+  time, it drives longitudinal motion (sound).
+\item $\Psi$, the volume: a constant $\Psi$ is the uniform metric change that defines the pressure (\Sect{sec:defs}); $\partial_t\Psi$ is a uniform expansion, $K=-d\,\partial_t\Psi$,
+  whose response is the bulk viscosity: with the expansion rate $\theta=\partial_t\ln\sqrt g=d\,\partial_t\Psi=-K$, $\Sstress^{ii}/d=\pr-\zeta\,\theta$ to first order.
+\item $\bm N$, the transverse shift: its symmetric gradient is a shear strain.  For example $\bm N=(A\sin ky,0)$, periodic on the torus, has
+  $K_{xy}=\tfrac12kA\cos ky$ and a vanishing trace; the response $\Sstress^{xy}$ at low frequency gives the shear viscosity at the wavenumber $k$ (a Kubo formula with the
+  operator \Eq{Sop}).
+\end{itemize}
+
+\paragraph{Slow geodesics.}
+\st
+\ddot{\bm x}=-\nabla\Phi-\partial_t\bm N+\bm v\times(\nabla\times\bm N)-2\,\partial_t\Psi\,\bm v .
+\stp
+
+\paragraph{The particle model.}  The Killing-energy Hamiltonian of a particle in this metric is $N\sqrt{m^2+g^{ij}p_ip_j}-N^ip_i$, whose coordinate velocity is
+$N v^i-N^i$, as in the Density Frame paper.  For the particle model,
+\st
+H=\sum_a\Big[N(\bm x_a)\,e_a\big(s_a,|\bm p_a|_g,V_a\big)-N^i(\bm x_a)\,p_{a,i}\Big],\qquad \dot x_a^i=N(\bm x_a)\,v_a^i-N^i(\bm x_a) ,
+\stp
+with $\Psi$ entering only through $g_{ij}$: in the norm of the momentum, in the proper distances of the kernel, and in the proper volumes.  The static lapse of
+\Sect{sec:implementation} is the first of the three pieces; the shift (for $\eta$) and $\Psi$ (for the volume and $\zeta$) have the same structure.
 
 \begin{thebibliography}{9}
 \bibitem{densityframe} J.~Bhambure, R.~Singh and D.~Teaney, \emph{Stochastic relativistic viscous hydrodynamics from the Metropolis algorithm} (the Density Frame
