@@ -344,8 +344,8 @@ $1/\delta\klab$ (\nolinkurl{partition_v2.tex}, ``The positions back in the therm
 Campaign \texttt{eos\_renorm} (NERSC jobs 61748587, 61751343, 61751345, \texttt{nersc/LOG.md}); figures and \texttt{docs/figs/eos\_table.csv} from
 \texttt{examples/eos\_measure.py}.  Complete: both Hamiltonians at the lattice starts $s_a=16$, $54$, $541$ and $h/a=2$, $3$, $4$ in the box $L=9h$, sixteen seeds of
 400 hybrid Monte Carlo updates each (one third discarded); the runs at $s_a\times0.9$, $1.1$ at $h/a=2$ for finite differences; and the boxes $L=18h$ at $h/a=2$, $3$
-for $S(k)$, eight seeds each.  The statistical errors of $E/\er-1$ and $\pr_{\rm model}/\pr-1$ are $1$--$5\times10^{-4}$ (between seeds).  Pending: the boxes
-$L=36h$ for $S(k)$ at small $k$ (job 61762047).  The renormalized Hamiltonian shifts the temperature of a lattice start, so its $\sigma_{\rm p}$ are $5.16$, $18.0$ and
+for $S(k)$, eight seeds each.  The statistical errors of $E/\er-1$ and $\pr_{\rm model}/\pr-1$ are $1$--$5\times10^{-4}$ (between seeds).  Extension: the boxes
+$L=36h$ at $h/a=2$ ($N=6048$, sixteen seeds each) for $S(k)$ at small $k$ (job 61762047).  The renormalized Hamiltonian shifts the temperature of a lattice start, so its $\sigma_{\rm p}$ are $5.16$, $18.0$ and
 $180$ in place of $3.89$, $16.4$ and $179$.
 
 \paragraph{The predictions at $\sigma_{\rm p}=3.89$.}  At this small entropy per particle the one-loop values are not enough, and the exact single particle
@@ -479,6 +479,10 @@ tree, $s_a=54$ & 16.4 & 0.35 & $0.316\pm0.012$ (0.293) & $0.271\pm0.014$ (0.253)
 renormalized, $s_a=54$ & 18.0 & 2.6 & $1.05\pm0.04$ (1.00) & $0.67\pm0.04$ (0.63) & $0.390\pm0.013$ (0.353) \\
 tree, $s_a=541$ & 179 & 0.29 & $0.101\pm0.006$ (0.105) & $0.066\pm0.004$ (0.065) & $0.040\pm0.003$ (0.036) \\
 renormalized, $s_a=541$ & 180 & 1.05 & $0.123\pm0.010$ (0.141) & $0.085\pm0.006$ (0.077) & $0.044\pm0.002$ (0.039) \\
+\multicolumn{6}{l}{$h/a=2$, $L=36h$: $kh=0.175$, $0.246$, $0.35$} \\
+renormalized, $s_a=54$ & 18.0 & 2.6 & $1.89\pm0.18$ (1.87) & $1.34\pm0.07$ (1.46) & $1.02\pm0.04$ (1.01) \\
+tree, $s_a=541$ & 179 & 0.29 & $0.202\pm0.019$ (0.202) & $0.139\pm0.010$ (0.155) & $0.099\pm0.005$ (0.106) \\
+renormalized, $s_a=541$ & 180 & 1.05 & $0.302\pm0.025$ (0.405) & $0.232\pm0.022$ (0.251) & $0.136\pm0.007$ (0.143) \\
 \multicolumn{6}{l}{$h/a=3$} \\
 tree, $s_a=54$ & 16.4 & 0.38 & $0.312\pm0.011$ (0.311) & $0.276\pm0.013$ (0.266) & $0.223\pm0.003$ (0.204) \\
 renormalized, $s_a=54$ & 18.0 & 5.9 & $1.39\pm0.12$ (1.28) & $0.685\pm0.025$ (0.730) & $0.423\pm0.013$ (0.382) \\
@@ -492,16 +496,20 @@ renormalized, $s_a=541$ & 180 & 2.4 & $0.159\pm0.012$ (0.152) & $0.078\pm0.007$ 
 \item At $s_a=54$ the renormalized $S(k)$ rises at small $k$ as predicted: three times the tree-level value at $kh=0.35$, on the curve \Eq{SkOZ} with
   $\klab=\delta\klab$ to $5\%$; at $h/a=3$, where $\delta\klab$ is smaller, it rises further ($1.39\pm0.12$, predicted $1.28$).  The labels of the renormalized Hamiltonian are neutral, and the positions are held at long wavelength only by the pressure through
   the kernel and by $\delta\klab$; the correlation length is $\xi=3.6h$ ($5.4h$ at $h/a=3$) against $1.3h$ at tree level.
-\item At $s_a=541$ the two Hamiltonians differ only below $kh\approx0.3$ ($\xi=7.3h$ against $3.8h$), which this box ($kh_{\rm min}=0.35$) does not reach; both agree
-  with \Eq{SkOZ} at the $k$ it has.  To see $S(k)$ turn over towards $S(0)=1/\delta\klab\approx1$ needs $kh\lesssim0.2$: the boxes $L=36h$ ($kh_{\rm min}=0.175$, predicted $S=0.40$
-  renormalized against $0.20$ at tree level) are running (job 61762047).
+\item In the boxes $L=36h$ ($kh_{\rm min}=0.175$) at $s_a=54$ the renormalized $S(k)$ continues on the curve, $1.89\pm0.18$ against $1.87$, two thirds of the way to its
+  plateau $S(0)=2.6$; a fit of \Eq{SkOZ} with the $k^2$ term fixed at $kh\le0.25$ gives $\klab+\delta\klab=0.42\pm0.03$, against $\delta\klab=0.38$.
+\item At $s_a=541$ the two Hamiltonians differ only below $kh\approx0.3$ ($\xi=7.3h$ against $3.8h$).  The box $L=18h$ does not reach it; in the box $L=36h$ the tree
+  level is on the curve ($0.202\pm0.019$ against $0.202$ at $kh=0.175$), and the renormalized $S(k)$ rises above it, $0.30\pm0.03$, but less than predicted, $0.40$.
+  The same fit gives $\klab+\delta\klab=3.8\pm0.3$ at tree level and $1.65\pm0.23$ renormalized, against $3.45$ and $0.95$: their difference, $2.2\pm0.4$, is the label
+  modulus $5/2$, and the modulus supplied by the positions, $\delta\klab\approx1.6$, is above the one-loop $0.95$, as the trace is (above), by more.  So $S(0)\approx0.6$
+  at $\sigma_{\rm p}=180$, $h/a=2$, and the turnover itself is below $kh\approx0.15$.
 \item The tree-level $S(k)$ is below $1$ everywhere, $S(0)=1/(\klab+\delta\klab)$: the counting term holds the particles at the preferred density.
 \item Above $kh\approx0.8$ the data lie above \Eq{SkOZ} by $10$--$30\%$, as expected of a small-$k$ form; the full $S(k)=1/(1+A(k))$ is not compared here.
 \end{itemize}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figs/eos_Sk.png}
-\caption{$S(k)$ of the positions in the boxes $L=0.9=18h$, averaged over shells of $|\bm k|$; filled, tree level; open, renormalized.  Lines: Ornstein--Zernike,
+\caption{$S(k)$ of the positions in the boxes $L=18h$ (circles, squares) and $L=36h$ (triangles), averaged over shells of $|\bm k|$; filled, tree level; open, renormalized.  Lines: Ornstein--Zernike,
 \Eq{SkOZ}, with $\delta\klab$ from \texttt{partition\_v2.tex} (solid, tree level; dashed, renormalized).  Left $s_a=54$, right $s_a=541$; colours by $h/a$.}
 \label{fig:Sk}
 \end{figure}
