@@ -627,6 +627,17 @@ plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); re
   **61751343**; the rest, tasks 123–288 and 353–480, job **61751345**.  Lesson: for 2-thread tasks of ≤ 2 h the shared QOS starts ~70
   at once within minutes; dedicated nodes only add queue wait.  Task times on 2 threads: h/a = 2 ~10 min, h/a = 3 ~38 min,
   h/a = 4 ~75 min, L = 0.9 h/a = 3 ~2 h (estimate).
+- **Done 17:59**: all 480 tasks COMPLETED (61748587, 61751343, 61751345; the L = 0.9 h/a = 3 boxes took 4.4 h, h/a = 2 1 h).  Total
+  ≈ 8 node-hours (shared, 2 cores).  docs/gravity.tex "Results" extended: full table (σ ≈ 17, 180 × h/a = 2, 3, 4, both Hamiltonians),
+  finite differences, S(k) at h/a = 2, 3.  Outcome: renormalized E/e−1, P/p−1 = the correction of the positions alone, as predicted to
+  ≤ 10%, ∝ 1/(n h²); tree = 2.5/σ + the same; the trace and the departure of c_s² from 1/2 are the positions' (same for both
+  Hamiltonians, collapse with n h²; trace 9–19% above one loop at σ ≈ 17); renormalized S(k) rises at small k on Ornstein–Zernike
+  with B = δB (no free parameter).  Open: renormalized at σ = 5.16, E/e−1 and P/p−1 → +0.048 at n h² → ∞ (a single-particle remainder
+  beyond one loop; check by quadrature).
+- Extension `eos_renorm_big` (`nersc/campaign_eos_renorm_big.txt`): S(k) in the box L = 1.8 = 36h (kh_min = 0.175), h/a = 2, ren and tree
+  at s_a = 541, ren at s_a = 54, 16 seeds × 400 updates, SR_KHMAX = 1.6: job **61762047** (48 tasks, shared, -t 16 h, est. ~9 h per task,
+  ~7 node-hours of the owner's extra 24).  Output into `$SCRATCH/sph/eos_renorm/*_L1.8`.  Question: does the renormalized S(k) at σ = 180
+  turn over towards S(0) = 1/δB ≈ 1 (predicted 0.40 at kh_min, tree 0.20)?
 - (laptop session, 2026-11-21) docs/gravity.tex now has the section "Results" with the four figures and a table for the first run
   (tree, s_a = 16, h/a = 2): agreement to 0.2% with the exact single particle plus the positions.  When more runs finish, rerun
   eos_measure.py and **extend that section** (table rows, the bullet list), do not start a new one.

@@ -1,0 +1,8 @@
+# Campaign `eos_renorm_big` (2026-11-21, branch statics, docs/gravity.tex "Results", the structure factor): S(k) in the box L = 1.8 = 36h
+# (kh_min = 0.175), h/a = 2, to see the renormalized S(k) turn over towards S(0) = 1/dB at sigma = 179 (predicted S = 0.40 at kh_min,
+# tree 0.20) and approach its plateau 2.6 at sigma = 18 (predicted 1.9 at kh_min).  400 HMC updates (one third discarded); ~72 s per
+# update on 2 threads (8x the L = 0.9 box), ~9 h per task; SR_KHMAX = 1.6 (the range of the plot).  48 tasks x 2 cores x ~9 h / 128
+# ~ 7 node-hours.  Submit with -t 16:00:00.
+eos_ren_s541_ha2_L1.8   16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 SR_KHMAX=1.6 -- examples/eos_measure.jl 1.8 2 541 400 eos_ren_s541_ha2_L1.8
+eos_tree_s541_ha2_L1.8  16                SR_HMC_TAUJIT=0.5 SR_KHMAX=1.6 -- examples/eos_measure.jl 1.8 2 541 400 eos_tree_s541_ha2_L1.8
+eos_ren_s54_ha2_L1.8    16  SPH_RENORM=1  SR_HMC_TAUJIT=0.5 SR_KHMAX=1.6 -- examples/eos_measure.jl 1.8 2 54 400 eos_ren_s54_ha2_L1.8
