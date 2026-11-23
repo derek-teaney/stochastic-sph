@@ -79,6 +79,12 @@ const SETS = GROUP == "L24" ?
              GROUP == "SP54" ?                    # the same at s_a = 54
     [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
      ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+             GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
+    (sa = GROUP[3:4];
+     [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
+      ("no viscous step", ["ds$(sa)_nv"], 0.0, "C3")]) :
+             GROUP in ("OLD16", "OLD54") ?        # the c_s² = 1/3 runs of campaign hastings (moment + Hastings at rest) through the present analysis; DIR = $SCRATCH/sph/hastings
+    [("c²=1/3 η/s=0.2", ["hs$(GROUP[4:5])_h_v0"], 0.0, "C0")] :
              GROUP == "HS16" ?                    # campaign hastings (inverse_moment.tex, stage 2): moment without/with SPH_HASTINGS, s_a = 16, $SCRATCH/sph/hastings
     [("no Hastings v=0", ["hs16_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs16_h_v0"], 0.0, "C1"),
      ("no Hastings v=0.8", ["hs16_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs16_h_v0.8"], 0.8, "C4")] :
@@ -256,7 +262,8 @@ for (run, dirs, v, col) in SETS
     end
     ν = m.etas / Trel
     nk = minimum(length(r.KE) for r in rs)
-    res[run] = (; v = vm, vreq, col, C, lab = run, Trel, ν, how, Trel_setup = m.Trel, h = m.h, n = length(rs), t = rs[1].rec.t[end],
+    sa = m.S0 * m.a^2 * sqrt(3) / 2                 # entropy per particle, rest frame: S0 · vol, vol = a²√3/2 (hexagonal lattice)
+    res[run] = (; v = vm, vreq, col, C, lab = run * @sprintf(", s_a=%.0f", sa), sa, Trel, ν, how, Trel_setup = m.Trel, h = m.h, n = length(rs), t = rs[1].rec.t[end],
                 KE = mean_([mean_(r.KE[nk÷2:nk]) for r in rs]), dH = mean_([r.H[nk] for r in rs]))
     @printf("%-15s SR_BOOST=%.1f  %2d runs  t=%.0f  state (%s): T_rel=%.1f±%.1f v=%.3f±%.3f  (set-up T_rel=%.1f)  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n",
             run, vreq, length(rs), res[run].t, how, Trel, dT, vm, dv, m.Trel, res[run].KE, res[run].dH)
@@ -265,6 +272,10 @@ runs = [s[1] for s in SETS if haskey(res, s[1])]
 fitruns = filter(r -> !occursin("Δt", r), runs)      # the Δt/2 set: in the tables only
 isempty(runs) && (println("no complete runs yet");  exit())
 names = ("E", "M_x", "M_y")
+# every figure carries the entropy per particle (rest frame), the temperature and the directory of the runs
+const STAMP = "s_a = " * join(unique([@sprintf("%.0f", res[r].sa) for r in runs]), ", ") * " (rest frame),  T_rel = " *
+              join(unique([@sprintf("%.1f", res[r].Trel) for r in runs]), ", ") * ",  runs: " * DIR
+savefig_s(path; kw...) = (gcf().text(0.995, 0.003, STAMP, ha = "right", va = "bottom", fontsize = 8, color = "0.3");  savefig(path; kw...))
 
 # ── equal time ───────────────────────────────────────────────────────────────────────────
 fig, axg = subplots(length(runs), 3, figsize = (15, 2.9 * length(runs)), squeeze = false)
@@ -292,7 +303,7 @@ for (row, run) in enumerate(runs)
                 join([@sprintf("%s %.3f±%.3f", names[a], eq(:perp, a)...) for a in 1:3], "  "))
     end
 end
-tight_layout();  savefig(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
+tight_layout();  savefig_s(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
 
 # ── dynamics: one figure per (direction, component) family ───────────────────────────────
 function panel!(ax, r, dir, a, b; part = real, j = 1, tmax = 60.0)
@@ -317,11 +328,11 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
         row == length(fitruns) && ax.set_xlabel("τ")
         row == 1 && col == 1 && ax.legend(fontsize = 8, loc = "lower left")
     end
-    tight_layout();  savefig(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
+    tight_layout();  savefig_s(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].vreq for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
@@ -342,7 +353,7 @@ if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB",
     end
     h, l = axg[1, 1].get_legend_handles_labels()
     fig.legend(h, l, loc = "upper center", ncol = length(meths), fontsize = 10, frameon = false)
-    tight_layout(rect = (0, 0, 1, 0.96));  savefig(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
+    tight_layout(rect = (0, 0, 1, 0.96));  savefig_s(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
     # dynamics: the correlators of boost.tex, one figure each, the methods as panels
     types = [("shear",    :par,  3, 3, real, "Re C_yy, k ∥ v (advected shear)", 80.0, (0.0, 0.8)),
              ("soundpar", :par,  2, 2, real, "Re C_xx, k ∥ v (sound along the flow)", 15.0, (0.0, 0.8)),
@@ -360,7 +371,7 @@ if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB",
             ax.axhline(0, color = "k", lw = 0.5);  ax.set_ylim(-1.1, 1.1);  ax.set_xlabel("τ")
             m == 1 && ax.legend(fontsize = 8, loc = "lower left")
         end
-        tight_layout();  savefig(joinpath(FIGD, "boost_" * tag * "_v" * string(v) * SUFFIX * ".png"), dpi = 100);  close()
+        tight_layout();  savefig_s(joinpath(FIGD, "boost_" * tag * "_v" * string(v) * SUFFIX * ".png"), dpi = 100);  close()
     end
 end
 
@@ -403,5 +414,5 @@ end
 axs[1].plot([0, 0.85], [0, 0.85], "k:", label = "Ω/k = v")
 axs[1].set_xlabel("v");  axs[1].set_ylabel("advection speed Ω/k of the shear mode");  axs[1].legend(fontsize = 8)
 axs[2].axhline(1, color = "k", lw = 0.5);  axs[2].set_xlabel("v");  axs[2].set_ylabel("Γ / hydrodynamics (smallest k)");  axs[2].legend(fontsize = 8)
-tight_layout();  savefig(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
+tight_layout();  savefig_s(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
 println("figures written to $FIGD")

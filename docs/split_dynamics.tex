@@ -120,15 +120,57 @@ $0.97$--$1.05$ (one point at $1.26\pm0.18$), the tree $1.03$--$1.19$.  This is t
 susceptibilities, removed by split, as in equilibrium (\texttt{eos\_split}).  The same error shows in the conserved totals: at the same
 $T_{\rm rel}$ the tree fluid carries 8--10\% more energy than the target equation of state at $s_a=16$ (smoke test, nersc/LOG.md).
 
-\paragraph{Advection and damping} (\Fig{fig:fit}).  The shear mode along the flow moves with $\Omega/k=0.800\pm0.002$ for both
-Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).  The shear damping is 3--6 times the hydrodynamic $\nu k^2$ for both, as in the
-earlier campaigns (the renormalization of the transport coefficients, \texttt{docs/helfand.tex}, is a separate question); split is
-somewhat more damped at $s_a=16$ (rest: $4.7$--$5.9$ against $3.5$--$4.0$), the two agree at $s_a=54$ ($3.4$--$3.9$ against $3.0$--$3.3$
-at rest, $3.0$--$3.7$ against $3.0$--$4.4$ at $v_0=0.8$).
+\paragraph{Advection} (\Fig{fig:fit}).  The shear mode along the flow moves with $\Omega/k=0.800\pm0.002$ for both
+Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).
 
-\paragraph{Open: split at $s_a=16$, $v_0=0.8$} (\Fig{fig:shear16}).  The advected shear mode at $kh=0.52$ decays fast at first and then
+\paragraph{The damping is 3--6 times hydrodynamics, for both Hamiltonians and both $s_a$} (\Fig{fig:fit}, Figs.~\ref{fig:corr16},
+\ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.7$--$5.9$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
+The sound modes are over-damped as well.  This is \emph{not} what the earlier campaigns found: in campaign \texttt{hastings}
+($c_s^2=1/3$, the same $S_0$, the same step) the shear damping was $1.0$--$1.2$ times hydrodynamics (\texttt{inverse\_moment.tex},
+Stage 2), and the present analysis applied to those runs gives the same ($1.17$--$1.23$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
+\texttt{BOOST\_GROUP=OLD16}, \texttt{OLD54}).  So the analysis is not the cause, and neither is the renormalization (tree and split are
+alike).  What differs: at the same $S_0$ the temperature is $T_{\rm rel}=140$ instead of $28$ ($s_a=16$), so
+\st
+\nu=\frac{\eta}{e+p}=\frac{\eta/s}{T_{\rm rel}}
+\stp
+is five times smaller, at the same resolution; and the stochastic step changed with the dimension fix (\texttt{8d50d04}: $d=d_s=2$,
+the bulk channel $\zeta_{\rm eff}=\max(\zeta+2\eta(1/2-1/d),\,0.01\,\eta)$, which was $\eta/3$ at $c_s^2=1/3$).  Campaign
+\texttt{damping\_scan} (below) separates the two.
+
+\paragraph{Open: split at $s_a=16$, $v_0=0.8$} (\Fig{fig:corr16}, third row).  The advected shear mode at $kh=0.52$ decays fast at first and then
 slowly; the fitted window is short ($\tau\le3.9$) and $\Gamma/\text{hydro}=11\pm3$.  The sound mode along the flow is also more damped
 than in the tree runs.  Not understood yet; $s_a=54$ shows nothing of the kind.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_SP16_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); $s_a=16$, $T_{\rm rel}=140.4$; run sets \texttt{hs16\_tr\_v<v>}
+(left), \texttt{hs16\_sp\_v<v>} (right).  The correlators of \texttt{inverse\_moment.tex} at the smallest $k$ ($kh=0.52$), normalized at
+$\tau=0$, against hydrodynamics at the bath (dashed), top to bottom: at rest, shear $\mathrm{Re}\,C_{yy}(k\hat x)$ and sound
+$\mathrm{Re}\,C_{xx}(k\hat x)$; at $v_0=0.8$, along the flow the advected shear $\mathrm{Re}\,C_{yy}$, the sound $\mathrm{Re}\,C_{xx}$ and
+$\mathrm{Re}\,C_{EE}$, across it the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ and shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$.}
+\label{fig:corr16}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_SP54_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_SP54_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); $s_a=54$, $T_{\rm rel}=258.0$; run sets \texttt{hs54\_tr\_v<v>}
+(left), \texttt{hs54\_sp\_v<v>} (right).  As \Fig{fig:corr16}.}
+\label{fig:corr54}
+\end{figure}
 
 \begin{figure}
 \centering
@@ -161,16 +203,5 @@ damping over hydrodynamics, $\nu k^2/\gamma^3$ along the flow and $\nu k^2/\gamm
 \label{fig:fit}
 \end{figure}
 
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP16_bath.png}
-\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets \texttt{hs16\_tr\_v0.8} (left), \texttt{hs16\_sp\_v0.8}
-(right).  $\mathrm{Re}\,C_{yy}(k,\tau)/C_{yy}(k,0)$ (advected shear, top) and $\mathrm{Re}\,C_{xx}$ (sound, bottom), $\bm k$ along the
-flow, $kh=0.52$, against hydrodynamics at the bath (dashed).  The remaining correlators of \texttt{inverse\_moment.tex}
-(\texttt{boost\_\{shear,soundpar\}\_v0.0}, \texttt{boost\_\{EEpar,soundperp,shearperp\}\_v0.8}, suffixes \texttt{\_SP16\_bath},
-\texttt{\_SP54\_bath}) are in \texttt{docs/figs}.}
-\label{fig:shear16}
-\end{figure}
 
 \end{document}
