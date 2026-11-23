@@ -189,6 +189,53 @@ $28.1$), \texttt{cs13} at the right temperature.  With $e\propto T^4$, $(28.1/24
 ($T=40.6$ against $42.2$) $1.17$ against $1.18$.  This is the $O(1/s_a)$ mismatch of the tree level between temperature and energy;
 split removes it.
 
+\paragraph{The shear correlator of all four cases on one axis} (\Fig{fig:overlay}).  Plotted against $\nu_0k^2\tau$, hydrodynamics is one
+line for every run.  The two sets with the same $\nu_0=7.1\times10^{-3}$ ($s_a=16$) --- $c_s^2=1/3$ at $\eta/s=0.2$ (\texttt{cs13}) and
+$c_s^2=1/2$ at $\eta/s=1.0$ (\texttt{damping\_scan}) --- lie on it, whatever the equation of state; the set with five times smaller
+$\nu_0$ ($c_s^2=1/2$, $\eta/s=0.2$) and the set without a viscous step fall far faster.  Against $\tau$ itself (left) all four decay at
+comparable rates, e-folding times $1.0$--$1.7$ at $s_a=16$ where hydrodynamics at $\eta/s=0.2$ would give $6.4$: below $\nu_0\approx
+5\times10^{-3}$ the decay no longer follows $\nu_0$.  At $s_a=54$ the $\eta/s=0.2$ set decays faster than $e^{-\nu_0k^2\tau}$ at first and
+then slowly, with a tail at $\approx0.1$ out to $\tau=12$: not a single exponential.  The standard correlators of \texttt{cs13} against
+\texttt{hastings} (\Fig{fig:cs13corr}) and its energy against time (\Fig{fig:cs13energy}: no drift, $|\Delta H/H|<10^{-3}$) show nothing
+amiss.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/shear_overlay_s16.png}
+\includegraphics[width=\textwidth]{figs/shear_overlay_s54.png}
+\caption{Campaigns \texttt{cs13} (run sets \texttt{c13\_<sa>\_v0}, commit \texttt{09c10bf}), \texttt{damping\_scan} (\texttt{ds<sa>\_e1},
+\texttt{ds<sa>\_nv}, commit \texttt{3262b00}) and \texttt{hastings\_bath} (\texttt{hs<sa>\_tr\_v0}, commit \texttt{3262b00}), tree level at
+rest; top $s_a=16$, bottom $s_a=54$.  $\mathrm{Re}\,C_{yy}(k\hat x,\tau)/C_{yy}(k\hat x,0)$ at $kh=0.52$, log scale, each with
+$e^{-\nu_0k^2\tau}$, $\nu_0=(\eta/s)/T_{\rm rel}$ (dashed, same colour; for the set without a viscous step, $\eta/s=0.2$).  Left against
+$\tau$, right against $\nu_0k^2\tau$.  \texttt{examples/shear\_overlay.jl}.}
+\label{fig:overlay}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CS16.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CS16.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CS54.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CS54.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_CS54.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_CS54.png}
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_CS54.png}
+\caption{Campaign \texttt{cs13} (left; run sets \texttt{c13\_<sa>\_v<v>}, commit \texttt{09c10bf}) against campaign \texttt{hastings}
+(right; \texttt{hs<sa>\_h\_v<v>}), tree level, $c_s^2=1/3$, $\eta/s=0.2$, $\zeta_{\rm eff}=\eta/3$.  Top to bottom: $s_a=16$ at rest, shear
+and sound; $s_a=54$ at rest, shear and sound; $s_a=54$ at $v_0=0.8$, the advected shear, the sound along and the sound across the flow;
+$kh=0.52$, hydrodynamics dashed.  The other correlators (\texttt{boost\_*\_CS16}, \texttt{\_CS54}) are in \texttt{docs/figs}.}
+\label{fig:cs13corr}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/energy_time_cs13.png}
+\caption{Campaign \texttt{cs13} (commit \texttt{09c10bf}); run sets \texttt{c13\_16\_v0}, \texttt{c13\_54\_v0}, \texttt{c13\_16\_v0.8},
+\texttt{c13\_54\_v0.8}.  $\Delta H/H$ (top) and the momentum fluctuations (bottom) against $t$, each run thin, the mean thick.
+\texttt{examples/energy\_time.jl}.}
+\label{fig:cs13energy}
+\end{figure}
+
 \begin{figure}
 \centering
 \includegraphics[width=0.49\textwidth]{figs/boost_fit_CS16.png}
