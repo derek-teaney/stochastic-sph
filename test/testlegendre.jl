@@ -1,0 +1,132 @@
+# testlegendre.jl — the renormalized Hamiltonian as a Legendre transform (src/renorm.jl, SPH_RENORM=legendre; docs/legendre_plan.tex, D):
+#   1. the reference values of the plan (examples/renorm_quadrature_legendre.py), to 1e-10 relative;
+#   2. the Legendre identities by central differences: ∂H/∂s = T, ∂H/∂m = v, ∂H/∂V = −P;
+#   3. forward and inverse are inverses, H(S(e, m, V), m, V) = e to 1e-13, for s_a in [10, 1e4], γ in [1, 100], c_s² = 1/2 and 1/4;
+#   4. with the counterterm off the solves reproduce the target's (eos_newton, eos_from_energy) to roundoff;
+#   5. warm and cold starts give the same answer, and the iterations per solve;
+#   6. hybrid Monte Carlo with the Legendre Hamiltonian: the energy error of a trajectory falls as δt² (the forces are −∂H/∂x),
+#      and a few updates are accepted with the total momentum unchanged by the trajectories.
+ENV["SPH_RENORM"] = "legendre"
+using StaticArrays, LinearAlgebra, Printf, Random
+include(joinpath(@__DIR__, "..", "src", "load.jl"))
+quiet(f) = redirect_stdout(f, devnull)
+ok = true
+check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
+LEGENDRE || error("SPH_RENORM=legendre not set at load")
+
+# H, T, v, P of the particle (s, m, V) through the forward map, cold
+fwd(s, m, V, eos; kw...) = legendre_forward(s, s / V, m / V, 0.0, 1.0, eos; kw...)
+Hof(s, m, V, eos) = s * fwd(s, m, V, eos).HS
+
+println("1. reference values (legendre_plan.tex)")
+ref = [(0.5, 3.0, 0.0, 4.0, 3.5329615802e1, 0.0, 9.3000000000e1, 1.1625000000e1),
+       (0.5, 3.0, 0.8, 4.0, 2.2769125486e2, 1.6184313725e3, 1.7797450980e3, 6.0625000000e1),
+       (0.5, 1.7, 0.95, 0.5, 5.2134000814e1, 1.0565293387e3, 1.0758910379e3, 7.2188166117e1),
+       (0.25, 3.0, 0.0, 1.0, 7.9676423584e1, 0.0, 2.1900000000e2, 5.3250000000e1),
+       (0.25, 3.0, 0.8, 1.0, 1.2752332646e3, 8.6112698413e3, 9.9900158730e3, 7.7375000000e2),
+       (0.25, 1.7, 0.95, 0.5, 1.7311977590e3, 2.8956034219e4, 2.9886312509e4, 1.1873400004e3)]
+rel(a, b) = b == 0 ? abs(a) : abs(a / b - 1)
+for (c2, T, v, V, s, m, H, P) in ref
+    local r = legendre_at(T, v, V, ConstantCs2EOS(cs2_val = c2))
+    err = maximum((rel(r.s, s), rel(r.m, m), rel(r.H, H), rel(r.P, P)))
+    check(err < 1e-10, @sprintf("c_s² = %.2f, T = %.1f, v = %.2f, V = %.1f: max relative error %.1e", c2, T, v, V, err))
+end
+
+println("2. Legendre identities (central differences)")
+# the volume at which the target's entropy of the particle is s_a at (T, v)
+vol_for(sa, T, v, eos) = (c = LegendreConsts(eos);  γ = 1 / sqrt(1 - v^2);  sa / (c.n * c.A * γ * (γ * T)^(c.n - 1)))
+for c2 in (0.5, 0.25), (T, v) in ((3.0, 0.0), (3.0, 0.8), (1.7, 0.95))
+    eos = ConstantCs2EOS(cs2_val = c2);  V = vol_for(54.0, T, v, eos)
+    local r = legendre_at(T, v, V, eos);  m = SVector(0.6, 0.8) * r.m
+    st = fwd(r.s, m, V, eos)
+    hs = 1e-5 * r.s;  hm = 1e-5 * (r.m + r.s * T);  hV = 1e-5 * V
+    dHds = (Hof(r.s + hs, m, V, eos) - Hof(r.s - hs, m, V, eos)) / 2hs
+    dHdm = SVector((Hof(r.s, m + SVector(hm, 0), V, eos) - Hof(r.s, m - SVector(hm, 0), V, eos)) / 2hm,
+                   (Hof(r.s, m + SVector(0, hm), V, eos) - Hof(r.s, m - SVector(0, hm), V, eos)) / 2hm)
+    # at fixed s and m: the forward map takes S = s/V and M = m/V
+    dHdV = (Hof(r.s, m, V + hV, eos) - Hof(r.s, m, V - hV, eos)) / 2hV
+    e1 = abs(dHds / st.T - 1);  e2 = norm(dHdm - st.v);  e3 = abs(-dHdV / st.p - 1)
+    check(max(e1, e2, e3) < 1e-6, @sprintf("c_s² = %.2f, T = %.1f, v = %.2f: ∂H/∂s = T to %.1e, ∂H/∂m = v to %.1e, −∂H/∂V = P to %.1e",
+                                           c2, T, v, e1, e2, e3))
+end
+
+println("3. forward and inverse are inverses")
+for c2 in (0.5, 0.25)
+    eos = ConstantCs2EOS(cs2_val = c2);  c = LegendreConsts(eos);  worst = 0.0;  worst_s = 0.0;  n = 0
+    for sa in (10.0, 30.0, 100.0, 1e3, 1e4), γ in (1.0, 1.5, 3.0, 10.0, 30.0, 99.0), V in (1e-3, 1.0)
+        v = sqrt(1 - 1 / γ^2)
+        Tr = (sa / (c.n * c.A * V * γ))^(1 / (c.n - 1));  T = Tr / γ       # the target's entropy s_a at (T, v)
+        local r = legendre_at(T, v, V, eos)
+        r.s > 0 || continue
+        m = SVector(0.6, -0.8) * r.m
+        si, vi, Ti = legendre_inverse(r.H, m, V, eos)
+        isfinite(si) || (worst = Inf;  continue)
+        e = Hof(si, m, V, eos)
+        worst = max(worst, abs(e / r.H - 1));  worst_s = max(worst_s, abs(si / r.s - 1));  n += 1
+    end
+    check(worst < 1e-13, @sprintf("c_s² = %.2f: %d states, max |H(S(e)) / e − 1| = %.1e (|S(e)/s − 1| ≤ %.1e)", c2, n, worst, worst_s))
+end
+
+println("4. the counterterm off: the target's maps")
+for c2 in (0.5, 0.25)
+    eos = ConstantCs2EOS(cs2_val = c2);  worstf = 0.0;  worsti = 0.0
+    for S in (5.0, 50.0, 5e3), Mr in (0.0, 0.5, 5.0, 50.0)
+        M = SVector(0.8, 0.6) * (Mr * S);  s = 2.0;  V = s / S
+        t = target_forward(s, S, M, 0.0, eos)
+        l = legendre_forward(s, S, M, 0.0, 1.0, eos; counter = false)
+        worstf = max(worstf, abs(l.T / t.T - 1), abs(l.γ / t.γ - 1), abs(l.HS / t.HS - 1), abs(l.p / t.p - 1), abs(l.e / t.e - 1))
+        e = s * t.HS
+        st, vt, Tt = target_inverse(e, M * V, V, eos)
+        isfinite(st) || continue                     # beyond γ_max: no state for either
+        sl, vl, Tl = legendre_inverse(e, M * V, V, eos; counter = false)
+        worsti = max(worsti, abs(sl / st - 1), abs(Tl / Tt - 1), norm(vl - vt))
+    end
+    # the target's own Newton (eos_newton) stops at 1e-12 relative
+    check(worstf < 1e-10 && worsti < 1e-10, @sprintf("c_s² = %.2f: forward to %.1e, inverse to %.1e of the target's (eos_newton: tol 1e-12)", c2, worstf, worsti))
+end
+
+println("5. warm and cold starts")
+eos = ConstantCs2EOS(cs2_val = 0.5)
+let worst = 0.0, nw = 0, nc = 0
+    for (T, v) in ((3.0, 0.0), (3.0, 0.5), (1.7, 0.95)), δ in (1e-3, 1e-2)
+        V = vol_for(54.0, T, v, eos);  local r = legendre_at(T, v, V, eos);  m = SVector(1.0, 0.0) * r.m
+        reset_legendre_counts!();  cold = fwd(r.s, m, V, eos);  nc += legendre_counts().iters
+        # warm: from the state of a neighbouring s (a step of the dynamics)
+        near = fwd(r.s * (1 + δ), m, V, eos)
+        reset_legendre_counts!()
+        warm = legendre_forward(r.s, r.s / V, m / V, near.e, near.γ, eos);  nw += legendre_counts().iters
+        worst = max(worst, abs(warm.T / cold.T - 1), abs(warm.HS / cold.HS - 1), norm(warm.v - cold.v))
+    end
+    check(worst < 1e-13, @sprintf("warm and cold agree to %.1e; iterations per solve: cold %.1f, warm %.1f", worst, nc / 6, nw / 6))
+end
+
+println("6. hybrid Monte Carlo with the Legendre Hamiltonian")
+function legendre_state(L; seed = 1, sa = 54.0)
+    params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> sa / (sqrt(3) / 2 * (0.05 / 2)^2), (x, y) -> SVector(0.0, 0.0);
+                                             L, lattice = :hex, seed = 4))
+    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(seed)))
+    return params, ps, cl, r
+end
+params, ps, cl, r = legendre_state(0.3)
+Hnow() = hmc_measure!(ps, params, cl, eos)[1]
+dt0 = 0.5 * compute_dt(ps, params, eos; mode = :ideal)
+x0 = [q.x for q in ps];  m0 = [q.m for q in ps];  H0 = Hnow()
+errs = Float64[]
+for f in (1, 2, 4)
+    setx!(ps, params, cl, x0);  setm!(ps, m0);  H0 = Hnow()
+    hmc_trajectory!(ps, params, cl, eos, dt0 / f, 8f)
+    push!(errs, abs(Hnow() - H0) / abs(H0))
+end
+setx!(ps, params, cl, x0);  setm!(ps, m0);  Hnow()
+ratio = errs[1] / errs[3]
+check(10 < ratio < 25, @sprintf("|ΔH/H| at δt, δt/2, δt/4: %.2e %.2e %.2e (ratio %.1f, δt² gives 16)", errs..., ratio))
+tg = HMCTarget(r.β0, r.β, params.vol, eos)
+P0 = sum(q.m for q in ps);  reset_legendre_counts!()
+acc = [hmc_update!(ps, params, cl, eos, tg, Xoshiro(7 + i); nsteps = 8, dt = dt0) for i in 1:5]
+na = count(u -> u.accepted, acc);  lc = legendre_counts()
+check(na >= 3, @sprintf("%d of 5 updates accepted, heat-bath acceptance %.2f", na, sum(u.heatbath for u in acc) / 5))
+check(lc.fails == 0, @sprintf("%d solves, %.2f iterations per solve, %d failures (no convergence), %d proposals with no state, %d cold",
+                              lc.solves, lc.iters / lc.solves, lc.fails, lc.nostate, lc.cold))
+
+ok || error("testlegendre: failures")
+println("testlegendre: all passed")

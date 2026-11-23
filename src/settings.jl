@@ -27,5 +27,9 @@ function setting(name::AbstractString, default)
     return value
 end
 
+# The raw string of a setting, or nothing, not recorded: only to choose how a setting is then read with `setting`
+# (sph.jl: SPH_RENORM=legendre is read as a Symbol, any other value as a Bool, as before).
+setting_peek(name::AbstractString) = get(ENV, name, nothing)
+
 # every setting read so far, in the order first read: name => (value, default, set)
 settings_read() = lock(() -> [n => SETTINGS[n] for n in SETTING_ORDER], SETTINGS_LOCK)
