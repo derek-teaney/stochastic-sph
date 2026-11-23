@@ -736,6 +736,13 @@ is a concatenation).
   then the rounding fix).  Stochastic step, stability.jl t = 20, 4 threads, three runs on one node (debug 61868745, 61869262): split
   86 / 84 s, SPH_RENORM=1 71 / 51 s, Legendre 104 / 100 s (first inverse: 175 s): split 1.2–1.6× label-only, less than Legendre.
   The campaign results stand (same answers to 1e-12).
+- **Regressions at 08962be against 53d29e4** (61863441 switch off, all; 61863444 SPH_RENORM=legendre, regress; both report FAIL, for
+  these reasons only): switch off — step.jl and stability drivers IDENTICAL, equilibrium drivers differ only in hast_lq_* (known,
+  thread order), unit output differs in testcheckpoint (wall clock), testlegendre (a path in a warning) and testrunrecord: SPH_RENORM_VBAR
+  was read only with split on, but the record must list every setting of the library — fixed in 9c01b6c (read at load).  Legendre —
+  stability drivers IDENTICAL, equilibrium drivers only hast_lq_*, step.jl refused in both (Einstein measure), unit-test output differs
+  only in file paths of the refusal messages.  Final checks at 9c01b6c (after the faster inverse touched stochastic.jl/hmc.jl/pointwise.jl):
+  jobs 61871467 (switch off, all), 61871469 (legendre, regress), worktree ~/stochastic-sph-splitR2.
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
