@@ -987,6 +987,688 @@ which holds up to the fluctuations of the volumes: the second equality takes $p_
 $V_a^2Q_a^{ii}$ add the correction of the positions, of order $1/(\bar nh^2)$, as in the previous paragraph.  So the measured pressure is the Laplace version, with both one-loop pieces: the label gas $\bar nT$ and the fluctuation share $\mathcal K_0\bar nT$.  These are the pieces
 the renormalized Hamiltonian of \nolinkurl{partition_v2.tex} removes.
 
+\subsection{The double Legendre transform in motion, and a shift in \texorpdfstring{$\bm m$}{m}}
+\label{app:doublelegendre}
+
+The question: the renormalized Hamiltonian shifts only the entropy variable, $e(s+\Delta s(u),\bm m,V)$, yet in a moving equilibrium it also renormalizes the
+momentum.  How, and what is left?  (Theory of the moving case: \nolinkurl{partition_v2.tex}, ``Equilibrium in motion''.)
+
+\paragraph{The double transform.}  At fixed $V$ the free energy of a particle is the Legendre transform over both $s$ and $\bm m$,
+\st
+F(T,\bm v,V)=\min_{s,\bm m}\big[e(s,\bm m,V)-Ts-\bm v\cdot\bm m\big],\qquad
+\frac{\partial e}{\partial s}\Big|_*=T,\qquad \frac{\partial e}{\partial\bm m}\Big|_*=\bm v .
+\stp
+The small-increment theorem holds for all variables at once: a change of the energy function at fixed $(s,\bm m)$ changes $F$ at fixed $(T,\bm v)$ by the same amount,
+evaluated at the saddle $(s_*,\bm m_*)(T,\bm v,V)$,
+\st
+\delta F\big|_{T,\bm v}=\delta e\big|_{s,\bm m}\Big|_*,\qquad \frac{\delta F}T=\Delta s\big|_*\quad\text{for the entropy shift} .
+\stp
+
+\paragraph{Why the shift in $s$ alone moves the momentum.}  The counterterm $\Delta s(u)$ is evaluated at the saddle, where the entropy of the particle is
+\st
+u_*=\gamma\,s(T_{\rm rel})\,V .
+\stp
+So $\delta F/T=\Delta s(u_*)$ depends on $\bm v$ through $\gamma$, and the momentum $M=-\partial F/\partial v$ (per particle) gains $-T\,\partial_v\Delta s(u_*)$.  For the conformal
+shift, $\Delta s=\tfrac\alpha2\ln u$,
+\st
+\Delta s(u_*)=\tfrac\alpha2\big(1+1/c_s^2\big)\ln\gamma+\dots=c_\gamma\ln\gamma+\dots,\qquad c_\gamma=\tfrac12(d+1)(3+1/c_s^2)\quad(d\,c_s^2=1) ,
+\stp
+the $\gamma$ part of the determinant of the boosted susceptibility, which it cancels: the momentum is renormalized through the dependence of the saddle on $\bm v$,
+without touching $\bm m$.
+
+\paragraph{What a function of $u$ cannot do.}  At fixed $V$, $u_*$ depends on $(T,\bm v)$ only through one combination,
+\st
+u_*\propto\gamma^{1+1/c_s^2}\,T^{1/c_s^2}\,V .
+\stp
+So a shift that depends on $u$ alone can cancel only the parts of the one-loop term that depend on $(T,\bm v)$ through that combination.  The other factor of the
+determinant,
+\st
+\tfrac12\ln\big(1-c_s^2v^2\big) ,
+\stp
+depends on $v$ separately, and no $\Delta s(u)$ cancels it: it is the momentum left over, $-T v\,c_s^2/(1-c_s^2v^2)$ per particle, and the violation $R$ of the Lorentz
+identity.
+
+\paragraph{The general counterterm.}  At fixed $V$ the map $(s,\bm m)\leftrightarrow(T,\bm v)$ is one to one, so any desired $\delta F/T(T,\bm v,V)$ is produced by some function
+$\Delta s(s,\bm m,V)$ on the phase space of the particle.  The natural, covariant choice is the determinant evaluated at the particle's own thermal vector, its own
+temperature $T_a$ and velocity $\bm v_a$,
+\begin{keyeq}
+\st
+\Delta s_a=\ln\Big[V_a^{\,1-\mathcal B}\,\det\big(2\pi V_a\,\chi^{\mu\nu}(T_a,\bm v_a)\big)^{1/2}\Big]-\ln T_a+\text{const} ,
+\stp
+\end{keyeq}
+the moving generalization of the shift of \nolinkurl{partition_v2.tex}.  At the saddle it cancels the whole one-loop term, the factor $1-c_s^2v^2$ included, and at one
+loop restores
+\st
+M=w\gamma^2v,\qquad M=v\,\big(T^{00}+T^{yy}\big) .
+\stp
+Equivalently one could shift the momentum variable, $e(s,\bm m+\Delta\bm m,V)$, which changes $F$ by $\bm v\cdot\Delta\bm m$ at the saddle.
+
+\paragraph{The price.}
+\begin{itemize}
+\item A dependence on $\bm m$ changes the ideal dynamics: the velocity becomes
+  \st
+  \dot{\bm x}_a=\frac{\partial e}{\partial\bm m}\Big|_u+T_a\,\frac{\partial\Delta s}{\partial\bm m} ,
+  \stp
+  a correction of relative order $1/s_a$, a momentum counterterm.
+\item A dependence on $V$ at fixed $(s,\bm m)$ adds a force term (the pressure of the counterterm).
+\item The present shift, in $u$ only, changes neither.  It renormalizes all that a function of $u$ can reach, and leaves exactly the $1-c_s^2v^2$ piece: the phase space of
+  the foliation dependence of the sound mode, the stiffness on the moving adiabat.
+\end{itemize}
+So the last piece is removed by a shift that depends on $\bm m$, at the price of a small velocity correction.  (Correction, 2026-11-22: a comoving volume alone would
+not remove it.  The factor $1-c_s^2v^2$ is the foliation dependence of the susceptibility itself, the sound stiffness on the moving adiabat, as in the Density Frame
+paper; see \nolinkurl{partition_v2.tex}, ``The counterterms: formal structure''.)
+
+\subsection{The quadratic form in motion: sound waves and the density-frame condition}
+\label{app:soundmodes}
+
+The question (2026-11-22): the counterterm $\delta\ln Z_{1,a}$ must be split between the entropy and the momentum, $\Delta s_a+\bm v_a\cdot\Delta\bm m_a/T_a=\delta\ln Z_{1,a}$
+(\nolinkurl{partition_v2.tex}, ``The counterterms: formal structure'').  How should the split be made?  This needs the quadratic form of a particle's fluctuations and
+its origin.  Two ways to organize it, which agree: by the normal modes (the sound waves), and by which terms violate the density-frame condition.
+
+\paragraph{The quadratic form.}  The Gaussian weight of a particle's fluctuations is
+\st
+\exp\Big[-\tfrac V2\,\delta\beta_\mu\,\chi^{\mu\nu}\,\delta\beta_\nu\Big],\qquad \chi^{\mu\nu}=n_\lambda\,\mathcal X^{\lambda\mu\nu},\qquad
+\mathcal X^{\lambda\mu\nu}=\frac{\partial T^{\lambda\mu}}{\partial\beta_\nu},
+\stp
+with $n$ the lab time direction.  The quadratic form
+\st
+S^\lambda\equiv\mathcal X^{\lambda\mu\nu}\,\delta\beta_\mu\,\delta\beta_\nu
+\stp
+is the second-order entropy current of the fluctuations, conserved by the linearized ideal equations, and the weight is its flux through the lab slice, $V\,n_\lambda S^\lambda$.
+Write the fluctuation of the thermal vector in the rest-frame variables,
+\st
+\delta\beta_\mu=\delta\beta_{\rm rel}\,u_\mu+\beta_{\rm rel}\,\delta u_\mu ,
+\stp
+and split $\delta\bm u$ along and across the flow, $\delta u_\parallel$, $\delta\bm u_\perp$.  With the rest-frame components of $\mathcal X$
+($\mathcal X^{\hat0\hat0\hat0}=wT_{\rm rel}/c_s^2$, $\mathcal X^{\hat0\hat\imath\hat\jmath}=wT_{\rm rel}\delta^{ij}$ and permutations) and $n=\gamma(1,\bm v)$ in the rest frame,
+\st
+\delta\beta_\mu\chi^{\mu\nu}\delta\beta_\nu=\gamma\,wT_{\rm rel}\beta_{\rm rel}^2\Big[a^2+2c_sv\,a\,\delta u_\parallel+\delta u_\parallel^2+\delta\bm u_\perp^2\Big],\qquad
+a\equiv\frac{\delta\beta_{\rm rel}}{c_s\beta_{\rm rel}}=-\frac{\delta p}{w\,c_s} ,
+\stp
+with $\delta p=s\,\delta T_{\rm rel}=w\,\delta T_{\rm rel}/T_{\rm rel}$.  The lab slice couples the temperature and the longitudinal velocity through $v$; nothing else is coupled.
+
+\paragraph{The normal modes.}  The $2\times2$ block is diagonal in
+\st
+J_\pm=a\pm\delta u_\parallel ,
+\stp
+the two sound waves (Riemann combinations of $\delta p/(wc_s)$ and $\delta u_\parallel$) running along and against the flow:
+\begin{keyeq}
+\st
+\delta\beta_\mu\chi^{\mu\nu}\delta\beta_\nu=\gamma\,wT_{\rm rel}\beta_{\rm rel}^2\Big[\tfrac12(1+c_sv)\,J_+^2+\tfrac12(1-c_sv)\,J_-^2+\delta\bm u_\perp^2\Big] .
+\label{modesform}
+\stp
+\end{keyeq}
+Each mode $m$ is weighted by
+\st
+\gamma\,(1+v\,w_m),\qquad w_m=+c_s,\ -c_s,\ 0\ (\text{the }d-1\text{ transverse modes}),
+\stp
+$w_m$ its velocity along the flow in the rest frame.  This is the flux statement above: in the rest frame each mode's entropy current is $S^x=w_mS^0$ (for $J_\pm$,
+$2c_s\,a\,\delta u_\parallel/(a^2+\delta u_\parallel^2)=\pm c_s$; for $\delta\bm u_\perp$, $S^x=0$), and the lab slice measures
+\st
+n_\lambda S^\lambda=\gamma\big(S^0+vS^x\big)=\gamma\,(1+v\,w_m)\,S^0 .
+\stp
+The product of the weights is $\gamma^{d+1}(1-c_s^2v^2)$, the determinant of \nolinkurl{partition_v2.tex}.  So the one-loop term is a sum over modes,
+\st
+\tfrac12\ln\det\big(2\pi V\chi\big)-\ln T=\underbrace{\mathcal K_0\ln(\gamma V)+\ln\gamma+\Lambda(T_{\rm rel})}_{\text{every mode: }\gamma\text{, and the rest frame}}
++\underbrace{\tfrac12\ln(1+c_sv)+\tfrac12\ln(1-c_sv)}_{\text{the sound waves: }1+vw_m} .
+\stp
+The factor $\gamma$ of each mode is the length contraction, common to all; the factor $1+vw_m$ is the Doppler factor of a mode that moves, and only the sound waves move.
+
+\paragraph{The density-frame condition as a linear condition on $\ln Z_1$.}  Per particle, with $\ln\mathcal Z_N=N\,g(\beta_\mu,\bar V)$ at fixed $N$, the energy and
+momentum per particle are $E=\partial g/\partial\beta_0$, $\bm P=\partial g/\partial\bm\beta$, and the pressure times the volume $p\bar V=T\,\bar V\partial g/\partial\bar V$.
+The ideal (density-frame) relation $\bm P=\bm v\,(E+p\bar V)$ is linear in $g$; define its violation
+\st
+\mathcal D[g]\equiv P_\parallel-v\,\big(E+p\bar V\big) .
+\stp
+Two results, by direct differentiation with $\beta_{\rm rel}=\sqrt{\beta_0^2-\bm\beta^2}$, $\gamma=|\beta_0|/\beta_{\rm rel}$:
+\begin{itemize}
+\item $\mathcal D[g]=0$ for every function of the two invariants of a particle, its rest-frame temperature and its rest-frame volume,
+  \st
+  g=g\big(\beta_{\rm rel},\,V_{\rm rest}\big),\qquad V_{\rm rest}=\gamma\bar V .
+  \stp
+  (For $f(\beta_{\rm rel})$: $\bm P=\bm vE$ and $p=0$.  For $h(V_{\rm rest})$ the energy, the momentum and the pressure combine to zero.  $\ln\gamma$ alone is not of this form:
+  it gives $\mathcal D=Tv$, which the label term $\ln\bar V$, with $\mathcal D=-Tv$, cancels; only $\ln(\gamma\bar V)$ is invariant.)
+\item For a function of the velocity at fixed $T_{\rm rel}$ and $V_{\rm rest}$,
+  \st
+  \mathcal D[g]=T\,(1-v^2)\,\frac{\partial g}{\partial v} .
+  \stp
+\end{itemize}
+So every term of $\delta\ln Z_{1,a}$ is either invariant, and respects the density frame, or violates it, and the violating part is defined without ambiguity as
+\st
+\delta\ln Z_1^{\rm viol}\equiv \delta\ln Z_1\big(\beta_{\rm rel},V_{\rm rest},v\big)-\delta\ln Z_1\big(\beta_{\rm rel},V_{\rm rest},0\big) ,
+\stp
+the dependence on the velocity at fixed invariants.  At one loop it is the sound term, mode by mode:
+\begin{keyeq}
+\st
+\delta\ln Z_1^{\rm viol}=\sum_{\pm}\tfrac12\ln(1\pm c_sv),\qquad \mathcal D\big[\tfrac12\ln(1\pm c_sv)\big]=\pm\,\frac{c_s\,T\,(1-v^2)}{2\,(1\pm c_sv)} ,
+\label{Dviol}
+\stp
+\end{keyeq}
+each sound wave violating the density frame by its own Doppler term, the two cancelling at $v=0$.  Their sum, $-c_s^2vT(1-v^2)/(1-c_s^2v^2)$, divided by the momentum
+$w\gamma^2v\bar V$, is $R$.  The transverse modes and the entropy (label) mode do not move, and do not violate it.  (With $c_s^2$ depending on $T_{\rm rel}$ the formulas hold
+at fixed $T_{\rm rel}$, which is how $\delta\ln Z_1^{\rm viol}$ is defined.)
+
+\paragraph{The split.}  This suggests the split by the density-frame condition:
+\st
+\Delta s_a=\delta\ln Z_{1,a}-\delta\ln Z^{\rm viol}_{1,a}\quad(\text{a function of }T_{{\rm rel},a},\ \gamma_aV_a),\qquad \bm v_a\cdot\Delta\bm m_a=T_a\,\delta\ln Z^{\rm viol}_{1,a} .
+\stp
+The entropy shift is then a function of the particle's invariants, and the momentum shift carries exactly what violates the density frame.  It is the conjugate split
+of \nolinkurl{partition_v2.tex}, now with a definition: the invariant part is what $\mathcal D$ annihilates.  Mode by mode the momentum shift is the momentum of the two
+sound waves on the lab slices,
+\st
+\Delta m_{a,\parallel}=\frac{T_a}{2v_a}\Big[\ln(1+c_sv_a)+\ln(1-c_sv_a)\Big]=\frac{T_a}{2v_a}\ln\big(1-c_s^2v_a^2\big) ,
+\stp
+the sum of the two waves (the logarithm of the product of their Doppler factors, not of their ratio), which is \nolinkurl{partition_v2.tex}'s $\Delta\bm m$.  The momentum
+that each wave contributes to the particle is
+\st
+T\,\partial_v\tfrac12\ln(1\pm c_sv)=\pm\frac{c_sT}{2(1\pm c_sv)} ,
+\stp
+equal and opposite at rest, and unbalanced in motion by the Doppler factors; the sum is $-c_s^2vT/(1-c_s^2v^2)$.  The ratio appears in the difference of the two waves,
+$\tfrac12\ln[(1+c_sv)/(1-c_sv)]={\rm artanh}(c_sv)$, odd in $v$, which cancels in the sum.  The other splits are other ways of factorizing the $2\times2$ block; see the next paragraph.
+
+\paragraph{Three factorizations of the sound block.}  Drop the common factor $\gamma\,wT_{\rm rel}\beta_{\rm rel}^2$ and write $b\equiv\delta u_\parallel$.  The block of
+\Eq{modesform} is
+\st
+Q(a,b)=a^2+2c_sv\,ab+b^2 ,\qquad \det Q=1-c_s^2v^2 .
+\stp
+Its Gaussian integral is fixed, $\int da\,db\,e^{-VQ/2}\propto(1-c_s^2v^2)^{-1/2}$, but there are three natural ways to say which fluctuation carries the factor.
+\begin{enumerate}
+\item \emph{Velocity first (the sound factor on the thermometer).}  Complete the square in $b$:
+  \st
+  Q=\big(b+c_sv\,a\big)^2+\big(1-c_s^2v^2\big)\,a^2 .
+  \stp
+  At fixed $a$ the velocity fluctuates about $-c_sv\,a$ with the rest-frame stiffness $1$: a pressure fluctuation on the lab slice drags a velocity fluctuation with it,
+  as in a sound wave.  What is left, the marginal of $a$, has the stiffness $1-c_s^2v^2$: the temperature (or pressure) fluctuations seen on the lab slice are larger by
+  $1/(1-c_s^2v^2)$, and in the variable $\delta\beta_{\rm rel}$ the stiffness is
+  \st
+  \frac{1-c_s^2v^2}{c_s^2}\;\propto\;\frac1{\gamma^2(dP/dE)_{M^i/S}} ,
+  \stp
+  the pressure derivative on the moving adiabat of \nolinkurl{partition_v2.tex}, which is written in this order: the momentum integrated first, the sound stiffness on the
+  energy.  The factor then belongs to the variable conjugate to $T$: the sound term goes into $\Delta s$.
+\item \emph{Temperature first (the sound factor on the speedometer).}  Complete the square in $a$:
+  \st
+  Q=\big(a+c_sv\,b\big)^2+\big(1-c_s^2v^2\big)\,b^2 .
+  \stp
+  At fixed velocity the temperature fluctuates about $-c_sv\,b$ with the stiffness $1$; the marginal of the longitudinal velocity has the stiffness $1-c_s^2v^2$: the
+  inertia measured on the lab slice, at fixed energy, is reduced by $1-c_s^2v^2$.  The factor belongs to the variable conjugate to $\bm v$: the sound term goes into $\Delta\bm m$.
+  This is the conjugate split of \nolinkurl{partition_v2.tex}.
+\item \emph{The normal modes (the two sound waves).}  Diagonalize instead of triangularizing: $Q=\tfrac12(1+c_sv)J_+^2+\tfrac12(1-c_sv)J_-^2$.  No variable is integrated first;
+  each wave carries its own Doppler factor and its own term $\tfrac12\ln(1\pm c_sv)$.  Each $J_\pm$ is half temperature and half velocity, so this factorization does not by
+  itself say $\Delta s$ or $\Delta\bm m$; the density-frame criterion does, since each $\tfrac12\ln(1\pm c_sv)$ depends on $v$ at fixed invariants: both go into $\Delta\bm m$.  One
+  wave alone would give $\Delta m_\pm=\pm c_sT/2+O(v)$, a momentum that does not vanish at rest; only the pair is isotropic, the odd parts $\pm{\rm artanh}(c_sv)$ cancelling.
+\end{enumerate}
+
+\paragraph{What is the same and what differs.}  The two marginals are equally enhanced: the inverse of $Q$ is
+\st
+Q^{-1}=\frac1{1-c_s^2v^2}\begin{pmatrix}1&-c_sv\\-c_sv&1\end{pmatrix},\qquad \avg{a^2}\propto\avg{b^2}\propto\frac1{1-c_s^2v^2} ,
+\stp
+so the statistics do not prefer the temperature or the velocity.  The determinant is the product of the stiffness of the variable integrated first and the Schur
+complement of the other, and which is called which is the order of integration.  At one loop every order gives $\tfrac12\ln(1-c_s^2v^2)$ in $\ln Z_1$, and by the
+small-increment theorem only $T\Delta s+\bm v\cdot\Delta\bm m$ at the saddle enters; so the three agree on the thermodynamics.  They differ in what the counterterm depends
+on across the particle's fluctuations: a $\Delta s$ that depends on $v$ is felt through $\partial\Delta s/\partial\bm m$ in the velocity of the particle, a $\Delta\bm m$
+through the inertia.  Those differences enter the Hamiltonian flow, and the equilibrium only at the next order in $1/s_a$.
+
+What decides is not the Gaussian integral but a property of the result: the term violates the density frame, and the density frame is a statement about the momentum.
+That selects the second (or, wave by wave, the third), and leaves the entropy shift a function of the invariants.
+
+\paragraph{On $\delta s$ and $\delta p$.}  For one particle at fixed $V$ and no charge there is one thermodynamic variable: $\delta s$, $\delta p$ and $\delta T_{\rm rel}$ are
+proportional, and the independent pair is $(\delta p,\delta u_\parallel)$, whose Riemann combinations are $J_\pm$.  A second thermodynamic variable appears only when $V$
+fluctuates (the positions): then the entropy per particle and $\delta p$ are independent, as in the Landau--Lifshitz theory of fluctuations, and the entropy per particle is
+the non-propagating entropy mode, $w_m=0$, which is where the labels live.  It does not move, so it does not violate the density frame.
+
+\subsection{The velocity near the light cone}
+\label{app:velocity}
+
+The question (2026-11-22): we want the velocity of a particle, $\dot{\bm x}=\partial H/\partial\bm m$, to stay below $1$.  Does the split of the counterterm between $\Delta s$
+and $\Delta\bm m$ matter?  Script: \nolinkurl{examples/renorm_velocity.py} (conformal fluid, $d=2$, one particle, $V=1$).
+
+\paragraph{What is guaranteed.}  At the saddle point every scheme has $\dot{\bm x}=\bm v$, the velocity of the bath, since the saddle condition of the weight
+$\exp[s-(e-\bm v\cdot\bm m)/T]$ in the code's variables is $\partial H/\partial\bm m=\bm v$.  The bound is a property of the whole phase space: $|\partial H/\partial\bm m|<1$
+everywhere.  The target energy has it.  With the shift in $u$ alone it holds exactly, since $\dot{\bm x}$ is the target velocity at $(u,\bm m)$.
+
+\paragraph{The check.}  At fixed code entropy $s$, as the momentum grows, compare $1-\dot x$ with $1-v$, $v$ the target velocity at $(u,\bm m)$, $u=s+\tfrac\alpha2\ln s$
+(a common reference for all schemes):
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+$(1-\dot x)/(1-v)$ at $v\to1$ & $u$ only & all in $\Delta s$ & split, sound in $\Delta\bm m$ & $(1+\mathcal K_0)\ln\gamma$ also in $\Delta\bm m$ \\
+\midrule
+$s=5$ & $1$ & $0.79$ & $0.99$ & leaves the domain \\
+$s=16$ & $1$ & $0.91$ & $0.985$ & $0.4$--$0.5$ \\
+$s=54$ & $1$ & $0.97$ & $0.985$ & $0.74$ \\
+$s=541$ & $1$ & $0.996$ & $0.997$ & $0.987$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item \emph{All in $\Delta s$} and \emph{the density-frame split}: $\dot x<1$ everywhere, with $1-\dot x$ a fixed fraction $1-O(1/u)$ of $1-v$, the same at every $\gamma$.  The
+  reason is that the sound term is bounded, $|\ln(1-c_s^2v^2)|\le|\ln(1-c_s^2)|$, since $c_s<1$: neither shift grows near the light cone.
+\item \emph{Moving $(1+\mathcal K_0)\ln\gamma$ into $\Delta\bm m$} (with $-(1+\mathcal K_0)\ln\gamma$ in $\Delta s$): both shifts grow like $\ln\gamma$, the particles move closer to the light
+  cone, and at small $s$ the shifted entropy $u-(1+\mathcal K_0)\ln\gamma$ leaves the domain.  It does not help.  (An earlier remark in the discussion, that this split drags fast
+  particles, compared the schemes at different reference states and was wrong.)
+\end{itemize}
+
+\paragraph{What the density frame says.}  The violating part $\delta\ln Z_1^{\rm viol}$ is bounded uniformly in $v$, so $\Delta\bm m=T\,\delta\ln Z_1^{\rm viol}/v$ is bounded and vanishes linearly at rest;
+what grows like $\ln\gamma$ is invariant, $\ln V_{\rm rest}=\ln(\gamma V)$, and stays in the entropy, where for the conformal fluid it is absorbed in $\ln u$ with no velocity term.
+For a general equation of state its velocity term is proportional to
+\st
+\frac{\partial\Delta s}{\partial\ln V_{\rm rest}}\Big|_s=(1+\mathcal K_0)-c_s^2\,T\frac{d\Lambda}{dT}=\mathcal N ,
+\stp
+the non-conformality.  So the split by the density frame is also the one in which nothing in the counterterm grows near the light cone, apart from the invariant
+$\mathcal N\ln V_{\rm rest}$.  Velocity control beyond that (a drag at large $\gamma$) would be a regulator of the dynamics, not part of the renormalization.
+
+\subsection{The label \texorpdfstring{$s_{\rm eff}$}{s\_eff}, the measure and the Hamiltonian, step by step}
+\label{app:seff}
+
+The question (2026-11-22): the counterterm can be written as a shift of the entropy argument, or as log terms in the weight, or as an energy added to the
+Hamiltonian.  Which variable does the code store, and what goes where?  Notation: $\delta\ln Z_1$ is the excess of a particle's $\ln Z_1$ over the target's
+(\nolinkurl{partition_v2.tex}), and the old name $u$ of \texttt{SPH\_RENORM} is $s_{\rm eff}$ below.
+
+\paragraph{Step 1: the model with a shifted argument.}  Each particle carries a label $s$, its entropy variable; the measure is flat in $s$ (Liouville), and the energy is
+the target's at a shifted entropy,
+\st
+H=\sum_a e_{\rm t}\big(s_a+\Delta s_a,\ \bm m_a,\ V_a\big),\qquad \Delta s=\delta\ln Z_1\ \text{at this order} .
+\stp
+The weight of a particle at the bath temperature $T$ and velocity $\bm v$ is
+\st
+e^{\,s}\,ds\;\exp\Big[-\frac{e_{\rm t}(s+\Delta s,\bm m,V)-\bm v\cdot\bm m}{T}\Big] .
+\stp
+
+\paragraph{Step 2: change the integration variable.}  At fixed $(\bm m,V)$ let
+\st
+s_{\rm eff}\equiv s+\Delta s ,
+\stp
+the argument of the target energy.  This is only a change of variables in the integral, so it changes nothing.  In the new variable the energy is the target's,
+$e_{\rm t}(s_{\rm eff},\bm m,V)$, with no log terms, and the log terms move into the weight:
+\st
+e^{\,s}\,ds=\exp\Big[s_{\rm eff}-\Delta s+\ln J\Big]\,ds_{\rm eff},\qquad J\equiv\frac{\partial s}{\partial s_{\rm eff}}\Big|_{\bm m,V}=1-\frac{\partial\Delta s}{\partial s_{\rm eff}}\Big|_{\bm m,V} .
+\stp
+Two log terms: $-\Delta s$, of order $\ln s$, from $e^{\,s}$; and $\ln J$, of order $1/s$, from the Jacobian.
+
+\paragraph{Step 3: what the flow does to the weight.}  The ideal step is a Hamiltonian flow: the positions and momenta are canonical pairs, and the labels have no conjugate,
+so the flow conserves every label (they are Casimirs), and by Liouville's theorem it preserves $\prod_a d\bm x_a\,d\bm m_a$.  It also conserves $H$ and the total momentum.
+Hence a weight of the form
+\st
+f\big(\text{labels}\big)\,\exp\Big[-\frac{H-\bm v\cdot\bm P}T\Big]
+\stp
+is stationary under the flow, for any function $f$ of the labels.  A weight factor that depends on $\bm m$ or on $V$ (through the positions) is not.
+
+\paragraph{Step 4: split the log terms.}  Write the shift as the part that depends on the label alone and the rest,
+\st
+\Delta s=\Delta s^{\rm lab}(s_{\rm eff})+\Delta s^{\rm dyn}(s_{\rm eff},\bm m,V) .
+\stp
+For the conformal fluid $\Delta s^{\rm lab}=\tfrac\alpha2\ln s_{\rm eff}$ (the present \texttt{SPH\_RENORM}) and $\Delta s^{\rm dyn}=\tfrac12\ln(1-c_s^2v^2)$, the sound term; for a general
+equation of state $\Delta s^{\rm dyn}$ also contains the dependence on the rest-frame volume $\gamma V$, with the coefficient $\mathcal N$.
+\begin{itemize}
+\item \emph{The label part stays in the measure.}  $e^{-\Delta s^{\rm lab}}J^{\rm lab}$ is a function of the label, so by Step 3 the flow with the target energy preserves it.  This
+  is why \texttt{SPH\_RENORM} works with the target forces unchanged.
+\item \emph{The dynamical part goes into the Hamiltonian.}  $e^{-\Delta s^{\rm dyn}}$ depends on $\bm m$ and $V$, so it cannot stay in the weight.  At the saddle the bath
+  temperature is the particle's, so
+  \st
+  e^{-\Delta s^{\rm dyn}}=\exp\Big[-\frac{T_a\,\Delta s^{\rm dyn}}T\Big]\Big(1+O\big(1/s_a\big)\Big) ,
+  \stp
+  an energy $T_a\Delta s^{\rm dyn}$ in the Boltzmann factor, which can be put into $H$.
+\end{itemize}
+
+\paragraph{Step 5: the model the code runs.}  The label is $s_{\rm eff}$, stored and conserved by the ideal step; the measure and the Hamiltonian are
+\begin{keyeq}
+\st
+d\mu=\prod_a e^{\,s_{{\rm eff},a}-\Delta s^{\rm lab}(s_{{\rm eff},a})}\,J^{\rm lab}_a\;ds_{{\rm eff},a}\,d\bm x_a\,d\bm m_a,\qquad
+H_{\rm eff}=\sum_a\Big[e_{\rm t}(s_{{\rm eff},a},\bm m_a,V_a)+T_a\,\Delta s^{\rm dyn}_a\Big] ,
+\label{seffmodel}
+\stp
+\end{keyeq}
+with $T_a$ the target temperature at $(s_{{\rm eff},a},\bm m_a,V_a)$.  Its equilibrium is that of Step 1 to the order of the counterterm.  Its dynamics is Hamiltonian:
+\st
+\dot{\bm x}_a=\bm v_a+\frac{\partial(T_a\Delta s^{\rm dyn}_a)}{\partial\bm m_a},\qquad
+\dot{\bm m}_a=\bm F^{\rm t}_a-\sum_b\frac{\partial(T_b\Delta s^{\rm dyn}_b)}{\partial V_b}\,\frac{\partial V_b}{\partial\bm x_a},\qquad \dot s_{{\rm eff},a}=0 ,
+\stp
+with $\bm F^{\rm t}_a$ the target force.  With $\Delta s^{\rm dyn}=0$ this is \texttt{SPH\_RENORM} exactly.
+
+\paragraph{Step 5$'$: everything in the Hamiltonian.}  Alternatively, keep the measure flat in the label $s_{\rm eff}$ and put all the log terms of Step 2 into the
+energy, the label part and the Jacobian included:
+\begin{keyeq}
+\st
+d\mu=\prod_a e^{\,s_{{\rm eff},a}}\,ds_{{\rm eff},a}\,d\bm x_a\,d\bm m_a,\qquad
+H_{\rm eff}=\sum_a\Big[e_{\rm t}(s_{{\rm eff},a},\bm m_a,V_a)+T_a\big(\Delta s_a-\ln J_a\big)\Big] ,
+\label{seffallH}
+\stp
+\end{keyeq}
+the sign of $-\ln J$ because the weight carries $e^{-\Delta s+\ln J}$.  By the small-increment theorem $e_{\rm t}(s_{\rm eff})+T\Delta s\simeq e_{\rm t}(s_{\rm eff}+\Delta s)$, so this is
+the model of Step 1 again, in its additive form, with the label renamed: consistent, with one Hamiltonian and the standard Liouville measure in every part of the
+code.  Its equilibrium is that of Step 5 at one loop.  The differences:
+\begin{enumerate}
+\item \emph{Extra terms in the equations of motion.}  $T_a\,\Delta s^{\rm lab}$ depends on $\bm m$ and $V$ through $T_a$ even when $\Delta s^{\rm lab}$ depends on the label alone, so the
+  velocity gains $\Delta s^{\rm lab}\,\partial T_a/\partial\bm m_a$ and the force $\Delta s^{\rm lab}\,\partial T_a/\partial V_a$, of relative order $\ln s/s$.  In Step 5 they are absent, since a
+  weight that depends on the labels alone is conserved anyway.
+\item \emph{The approximation.}  Moving a weight into $H$ replaces the bath temperature by the particle's, exact only at the saddle.  For the label part Step 5 needs no such
+  step (it is the change of variables of Step 2, exact); for $\Delta s^{\rm dyn}$ both need it.
+\item \emph{The reported energy and pressure.}  The energy that couples to the lapse is the generator of time translations, $H_{\rm eff}$.  With $N=e^\sigma$ the static weight is
+  $\exp\big[\sum_as_a-\sum_aN(\bm x_a)H_{{\rm eff},a}/T\big]$, and $E=-T\,\delta\ln Z/\delta\sigma$ (\nolinkurl{gravity.tex}) gives
+  \st
+  E(\bm x)=\Big\langle\sum_a\delta(\bm x-\bm x_a)\,H_{{\rm eff},a}\Big\rangle,\qquad H_{{\rm eff},a}=e_{\rm t}(s_a,\bm m_a,V_a)+T_a\big(\Delta s_a-\ln J_a\big) .
+  \stp
+  The temperature in the counterterm must be the particle's own, $T_a=\partial e_{\rm t}/\partial s$ at $(s_a,\bm m_a,V_a)$: then $H_{{\rm eff},a}$ is a function of the particle's variables
+  alone and the lapse multiplies it cleanly; with the bath temperature, or the Tolman temperature $T/N$, the variation would pick up their dependence on $\sigma$.  A
+  uniform lapse only rescales $\beta$, so this $E$ is $-\partial\ln Z/\partial\beta$, the target's $e(T)$ at one loop.  The stress, from the variation in $g_{ij}$, has the virial with
+  the particle pressure of $H_{\rm eff}$ and the kinetic part with its velocity,
+  \st
+  P_a=-\frac{\partial H_{{\rm eff},a}}{\partial V_a}=P_{{\rm t},a}-\frac{\partial\big[T_a(\Delta s_a-\ln J_a)\big]}{\partial V_a},\qquad \dot{\bm x}_a=\frac{\partial H_{{\rm eff},a}}{\partial\bm m_a} .
+  \stp
+  So \texttt{energy\_pressure} in \nolinkurl{src/measure.jl} would change.  In Step 5 the lapse multiplies $\sum_ae_{\rm t}$ while the label factor does not depend on $\sigma$ (nor on
+  $\beta$), so $E=\langle\sum_a\delta(\bm x-\bm x_a)\,e_{{\rm t},a}\rangle$, as now: the same thermodynamic $E$ at one loop, reached differently.
+\item \emph{Cost.}  With $\Delta s^{\rm dyn}\neq0$ both need the inverse of Step 6; without it, Step 5 is the present code, and Step 5$'$ already needs the inverse.
+\end{enumerate}
+The equilibrium is the same at this order; the dynamics differ at relative order $\ln s/s$.  The choice is between one rule everywhere (Step 5$'$) and the split that
+is exact for the label part and keeps the present code (Step 5).  \emph{But see the check below: Step 5$'$ fails in practice}, because $\Delta s$ is not small.  The step
+$e_{\rm t}(s)+T\Delta s\simeq e_{\rm t}(s+\Delta s)$ has the error $\tfrac12\Delta s^2\,\partial T/\partial s\sim T\,\Delta s^2/s$, and $\Delta s=\tfrac\alpha2\ln s+{\rm const}$ is about $14$ at
+$s_a=54$, larger than $\sqrt{s_a}$.  In Step 5 the label part is an exact change of variables, and only the bounded sound term, $|\tfrac12\ln(1-c_s^2v^2)|\le\tfrac12|\ln(1-c_s^2)|$,
+goes into $H$ additively, where this error is negligible.
+
+\paragraph{Check: the single particle in motion.}  The exact quadrature of $Z_1(T,\bm v,V)$ over $(s,\bm m)$, with the Liouville measure of each model and the label gas
+(\nolinkurl{examples/renorm_quadrature_moving.py}; conformal, $d=2$), gives per particle the energy $E$, the momentum $M$, the pressure, the violation $R$ of the
+identity $M=v(T^{00}+T^{yy})$ and $\mu/T$, against the target ($R=0$, $\mu=0$).  Relative deviations at $v=0.8$:
+\begin{center}
+\small
+\begin{tabular}{llccccc}
+\toprule
+$s_a$ & model & $E$ & $M$ & $p$ & $R$ & $\mu/T$ \\
+\midrule
+$54$ & tree & & $+1.3\times10^{-1}$ & $+1.4\times10^{-1}$ & & $-11.5$ \\
+ & \texttt{SPH\_RENORM} (label part only) & $-3.2\times10^{-3}$ & $-4.5\times10^{-3}$ & $+1.6\times10^{-4}$ & $-1.7\times10^{-3}$ & $+0.20$ \\
+ & Step 5 (label part + sound in $H$) & $+1.0\times10^{-3}$ & $+9.7\times10^{-4}$ & $+1.1\times10^{-3}$ & $-6.2\times10^{-5}$ & $+0.04$ \\
+ & Step 5$'$ (all in $H$) & $-8.0\times10^{-2}$ & $-7.0\times10^{-2}$ & $-1.1\times10^{-1}$ & $+1.5\times10^{-2}$ & $-6.4$ \\
+\midrule
+$541$ & tree & $+1.4\times10^{-2}$ & $+1.3\times10^{-2}$ & $+1.4\times10^{-2}$ & $-1.7\times10^{-4}$ & $-17.2$ \\
+ & \texttt{SPH\_RENORM} & $-3.5\times10^{-4}$ & $-4.9\times10^{-4}$ & $+1.3\times10^{-6}$ & $-1.8\times10^{-4}$ & $+0.19$ \\
+ & Step 5 & $+9.7\times10^{-6}$ & $+9.2\times10^{-6}$ & $+1.1\times10^{-5}$ & $-6.6\times10^{-7}$ & $+0.004$ \\
+ & Step 5$'$ & $-2.8\times10^{-3}$ & $-2.2\times10^{-3}$ & $-4.3\times10^{-3}$ & $+7.3\times10^{-4}$ & $-1.8$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+(Blank: the tree-level energy average did not converge on the grid.)  What it shows:
+\begin{itemize}
+\item \texttt{SPH\_RENORM} leaves exactly the predicted sound remainder: $R\simeq-(\bar nT/w)\,c_s^2(1-v^2)^2/(1-c_s^2v^2)$ ($-1.76\times10^{-4}$ at $s_a=541$, the same as the tree level)
+  and $\mu/T=-\tfrac12\ln(1-c_s^2v^2)=0.193$.
+\item Step 5 removes it: $R$ falls by a factor $\sim30$ at $s_a=54$ and $\sim300$ at $s_a=541$, i.e.\ to $O(1/s_a^2)$; the momentum and the energy match to the same order
+  as the pressure; $\mu/T$ falls by $5$--$50$.  At rest Step 5 is slightly better than \texttt{SPH\_RENORM} too (the $\ln J$ of the sound term).
+\item Step 5$'$ fails at every $s_a$, by $\Delta s^2/s_a$, as explained above.
+\end{itemize}
+So the model to implement is Step 5: the present measure for the label part, plus $T_a\big[\tfrac12\ln(1-c_s^2v_a^2)-\ln J^{\rm dyn}_a\big]$ added to the energy of each particle.
+
+\paragraph{Step 5$''$: the Legendre transform of the wanted free energy.}  The clean form of ``everything in $H$'': take the free energy we want at tree level,
+\st
+F_{\rm want}(T,\bm v,V)=F_{\rm t}(T,\bm v,V)+T\,\delta\ln Z_1(T,\bm v,V) ,
+\stp
+and define $H_{\rm eff}(s,\bm m,V)$ as its Legendre transform, $H_{\rm eff}=F_{\rm want}+Ts+\bm v\cdot\bm m$ at $s=-\partial F_{\rm want}/\partial T$, $\bm m=-\partial F_{\rm want}/\partial\bm v$.  The
+tree level of $H_{\rm eff}$ is then $F_{\rm want}$ exactly, and its one loop removes $\delta\ln Z_1$ up to the difference between the susceptibilities of $H_{\rm eff}$ and of the target,
+of relative order $1/s$.  Step 5$'$ was the linearization of this transform, and the linearization was its error: the exact transform puts the large $\tfrac\alpha2\ln s$ into
+the argument.  The transform also makes the split by itself, by conjugacy: the $T$-dependence of $T\delta\ln Z_1$ shifts $s$, its $\bm v$-dependence (the sound term, and the powers
+of $\gamma$) shifts $\bm m$.  And $\partial H_{\rm eff}/\partial\bm m=\bm v$, $\partial H_{\rm eff}/\partial s=T$ exactly, so $|\dot{\bm x}|<1$ by construction.
+
+Check (\nolinkurl{examples/renorm_quadrature_legendre.py}, the quadrature over the Legendre variables $(T,\bm v)$, in which $s$, $\bm m$ and $H_{\rm eff}$ are explicit):
+\begin{center}
+\small
+\begin{tabular}{llccccc}
+\toprule
+$s_a$ & $v$ & $E$ & $M$ & $p$ & $R$ & $\mu/T$ \\
+\midrule
+$54$ & $0$ & $+7.0\times10^{-3}$ & & $+7.0\times10^{-3}$ & & $+0.25$ \\
+ & $0.8$ & $+8.4\times10^{-3}$ & $+8.5\times10^{-3}$ & $+7.5\times10^{-3}$ & $+2.5\times10^{-4}$ & $+0.26$ \\
+$541$ & $0$ & $+6.5\times10^{-5}$ & & $+6.5\times10^{-5}$ & & $+0.024$ \\
+ & $0.8$ & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+1.8\times10^{-7}$ & $+0.024$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+It works: the residuals are $O(T/s_a)$ per particle, the same at rest and in motion, $R$ cancels, and $\mu/T$ is $O(1/s_a)$.  The coefficient is about ten times that of
+Step 5 at rest, because Step 5 treats the label part by an exact change of variables, while here the one-loop term of $H_{\rm eff}$ differs from the target's at order $1/s$.
+Iterating once at one loop, with the determinant of $H_{\rm eff}$'s own susceptibility in $F_{\rm want}$, overshoots: at $s_a=541$ the residual changes from $+6.5\times10^{-5}$
+to $-2\times10^{-5}$ (and $\mu/T$ from $+0.024$ to $-0.007$, $R$ from $2\times10^{-7}$ to $9\times10^{-7}$), and at $s_a=54$ the iterated $F_{\rm want}$ is no longer convex in the tails
+and the quadrature fails.  So the remaining residual is not only the one-loop mismatch; the terms beyond one loop are comparable.  The systematic way to remove it is
+to fix $F_{\rm want}$ by matching the exact single-particle quadrature, the ``exact shift'' of \nolinkurl{partition_v2.tex} in this language.  In the code $H_{\rm eff}$ is not explicit in $(s,\bm m,V)$:
+the forward map needs a solve for $(T,\bm v)$, like the present state solve, and the votes the same solve from $(e,\bm m,V)$.
+
+\paragraph{Step 6: the stochastic step.}  The votes work with the energies and momenta, so they need the weight as a function of $(e,\bm m,V)$:
+\begin{enumerate}
+\item find the label: $s_{\rm eff}$ with $e_{\rm t}(s_{\rm eff},\bm m,V)+T\,\Delta s^{\rm dyn}=e$, by iterating the target inverse,
+  $s_{\rm eff}^{(k+1)}=S_{\rm t}\big(e-T^{(k)}\Delta s^{{\rm dyn}(k)},\bm m,V\big)$, starting from $S_{\rm t}(e,\bm m,V)$ (each step gains a factor of order $1/s_a$);
+\item the weight is $s_{\rm eff}-\Delta s^{\rm lab}+\ln J^{\rm lab}-\ln T_{\rm eff}$, with $T_{\rm eff}=\partial H_{\rm eff}/\partial s_{\rm eff}$ the Jacobian from the label to the energy
+  (the Liouville measure written in the energy).
+\end{enumerate}
+With $\Delta s^{\rm dyn}=0$ step 1 is the target inverse itself and step 2 is the present vote, $s_{\rm eff}-\tfrac\alpha2\ln s_{\rm eff}+\ln(1-\alpha/2s_{\rm eff})-\ln T$.
+
+\paragraph{Summary of the names.}
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+$s$ & the label of Step 1 (flat measure, shifted argument); not used by the code \\
+$s_{\rm eff}$ & the label of the code (formerly $u$): stored, conserved, the argument of $e_{\rm t}$ \\
+$\Delta s^{\rm lab}$, $J^{\rm lab}$ & the counterterm that is a function of the label: in the measure \\
+$\Delta s^{\rm dyn}$ & the counterterm that depends on $\bm m$, $V$: in $H_{\rm eff}$, times the particle's temperature \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The procedure: the Hamiltonian as the Legendre transform of the wanted free energy}
+\label{app:procedure}
+
+The steps (2026-11-22), with the Legendre transform as the definition of the renormalized model (Step 5$''$ of \App{app:seff}).
+
+\paragraph{1. The target.}  Choose the equation of state $p(T)$; the target free energy of a particle of volume $V$ moving with $\bm v$ at the (bare) temperature $T$ is
+\st
+F_{\rm t}(T,\bm v,V)=-p(T_{\rm rel})\,V,\qquad T_{\rm rel}=\gamma T .
+\stp
+
+\paragraph{2. The counterterm.}  The excess of the tree-level model's $\ln Z_1$ over the target's,
+\st
+\delta\ln Z_1(T,\bm v,V)=\tfrac12\ln\det\big(2\pi V\chi^{\mu\nu}(T,\bm v)\big)-\ln T+(1-\mathcal B)\ln V+\text{const},
+\stp
+with $\mathcal B=0$ and the constant chosen so that $\mu/T=0$ (the constant is $1$).  It is in closed form for any equation of state, with
+$w$ and $c_s^2$ functions of $T_{\rm rel}$, since
+\st
+\det\chi^{\mu\nu}=\gamma^{d+1}\big(1-c_s^2v^2\big)\,\frac{(wT_{\rm rel})^{d+1}}{c_s^2}
+\stp
+holds for any $c_s^2(T_{\rm rel})$ (the rest-frame components $\mathcal X^{\hat0\hat0\hat0}=wT_{\rm rel}/c_s^2=T_{\rm rel}^2C_V$, $\mathcal X^{\hat0\hat\imath\hat\jmath}=wT_{\rm rel}\delta^{ij}$ are
+general).  Explicitly, with $T=T_{\rm rel}/\gamma$,
+\st
+\delta\ln Z_1=\tfrac{d+1}2\ln\big(2\pi V\gamma\,wT_{\rm rel}\big)+\tfrac12\ln\big(1-c_s^2v^2\big)-\tfrac12\ln c_s^2-\ln T+(1-\mathcal B)\ln V+1 .
+\label{dlnZgeneral}
+\stp
+A dependence of $c_s^2$ on $T_{\rm rel}$ enters only through the values of $w$ and $c_s^2$ here, and through $dc_s^2/dT_{\rm rel}$ in the derivatives of the solves.  Optionally, later: a correction fitted to the exact single-particle quadrature, for small $s_a$.
+
+\paragraph{3. The wanted free energy.}
+\st
+F_{\rm want}(T,\bm v,V)=F_{\rm t}(T,\bm v,V)+T\,\delta\ln Z_1(T,\bm v,V) .
+\stp
+
+\paragraph{4. The Hamiltonian: its Legendre transform.}  For a particle with the label $s$, the momentum $\bm m$ and the volume $V$, solve
+\st
+s=-\frac{\partial F_{\rm want}}{\partial T},\qquad \bm m=-\frac{\partial F_{\rm want}}{\partial\bm v}
+\label{legsolve}
+\stp
+for its $(T,\bm v)$.  Then
+\begin{keyeq}
+\st
+H_a=F_{\rm want}+Ts+\bm v\cdot\bm m,\qquad \frac{\partial H_a}{\partial s}=T,\qquad \frac{\partial H_a}{\partial\bm m}=\bm v,\qquad
+P_a\equiv-\frac{\partial H_a}{\partial V}\Big|_{s,\bm m}=-\frac{\partial F_{\rm want}}{\partial V}\Big|_{T,\bm v} .
+\label{legH}
+\stp
+\end{keyeq}
+The particle's temperature, velocity and pressure come out of the solve, with no further derivatives; $|\bm v|<1$ by construction.
+
+\paragraph{5. The code.}  The same variables $(s,\bm m,\bm x)$, the same Liouville measure (flat in $s$), the same integrators.
+\begin{itemize}
+\item \emph{The ideal step and the trajectories of hybrid Monte Carlo} use $\bm v_a$ and $P_a$ of \Eq{legH} where they now use the target's.
+\item \emph{The votes and the heat bath} need the entropy at given $(e,\bm m,V)$: solve $e=H_a$ and $\bm m=-\partial F_{\rm want}/\partial\bm v$ for $(T,\bm v)$; the entropy is
+  $S=-\partial F_{\rm want}/\partial T$, and the weight of the vote is $S-\ln T$ (the Liouville measure written in the energy).
+\item \emph{The measurements}: the energy is $\sum_aH_a$, the virial uses $P_a$, the kinetic stress $\bm v_a\bm m_a$.
+\end{itemize}
+
+\paragraph{6. The solvers.}  $F_{\rm want}$ is not an equation of state of the densities (it has $\ln V$ and $\ln T$), so the hook is at the particle level, where the code
+turns $(s_a,\bm m_a,V_a)$ or $(e_a,\bm m_a,V_a)$ into the particle's state.  Start each solve from the present target solvers (\texttt{eos\_newton}, \texttt{rest\_energy} in
+\nolinkurl{src/pointwise.jl}), then one or two Newton steps in $(T,\bm v)$.  The Jacobian of \Eq{legsolve} is the particle's susceptibility, in closed form (as in
+\nolinkurl{examples/renorm_quadrature_legendre.py}).  The invariant part of $F_{\rm want}$ respects $\bm m=\bm v(e+P_aV)$, the single-root structure of the present solvers;
+only the sound term breaks it, and it enters as a small correction.
+
+\paragraph{7. Checks, in order.}
+\begin{enumerate}
+\item The single-particle quadrature (done, \App{app:seff}): residuals $O(T/s_a)$ per particle, $R$ cancelled, $\mu/T=O(1/s_a)$.
+\item Hybrid Monte Carlo at rest (\nolinkurl{examples/eos_measure.jl}): $E$, $P$, $c_s^2$, the momentum susceptibility, $S(k)$.
+\item Hybrid Monte Carlo at $v=0.8$: $R$ and $\mu/T$.
+\item A short dynamical run: the drift of $H$, against \texttt{SPH\_RENORM}.
+\end{enumerate}
+
+\subsection{Constant speed of sound, not necessarily conformal}
+\label{app:constcs2}
+
+The procedure above is general.  For the implementation, take $c_s^2$ constant but not necessarily $1/d$: the code's \texttt{ConstantCs2EOS}, with
+$T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)}$, i.e.
+\st
+p=A\,T_{\rm rel}^{\,n},\qquad n\equiv1+\frac1{c_s^2},\qquad A=c_s^2\,T_{\rm scale}^{-n},\qquad w=nA\,T_{\rm rel}^{\,n},\qquad s=nA\,T_{\rm rel}^{\,n-1} .
+\stp
+With $T$ and $v$ as the independent variables ($T_{\rm rel}=\gamma T$), $d=2$ and $\mathcal B=0$:
+\begin{keyeq}
+\st
+F_{\rm want}=-A\,V\,(\gamma T)^n+T\Big[\tfrac52\ln V+\tfrac52\ln\gamma+k\ln(\gamma T)+\tfrac12\ln\big(1-c_s^2v^2\big)+C\Big],\qquad k=2+\frac{3}{2c_s^2},
+\label{Fwantcs2}
+\stp
+\end{keyeq}
+with $C=\tfrac32\ln(2\pi nA)-\tfrac12\ln c_s^2+1$.  (For $c_s^2=1/2$: $n=3$, $k=5$, the form used in \nolinkurl{examples/renorm_quadrature_legendre.py}.)  The Legendre pair:
+\st
+s=nAV\gamma^nT^{n-1}-\big[\ldots\big]-k,\qquad
+|\bm m|=nAVT^n\gamma^{n+2}v-T\,v\Big[\big(\tfrac52+k\big)\gamma^2-\frac{c_s^2}{1-c_s^2v^2}\Big],
+\stp
+with $[\ldots]$ the bracket of \Eq{Fwantcs2}; the first terms are the target's, $s_{\rm t}=\gamma s(T_{\rm rel})V$ and $m_{\rm t}=w\gamma^2vV$.  The particle's pressure is
+\st
+P_a=-\frac{\partial F_{\rm want}}{\partial V}=p(T_{\rm rel})-\frac52\,\frac TV ,
+\stp
+for any $c_s^2$: the counterterm's $-(1+\mathcal K_0)T/V$, which with the label gas ($+T/V$) and the particle's fluctuations ($+\mathcal K_0T/V$) leaves the target's $p$.
+
+\paragraph{What is new when $c_s^2\neq1/d$.}  In terms of the particle's target entropy $u=\gamma Vs(T_{\rm rel})\propto\gamma V\,T_{\rm rel}^{\,n-1}$,
+\st
+\delta\ln Z_1=\tfrac52\ln u-\frac{\mathcal N}{c_s^2}\ln T_{\rm rel}+\tfrac12\ln\big(1-c_s^2v^2\big)+{\rm const},\qquad \mathcal N=1-d\,c_s^2 .
+\stp
+The second term is the non-conformality: it is not a function of $u$, so the shift in $u$ alone (\texttt{SPH\_RENORM}) cannot carry it (it would leave the labels the
+bulk modulus $\delta\mathcal B_s=\mathcal N$).  The Legendre transform carries it automatically: its $T$-dependence shifts $s$, and through $T_{\rm rel}=\gamma T$ it also shifts $\bm m$.
+
+\paragraph{Why constant $c_s^2$ is convenient.}  The target inversions stay in closed form (\texttt{rest\_energy} for \texttt{ConstantCs2EOS}; the forward map by
+$|\bm m|/s^{\,n/(n-1)}$, a function of $v$ alone), so the cold start of every solve is analytic; the Jacobians have no $dc_s^2/dT$ terms; and the measurement of
+$c_s^2$ (\nolinkurl{examples/eos_measure.jl}) has a constant target.  For the conformal case the u-only scheme and the Legendre transform can be compared
+directly; for $c_s^2\neq1/2$ only the latter reaches $\mathcal B=0$.
+
+\paragraph{Check.}  The quadrature of \nolinkurl{examples/renorm_quadrature_legendre.py}, now for any constant $c_s^2$ (\texttt{python3 examples/renorm\_quadrature\_legendre.py 0.25 0.7}),
+relative deviations from the target at $v=0.8$ ($c_s^2=1/2$ reproduces the earlier table):
+\begin{center}
+\small
+\begin{tabular}{cccccccc}
+\toprule
+$c_s^2$ & $\mathcal N$ & $s_a$ & $E$ & $M$ & $p$ & $R$ & $\mu/T$ \\
+\midrule
+$1/2$ & $0$ & $541$ & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+1.8\times10^{-7}$ & $+0.024$ \\
+$1/3$ & $+1/3$ & $541$ & $+9.9\times10^{-5}$ & $+9.9\times10^{-5}$ & $+9.8\times10^{-5}$ & $+4.8\times10^{-7}$ & $+0.026$ \\
+$1/4$ & $+1/2$ & $541$ & $+1.4\times10^{-4}$ & $+1.4\times10^{-4}$ & $+1.4\times10^{-4}$ & $+5.2\times10^{-7}$ & $+0.030$ \\
+$0.7$ & $-0.4$ & $541$ & $+5.4\times10^{-5}$ & $+5.3\times10^{-5}$ & $+5.6\times10^{-5}$ & $-1.2\times10^{-6}$ & $+0.025$ \\
+\midrule
+$1/4$ & $+1/2$ & $54$ & $+1.8\times10^{-2}$ & $+1.9\times10^{-2}$ & $+1.6\times10^{-2}$ & $+5.0\times10^{-4}$ & $+0.34$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+For every $c_s^2$ the residuals are $O(T/s_a)$ per particle (they fall by $\sim100$ from $s_a=54$ to $541$, relative to the target's $O(s_a)$), the same at rest and in
+motion, $R$ cancels and $\mu/T=O(1/s_a)$.  The non-conformal part is removed: a shift in $u$ alone would leave the pressure off by $\mathcal N\bar nT/p=\mathcal N/\sigma$,
+about $5\%$ at $s_a=54$ and $0.5\%$ at $541$ for $c_s^2=1/4$, against the $1.6\%$ and $0.014\%$ here.  The coefficient of the residual grows slowly as $c_s^2$
+decreases.
+
+\subsection{Implementation plan for the root finding}
+\label{app:rootplan}
+\begingroup\sloppy
+
+The question (2026-11-22): the Legendre route (\App{app:procedure}) needs a solve for the particle's $(T,\bm v)$ wherever the code now solves the target equation of
+state.  Where are the solves, and how are they made fast?  Scope: the default scheme, $\texttt{hamiltonian}=\texttt{:energy}$ with $\texttt{volume}=\texttt{:number}$,
+$V_a=1/n_a$ (the only one hybrid Monte Carlo and \texttt{energy\_pressure} support).
+
+\paragraph{Where the solves are.}
+\begin{itemize}
+\item \emph{Forward}, $(s,\bm m,V)\to(T,\bm v)$: \texttt{solve\_eos!} (\nolinkurl{src/sph.jl}), called by \texttt{update\_thermodynamics!} at every evaluation of the
+  forces and velocities: every step of the ideal integrator, every implicit iteration of the generalized leapfrog (\nolinkurl{src/hmc.jl}, up to 60 iterations to
+  $10^{-13}$), every step of a trajectory of hybrid Monte Carlo, and the measurements.  It now does a one-dimensional Newton solve in the rest-frame energy density,
+  warm-started from the stored \texttt{pa.e}.
+\item \emph{Inverse}, $(e,\bm m,V)\to S$: \texttt{vote\_entropy} (\nolinkurl{src/stochastic.jl}), for every proposal of the stochastic step (both particles of a bond)
+  and of the heat bath of hybrid Monte Carlo ($n_{\rm mh}=10$ per particle and update).  It now uses \texttt{eos\_from\_energy}: the fixed point
+  $e=\varepsilon-|\bm M|^2/(\varepsilon+p(e))$, in closed form for constant $c_s^2$.
+\end{itemize}
+
+\paragraph{What the forward solve must return.}  In the $n$-scheme the forces need only the particle's pressure times $V_a^2$, the velocity is local, and
+$T_{\rm eff}=T$ (\nolinkurl{src/ideal.jl}).  So \texttt{solve\_eos!} keeps its interface, with
+\st
+\begin{gathered}
+\texttt{pa.p}\leftarrow P_a=-\frac{\partial F_{\rm want}}{\partial V},\qquad \texttt{pa.T}\leftarrow T,\qquad \texttt{pa.}\gamma\leftarrow\gamma_a ,\\
+\texttt{pa.v\_over\_S}\leftarrow\frac{\bm v_a}{S_a},\qquad \texttt{pa.H\_over\_S}\leftarrow\frac{H_a}{s_a} ,
+\end{gathered}
+\stp
+and nothing downstream changes: \texttt{hamiltonian\_force\_energy!} uses $p_aV_a^2$, \texttt{energy\_pressure} uses \texttt{pa.p} and the velocity, \texttt{hmc\_measure!}
+uses $\sum_as_a\,\texttt{H\_over\_S}$.  (In the entropy-volume scheme $H/s$ would also serve as $\partial H/\partial s$ in $T_{\rm eff}$, which fails for a non-extensive
+$H_{\rm eff}$; that scheme is out of scope.)
+
+\paragraph{Everything else is unchanged, but the two maps are called from many places.}  Apart from the two solves the code is the same.  The target's
+particle-level maps are, however, called directly in about 35 places outside \texttt{solve\_eos!}: \texttt{particle\_energy} (used by \texttt{energy\_pressure}),
+\texttt{eos\_from\_energy}, \texttt{particle\_entropy} and \texttt{particle\_entropy\_lnT} in the stochastic step (13 calls), the back map of the viscous step (4), the
+measurements (11), \nolinkurl{src/pointwise.jl}, \nolinkurl{src/hmc.jl}, \nolinkurl{src/grid.jl}.  So the first task is to route every particle-level call through two
+functions, the forward map $(s,\bm m,V)\to$ state and the inverse $(e,\bm m,V)\to$ entropy, and switch only those.  With the switch off this refactoring must be
+bit-identical.
+
+\paragraph{The unknowns.}  Use $(\ln T_{\rm rel},\eta)$, with the rapidity $\eta$: $\gamma=\cosh\eta$, $\gamma v=\sinh\eta$.  The direction of $\bm v$ is that of $\bm m$
+(isotropy), so the solve is $2\times2$ in scalars.  The rapidity removes the cancellations in $1-v^2$ near the cap $\gamma_{\max}=100$, and both unknowns are
+unbounded, so a Newton step cannot leave the domain.
+
+\paragraph{The Newton step.}  The residuals are those of \Eq{legsolve} (forward) or of $e=H$, $|\bm m|=-\partial_vF_{\rm want}$ (inverse).  The Jacobian is the particle's
+susceptibility, the second derivatives of $F_{\rm want}$: in closed form from $w$, $c_s^2$, $dc_s^2/dT$ and the derivatives of the counterterm, all at $(T_{\rm rel},\eta,V)$
+(as in \nolinkurl{examples/renorm_quadrature_legendre.py}).  Convergence: the relative residual below $10^{-14}$, at most 8 iterations; if a step increases the
+residual, halve it; a guard counter (as \texttt{GUARD\_REJECTED}) records the cases that do not converge.
+
+\paragraph{Starting points.}  Newton converges quadratically, so the cost is set by the start.
+\begin{enumerate}
+\item \emph{Warm start} (the common case): the particle's stored $(T_{\rm rel},\eta)$ from the last solve.  Between successive calls (the iterations of the leapfrog,
+  the steps of a trajectory, the time steps) the state changes little, and one iteration reaches $10^{-13}$, a second confirms.  Store $\ln T_{\rm rel}$ in \texttt{pa.e}
+  (now the warm start of the rest-frame energy) and $\eta$ from \texttt{pa.}$\gamma$, or add two fields.
+\item \emph{Cold start} (initial conditions, after a vote changes a particle): the target solve, \texttt{eos\_newton} or \texttt{rest\_energy}, at the entropy shifted by
+  the counterterm evaluated at the target state, then one Newton step.  For constant $c_s^2$ the target solve is in closed form, so this start is within
+  $O\big((\ln s/s)^2\big)$ of the root.
+\item \emph{Proposals of a vote}: start from the current state of the particle; the proposal changes $(e,\bm m)$ by a fraction of the particle's fluctuation, and one
+  or two iterations suffice.  Independence proposals of the heat bath use the cold start.
+\end{enumerate}
+
+\paragraph{Exactness.}  The vote must use the exact inverse of the $H$ that drives the ideal step (otherwise the two steps have different equilibria, the
+mismatch the Hastings correction removed).  Both solves call the same function $F_{\rm want}$ and its derivatives, and both iterate to roundoff; a unit test
+checks $H(S(e,\bm m,V),\bm m,V)=e$ to $10^{-13}$.
+
+\paragraph{Cost.}  An iteration evaluates a few logarithms, a $\cosh$/$\sinh$ pair and the equation of state ($p$, $c_s^2$, $dc_s^2/dT$): about one iteration of the
+present \texttt{eos\_newton}.  With warm starts, one or two iterations, comparable to now.  The solves are per particle and threaded; the step is dominated by the
+neighbour sums.  To be measured before and after (\texttt{BenchmarkTools}, one step of the ideal integrator and one sweep of the stochastic step at $N\sim10^4$).
+Further savings if needed: skip the solve for particles whose $(s,\bm m,V)$ did not change since the last call; keep $\ln V$, $\ln T_{\rm rel}$, $\eta$ of the current
+state for the vote's evaluation of the present state; for constant $c_s^2$, take the first Newton step analytically from the closed-form target solution.
+
+\paragraph{Code organization.}
+\begin{itemize}
+\item New file \nolinkurl{src/renorm.jl}: $F_{\rm want}(\ln T_{\rm rel},\eta,V;{\rm eos})$ with its gradient and Hessian in closed form; \texttt{renorm\_state}$(s,\bm m,V;\,{\rm guess})$
+  (forward) and \texttt{renorm\_entropy}$(e,\bm m,V;\,{\rm guess})$ (inverse).
+\item A load-time switch, \texttt{SPH\_RENORM=legendre}, choosing the methods of \texttt{solve\_eos!} and \texttt{vote\_entropy}, as \texttt{SPH\_RENORM} does now, so that with
+  it off the code is bit-identical (\texttt{test/run.sh regress}).  Errors for the out-of-scope schemes.
+\item Constant $\mu/T=0$ and $\mathcal B=0$ fixed in \texttt{F\_want}; the equation of state through the existing \texttt{pressure}, \texttt{cs2}, \texttt{Trel}.
+\end{itemize}
+
+\paragraph{Tests.}
+\begin{enumerate}
+\item The Legendre identities by finite differences: $\partial H/\partial s=T$, $\partial H/\partial\bm m=\bm v$, $\partial H/\partial V=-P$.
+\item Forward and inverse are inverses, to $10^{-13}$, over a grid of $(s_a,\gamma)$ up to $\gamma_{\max}$.
+\item The counterterm set to zero reproduces the present \texttt{solve\_eos!} and \texttt{eos\_from\_energy} to roundoff.
+\item One particle: the averages of hybrid Monte Carlo against \nolinkurl{examples/renorm_quadrature_legendre.py}.
+\item \texttt{test/run.sh all}: unit tests pass, scripts load, regression bit-identical with the switch off.
+\item Timing, before and after.
+\end{enumerate}
+\endgroup
+
 \begin{thebibliography}{9}
 \bibitem{amt} Y.~Akamatsu, A.~Mazeliauskas and D.~Teaney, \emph{Bulk viscosity from hydrodynamic fluctuations with relativistic hydro-kinetic theory},
   Phys.\ Rev.\ C \textbf{97}, 024902 (2018), arXiv:1708.05657.

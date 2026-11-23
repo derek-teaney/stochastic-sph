@@ -596,61 +596,20 @@ renormalized, $s_a=541$ & 180 & 2.4 & $0.159\pm0.012$ (0.152) & $0.078\pm0.007$ 
 \end{figure}
 
 %=============================================================================
-\section{Boosted equilibrium: the momentum}
+\section{Boosted equilibrium: measurement plan}
 \label{sec:boost}
 
-The point: in an equilibrium moving with the velocity $\bm v$ the model carries a momentum density, and a relativistic fluid fixes it in terms of its energy and
-pressure.  Measuring it at $v=0.8$ says how the momentum depends on the temperature in the model, and whether the model's inertia is the enthalpy, as Lorentz
-invariance requires.
-
-\paragraph{The identity.}  For a perfect fluid moving along $x$, in the density frame,
-\st
-\pdense=w\gamma^2v,\qquad T^{00}=w\gamma^2-\pr,\qquad T^{yy}=\pr,\qquad\text{so}\qquad \pdense=v\,\big(T^{00}+T^{yy}\big),
-\label{lorentzid}
-\stp
-with $w=\er+\pr$ at the rest-frame temperature $T_{\rm rel}=\gamma T$; equivalently $T^{xx}-T^{yy}=\pdense v$.  In the boosted canonical ensemble, with the weight
-$\exp[\sum_as_a-(H-\bm v\cdot\bm P)/T_0]$,
-\st
-\pdense=\bar nT\,\frac{\partial\ln Z_1}{\partial v}\Big|_{T,V} ,
-\stp
-because the entropy of the labels, $\ln\bar V+1$, does not depend on $v$.  The labels carry pressure (the kinetic stress $\bar nT$ is in $T^{yy}$) but no momentum of their
-own, so \Eq{lorentzid} need not hold.
-
-\paragraph{The single particle at small $v$.}  At small $v$, $\pdense/v$ is the momentum susceptibility, $\chi_{MM}=\avg{m_x^2}/T$ per particle.  The quadrature at fixed
-volume (\texttt{partition\_v2.tex}, Appendix D, with $\avg{m_x^2}$ added) gives, with $w$ the target enthalpy and $R=\chi_{MM}\big/\big[(E+\pr_{\rm model})/\bar n\big]-1$ the
-violation of \Eq{lorentzid}:
-\begin{center}
-\begin{tabular}{c ccc ccc}
-\toprule
- & \multicolumn{3}{c}{tree level} & \multicolumn{3}{c}{renormalized} \\
-$s(T)\bar V$ & $\chi_{MM}/wV$ & $(E+\pr)/\bar nwV$ & $R$ & $\chi_{MM}/wV$ & $(E+\pr)/\bar nwV$ & $R$ \\
-\midrule
-11.7 & 1.567 & 1.603 & $-0.023$ & 1.087 & 1.119 & $-0.029$ \\
-49.2 & 1.140 & 1.150 & $-0.0085$ & 0.991 & 1.001 & $-0.0097$ \\
-200  & 1.035 & 1.037 & $-0.0024$ & 0.998 & 1.000 & $-0.0025$ \\
-536  & 1.013 & 1.014 & $-0.0009$ & 0.999 & 1.000 & $-0.0009$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-Two conclusions.  The momentum response follows the renormalization: $14\%$ high at tree level at $s_a\approx50$, on target to $1\%$ with the renormalized
-Hamiltonian.  The identity is violated in both, by the same amount, $R\simeq-1/(2s(T)\bar V)$ for $s_a\gtrsim50$: per particle
-\st
-\chi_{MM}=e_1+p_1V+\tfrac12T ,
-\stp
-the labels' kinetic stress $T$ counting only half as inertia.  The entropy shift does not touch it (the labels do not depend on $v$); removing it would need a term in
-the energy that depends on the momentum.  It is $1\%$ at $s_a\approx50$ and $0.1\%$ at $500$.
-
-\paragraph{The plan at $v=0.8$.}
+The theory of the model in uniform motion (the boosted single particle, the determinant of the boosted susceptibility, the momentum, and the violation of the
+Lorentz identity $\pdense=v(T^{00}+T^{yy})$ that the lab foliation produces) is in \nolinkurl{partition_v2.tex}, ``Equilibrium in motion''.  The
+measurement at $v=0.8$:
 \begin{enumerate}
-\item \emph{Theory}: the same quadrature with the boosted weight $\exp[s-e/T+\bm v\cdot\bm m/T]$ at $v=0.8$ ($\gamma=5/3$), for both Hamiltonians: per particle
-  $\avg{m_x}$, $\avg{e}$, the longitudinal and transverse pressures.  Whether $R$ grows with $\gamma$: the particle at fixed volume is not Lorentz contracted.
 \item \emph{Code} (small): \texttt{energy\_pressure} also returns $\pdense=\sum_a\bm m_a/L^d$ and the components $\Sstress^{xx}$, $\Sstress^{yy}$; \texttt{eos\_measure.jl} gets a
   boost (\texttt{SR\_BOOST}), drawing the initial state at the total momentum of the boosted fluid and passing its $\beta$ to hybrid Monte Carlo, as
   \texttt{examples/equilibrium.jl} does.
-\item \emph{Runs}: $v=0.8$, both Hamiltonians, $s_a=54$ and $541$, $h/a=2$ and $3$, with the $\pm10\%$ runs for $\partial\pdense/\partial T$ at fixed $v$; the cost of the
-  flat-space ones.
-\item \emph{Observables}: the momentum against the target, $\pdense/(w\gamma^2v)-1$ at $T_{\rm rel}=\gamma T_0$; the identity, $\pdense/[v(E+\Sstress^{yy})]-1$; the anisotropy of
-  the stress, $\Sstress^{xx}-\Sstress^{yy}-\pdense v$; and $\partial\pdense/\partial T$ at fixed $v$ from the fluctuations, $A\,\mathrm{Cov}(\pdense,E-v\pdense)/T_0^2$ (the weight is $e^{-(H-vP)/T_0}$).
+\item \emph{Runs}: $v=0.8$, both Hamiltonians, $s_a=54$ and $541$, $h/a=2$ and $3$, with the $\pm10\%$ runs for $\partial\pdense/\partial T$ at fixed $v$.
+\item \emph{Observables}: $\pdense/(w\gamma^2v)-1$ at $T_{\rm rel}=\gamma T_0$; the identity, $\pdense/[v(E+\Sstress^{yy})]-1$; the anisotropy $\Sstress^{xx}-\Sstress^{yy}-\pdense v$
+  (zero in the model, exactly); and $\partial\pdense/\partial T$ at fixed $v$ from the fluctuations, $A\,\mathrm{Cov}(\pdense,E-v\pdense)/T_0^2$ (the weight is
+  $e^{-(H-vP)/T_0}$).
 \end{enumerate}
 
 %=============================================================================

@@ -589,6 +589,22 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### `eos_legendre` — 2026-11-22, the renormalized Hamiltonian as a Legendre transform — TO DO (note for the NERSC session)
+
+**Plan: docs/legendre_plan.tex (read it first; it is self-contained).**  Implement `SPH_RENORM=legendre`: the particle Hamiltonian is
+the Legendre transform of F_want = F_t + T δlnZ_1, for ConstantCs2EOS (any c_s^2), d = 2, the n-scheme.  Only the two particle-level maps
+change (forward (s, m, V) -> state; inverse (e, m, V) -> entropy), each a 2x2 Newton solve with an analytic Jacobian and warm starts.
+The owner wants, when back: the option implemented, tested (bit-identical with the switch off), timed, and demonstrated by repeating
+the `eos_renorm` measurements at rest (c_s^2 = 1/2 and 1/4) and the same at v = 0.8 with the momentum and R = M/(v(E + T^yy)) - 1, and the full susceptibility matrix (dE/dT, dM/dT, dE/dv, dM/dv
+from the canonical covariances of the total E and P; HMC unchanged, eos_measure.jl records the total momentum; plan Sect. 4).
+Order of work (plan sections): A routing refactor (bit-identical), B src/renorm.jl, C the switch, D tests, E speed, F smoke runs,
+then the campaign `eos_legendre` (~430 tasks, ~3 node-hours shared; recompute from the smoke runs and record here before submitting).
+Branch: **`legendre`** (created by the owner's laptop session from `statics`, with the plan; `git fetch && git checkout legendre`).
+Reference numbers: examples/renorm_quadrature_legendre.py.  Report in docs/legendre_plan.tex, "Results", and here.
+**Owner's authorization (2026-11-22): work on this for the next two days; commit and push to `legendre` as results come in**
+(code, tests, campaign files, figures, csv, notes; never .h5/.jls).  Budget for the campaign as in the plan (~3 node-hours; ask
+before going over 20).
+
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
 The equation of state of the model with the tree-level and the renormalized Hamiltonian (`SPH_RENORM=1`, docs/partition_v2.tex

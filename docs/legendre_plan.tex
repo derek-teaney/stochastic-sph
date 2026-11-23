@@ -1,0 +1,374 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\newcommand{\klab}{\mathcal B}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\sloppy
+
+\title{The renormalized Hamiltonian as a Legendre transform:\\ development plan}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+A plan for implementing, testing and measuring the renormalized particle Hamiltonian defined as the Legendre transform of the wanted single-particle
+free energy, for a constant speed of sound (not necessarily conformal), in the default scheme of the code.  Written on 2026-11-22 for a session at
+NERSC to carry out over a day or so.  The derivation and the single-particle checks are in \nolinkurl{partition.tex}, Appendix ``Notes from
+discussion'' (subsections from ``The label $s_{\rm eff}$'' to ``Implementation plan for the root finding''); the theory of the counterterm is in
+\nolinkurl{partition_v2.tex}, Sects.~``Equilibrium in motion'' and ``The counterterms: formal structure''.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The goal}
+\label{sec:goal}
+
+The model's particles carry a label $s_a$ (entropy), a momentum $\bm m_a$ and a volume $V_a$ ($=1/n_a$ in the default $n$-scheme).  At one loop the
+canonical ensemble of the present (tree-level) Hamiltonian has the target fluid's thermodynamics plus terms of order $T$ per particle: the label gas
+and the fluctuations of each particle.  The renormalized Hamiltonian removes them.  The present option \texttt{SPH\_RENORM=1} does it for the conformal
+fluid at rest by a shift of the entropy alone; it leaves the sound term in motion (the violation $R$ of the density-frame relation, a deficit of the
+momentum susceptibility) and it cannot treat a non-conformal equation of state.
+
+The new definition: the Hamiltonian of a particle is the Legendre transform of the free energy we want at tree level,
+\begin{keyeq}
+\st
+\begin{gathered}
+F_{\rm want}(T,\bm v,V)=F_{\rm t}(T,\bm v,V)+T\,\delta\ln Z_1(T,\bm v,V),\\
+H_a(s,\bm m,V)=F_{\rm want}+Ts+\bm v\cdot\bm m\quad\text{at}\quad s=-\frac{\partial F_{\rm want}}{\partial T},\quad \bm m=-\frac{\partial F_{\rm want}}{\partial\bm v},
+\end{gathered}
+\label{Hdef}
+\stp
+\end{keyeq}
+with $F_{\rm t}=-p(T_{\rm rel})V$ the target and $\delta\ln Z_1$ the excess of the tree-level model's $\ln Z_1$ over the target's.  The tree level of $H_a$ is
+$F_{\rm want}$ exactly, and its one loop removes $\delta\ln Z_1$; the target's thermodynamics remains, up to $O(T/s_a)$ per particle.  The transform divides
+the counterterm between $s$ and $\bm m$ by itself, gives $\partial H/\partial s=T$ and $\partial H/\partial\bm m=\bm v$ exactly ($|\dot{\bm x}|<1$), and treats a
+non-conformal equation of state with no change.  Checked by the exact single-particle quadrature (\Sect{sec:refs}).
+
+\paragraph{The deliverable.}  When the owner comes back: the option implemented and tested, its speed measured, and the renormalization demonstrated by
+repeating the measurements of the campaign \texttt{eos\_renorm} at rest (\nolinkurl{gravity.tex}, ``Results'': $E$, $P$, the trace, $dE/dT$, $dP/dT$, $c_s^2$,
+$S(k)$), now for the Legendre Hamiltonian and for $c_s^2=1/2$ and $1/4$, and by the same measurements at $v=0.8$ together with the momentum and the
+density-frame relation $R$ (\Sect{sec:campaign}).
+
+Apart from the two maps between the particle's variables and its state, the code is unchanged: the integrators, the stochastic step and its
+Hastings correction, hybrid Monte Carlo and the measurements use the particle's $T$, $\bm v$, pressure and energy as now.
+
+%=============================================================================
+\section{The formulas}
+\label{sec:formulas}
+
+\paragraph{General.}  With $T$ the bare (density-frame) temperature, $T_{\rm rel}=\gamma T$, $w$ and $c_s^2$ at $T_{\rm rel}$, $d$ dimensions and the bulk modulus
+of the labels $\klab$,
+\st
+\delta\ln Z_1=\tfrac{d+1}2\ln\big(2\pi V\gamma\,wT_{\rm rel}\big)+\tfrac12\ln\big(1-c_s^2v^2\big)-\tfrac12\ln c_s^2-\ln T+(1-\klab)\ln V+1 .
+\label{dlnZ}
+\stp
+Here: $\klab=0$ (neutral labels), and the constant $1$ makes $\mu/T=0$.
+
+\paragraph{Implementation: constant $c_s^2$, $d=2$.}  The code's \texttt{ConstantCs2EOS}, $T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)}$, is
+\st
+p=A\,T_{\rm rel}^{\,n},\qquad n=1+\frac1{c_s^2},\qquad A=c_s^2\,T_{\rm scale}^{-n},\qquad w=n\,p .
+\stp
+Then, with $(T,v)$ as the independent variables and $\gamma=(1-v^2)^{-1/2}$,
+\begin{keyeq}
+\st
+F_{\rm want}=-A\,V(\gamma T)^n+T\,\Delta,\qquad
+\Delta=\tfrac52\ln V+\tfrac52\ln\gamma+k\ln(\gamma T)+\tfrac12\ln\big(1-c_s^2v^2\big)+C ,
+\label{Fwant}
+\stp
+\end{keyeq}
+\st
+k=2+\frac3{2c_s^2},\qquad C=\tfrac32\ln(2\pi nA)-\tfrac12\ln c_s^2+1 .
+\stp
+The Legendre pair, the energy and the particle's pressure:
+\begin{align}
+s&=nAV\gamma^nT^{n-1}-\Delta-k , \label{s}\\
+|\bm m|&=nAVT^n\gamma^{n+2}v-T\,v\Big[\big(\tfrac52+k\big)\gamma^2-\frac{c_s^2}{1-c_s^2v^2}\Big],\qquad \hat{\bm m}=\hat{\bm v} , \label{m}\\
+H&=F_{\rm want}+Ts+v|\bm m| , \label{H}\\
+P&\equiv-\frac{\partial H}{\partial V}\Big|_{s,\bm m}=-\frac{\partial F_{\rm want}}{\partial V}\Big|_{T,v}=A(\gamma T)^n-\frac52\,\frac TV . \label{P}
+\end{align}
+The first terms of $s$ and $|\bm m|$ are the target's, $\gamma s(T_{\rm rel})V$ and $w\gamma^2vV$.  The Jacobian of $(s,|\bm m|)$ with respect to $(T,v)$ (the
+particle's susceptibility; symmetric by the Maxwell relation $\partial s/\partial v=\partial|\bm m|/\partial T$), with $K=\tfrac52+k$ and $q=1-c_s^2v^2$:
+\begin{align}
+\frac{\partial s}{\partial T}&=n(n-1)AV\gamma^nT^{n-2}-\frac kT ,\\
+\frac{\partial s}{\partial v}=\frac{\partial|\bm m|}{\partial T}&=n^2AVT^{n-1}\gamma^{n+2}v-K\gamma^2v+\frac{c_s^2v}q ,\\
+\frac{\partial|\bm m|}{\partial v}&=nAVT^n\gamma^{n+2}\big(1+(n+2)\gamma^2v^2\big)-T\Big[K\big(\gamma^2+2\gamma^4v^2\big)-\frac{c_s^2(1+c_s^2v^2)}{q^2}\Big] .
+\end{align}
+For the inverse map (votes) the residual $e-H$ replaces $s-s(T,v)$; since $\partial H/\partial T=T\,\partial s/\partial T+v\,\partial|\bm m|/\partial T$ and
+$\partial H/\partial v=T\,\partial s/\partial v+v\,\partial|\bm m|/\partial v$ (from $dH=T\,ds+v\,d|\bm m|$), its Jacobian follows from the same entries.
+
+\paragraph{What the code needs from a solve.}  In the $n$-scheme the forces use $p_aV_a^2$, the velocity is local, $T_{\rm eff}=T$ (\nolinkurl{src/ideal.jl}).
+So the forward solve fills the present fields:
+\st
+\begin{gathered}
+\texttt{pa.p}\leftarrow P,\qquad \texttt{pa.T}\leftarrow T,\qquad \texttt{pa.}\gamma\leftarrow\gamma,\\
+\texttt{pa.v\_over\_S}\leftarrow\frac{\bm v}{S_a},\qquad \texttt{pa.H\_over\_S}\leftarrow\frac{H}{s_a} .
+\end{gathered}
+\stp
+
+\paragraph{Reference values.}  From \nolinkurl{examples/renorm_quadrature_legendre.py} (\texttt{Model(c2).legendre}), $T_{\rm scale}=1$, for the unit tests:
+\begin{center}
+\small
+\resizebox{\linewidth}{!}{\begin{tabular}{cccccccc}
+\toprule
+$c_s^2$ & $T$ & $v$ & $V$ & $s$ & $|\bm m|$ & $H$ & $P$ \\
+\midrule
+$0.5$ & $3.0$ & $0$ & $4.0$ & $3.5329615802\times10^{1}$ & $0$ & $9.3000000000\times10^{1}$ & $1.1625000000\times10^{1}$ \\
+$0.5$ & $3.0$ & $0.8$ & $4.0$ & $2.2769125486\times10^{2}$ & $1.6184313725\times10^{3}$ & $1.7797450980\times10^{3}$ & $6.0625000000\times10^{1}$ \\
+$0.5$ & $1.7$ & $0.95$ & $0.5$ & $5.2134000814\times10^{1}$ & $1.0565293387\times10^{3}$ & $1.0758910379\times10^{3}$ & $7.2188166117\times10^{1}$ \\
+$0.25$ & $3.0$ & $0$ & $1.0$ & $7.9676423584\times10^{1}$ & $0$ & $2.1900000000\times10^{2}$ & $5.3250000000\times10^{1}$ \\
+$0.25$ & $3.0$ & $0.8$ & $1.0$ & $1.2752332646\times10^{3}$ & $8.6112698413\times10^{3}$ & $9.9900158730\times10^{3}$ & $7.7375000000\times10^{2}$ \\
+$0.25$ & $1.7$ & $0.95$ & $0.5$ & $1.7311977590\times10^{3}$ & $2.8956034219\times10^{4}$ & $2.9886312509\times10^{4}$ & $1.1873400004\times10^{3}$ \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+%=============================================================================
+\section{The work, in order}
+\label{sec:work}
+
+Branch: \texttt{legendre} (created from \texttt{statics} with this note; \texttt{git fetch; git checkout legendre}).  Read \nolinkurl{nersc/LOG.md}, \nolinkurl{CLAUDE.md}, this note, and the subsections of
+\nolinkurl{partition.tex} named in the abstract.  Follow \nolinkurl{CLAUDE.md}: no simulations on the login node beyond seconds, \texttt{julia --project=nersc},
+output under \texttt{\$SCRATCH/sph/}, never commit \texttt{.jls}/\texttt{.h5}.
+
+\subsection{A. Route the particle-level maps through two functions (no change of numerics)}
+\label{sec:routing}
+
+The target's particle-level maps are called in about 35 places; find them with a search of \texttt{src/*.jl} for \texttt{eos\_newton}, \texttt{eos\_from\_energy},
+\texttt{particle\_energy(}, \texttt{particle\_entropy(}, \texttt{particle\_entropy\_lnT(} and \texttt{rest\_energy(}:
+\nolinkurl{src/stochastic.jl} (13), \nolinkurl{src/measure.jl} (11), \nolinkurl{src/viscous.jl} (4, the back map), \nolinkurl{src/pointwise.jl},
+\nolinkurl{src/hmc.jl}, \nolinkurl{src/grid.jl}, \nolinkurl{src/sph.jl} (\texttt{solve\_eos!}).
+\begin{enumerate}
+\item Define two functions with the present behaviour: the \emph{forward} map, $(s,\bm m,V)\to$ the particle's state (what \texttt{solve\_eos!} and
+  \texttt{particle\_energy} compute), and the \emph{inverse} map, $(e,\bm m,V)\to$ the entropy $S$ (and $T$, $\bm v$), what \texttt{eos\_from\_energy},
+  \texttt{particle\_entropy} and \texttt{particle\_entropy\_lnT} compute.
+\item Replace every particle-level call by one of the two.  Leave field-level (density) uses that are not about a particle alone as they are, and list them.
+\item \texttt{test/run.sh all}: unit tests pass, scripts load, and the regression against \texttt{main} is bit-identical (the known exception: the
+  \texttt{hast\_lq\_*} datasets differ run to run, thread order; \nolinkurl{nersc/LOG.md}).  If anything else differs, stop and find why.
+\end{enumerate}
+
+\subsection{B. The new maps: \texorpdfstring{\nolinkurl{src/renorm.jl}}{src/renorm.jl}}
+\label{sec:renormjl}
+
+\begin{itemize}
+\item $F_{\rm want}$ and the entries of \Sect{sec:formulas} for \texttt{ConstantCs2EOS} (any $c_s^2$), $d=2$, $\klab=0$; error for other equations of state and
+  dimensions.  Write them in the unknowns $(\ln T_{\rm rel},\eta)$, $\gamma=\cosh\eta$, $\gamma v=\sinh\eta$, or in $(T,v)$ with care near $\gamma_{\max}=100$
+  (\texttt{SPH\_GAMMA\_MAX}): the rapidity avoids the cancellation in $1-v^2$ and keeps every Newton step in the domain.
+\item \texttt{renorm\_state(s, m, V, eos; guess)}: solve \Eq{s}, \Eq{m} for $(T,v)$ by Newton with the analytic Jacobian; return $T$, $\bm v$ (along $\bm m$),
+  $\gamma$, $H$, $P$.
+\item \texttt{renorm\_entropy(e, m, V, eos; guess)}: solve $H(T,v)=e$ and \Eq{m} for $(T,v)$; return $S$ from \Eq{s}, $T$, $\bm v$.  The vote's weight with the
+  Liouville measure is $S-\ln T$ (as \texttt{particle\_entropy\_lnT}).
+\item Newton: stop at a relative residual $10^{-14}$ (both equations), at most 8 iterations; halve a step that increases the residual; count the failures in a
+  guard counter (as \texttt{GUARD\_REJECTED} in \nolinkurl{src/stochastic.jl}) and return $-\infty$ for the vote, \texttt{NaN} for the state, if a solve fails.
+\item Starting points, in order of preference: (i) the particle's stored state from the last solve (warm start; store $\ln T_{\rm rel}$ and $\eta$, in
+  \texttt{pa.e} and from \texttt{pa.}$\gamma$, or in two new fields of \texttt{Particle}); (ii) for a vote's proposal, the current state of the particle;
+  (iii) cold: the target's closed-form solve (\texttt{rest\_energy}, or the forward map through $|\bm m|/s^{n/(n-1)}$, a function of $v$ alone), at the entropy
+  shifted by $\Delta+k$ of \Eq{s} evaluated there, then Newton.
+\end{itemize}
+
+\begin{algobox}{Forward solve (one particle)}
+\begin{algorithmic}[1]
+\State Take the start: the stored $(\ln T_{\rm rel},\eta)$ if there is one, else the target's solution at the shifted entropy.
+\Repeat
+  \State From $(T,v)$ evaluate $s(T,v)$ and $|\bm m|(T,v)$ by \Eq{s}, \Eq{m}, and the Jacobian.
+  \State Solve the $2\times2$ linear system for the step that zeroes the residuals $s-s_a$ and $|\bm m|-|\bm m_a|$.
+  \State Take the step; if the residual grew, halve it until it does not.
+\Until{both relative residuals are below $10^{-14}$, or 8 iterations (then count a failure)}
+\State Return $T$, $\bm v=v\,\hat{\bm m}_a$, $\gamma$, $H$ by \Eq{H}, $P$ by \Eq{P}; store $(\ln T_{\rm rel},\eta)$ for the next call.
+\end{algorithmic}
+\end{algobox}
+
+\subsection{C. The switch}
+\label{sec:switch}
+
+\begin{itemize}
+\item \texttt{SPH\_RENORM=legendre}, chosen at load time as \texttt{SPH\_RENORM=1} is now (methods defined under \texttt{if}), so that with it off the code is
+  exactly that of before.  Keep \texttt{SPH\_RENORM=1} working.
+\item With the switch on: the forward and the inverse functions of \Sect{sec:routing} call \texttt{renorm\_state} and \texttt{renorm\_entropy}.
+\item Errors (not silent fallbacks) for: $\texttt{volume}\neq\texttt{:number}$ or $\texttt{hamiltonian}\neq\texttt{:energy}$ (in the entropy-volume scheme $H/s$
+  also serves as $\partial H/\partial s$, which fails for a non-extensive $H$); $d\neq2$; an equation of state other than \texttt{ConstantCs2EOS}; the Einstein
+  measure (the Liouville measure is needed, as for \texttt{SPH\_RENORM=1}).
+\item The viscous step's back map and the measurements go through the same two functions; check that the energy reported by \texttt{energy\_pressure}
+  is $\sum_aH_a$ and that it uses \texttt{pa.p}$=P$.
+\end{itemize}
+
+\subsection{D. Tests (\texttt{test/})}
+\label{sec:tests}
+
+\begin{enumerate}
+\item The reference values of \Sect{sec:formulas}, to $10^{-10}$ relative.
+\item The Legendre identities by central differences: $\partial H/\partial s=T$, $\partial H/\partial\bm m=\bm v$, $\partial H/\partial V=-P$.
+\item Forward and inverse are inverses: $H(S(e,\bm m,V),\bm m,V)=e$ to $10^{-13}$, on a grid of $s_a\in[10,10^4]$, $\gamma\in[1,100]$, two values of $c_s^2$.
+\item With the counterterm set to zero ($\Delta+k\to0$ and the $T$-terms of $|\bm m|$ off) the new solves reproduce the target's (\texttt{eos\_newton},
+  \texttt{eos\_from\_energy}) to roundoff.
+\item Warm and cold starts give the same answer; count the iterations (expect 1--2 warm, 2--4 cold).
+\item \texttt{test/run.sh all} with the switch off: bit-identical (as in A); with it on: the unit tests pass and every script loads.
+\end{enumerate}
+
+\subsection{E. Speed}
+\label{sec:speed}
+
+Measure before and after (\texttt{BenchmarkTools}, \texttt{julia -t 8}): one step of the ideal integrator (generalized leapfrog) and one sweep of the stochastic
+step, $N\approx10^4$, $s_a=54$, $c_s^2=1/2$; and one update of hybrid Monte Carlo at $N=360$.  Record: time per step, the share in the solves, the mean
+number of Newton iterations.  The solves are per particle and threaded, an iteration costs about one iteration of \texttt{eos\_newton}, and the step is
+dominated by the neighbour sums, so a modest slow-down is expected; if the solves cost more than about half of the step, apply in order: skip particles
+whose $(s,\bm m,V)$ did not change since the last solve; keep $\ln V$, $\ln T_{\rm rel}$, $\eta$ of the current state for the vote's evaluation of the present
+state; take the first Newton step analytically from the closed-form target solution.  Report the numbers in \Sect{sec:results}.
+
+\subsection{F. Small validation runs (laptop-sized, interactive or \texttt{-q debug})}
+\label{sec:smoke}
+
+\begin{enumerate}
+\item Hybrid Monte Carlo at rest, \nolinkurl{examples/eos_measure.jl}, $L=0.45$, $h/a=2$, $s_a=54$, 200 updates, for $c_s^2=1/2$: \texttt{SPH\_RENORM=legendre}
+  against \texttt{SPH\_RENORM=1} (\nolinkurl{gravity.tex}, ``Results''): $E/e-1$ and $P/p-1$ should agree to the single-particle residual
+  ($\sim7\times10^{-3}$ at $s_a=54$, \Sect{sec:refs}), both being dominated by the correction of the positions.  Acceptance of the trajectories unchanged.
+\item The same for $c_s^2=1/4$ (needs \nolinkurl{examples/eos_measure.jl} to take $c_s^2$ from an environment variable, e.g.\ \texttt{SR\_CS2}, and its
+  targets $de/dT$, $dp/dT$ to be general, $n\,e/T$ and $n\,p/T$).
+\item A short dynamical run (\nolinkurl{examples/stability.jl}, the stochastic step on, $s_a=54$, $t\sim20$): the drift of $H$ and the acceptance of the
+  votes, against \texttt{SPH\_RENORM=1}.
+\end{enumerate}
+Stop and report if the acceptances drop, if the Newton failures are not rare ($>10^{-6}$ of the solves), or if the two renormalized Hamiltonians differ by
+more than the single-particle residual at $c_s^2=1/2$.
+
+%=============================================================================
+\section{The campaign}
+\label{sec:campaign}
+
+\paragraph{What to measure.}  In canonical hybrid Monte Carlo (\nolinkurl{examples/eos_measure.jl}, extended):
+\begin{itemize}
+\item at rest: $E$, $P$ (kinetic and virial), $c_s^2$ at fixed density and $dE/dT$, $dP/dT$ from the fluctuations (as now), $S(k)$, and the momentum
+  susceptibility from the fluctuations of the total momentum, $\chi_{MM}=\avg{P_x^2}/(L^2T)$ (the heat bath does not conserve the total momentum);
+\item in motion, $v=0.8$ (initial velocity field uniform, multipliers $\beta^0$, $\bm\beta$ from \texttt{equilibrium\_init!}): $E$, $P$ (the stress
+  $T^{yy}=P-(T^{xx}-T^{yy})/2$, from \texttt{energy\_pressure}), the momentum density $M$, and $R=M/\big(v(E+T^{yy})\big)-1$.  Add an option (e.g.\ \texttt{SR\_V})
+  for the velocity;
+\item at rest and in motion, \emph{the full susceptibility matrix}, from the canonical covariances of the totals $\mathcal E=L^2E$ and $\mathcal P_x=L^2M$
+  (the heat bath changes both, the trajectories conserve both, so they fluctuate canonically at the multipliers $\beta^0=1/T$, $\bm\beta=\bm v/T$):
+  \st
+  \begin{gathered}
+  \frac{\partial E}{\partial v}\Big|_T=\frac{{\rm Cov}(\mathcal E,\mathcal P_x)}{L^2T},\qquad \frac{\partial M}{\partial v}\Big|_T=\frac{{\rm Var}(\mathcal P_x)}{L^2T},\\
+  \frac{\partial E}{\partial T}\Big|_v=\frac{{\rm Cov}(\mathcal E,\mathcal E-v\mathcal P_x)}{L^2T^2},\qquad \frac{\partial M}{\partial T}\Big|_v=\frac{{\rm Cov}(\mathcal P_x,\mathcal E-v\mathcal P_x)}{L^2T^2} ,
+  \end{gathered}
+  \label{chifluct}
+  \stp
+  and the transverse ${\rm Var}(\mathcal P_y)/(L^2T)=w\gamma^2$ (target), with jackknife errors as \nolinkurl{examples/eos_measure.jl} does for $dE/dT$.  The Maxwell
+  relation (the matrix in the variables $\beta_\mu$ is symmetric) is a check of the statistics.
+\end{itemize}
+The target's entries, with $T_{\rm rel}=\gamma T$, $w=nA\,T_{\rm rel}^n$ and $dw/dT_{\rm rel}=n\,w/T_{\rm rel}$, $n=1+1/c_s^2$:
+\st
+\begin{gathered}
+\frac{\partial E}{\partial T}\Big|_v=\frac wT\big(n\gamma^2-1\big),\qquad \frac{\partial M}{\partial T}\Big|_v=\frac{n\gamma^2v\,w}{T},\\
+\frac{\partial E}{\partial v}\Big|_T=(n+2)\gamma^4v\,w-\gamma^2v\,w,\qquad \frac{\partial M}{\partial v}\Big|_T=w\gamma^2\big(1+(n+2)\gamma^2v^2\big) .
+\end{gathered}
+\label{chitarget}
+\stp
+At $v=0$: $\partial E/\partial v=0$, $\partial M/\partial v=w$, $\partial E/\partial T=w/(c_s^2T)=C_V$.  (Checked against finite differences of $E$, $M$.)  The model's one-loop entries (tree level, \texttt{SPH\_RENORM=1},
+Legendre) follow from the single-particle $\ln Z_1(T,v,V)$ by the same derivatives: extend \nolinkurl{examples/renorm_quadrature_legendre.py} and
+\nolinkurl{examples/renorm_quadrature_moving.py} to print them (finite differences of $\ln Z_1$ in $T$ and $v$, or the covariances on the quadrature grid), as the
+reference for each Hamiltonian; the positions add their own $O(1/\bar nh^2)$, to be read off from the $h/a$ dependence.
+
+\paragraph{The code.}  Hybrid Monte Carlo itself needs no change: it already samples the canonical ensemble at the multipliers $(\beta^0,\bm\beta)$, and the totals
+fluctuate as they should.  \nolinkurl{examples/eos_measure.jl} needs: the velocity option, the record of the total momentum $\sum_a\bm m_a$ after every update
+(it records $E$ and $P$ now), $T^{yy}$, the covariances \Eq{chifluct} with errors, and the targets \Eq{chitarget} for any $c_s^2$.
+
+\paragraph{Expectations} (per particle, $s_a$ the entropy per particle, $\sigma=pV/T=c_s^2s_a/(1+c_s^2)$ at rest; the correction of the positions,
+$\propto1/(\bar nh^2)$, is common to all and was measured in \texttt{eos\_renorm}):
+\begin{center}
+\small
+\resizebox{\linewidth}{!}{\begin{tabular}{lccc}
+\toprule
+ & tree level & \texttt{SPH\_RENORM=1} ($c_s^2=1/2$ only) & Legendre \\
+\midrule
+$P/p-1$ & $\tfrac52/\sigma$ & 0 & $O(1/s_a)$ \\
+$E/e-1$ & $k(1+c_s^2)/s_a$ & 0 & $O(1/s_a)$ \\
+$\chi_{MM}/(Tw)-1$ (at rest) & $(\tfrac52+k-c_s^2)/s_a$ & $-c_s^2/s_a$ & $O(1/s_a^2)$ \\
+$R$ at $v$ & $-\dfrac{c_s^2(1-v^2)^2}{(1-c_s^2v^2)\,s_a}$ & the same & $O(1/s_a^2)$ \\
+$\chi^{\mu\nu}$, all entries & $O(1/s_a)$ & the momentum entries $O(1/s_a)$ & $O(1/s_a)$, smaller \\
+\bottomrule
+\end{tabular}}
+\end{center}
+(For $c_s^2=1/2$, $k=5$ and both tree entries are $7.5/s_a$; for $c_s^2=1/4$, $k=8$: $12.5/s_a$ and $10/s_a$.)  Whether the positions add their own $R$ in
+motion is not known: report it.
+
+\paragraph{Runs.}  $c_s^2\in\{1/2,1/4\}$ $\times$ Hamiltonian $\in\{$tree, Legendre$\}$ (plus \texttt{SPH\_RENORM=1} at $c_s^2=1/2$, $v=0.8$; at rest it is in
+\texttt{eos\_renorm}) $\times$ $s_a\in\{16,54,541\}$ $\times$ $h/a\in\{2,3\}$ $\times$ $v\in\{0,0.8\}$, $L=0.45$, 8 seeds of 300 updates.  That is
+$2\cdot2\cdot3\cdot2\cdot2\cdot8=384$ tasks plus 48.  Cost, from \texttt{eos\_renorm} (2 threads: $h/a=2$ about 10 min, $h/a=3$ about 38 min) and a factor
+$\sim1.5$ for the solves: about $432\times0.4\,{\rm h}\times2/128\approx3$ node-hours, shared QOS (\nolinkurl{nersc/LOG.md}: 2-thread tasks of $\le2$ h start
+quickly there).  Under the 20 node-hour limit of \nolinkurl{CLAUDE.md}; report the estimate in the log before submitting, and recompute it from the
+measured time per update of \Sect{sec:smoke}.  Campaign file \nolinkurl{nersc/campaign_eos_legendre.txt}, output \texttt{\$SCRATCH/sph/eos\_legendre/};
+smoke test of two tasks in \texttt{-q debug} first.
+
+\paragraph{Analysis.}  Extend \nolinkurl{examples/eos_measure.py} (or a copy) for $c_s^2$, $\chi_{MM}$ and $R$: plots of $E/e-1$, $P/p-1$, $\chi_{MM}/(Tw)-1$
+and $R$ against $1/s_a$ for the three Hamiltonians and both $h/a$ (separating the positions' $1/(\bar nh^2)$), and the four entries of the susceptibility \Eq{chifluct} against \Eq{chitarget} and against the single-particle references, at $v=0$ and $0.8$; a table
+against the expectations above.
+
+%=============================================================================
+\section{Reporting}
+\label{sec:report}
+
+\begin{itemize}
+\item \nolinkurl{nersc/LOG.md}: an entry \texttt{eos\_legendre} with the branch, commits, job IDs, cost, lessons; update it as you go.
+\item This note, \Sect{sec:results}: what was implemented (file and function names), the test results, the timing, the smoke runs, the campaign's figures
+  (\nolinkurl{docs/figs/legendre_*.png}) and table; say plainly where the results agree with the expectations and where not.
+\item Commits: code, tests, campaign file, figures, csv and notes only (no \texttt{.h5}, \texttt{.jls}); on branch \texttt{legendre}.  The owner has
+  authorized (2026-11-22) two days of work on this plan, with commits and pushes to \texttt{legendre} as results come in.  Messages end with the attribution
+  line.
+\end{itemize}
+
+\paragraph{Ask the owner before}: changing the default of any option; anything that changes the numerics with the switch off; more than 20 node-hours;
+changing \texttt{Particle} in a way that breaks reading old \texttt{.jls} files.
+
+%=============================================================================
+\section{References in the repository}
+\label{sec:refs}
+
+\begin{itemize}
+\item \nolinkurl{examples/renorm_quadrature_legendre.py} — the exact single-particle quadrature of the Legendre Hamiltonian for any constant $c_s^2$
+  (\texttt{python3 examples/renorm\_quadrature\_legendre.py 0.5 0.25}, 30 s).  At $v=0.8$: residuals of $E$, $M$, $p$ about $7\times10^{-3}$ ($s_a=54$) and
+  $7\times10^{-5}$ ($s_a=541$) for $c_s^2=1/2$, about twice that for $c_s^2=1/4$; $R\lesssim10^{-6}$ at $s_a=541$; $\mu/T=O(1/s_a)$.
+\item \nolinkurl{examples/renorm_quadrature_moving.py} — the same for the tree level, \texttt{SPH\_RENORM=1} and the split schemes (7 min).
+\item \nolinkurl{examples/renorm_velocity.py} — the velocity of a particle near the light cone for the schemes.
+\item \nolinkurl{partition.tex}, Appendix ``Notes from discussion'': the derivation (``The label $s_{\rm eff}$\ldots'', ``The procedure'', ``Constant speed of sound'',
+  ``Implementation plan for the root finding'').
+\item \nolinkurl{gravity.tex}, ``Results'': the campaign \texttt{eos\_renorm} (tree and \texttt{SPH\_RENORM=1} at rest, $c_s^2=1/2$), the baseline.
+\end{itemize}
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+(To be filled in by the session that carries out the plan.)
+
+\end{document}
