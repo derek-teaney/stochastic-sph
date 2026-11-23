@@ -23,6 +23,8 @@ split_counts() = (t = sum(SPLIT_CNT; dims = 2);  (solves = t[1], iters = t[2], f
 
 # V̄, the reference volume of Δs_dyn (SPH_RENORM_VBAR; default the mean volume L²/N of the run, set by check_split)
 const SPLIT_VBAR = Ref(NaN)
+const SPLIT_FAILLOG = Any[];  const SPLIT_FAILLOCK = ReentrantLock()   # the first 200 solves that did not converge: (e, m, V, u, H − e, ∂H/∂u)
+splitlog(x) = lock(() -> length(SPLIT_FAILLOG) < 200 && push!(SPLIT_FAILLOG, x), SPLIT_FAILLOCK)
 const SPLIT_TOL = 1e-12      # relative residual of the inverse's Newton solve in u: the accuracy of the target's forward solve
                              # (eos_newton, tol 1e-12), below which H(u) does not resolve u (the steps stall at ~1e-13)
 const SPLIT_MAXIT = 20
@@ -31,8 +33,9 @@ struct SplitConsts
     c2 :: Float64;  n :: Float64;  A :: Float64;  N :: Float64;  b :: Float64;  lVbar :: Float64
 end
 function SplitConsts(eos::ConstantCs2EOS)
-    c2 = eos.cs2_val;  n = 1 + 1 / c2
-    return SplitConsts(c2, n, c2 * eos.T_scale^(-n), 1 - 2c2, 2.5 - (1 - 2c2), log(SPLIT_VBAR[]))
+    c2 = eos.cs2_val;  n = 1 + 1 / c2;  N = 1 - 2c2
+    N != 0 && !isfinite(SPLIT_VBAR[]) && error("SPH_RENORM=split: V̄ not set (check_split(params), called when SimParams is built)")
+    return SplitConsts(c2, n, c2 * eos.T_scale^(-n), N, 2.5 - N, log(SPLIT_VBAR[]))
 end
 SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
@@ -89,7 +92,13 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
         u, v0, T0 = target_inverse(max(e, mm) + δe, m, V, eos);  δe *= 2
     end
     (isfinite(u) && u > 0) || (splitcnt!(4);  return fail)
-    e0 = (T0 / sqrt(1 - dot(v0, v0)) / eos.T_scale)^(1 + 1 / eos.cs2_val)     # the target's rest-frame energy density, the warm start
+    if u <= c.b                                                # a start at or below the label boundary, where ∂H/∂u can be < 0
+        T0 = NaN
+        rb = split_H(c.b, mm, m, V, 1.0, eos, c; sound)
+        (isfinite(rb.H) && rb.H < e) || (splitcnt!(4);  return fail)
+        u = 2 * c.b
+    end
+    e0 = isfinite(T0) ? (T0 / sqrt(1 - dot(v0, v0)) / eos.T_scale)^(1 + 1 / eos.cs2_val) : 1.0   # the target's rest-frame energy density
     for it in 1:SPLIT_MAXIT
         r = split_H(u, mm, m, V, e0, eos, c; sound);  its += 1;  e0 = r.e
         (isfinite(r.H) && r.TH > 0) || break
@@ -106,7 +115,7 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
         u = un
     end
     splitcnt!(2, its)
-    conv || (splitcnt!(3);  return fail)
+    conv || (splitcnt!(3);  splitlog((e, m, V, u, r === nothing ? NaN : r.H - e, r === nothing ? NaN : r.TH));  return fail)
     r = split_H(u, mm, m, V, e0, eos, c; sound)
     (r.TH > 0 && abs(r.xd) < 1 && r.γ <= GAMMA_MAX) || (splitcnt!(4);  return fail)
     vt = norm(r.v)

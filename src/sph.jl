@@ -178,7 +178,9 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, sim_dim=2, phys
     measure === :liouville && (hamiltonian === :energy ||
         error("measure = :liouville needs hamiltonian = :energy (equilibrium_positions.tex, Appendix A)"))
     measure === :liouville && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
-    SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
+    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
+    check_split(sp)                               # SPH_RENORM=split: the schemes it supports and V̄, before any map is used (renorm_split.jl)
+    sp
 end
 
 # Stochastic runs (the stochastic step, hybrid Monte Carlo) are two-dimensional (dimension.tex).
