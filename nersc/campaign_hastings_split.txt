@@ -1,0 +1,22 @@
+# Campaign `hastings_split` (2026-11-23, branch split, docs/step5_plan.tex): the dynamics of campaign `hastings` (inverse_moment.tex,
+# stage 2: the viscous step `moment` with the Hastings correction, the current default) with the split Hamiltonian (SPH_RENORM=split,
+# Step 5), against hybrid Monte Carlo chains of the same Hamiltonian and measure.  Same box, EOS (conformal, c_s^2 = 1/2), seeds and
+# lengths as the "h" and "hq" lines of campaign_hastings.txt / campaign_hastings_s16.txt / campaign_hastings_hq16.txt, whose output
+# ($SCRATCH/sph/hastings/hs<sa>_h_v<v>, hq<sa>_v<v>) is the tree-level reference (not rerun: with the switch off the code is
+# bit-identical to what produced it, regressions at 08962be).  L = 0.6 (N = 672), h/a = 2, η/s = 0.2, s_a = 16, 54, v0 = 0, 0.8.
+#
+# 128 tasks of 4 cores, packed on 4 nodes:
+#   sbatch -A m3722 -q regular -C cpu -N 4 -t 01:00:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_hastings_split.txt hastings_split
+# Analysis: the tree-level sets are linked into $SCRATCH/sph/hastings_split; HA_SAS=16,54 examples/hastings_analysis.jl (each model
+# against its own HMC), boost groups SP16, SP54 (shear and sound fits, tree against split).
+#
+# 1. The full step, t = 100 (tasks 1-64).
+hs16_sp_v0      16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0
+hs16_sp_v0.8    16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0.8
+hs54_sp_v0      16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0
+hs54_sp_v0.8    16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0.8
+# 2. The reference: hybrid Monte Carlo chains of the split Hamiltonian, 300 updates (tasks 65-128).
+hq16_sp_v0      16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0
+hq16_sp_v0.8    16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0.8
+hq54_sp_v0      16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0
+hq54_sp_v0.8    16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0.8
