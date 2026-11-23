@@ -713,6 +713,20 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
   equilibrium drivers only hast_lq_*, unit output only paths / wall clock, and testrunrecord now passes (one more setting, the
   renorm_split.jl line).  Split leaves the switch-off and SPH_RENORM=legendre paths bit-identical to 53d29e4.
 
+- **The start was not at the requested state** (owner: "we are thermalizing via HMC where temperature and velocity are precisely
+  defined").  HMC was given the β^μ solved from the set-up totals (`beta_from_averages`, a Newton solve on a 41³ grid of single-particle
+  states), not the requested one.  From the run records ([start] T0, v0, E_total, M_total): split s_a = 16, v0 = 0.8 ran at T_rel = 208,
+  v = 0.66 (70% more momentum than set up); split s_a = 54 at 293, 0.78; tree at 137–139, 0.784 (s_a = 16).  At rest all within ~1%
+  of the totals.  The analysis compared with hydro at the set-up T_rel and the hard-wired v = 0.8: the split "×2.4 equal time" and
+  "advection 0.66" were the wrong state, not split.  With the state from the conserved totals (boost_analysis, 3262b00): split v0 = 0.8
+  equal time / χ = 1.0–1.15, Ω/k = 0.659 against hydro 0.658, Γ/hydro 3.6–4.2 (tree 3.6–4.8).
+- **Fix (3262b00)**: `SR_BATH=nominal`, new default of equilibrium.jl and hmc_positions.jl: the HMC start and the draw at β⁰ = γ/T_rel0,
+  β = γv/T_rel0 x̂ (T_rel0 of the rest state at S0).  `SR_BATH=totals` = before.  src default (bath = nothing) unchanged.  Smoke (debug
+  61885718, s_a = 16): bath exactly 140.4, 0.800; the totals through the target EOS: split 139.4 / 142.6 (v0 0.8 / 0), tree 151.9 /
+  155.5 — the tree's O(1/s) excess energy at a given T, removed by split.  boost_analysis uses the recorded bath when it is nominal.
+- **Rerun** `hastings_bath` (nersc/campaign_hastings_bath.txt, same 256 tasks): job **61886625** (8 regular nodes, ≈ 2 node-hours) from
+  ~/stochastic-sph-splitB (3262b00); tests (unit, load, regress against 86fbc35) debug 61886627.
+
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
 Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
