@@ -654,6 +654,10 @@ plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); re
   at s_a = 541, ren at s_a = 54, 16 seeds × 400 updates, SR_KHMAX = 1.6: job **61762047** (48 tasks, shared, -t 16 h, est. ~9 h per task,
   ~7 node-hours of the owner's extra 24).  Output into `$SCRATCH/sph/eos_renorm/*_L1.8`.  Question: does the renormalized S(k) at σ = 180
   turn over towards S(0) = 1/δB ≈ 1 (predicted 0.40 at kh_min, tree 0.20)?
+- **eos_renorm_big done 2026-11-22 02:16**: 48/48 COMPLETED, 6.0–8.2 h per task.  Renormalized s_a = 54 on Ornstein–Zernike to kh = 0.175
+  (B fitted 0.42 ± 0.03 vs δB = 0.38); tree s_a = 541 on the curve (3.8 ± 0.3 vs 3.45); renormalized s_a = 541 rises above tree but less than
+  predicted, 0.30 ± 0.03 vs 0.40 at kh = 0.175, B = 1.65 ± 0.23 vs δB = 0.95 (one loop): δB from the positions is larger than one loop at
+  σ = 180, h/a = 2; S(0) ≈ 0.6.  gravity.tex Results updated.
 - (laptop session, 2026-11-21) docs/gravity.tex now has the section "Results" with the four figures and a table for the first run
   (tree, s_a = 16, h/a = 2): agreement to 0.2% with the exact single particle plus the positions.  When more runs finish, rerun
   eos_measure.py and **extend that section** (table rows, the bullet list), do not start a new one.

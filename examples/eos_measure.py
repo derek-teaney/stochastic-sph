@@ -150,7 +150,7 @@ MU2 = 5 / 9
 def dB(sig, nh2):
     return np.interp(np.log(sig), np.log([3.89, 16.4, 179.0]), [0.21, 0.36, 0.95]) * 4.62 / nh2
 fig, axs = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
-kk = np.linspace(0.05, 1.6, 200)
+kk = np.linspace(0.02, 1.6, 300)
 for ax, sa in zip(axs, ("54", "541")):
     for kind, mk in (("tree", "o"), ("ren", "s")):
         for name, v in sel(kind, big=True):
@@ -159,8 +159,10 @@ for ax, sa in zip(axs, ("54", "541")):
                 continue
             ha = int(m.group(3)); c = cols[ha]
             kr = np.round(v["kh"], 2); sh = np.unique(kr); sh = sh[sh <= 1.6]
-            ax.plot(sh, [v["Sk"][kr == q].mean() for q in sh], mk, color=c, mfc=c if kind == "tree" else "none", ms=5,
-                    label=f"{'tree' if kind == 'tree' else 'renorm.'}, h/a={ha}, σ={v['sigma']:.3g}")
+            big2 = m.group(4) == "_L1.8"
+            ax.plot(sh, [v["Sk"][kr == q].mean() for q in sh], ("^" if kind == "tree" else "v") if big2 else mk, color=c,
+                    mfc=c if kind == "tree" else "none", ms=7 if big2 else 5,
+                    label=f"{'tree' if kind == 'tree' else 'renorm.'}, h/a={ha}, σ={v['sigma']:.3g}" + (", L=36h" if big2 else ""))
             B = (2.5 if kind == "tree" else 0.0) + dB(v["sigma"], v["nh2"])
             ax.plot(kk, 1 / (B + v["sigma"] * MU2 * kk**2 / 2), "-" if kind == "tree" else "--", color=c, lw=1)
     ax.set_yscale("log"); ax.set_xlabel("kh"); ax.set_title(f"s_a = {sa}"); ax.legend(fontsize=7)
