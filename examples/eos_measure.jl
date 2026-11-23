@@ -30,32 +30,23 @@ const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
 
 eos = CS2 == 0.5 ? conformal_eos(default_phys_dim(); η_by_s = 0.2) : ConstantCs2EOS(cs2_val = CS2, η_by_s = 0.2)
-# the momentum density of the start, S0 = s_rel γ the lab entropy density: M = w γ² v = T_rel S0 γ v, s_rel(T_rel) = n A T_rel^(n−1)
-const NEXP = 1 + 1 / CS2;  const AEOS = CS2 * eos.T_scale^(-NEXP)
-const M0 = (γv = 1 / sqrt(1 - VFLUID^2);  Tr = (S0 / (γv * NEXP * AEOS))^(1 / (NEXP - 1));  Tr * S0 * γv * VFLUID)
-params, ps, cl, _ = setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(M0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-# In motion with SPH_RENORM=legendre the label s_a is not the target's entropy (it is shifted by Δ + k, comparable to s_a at s_a ~ 50),
-# so the uniform start at velocity SR_V is built in the Legendre variables: T from s(T, v) = s_a at the particle's volume, m_a = |m|(T, v) x̂.
-if LEGENDRE && VFLUID > 0
-    let V = ps[1].s / ps[1].S_smooth, lo = log(1e-3), hi = log(1e6)
-        for _ in 1:200                                    # s(T, v) increases with T
-            mid = (lo + hi) / 2;  legendre_at(exp(mid), VFLUID, V, eos).s < SA ? (lo = mid) : (hi = mid)
-        end
-        st0 = legendre_at(exp((lo + hi) / 2), VFLUID, V, eos)
-        for q in ps;  q.m = SVector(st0.m, 0.0);  end
-        thermalize!(ps, params, cl, eos)
-    end
-end
+params, ps, cl, _ = setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
 start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))
-tg = HMCTarget(start.β0, start.β, params.vol, eos)
+# the bath: the start at rest, as for v = 0; in motion (SR_V) the same rest-frame temperature T_rel = 1/β⁰_rest moving at v:
+# β⁰ = γ/T_rel, β = v β⁰ x̂ (the heat bath gives the particles their momenta at the first update; the burn-in absorbs the start)
+const NEXP = 1 + 1 / CS2
+const BATH = VFLUID > 0 ? (γv = 1 / sqrt(1 - VFLUID^2);  β0 = γv * start.β0;
+                           (β0 = β0, β = SVector(VFLUID * β0, 0.0), T = 1 / β0, v = SVector(VFLUID, 0.0))) :
+                          (β0 = start.β0, β = start.β, T = start.T, v = start.v)
+tg = HMCTarget(BATH.β0, BATH.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt))
 
 # the target at the bath's multipliers: T0 = 1/β⁰ (the bare temperature), v = β/β⁰, T_rel = γ T0; e_t, p_t at rest (v = 0) or the
 # lab energy density and the transverse pressure (v > 0), M_t = w γ² v
-T0 = start.T;  vb = start.v[1];  γb = 1 / sqrt(1 - dot(start.v, start.v));  Tr0 = γb * T0
+T0 = BATH.T;  vb = BATH.v[1];  γb = 1 / sqrt(1 - dot(BATH.v, BATH.v));  Tr0 = γb * T0
 e_rest = state_from_beta(1 / Tr0, SVector(0.0, 0.0), eos).ε;  p_t = pressure(eos, e_rest);  w_t = e_rest + p_t
-st = state_from_beta(start.β0, start.β, eos)
+st = state_from_beta(BATH.β0, BATH.β, eos)
 e_t = st.ε;  M_t = st.M[1];  nbar = params.N / prod(params.L);  σp = p_t / (Tr0 * nbar)
 @printf("eos: N = %d, h/a = %.3g, s_a = %.4g, %s, c_s² = %.3g, v = %.4g, T0 = %.6g, σ = %.4g, %d steps per trajectory, %d updates\n",
         params.N, HA, SA, SCHEME, CS2, vb, T0, σp, NSTEPS, NUPD)

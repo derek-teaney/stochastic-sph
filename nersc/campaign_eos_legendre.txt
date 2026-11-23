@@ -1,0 +1,60 @@
+# Campaign `eos_legendre` (2026-11-23, branch legendre, docs/legendre_plan.tex "The campaign"): the equation of state, the momentum and the
+# susceptibility matrix of the model in canonical hybrid Monte Carlo (examples/eos_measure.jl), for the tree-level and the Legendre
+# Hamiltonian (SPH_RENORM=legendre), c_s^2 = 1/2 and 1/4 (SR_CS2), lattice starts s_a = 16, 54, 541, h/a = 2, 3, at rest and at v = 0.8
+# (SR_V), L = 0.45; plus SPH_RENORM=1 (the entropy shift, c_s^2 = 1/2 only) at v = 0.8 (at rest it is in eos_renorm).  8 seeds of 300
+# updates each (one third discarded).  432 tasks on 2 threads; timing from the smoke runs (nersc/LOG.md, eos_legendre).
+# Each task writes <run>/<tag>_seed<k>.{txt,h5}.
+eosL_tree_c05_s16_ha2_v0       8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 16 300 eosL_tree_c05_s16_ha2_v0
+eosL_tree_c05_s16_ha3_v0       8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 16 300 eosL_tree_c05_s16_ha3_v0
+eosL_tree_c05_s54_ha2_v0       8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 54 300 eosL_tree_c05_s54_ha2_v0
+eosL_tree_c05_s54_ha3_v0       8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 54 300 eosL_tree_c05_s54_ha3_v0
+eosL_tree_c05_s541_ha2_v0      8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 541 300 eosL_tree_c05_s541_ha2_v0
+eosL_tree_c05_s541_ha3_v0      8  SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 541 300 eosL_tree_c05_s541_ha3_v0
+eosL_tree_c05_s16_ha2_v08      8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 16 300 eosL_tree_c05_s16_ha2_v08
+eosL_tree_c05_s16_ha3_v08      8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 16 300 eosL_tree_c05_s16_ha3_v08
+eosL_tree_c05_s54_ha2_v08      8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 54 300 eosL_tree_c05_s54_ha2_v08
+eosL_tree_c05_s54_ha3_v08      8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 54 300 eosL_tree_c05_s54_ha3_v08
+eosL_tree_c05_s541_ha2_v08     8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 2 541 300 eosL_tree_c05_s541_ha2_v08
+eosL_tree_c05_s541_ha3_v08     8  SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5                -- examples/eos_measure.jl 0.45 3 541 300 eosL_tree_c05_s541_ha3_v08
+eosL_leg_c05_s16_ha2_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c05_s16_ha2_v0
+eosL_leg_c05_s16_ha3_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c05_s16_ha3_v0
+eosL_leg_c05_s54_ha2_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c05_s54_ha2_v0
+eosL_leg_c05_s54_ha3_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c05_s54_ha3_v0
+eosL_leg_c05_s541_ha2_v0       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c05_s541_ha2_v0
+eosL_leg_c05_s541_ha3_v0       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c05_s541_ha3_v0
+eosL_leg_c05_s16_ha2_v08       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c05_s16_ha2_v08
+eosL_leg_c05_s16_ha3_v08       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c05_s16_ha3_v08
+eosL_leg_c05_s54_ha2_v08       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c05_s54_ha2_v08
+eosL_leg_c05_s54_ha3_v08       8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c05_s54_ha3_v08
+eosL_leg_c05_s541_ha2_v08      8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c05_s541_ha2_v08
+eosL_leg_c05_s541_ha3_v08      8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c05_s541_ha3_v08
+eosL_tree_c025_s16_ha2_v0      8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 16 300 eosL_tree_c025_s16_ha2_v0
+eosL_tree_c025_s16_ha3_v0      8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 16 300 eosL_tree_c025_s16_ha3_v0
+eosL_tree_c025_s54_ha2_v0      8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 54 300 eosL_tree_c025_s54_ha2_v0
+eosL_tree_c025_s54_ha3_v0      8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 54 300 eosL_tree_c025_s54_ha3_v0
+eosL_tree_c025_s541_ha2_v0     8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 541 300 eosL_tree_c025_s541_ha2_v0
+eosL_tree_c025_s541_ha3_v0     8  SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 541 300 eosL_tree_c025_s541_ha3_v0
+eosL_tree_c025_s16_ha2_v08     8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 16 300 eosL_tree_c025_s16_ha2_v08
+eosL_tree_c025_s16_ha3_v08     8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 16 300 eosL_tree_c025_s16_ha3_v08
+eosL_tree_c025_s54_ha2_v08     8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 54 300 eosL_tree_c025_s54_ha2_v08
+eosL_tree_c025_s54_ha3_v08     8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 54 300 eosL_tree_c025_s54_ha3_v08
+eosL_tree_c025_s541_ha2_v08    8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 2 541 300 eosL_tree_c025_s541_ha2_v08
+eosL_tree_c025_s541_ha3_v08    8  SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5               -- examples/eos_measure.jl 0.45 3 541 300 eosL_tree_c025_s541_ha3_v08
+eosL_leg_c025_s16_ha2_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c025_s16_ha2_v0
+eosL_leg_c025_s16_ha3_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c025_s16_ha3_v0
+eosL_leg_c025_s54_ha2_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c025_s54_ha2_v0
+eosL_leg_c025_s54_ha3_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c025_s54_ha3_v0
+eosL_leg_c025_s541_ha2_v0      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c025_s541_ha2_v0
+eosL_leg_c025_s541_ha3_v0      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c025_s541_ha3_v0
+eosL_leg_c025_s16_ha2_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c025_s16_ha2_v08
+eosL_leg_c025_s16_ha3_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c025_s16_ha3_v08
+eosL_leg_c025_s54_ha2_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c025_s54_ha2_v08
+eosL_leg_c025_s54_ha3_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c025_s54_ha3_v08
+eosL_leg_c025_s541_ha2_v08     8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c025_s541_ha2_v08
+eosL_leg_c025_s541_ha3_v08     8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c025_s541_ha3_v08
+eosL_ren1_c05_s16_ha2_v08      8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 2 16 300 eosL_ren1_c05_s16_ha2_v08
+eosL_ren1_c05_s16_ha3_v08      8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 3 16 300 eosL_ren1_c05_s16_ha3_v08
+eosL_ren1_c05_s54_ha2_v08      8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 2 54 300 eosL_ren1_c05_s54_ha2_v08
+eosL_ren1_c05_s54_ha3_v08      8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 3 54 300 eosL_ren1_c05_s54_ha3_v08
+eosL_ren1_c05_s541_ha2_v08     8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 2 541 300 eosL_ren1_c05_s541_ha2_v08
+eosL_ren1_c05_s541_ha3_v08     8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5   -- examples/eos_measure.jl 0.45 3 541 300 eosL_ren1_c05_s541_ha3_v08
