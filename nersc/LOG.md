@@ -605,6 +605,33 @@ Reference numbers: examples/renorm_quadrature_legendre.py.  Report in docs/legen
 (code, tests, campaign files, figures, csv, notes; never .h5/.jls).  Budget for the campaign as in the plan (~3 node-hours; ask
 before going over 20).
 
+**Progress (NERSC session, 2026-11-22/23):**
+- A (fe1ca71): the particle-level maps go through `particle_forward` / `particle_inverse` (src/pointwise.jl; target: `target_forward`,
+  `target_inverse`, the arithmetic of solve_eos!/eos_from_energy).  Field-level uses left as they are: grid.jl (grid_forward/inverse),
+  the starting guess of beta_from_averages, state_from_beta, particle_moments.  Regression against db139ef (debug 61821418 and the
+  interactive node): bit-identical except the known hast_lq_* datasets.
+- B–D (6b7a207, 186124b): src/renorm.jl — Newton in (ln T_rel, rapidity), analytic Jacobian, warm starts from pa.e (the target's rest
+  energy density at T_rel) and pa.γ, cold starts by a fixed point on the shifted entropy/energy (contracts on the physical branch);
+  counters legendre_counts() (solves, iterations, failures = no convergence, no state, cold).  Switch `SPH_RENORM=legendre`
+  (sph.jl LEGENDRE, read through settings.jl setting_peek so that the record of SPH_RENORM is unchanged without it); check_legendre.
+  test/testlegendre.jl: reference values to 3e-11 (the table's digits), Legendre identities to 1e-9, forward∘inverse to 1e-14 (incl.
+  labels s < 0), counterterm off = the target to its own 1e-12, warm = cold, HMC energy error ∝ δt² (ratio 16.1), all pass.
+- Lessons: (1) the label s = target entropy − (Δ + k) is often ≤ 0 at s_a ≲ 50 (Δ + k ≈ 25 at c_s² = 1/2, ≈ 45 at 1/4; the canonical
+  spread of s is ±20 at c_s² = 1/4): s ≤ 0 and H ≤ 0 are legitimate states (the physical branch is det ∂(s,|m|)/∂(T,v) > 0, |m| ≥ 0);
+  (2) HMC rejects a trajectory that reaches a state with no H (hmc.jl, LEGENDRE only); (3) a non-converged inverse with e < |m| is
+  counted as "no state" (any Legendre state has H − |m| > −kT; these are 7σ momentum tails of the heat-bath proposals); (4) in motion
+  the bath is the rest start's T_rel moving at SR_V (examples/eos_measure.jl), else σ moves with v; (5) beta_from_averages (measure.jl)
+  halves a Newton step that leaves the light cone (never triggered before; needed in motion with the Legendre H).
+- Failures (no convergence) in HMC: ≤ 3e-7 of the solves (c_s² = 1/4, s_a = 16, v = 0.8 the worst), all inverse, at extreme proposals.
+- E, speed (debug 61824228, 8 threads, N = 9752, s_a = 54, c_s² = 1/2): ideal step (generalized leapfrog) 49 ms tree, 39 ms Legendre
+  (forward solves 0–1 iterations warm: no cost); stochastic step 36 → 143 ms (1.25 M inverse solves per step, cold, 2.5 iterations,
+  ~0.9 µs each against ~0.23 µs for the target): the votes need warm starts (to do); HMC update at N = 360: 0.32 → 0.37 s.
+- F, smoke (interactive node 61821858, L = 0.45, h/a = 2, s_a = 54, 200 updates, 2 seeds): c_s² = 1/2 Legendre E/e−1 = −0.010,
+  P/p−1 = −0.032 (σ = 22.7) against SPH_RENORM=1 −0.015, −0.039 (σ = 18.0): within the single-particle residual, both dominated
+  by the positions; acceptance 0.985–0.995 for all; tree 0.134, 0.106.  Dynamics (stability.jl, S0 = 1e5, t = 20): ΔH/H = +4.8e-5
+  Legendre, +4.2e-5 SPH_RENORM=1.
+- Campaign file `nersc/campaign_eos_legendre.txt` (432 tasks, aa85f5c); smoke test of two tasks (60 updates): debug job 61824455.
+
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
 The equation of state of the model with the tree-level and the renormalized Hamiltonian (`SPH_RENORM=1`, docs/partition_v2.tex
