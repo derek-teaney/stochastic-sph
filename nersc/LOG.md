@@ -645,6 +645,21 @@ before going over 20).
 - Clean switch-off regression of b474aef against db139ef (job 61825713, shared -c 64, 38 min): step.jl and stability drivers
   IDENTICAL; equilibrium drivers differ only in hast_lq_* (known, thread order); unit-test output differs only in testcheckpoint
   (wall-clock seconds) and testrunrecord (src/renorm.jl in the file list).  The suite reports FAIL for these reasons only.
+- **Solver failures in the campaign** (2026-11-23): eosL_leg_c025_s16_ha2_v0 had E = NaN on ~1% of the configurations (all 8 seeds;
+  acceptance 0.91), ~10 failed forward solves per seed; a few also at c_s² = 1/2, s_a = 16, at rest.  Reproduced (debug 61829998): the
+  failing particles (labels s = −3.7 to −4.4, |m| = 7–13, γ = 12–41) have a physical state, but Newton from the warm and the cold start
+  converged to the unphysical branch, and a warm start that converged to the wrong branch was not retried; an HMC update that then
+  rejects restores the particle with no state.  Fixed in **b351f3a**: retry cold on a wrong-branch convergence (forward and inverse),
+  and as the last resort bracket the physical branch (legendre_bracket_forward; ~0.6 ms, rarely called); testlegendre 5b with the three
+  states; all pass (debug 61830861).  Only renorm.jl changed (switch-off numerics untouched).
+- **Rerun**: pending/running c_s² = 1/4 Legendre tasks of 61825274 cancelled (array 289–384); old output of the 14 affected lines in
+  `$SCRATCH/sph/eos_legendre/old_3c6fd46/`; `nersc/campaign_eos_legendre_rerun.txt` (14 lines, 112 tasks) submitted from worktree
+  `~/stochastic-sph-legS` (b351f3a): job **61831354**, shared, -t 2 h (~0.7 node-hours).
+- **Found while at it — the Legendre H is two-valued at very negative labels** (c_s² = 1/2): for s < −5.65 (independent of V) the curve
+  s = const in (T_rel, rapidity) has two segments with det ∂(s,|m|)/∂(T,v) > 0 separated by a fold (det < 0, rapidity ≈ 1.2–1.8), and their
+  |m| ranges overlap: two physical states (a hot slow one and a cold fast one, γ ~ 15–65) with the same (s, |m|, V).  At c_s² = 1/4 it is
+  single-valued down to s = −10.  The warm-started Newton follows the sheet it is on; the bracket picks the slow one.  Deep in the tail
+  (|m| ≈ 85 at V = 5.6e-4 at the onset), so negligible for the campaign's averages, but H(s, m, V) is not a function there: for the owner.
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 

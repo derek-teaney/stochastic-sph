@@ -1,0 +1,16 @@
+# eos_legendre rerun with b351f3a (the forward map's branch fix): the Legendre lines with solver failures under 3c6fd46
+# (c_s^2 = 1/2, s_a = 16, at rest) and every c_s^2 = 1/4 Legendre line. Old output in $SCRATCH/sph/eos_legendre/old_3c6fd46/.
+eosL_leg_c05_s16_ha2_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c05_s16_ha2_v0
+eosL_leg_c05_s16_ha3_v0        8  SPH_RENORM=legendre SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c05_s16_ha3_v0
+eosL_leg_c025_s16_ha2_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c025_s16_ha2_v0
+eosL_leg_c025_s16_ha3_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c025_s16_ha3_v0
+eosL_leg_c025_s54_ha2_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c025_s54_ha2_v0
+eosL_leg_c025_s54_ha3_v0       8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c025_s54_ha3_v0
+eosL_leg_c025_s541_ha2_v0      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c025_s541_ha2_v0
+eosL_leg_c025_s541_ha3_v0      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c025_s541_ha3_v0
+eosL_leg_c025_s16_ha2_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosL_leg_c025_s16_ha2_v08
+eosL_leg_c025_s16_ha3_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosL_leg_c025_s16_ha3_v08
+eosL_leg_c025_s54_ha2_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosL_leg_c025_s54_ha2_v08
+eosL_leg_c025_s54_ha3_v08      8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosL_leg_c025_s54_ha3_v08
+eosL_leg_c025_s541_ha2_v08     8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosL_leg_c025_s541_ha2_v08
+eosL_leg_c025_s541_ha3_v08     8  SPH_RENORM=legendre SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosL_leg_c025_s541_ha3_v08
