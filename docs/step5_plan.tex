@@ -317,9 +317,12 @@ pressure, $-0.043$, is the error $\mathcal N/\sigma=0.046$ of the label part alo
 \subsection{F. The campaign}
 \label{sec:campaign_results}
 
-\emph{Running} (jobs 61863928, 61863936; \nolinkurl{nersc/LOG.md}).  The figures below are regenerated as the runs finish.  Split and
-\texttt{SPH\_RENORM=1} at $c_s^2=1/4$ and at rest are new (output \texttt{\$SCRATCH/sph/eos\_split/}); the tree level and \texttt{SPH\_RENORM=1} at
-$c_s^2=1/2$, $v=0.8$ are the runs of \texttt{eos\_legendre}.
+Done: split (192 tasks, job 61863928, 3 nodes, 20 minutes) and \texttt{SPH\_RENORM=1} at $c_s^2=1/4$ and at rest at $c_s^2=1/2$ (144 tasks, job
+61863936, 2 nodes, 20 minutes), packed on regular nodes with \nolinkurl{nersc/node.sh}; 1.7 node-hours.  The tree level and \texttt{SPH\_RENORM=1} at
+$c_s^2=1/2$, $v=0.8$ are the runs of \texttt{eos\_legendre}.  Every one of the 42 lines has its 8 seeds; no configuration with a NaN, no failed solve in
+$4.2\times10^8$ inverse solves of split, and the acceptance is $0.97$--$1.0$ everywhere, at $c_s^2=1/4$, $s_a=16$ too (where the Legendre Hamiltonian lost
+seeds and its acceptance fell to $0.78$).  Tables: \nolinkurl{docs/figs/split_table.csv}, and the four Hamiltonians side by side in
+\nolinkurl{docs/figs/split_compare_table.csv} (\nolinkurl{examples/eos_compare.py}).
 
 \begin{figure}[h]
 \centering
@@ -345,6 +348,50 @@ dashed in the last column: the one-loop $R$ of the tree level and \texttt{SPH\_R
 as in \Fig{fig:split_EP}.}
 \label{fig:split_chi}
 \end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_compare_rest.png}
+\caption{The three renormalized models side by side at rest (\nolinkurl{examples/eos_compare.py}): green \texttt{SPH\_RENORM=1} (the label part alone), red
+Legendre, orange split; $h/a=2$ filled, $3$ open.  The tree level, off this scale at small $s$, is in \Fig{fig:split_EP}.}
+\label{fig:compare_rest}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_compare_moving.png}
+\caption{The same at $v=0.8$; the last column, $R$, also for the tree level (blue).}
+\label{fig:compare_moving}
+\end{figure}
+
+\subsection{Reading}
+
+\paragraph{All three renormalized models remove the tree level's $O(1/s)$.}  At rest, $s_a=16$, the tree level's $E/e-1$ and $P/p-1$ are $0.52$--$1.14$; the
+three models' $E/e-1$ are $0.01$--$0.09$.  At $s_a=541$ they agree with one another to $5\times10^{-4}$, and what remains, $E/e-1\approx-0.004$,
+$P/p-1\approx-0.013$ ($h/a=2$), falling as $1/(\bar nh^2)$, is the correction of the positions.
+
+\paragraph{Split and Legendre agree; the label part alone differs from them by what it leaves out.}  Split and the Legendre Hamiltonian both remove the
+whole one-loop counterterm, and where their entropies per particle are comparable they agree: at $s_a=541$, $c_s^2=1/4$, $h/a=2$, $P/p-1=-0.0168$ and
+$-0.0166$; in motion at $c_s^2=1/2$, $R=+0.0033$ and $+0.0032$ at $s_a=16$, $+0.0022$ and $+0.0022$ at $s_a=54$.  \texttt{SPH\_RENORM=1} leaves out
+$\Delta s^{\rm dyn}$, a term of the same order as the one it removes, and differs from them by its one-loop value.  At $c_s^2=1/4$ its pressure is above
+split's by $+0.0046$ at $s_a=541$ and $+0.044$ at $s_a=54$ ($h/a=2$), against $\mathcal N/\sigma=0.0046$ and $0.046$; at $s_a=16$ it is $P/p-1=+0.19$ against
+split's $+0.06$.  In motion at $c_s^2=1/2$ its $R$ differs from split's by the sound term ($+0.0004$ against $+0.0033$ at $s_a=16$).  $E$, $M$ and the
+susceptibilities are much the same for the three, within the errors of the latter ($0.02$--$0.05$).
+
+\paragraph{Controlled and uncontrolled.}  Split is consistent at one loop for any constant $c_s^2$, at rest and in motion: its single-particle remainder is
+$O(1/s^2)$ (\Sect{sec:check}), and the term left out (A) is of that order.  The label part alone is exact at one loop only for the conformal fluid at rest; for
+$c_s^2\neq1/2$, or in motion, its error is of first order.  In the many-particle data the two are close at $s_a\ge54$, and in places the label part alone is
+nearer the target ($P/p-1=-0.003$ against $-0.047$ at $c_s^2=1/4$, $s_a=54$, $h/a=2$; $R=+0.0004$ against $+0.0033$ at $c_s^2=1/2$, $s_a=16$): its first-order
+error happens to have the opposite sign to the correction of the positions.  That is a cancellation, not a property of the model, and nothing guarantees it
+elsewhere; split's agreement with Legendre is.
+
+\paragraph{Against Legendre.}  Split gives the same answers as the Legendre Hamiltonian at a fraction of the trouble: closed-form maps of the target plus a
+one-dimensional Newton solve in $u$ for the inverse (2.9 iterations), no failed solve and no lost seed in the campaign (Legendre: 425 failures, four NaN
+configurations, acceptance down to $0.78$ at $c_s^2=1/4$, $s_a=16$), hybrid Monte Carlo at the tree level's cost.  Its stochastic step costs 3.4 times that of
+\texttt{SPH\_RENORM=1} (Legendre's 2.6 times the tree level's): every vote is a Newton solve.
+
+\paragraph{What remains.}  At $s_a\ge54$ the error of every renormalized model is the correction of the positions, $\propto1/(\bar nh^2)$, which no
+single-particle counterterm removes.
 
 %=============================================================================
 \section{Later}

@@ -722,6 +722,12 @@ is a concatenation).
 - **F. Campaigns** from the pinned worktree `~/stochastic-sph-splitC` (08962be), packed with node.sh, THREADS = 2: eos_split (192 tasks)
   on 3 regular nodes and eos_ren1 (144) on 2, one wave each, ~20 min (h/a = 3 tasks ~15 min on dedicated nodes): estimate ≈ 1.7
   node-hours, at most 5 (-t 1:00).
+- **Campaigns done (2026-11-23 08:53)**: eos_split job 61863928 (3 nodes, 19.8 min) and eos_ren1 job 61863936 (2 nodes, 20.3 min): 1.7
+  node-hours.  All 42 lines with 8 seeds; no NaN; 0 failed inverse solves in 4.2e8 (split); acceptance 0.97–1.0 everywhere (c_s² = 1/4,
+  s_a = 16 included).  Figures docs/figs/split_*.png, tables split_table.csv, split_compare_table.csv (examples/eos_compare.py); reading in
+  docs/step5_plan.tex, "Results".  In short: split = Legendre where comparable (P at s_a = 541, c_s² = 1/4: −0.0168 / −0.0166; R at
+  c_s² = 1/2: +0.0033 / +0.0032 at s_a = 16); SPH_RENORM=1 (label only) differs by its one-loop error (P: +𝒩/σ as predicted, 0.0046 and
+  0.044 at s_a = 541, 54); positions' correction dominates at s_a ≥ 54.  Split: no solver trouble, stochastic step 3.4× label-only.
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
