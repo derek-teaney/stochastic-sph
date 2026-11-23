@@ -727,6 +727,20 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
 - **Rerun** `hastings_bath` (nersc/campaign_hastings_bath.txt, same 256 tasks): job **61886625** (8 regular nodes, ≈ 2 node-hours) from
   ~/stochastic-sph-splitB (3262b00); tests (unit, load, regress against 86fbc35) debug 61886627.
 
+- **hastings_bath done** (61886625, 8 nodes, 29 min ≈ 3.9 node-hours, 256/256).  Bath exactly as requested.  Dynamics / own HMC = 1
+  within 2–5% for tree and split.  Equal time / χ(EOS at the bath): split 0.92–1.07, tree 1.2–1.4 (s_a = 16).  Tests (debug 61886627):
+  unit, physics, load pass; equilibrium drivers differ (start changed, intended).  With SR_BATH=totals (debug 61888823) the drivers
+  reproduce 86fbc35 except hast_lq_* (as before): the change is the start only.  (Both debug jobs hit the 30 min limit after these checks.)
+- **The damping**: shear Γ/hydro 3–6 for tree and split at η/s = 0.2, c_s^2 = 1/2 (owner: "tree level was working pretty good").  The
+  present analysis on the old c_s^2 = 1/3 hastings runs gives 0.94–1.23: not the analysis.  T_rel at the same S0 went 28 → 140
+  (s = (4/3)T^3 → (3/2)T^2), so ν0 = (η/s)/T_rel is 5× smaller.  Campaign **damping_scan** (61889391, 2 nodes; tree at rest):
+  η/s = 1.0 gives 1.09–1.20 × hydro; no viscous step gives 7.3–7.9 (s_a = 16), 5.8–6.2 (54) × the η/s = 0.2 rate, with H conserved to
+  2e-6.  The decay is mode coupling to the fluctuations, not the viscous step: Γ = ν0 k^2 + (A/ν0) k^2, A fixed at η/s = 0.2 predicts 1.12
+  at η/s = 1.0 (measured 1.09–1.16).  In d = 2 conformal A/ν0^2 ∝ 1/(η/s)^2, independent of s_a.  H(t) flat in all sets
+  (examples/energy_time.jl).
+- **cs13** (nersc/campaign_cs13.txt, 09c10bf: SR_CS2=1/3, SR_ZETAS=(η/s)/3, i.e. ζ_eff = η/3 as before 8d50d04): the hastings tree runs with
+  the present code, job **61890225** (2 nodes) from ~/stochastic-sph-splitC13.
+
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
 Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
