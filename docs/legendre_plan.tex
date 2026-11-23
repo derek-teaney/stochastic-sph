@@ -28,6 +28,7 @@
 \def\stp{\end{equation}}
 \def\Eq#1{eq.~(\ref{#1})}
 \def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
 \def\App#1{Appendix~\ref{#1}}
 \def\tr{\operatorname{tr}}
 \let\oldparagraph\paragraph
@@ -462,6 +463,37 @@ stochastic step on, $S_0=10^5$, $t=20$) drifts by $\Delta H/H=+4.8\times10^{-5}$
 
 \subsection{The campaign}
 
-STATUS-CAMPAIGN
+\emph{Running.}  The tree-level and \texttt{SPH\_RENORM=1} lines are final.  Every Legendre line is being rerun with the fixes of
+items (vi) and (vii) (job 61838799, the rest packed on regular nodes, job 61851444); the figures below are regenerated as its runs
+finish, and so far show the Legendre Hamiltonian (red) only at rest, at $c_s^2=1/2$, $s_a=16$ and (partly) $s_a=54$.  The analysis,
+the table against the expectations, and the reading of the figures follow when the rerun is done.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/legendre_EP.png}
+\caption{At rest: $E/e-1$, $P/p-1$ and $\chi_{MM}/(Tw)-1$ against $1/s$, where $s$ is the measured entropy per particle, for
+$c_s^2=1/2$ (top) and $1/4$ (bottom), $h/a=2$ (filled) and $3$ (open).  Blue: tree level; red: the Legendre Hamiltonian.
+Dashed: the one-loop expectation for the tree level, and the exact single-particle quadrature for the Legendre Hamiltonian
+(the correction of the positions is not included in either).}
+\label{fig:legendre_EP}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/legendre_moving.png}
+\caption{At $v=0.8$: the lab-frame $E/e-1$, $T^{yy}/p-1$, $M/(w\gamma^2v)-1$, and $R=M/(v(E+T^{yy}))-1$ against $1/s$.  Blue: tree
+level; green: \texttt{SPH\_RENORM=1}; red (when finished): the Legendre Hamiltonian.  Dashed in the last column: the one-loop
+$R=-c_s^2(1-v^2)^2/((1-c_s^2v^2)s)$ for the tree level and \texttt{SPH\_RENORM=1}; red: the exact Legendre single particle.}
+\label{fig:legendre_moving}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/legendre_chi.png}
+\caption{The susceptibility matrix from the canonical covariances, relative to the target: $(\partial E/\partial T)_v$,
+$(\partial M/\partial v)_T$, $(\partial E/\partial v)_T$, $(\partial M/\partial T)_v$ at $v=0.8$, and $(\partial E/\partial T)$ at
+$v=0$ (last column), with jackknife errors.  Colours as in \Fig{fig:legendre_moving}; red dashed: the exact Legendre single particle.}
+\label{fig:legendre_chi}
+\end{figure}
 
 \end{document}
