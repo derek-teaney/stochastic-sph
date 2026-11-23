@@ -75,6 +75,14 @@ const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 const BOOST  = setting("SR_BOOST", 0.0)
 const GAMMA  = 1 / sqrt(1 - BOOST^2)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
+# SR_BATH: the multipliers β^μ of the hybrid Monte Carlo start and of the equilibrium draw (SR_START=eq).
+#   nominal (default since 2026-11-23): the requested state, β⁰ = γ/T_rel0, β = γ v/T_rel0 x̂, with T_rel0 the temperature
+#           of the rest-frame state at S0 and v = SR_BOOST: the fluid of the run is at this (T_rel, v), exactly, for any Hamiltonian.
+#   totals: (before 2026-11-23) β^μ solved from the totals of the set-up state (beta_from_averages, a quadrature on a grid
+#           of single-particle states).  In a moving fluid at low s_a the solve can be far off: split, s_a = 16, v = 0.8 gave
+#           T_rel = 208, v = 0.66 (campaign hastings_split, nersc/LOG.md).
+const BATH = setting("SR_BATH", :nominal)
+BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
 const LAMBDA = setting("SR_LAMBDA", 1.0)            # residual move: 1 (detailed balance) or Inf
 const VOTE   = :star                                                 # stochastic step: one consensus vote per star
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
@@ -173,9 +181,10 @@ function one_realization(seed)
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
         hmcinfo = NamedTuple()
+        bath = BATH === :nominal ? (GAMMA / Trel0, SVector(GAMMA * BOOST / Trel0, 0.0)) : nothing
         if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run
             params.ideal === :grid && error("SR_POSITIONS=hmc is not possible with SPH_IDEAL=grid")
-            r0 = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6))
+            r0 = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6), bath)
             tg = HMCTarget(r0.β0, r0.β, params.vol, eos)
             dtH = HMC_DTFAC * compute_dt(ps, params, eos; mode = :ideal)
             nH = max(1, round(Int, (HMC_TAU > 0 ? HMC_TAU : LBOX * sqrt(3)) / dtH))
@@ -188,7 +197,7 @@ function one_realization(seed)
                     seed, HMC_N, nH, nH * dtH, nacc / HMC_N, time() - th)
             hmcinfo = (hmc_updates = HMC_N, hmc_steps = nH, hmc_taujit = HMC_TAUJIT, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = nacc / HMC_N)
         end
-        start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3)), hmcinfo)
+        start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3), bath), hmcinfo, (bath = string(BATH),))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
         GRID == (params.ideal === :grid) || error("equilibrium.jl: SPH_IDEAL and SimParams.ideal disagree")

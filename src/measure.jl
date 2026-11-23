@@ -203,15 +203,21 @@ end
 # state), keeping the positions and the volumes V_a = s_a/S_a.  Sets m_a and
 # s_a = S_a(e_a, m_a), then re-smooths.  exact_totals as in draw_configuration: true
 # starts an SPH run at exactly (E, M), with no thermalization step needed.
+# bath = (β⁰, β): draw at these multipliers instead of solving for them (beta_from_averages); the drivers pass the
+# requested state (SR_BATH=nominal).  The default (nothing) is the solve, as before.
 function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                            eos::AbstractEOS; rng::AbstractRNG = Random.default_rng(),
-                           E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false)
+                           E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false, bath = nothing)
     thermalize!(particles, params, cl, eos)
     V = [pa.s / pa.S_smooth for pa in particles]
     Etot = E === nothing ? sum(particle_energy(pa, eos) for pa in particles) : Float64(E)
     Mtot = M === nothing ? sum(pa.m for pa in particles) : SVector{2,Float64}(M)
     liouville = params.measure === :liouville                     # draw with S_a − ln T_a (sph.jl, measure)
-    β0, β, mom = beta_from_averages(V, Etot, Mtot, eos; liouville)
+    if bath === nothing
+        β0, β, mom = beta_from_averages(V, Etot, Mtot, eos; liouville)
+    else
+        β0 = Float64(bath[1]);  β = SVector{2,Float64}(bath[2]);  mom = moments_table(V, β0, β, eos; liouville)
+    end
     X, acc = draw_configuration(V, β0, β, mom, eos, rng; nmh, exact_totals, E = Etot, M = Mtot, liouville)
     e = [x[1] for x in X]
     for (a, pa) in enumerate(particles)
@@ -230,15 +236,18 @@ end
 #             them exactly, so no thermalization step is needed (docs/eqstart.tex)
 #   :thermal  thermal_init!: momenta only, at fixed particle energies (campaign `first`)
 function initial_state!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                        eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng())
+                        eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng(), bath = nothing)
+    # bath = (β⁰, β): the draw of :eq at these multipliers (equilibrium_init!); nothing: at those of the totals, as before
     # returns a description of the start, for the run record (src/runinfo.jl)
     if start === :cold
         thermalize!(particles, params, cl, eos)
         return (type = "cold", what = "the state as set up (uniform, at rest), no fluctuations; the run thermalizes")
     elseif start === :eq
-        r = equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true)
+        r = equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true, bath)
         acc = r.acc isa AbstractArray ? sum(r.acc) / length(r.acc) : r.acc
-        return (type = "eq", what = "equilibrium draw of (e_a, m_a) at the global beta^mu of the totals, totals shifted to them exactly",
+        return (type = "eq", what = bath === nothing ?
+                    "equilibrium draw of (e_a, m_a) at the global beta^mu of the totals, totals shifted to them exactly" :
+                    "equilibrium draw of (e_a, m_a) at the given beta^mu (the requested state), totals shifted to those of the state exactly",
                 T0 = r.T, v0 = collect(r.v), E_total = r.E, M_total = collect(r.M), exact_totals = true, nmh = 30,
                 mh_acceptance = acc)
     elseif start === :thermal

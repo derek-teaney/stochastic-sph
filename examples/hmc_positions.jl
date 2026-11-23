@@ -23,12 +23,16 @@ const BOOST  = setting("SR_BOOST", 0.0);  const GAMMA = 1 / sqrt(1 - BOOST^2)
 # resonates with a box sound mode when τ = L/c_s).  nsteps = 0 on the command line: τ = L/c_s, as in examples/equilibrium.jl.
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0            # the energy modes E_k too
+const BATH = setting("SR_BATH", :nominal)            # as examples/equilibrium.jl: nominal (the requested state) or totals (before 2026-11-23)
+BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
 
 eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 _, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
 const MX0 = (ps0[1].e + ps0[1].p) * GAMMA^2 * BOOST            # the momentum density of the boosted state
+const TREL0 = ps0[1].T * ps0[1].γ                               # the temperature of the rest-frame state at S0
 params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(MX0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))       # the present start, at the lattice
+start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3),       # the present start, at the lattice
+                          bath = BATH === :nominal ? (GAMMA / TREL0, SVector(GAMMA * BOOST / TREL0, 0.0)) : nothing)
 tg = HMCTarget(start.β0, start.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = NSTEPS_ARG > 0 ? NSTEPS_ARG : max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt));  τ = NSTEPS * dt
@@ -50,7 +54,7 @@ for n in 1:NUPD
                 n, sum(acc) / n, sum(hb) / n, sum(abs, dH) / n, sum(its) / n, prec.psi6[end], prec.psi6loc[end], Ht[end], time() - t0)
 end
 mkpath(OUTDIR)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = GAMMA * S0 * params.vol, T0 = start.T, eos_meta(params, eos)..., boost = BOOST,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = GAMMA * S0 * params.vol, T0 = start.T, Trel0 = TREL0, bath = string(BATH), eos_meta(params, eos)..., boost = BOOST,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt, tau = τ, acceptance = sum(acc) / NUPD,
         heatbath = sum(hb) / NUPD, seed = SEED)
 write_equilibrium_h5(joinpath(OUTDIR, "equilibrium_$(TAG)_r$(SEED).h5"), meta, rec, Ht, zeros(length(Ht)); prec,
