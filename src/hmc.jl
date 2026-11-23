@@ -44,6 +44,7 @@ function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, w
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
         x = SVector(e - ē, pa.m[1] - m̄[1], pa.m[2] - m̄[2]);  wx = logp(x) - logq(x)
+        LEGENDRE && isnan(wx) && (wx = -Inf)             # a current state with no weight (a failed solve): any valid proposal leaves it
         for _ in 1:nmh
             y = Lw * SVector(randn(rng), randn(rng), randn(rng));  wy = logp(y) - logq(y)
             if isfinite(wy) && log(rand(rng)) < wy - wx

@@ -29,7 +29,7 @@ const LEG_FAILLOG = Any[];  const LEG_FAILLOCK = ReentrantLock()      # the firs
 logfail(x) = lock(() -> length(LEG_FAILLOG) < 2000 && push!(LEG_FAILLOG, x), LEG_FAILLOCK)
 const LEG_TOL = 1e-14         # relative residual, both equations
 const LEG_MAXIT = 8           # Newton iterations per solve from a warm start or a guess; a solve that fails then starts again cold
-const LEG_MAXIT_COLD = 30     # from a cold start (near the light cone the iteration is slow: 8–10 steps at v ≈ 0.997)
+const LEG_MAXIT_COLD = 50     # from a cold start (near the light cone the iteration is slow: 8–12 steps at v ≈ 0.997)
 
 # The constants of the model for an equation of state; an error for any other than ConstantCs2EOS.
 struct LegendreConsts
@@ -71,7 +71,8 @@ LegendreConsts(eos::AbstractEOS) = error("SPH_RENORM=legendre: implemented for C
     return (s = s, m = m, H = H, P = P, T = T, v = v, γ = γ, Tr = Tr, J = J)
 end
 
-# Newton on (λ, η) for the residuals (x(λ, η) − x0, |m|(λ, η) − m0), x = s (forward) or H (inverse), with step halving.
+# Newton on (λ, η) for the residuals (x(λ, η) − x0, |m|(λ, η) − m0), x = s (forward) or H (inverse), with step halving when a step makes
+# the residual non-finite or four times larger.
 @inline function legendre_newton(λ, η, x0, m0, V, c, inverse::Bool, maxit::Int; counter::Bool = true)
     # scales of the residuals; the label s may be small or negative (it is the target's entropy less Δ + k), so its scale has a floor
     xs = abs(x0) + (inverse ? 10.0 * exp(λ) : 10.0);  ms = m0 + (inverse ? xs : xs * exp(λ))
@@ -92,7 +93,9 @@ end
             ptn = legendre_point(λn, ηn, V, c; counter)
             r1n = (inverse ? ptn.H : ptn.s) - x0;  r2n = ptn.m - m0
             resn = abs(r1n) / xs + abs(r2n) / ms
-            if (isfinite(resn) && resn <= res) || t < 1e-3 || (abs(t * dλ) + abs(t * dη) < 1e-15)
+            # the full step unless the residual is not finite or grows fourfold (near the light cone the iteration overshoots once or
+            # twice on its way; halving every increase stalls it)
+            if (isfinite(resn) && resn <= 4res) || t < 1e-3 || (abs(t * dλ) + abs(t * dη) < 1e-15)
                 λ, η, pt, r1, r2, res = λn, ηn, ptn, r1n, r2n, resn
                 break
             end
