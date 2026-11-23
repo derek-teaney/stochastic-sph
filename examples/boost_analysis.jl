@@ -73,12 +73,12 @@ const SETS = GROUP == "L24" ?
              GROUP == "HS4" ?                     # campaign hastings_low: moment without/with SPH_HASTINGS, s_a = 4, $SCRATCH/sph/hastings
     [("no Hastings v=0", ["hs4_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs4_h_v0"], 0.0, "C1"),
      ("no Hastings v=0.8", ["hs4_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs4_h_v0.8"], 0.8, "C4")] :
-             GROUP == "SP16" ?                    # campaign hastings_split (step5_plan.tex): moment + Hastings, tree against SPH_RENORM=split, s_a = 16, $SCRATCH/sph/hastings_split
-    [("tree v=0", ["hs16_h_v0"], 0.0, "C0"), ("split v=0", ["hs16_sp_v0"], 0.0, "C1"),
-     ("tree v=0.8", ["hs16_h_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs16_sp_v0.8"], 0.8, "C4")] :
+             GROUP == "SP16" ?                    # campaign hastings_split (split_dynamics.tex): moment + Hastings, tree against SPH_RENORM=split, s_a = 16, $SCRATCH/sph/hastings_split
+    [("tree v=0", ["hs16_tr_v0"], 0.0, "C0"), ("split v=0", ["hs16_sp_v0"], 0.0, "C1"),
+     ("tree v=0.8", ["hs16_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs16_sp_v0.8"], 0.8, "C4")] :
              GROUP == "SP54" ?                    # the same at s_a = 54
-    [("tree v=0", ["hs54_h_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
-     ("tree v=0.8", ["hs54_h_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+    [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
+     ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
              GROUP == "HS16" ?                    # campaign hastings (inverse_moment.tex, stage 2): moment without/with SPH_HASTINGS, s_a = 16, $SCRATCH/sph/hastings
     [("no Hastings v=0", ["hs16_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs16_h_v0"], 0.0, "C1"),
      ("no Hastings v=0.8", ["hs16_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs16_h_v0.8"], 0.8, "C4")] :

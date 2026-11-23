@@ -1,0 +1,96 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\sloppy
+
+\title{The dynamics with the split Hamiltonian: campaign \texttt{hastings\_split}}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The split renormalization (Step 5, \texttt{docs/step5\_plan.tex}) was tested so far in equilibrium only, by hybrid Monte Carlo
+(campaign \texttt{eos\_split}).  Here the full dynamics --- the Hamiltonian step and the stochastic viscous step \texttt{moment} with the
+Hastings correction, the current defaults --- runs with the split Hamiltonian (\texttt{SPH\_RENORM=split}) and, with the same seeds and
+settings, at the tree level (no renormalization).  The questions: (i) does the dynamics with the split Hamiltonian sample its own
+equilibrium (dynamics against HMC of the same Hamiltonian)? (ii) how much do the equal-time spectra and the standard plots of
+\texttt{docs/inverse\_moment.tex} (shear damping, sound, the correlators along and across the flow at $v_0=0.8$) change when the
+equation of state is renormalized?  The intention is to make \texttt{SPH\_RENORM=split} the default once these answers are in.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{What was run}
+\label{sec:runs}
+
+\paragraph{Provenance rule.}  Every figure caption in this note begins with the campaign, the run sets it reads (the directory names
+under \texttt{\$SCRATCH/sph/<campaign>/}) and the commit; the table below gives each campaign's settings.  Every run also records its
+settings (\texttt{cs2\_val}, \texttt{SPH\_RENORM}, the commit) in its \texttt{.toml}.
+
+\paragraph{Campaign \texttt{hastings\_split}} (\texttt{nersc/campaign\_hastings\_split.txt}).  A uniform two-dimensional conformal fluid
+in $d=2$, $c_s^2=1/2$ (the default equation of state of \texttt{examples/equilibrium.jl} and \texttt{examples/hmc\_positions.jl}),
+$\eta/s=0.2$, periodic box $L=0.6$ ($N=672$), $h=0.05$, $h/a=2$, energy Hamiltonian with the number volume, generalized leapfrog,
+Liouville measure, HMC start, viscous step \texttt{moment} with the Hastings correction, $\gamma_{\max}=100$ (all current defaults).
+Entropy per particle $s_a=16$ ($S_0=2.956\times10^4$) and $54$ ($9.977\times10^4$); fluid at rest and moving with $v_0=0.8$ along $x$.
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+run sets & Hamiltonian & what & per set \\ \midrule
+\texttt{hs<sa>\_tr\_v<v>} & tree level (\texttt{SPH\_RENORM=0}) & full dynamics, $t=100$ & 16 seeds \\
+\texttt{hs<sa>\_sp\_v<v>} & split (\texttt{SPH\_RENORM=split}) & full dynamics, $t=100$ & 16 seeds (same as tr) \\
+\texttt{hq<sa>\_tr\_v<v>} & tree level & HMC, 300 updates & 16 chains \\
+\texttt{hq<sa>\_sp\_v<v>} & split & HMC, 300 updates & 16 chains \\
+\bottomrule
+\end{tabular}
+\end{center}
+$\langle sa\rangle\in\{16,54\}$, $\langle v\rangle\in\{0,0.8\}$: 256 runs.  Time-step factor 0.6 at $v_0=0.8$; HMC trajectories of random
+length in $[\tau/2,\tau]$, $\tau=L/c_s$, $\delta t$ factor 0.35.
+
+\paragraph{The earlier campaign \texttt{hastings} is not a reference.}  Campaign \texttt{hastings} and its reruns
+(\texttt{hastings\_s16}, \texttt{hastings\_hq16}, \texttt{hastings\_low}; \texttt{inverse\_moment.tex}, Stage 2, figures
+\texttt{hastings\_nersc\_*}) ran at commits \texttt{927e035}, \texttt{e282211}, \texttt{77cf74f}, before the default was changed to
+$d=d_s$ (\texttt{8d50d04}): their fluid has $c_s^2=1/3$ (physical dimension 3 in a two-dimensional simulation), recorded as
+\texttt{cs2\_val = 0.333} in every run.  The present tree-level lines repeat their \texttt{h} and \texttt{hq} lines at $c_s^2=1/2$.
+Nothing else differs between the tr and sp lines of \texttt{hastings\_split}: the same seeds, settings and code; only
+\texttt{SPH\_RENORM}.
+
+\paragraph{What the split Hamiltonian changes at $c_s^2=1/2$.}  For the conformal fluid in $d=2$, $\mathcal N=1-2c_s^2=0$: the counterterm
+is the label part $b\ln u$ with $b=5/2$ in the measure and the motion term $E_{\rm dyn}=\tfrac12T\ln(1-c_s^2v^2)$ in $H$
+(\texttt{step5\_plan.tex}).  The equilibrium effect (campaign \texttt{eos\_split}, Figs.~1--6 of \texttt{step5\_plan.tex}) is to remove the
+$O(1/s)$ error of the tree level in $E$, $P$ and the susceptibilities.  The equal-time spectra at small $k$ are the susceptibilities,
+so a change of order $1/s_a$ (a few percent at $s_a=16$) is expected there.
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+\emph{Pending: the campaign is running.  Planned figures (each with its campaign and run sets in the caption):}
+\begin{enumerate}
+\item Equal-time spectra $\avg{|M_{L,\bm k}|^2}$, $\avg{|M_{T,\bm k}|^2}$: tree dynamics / tree HMC, split dynamics / split HMC, split HMC /
+  tree HMC (\texttt{HA\_SPLIT=1 examples/hastings\_analysis.jl}; \texttt{hastings\_split\_spectra.png}).
+\item For $s_a=54$ and $16$ (\texttt{BOOST\_GROUP=SP54}, \texttt{SP16} \texttt{examples/boost\_analysis.jl}): the equal-time correlators,
+  the fitted damping and frequencies against hydrodynamics, and the time correlators (shear and sound at rest; shear, sound, $EE$ along the
+  flow and sound, shear across it at $v_0=0.8$), tree and split overlaid.
+\end{enumerate}
+
+\end{document}

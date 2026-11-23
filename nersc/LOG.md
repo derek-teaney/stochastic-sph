@@ -685,15 +685,16 @@ before going over 20).
   single-valued down to s = −10.  The warm-started Newton follows the sheet it is on; the bracket picks the slow one.  Deep in the tail
   (|m| ≈ 85 at V = 5.6e-4 at the onset), so negligible for the campaign's averages, but H(s, m, V) is not a function there: for the owner.
 
-### `hastings_split` — 2026-11-23, branch `split` (drafted, not submitted)
-The dynamics (moment + Hastings, the default) with SPH_RENORM=split against split HMC, and against the tree-level `hastings` runs
-(reused from $SCRATCH/sph/hastings, same seeds): nersc/campaign_hastings_split.txt, s_a = 16, 54, v0 = 0, 0.8, 16 seeds, 128 tasks of
-4 cores on 4 nodes.  Estimate ≈ 1.5–3 node-hours.  Analysis: HA_SPLIT=1 examples/hastings_analysis.jl (dyn/HMC for each model, split
-HMC / tree HMC), BOOST_GROUP=SP16, SP54 examples/boost_analysis.jl (tree and split overlaid).  Only c_s^2 = 1/2 (the drivers' conformal
-EOS, 𝒩 = 0): split differs from label-only there only by ½ ln(1 − c²v²).
+### `hastings_split` — 2026-11-23, branch `split` (docs/split_dynamics.tex)
+The dynamics (moment + Hastings, the defaults) at the tree level (SPH_RENORM=0, "tr") and with SPH_RENORM=split ("sp"), each against HMC
+of its own Hamiltonian; nersc/campaign_hastings_split.txt, s_a = 16, 54, v0 = 0, 0.8, 16 seeds, t = 100 / 300 HMC updates, conformal
+c_s^2 = 1/2.  **The old `hastings` runs had c_s^2 = 1/3** (cs2_val = 0.333 in every .toml of $SCRATCH/sph/hastings: 927e035, e282211,
+77cf74f, before the dimfix 8d50d04 made d = d_s), so they are not a reference; the tree lines are rerun here at c_s^2 = 1/2 (owner:
+"the old jobs did not have any renormalization ... we should know what was run").  256 tasks × 4 cores, 8 regular nodes, one wave;
+estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), at most 8 (-t 1:00).
 - Smoke (debug 61879181, s_a = 16, t = 3, HMC start of 50 updates; 20 split HMC updates): all four ran, no failures.  v0 = 0: stress /
-  residual acceptance 0.93 / 0.51 (tree, t = 100: 0.91 / 0.37–0.60), ΔH/H = +3.6e-3 (tree over t = 100: 1–4e-3); v0 = 0.8: 0.985 / 0.76,
-  ΔH/H = −1.6e-4.  HMC: acceptance 1.0, |ΔH/H| 5e-6 (v0 = 0), 4e-7 (0.8).
+  residual acceptance 0.93 / 0.51, ΔH/H = +3.6e-3 (short run, short HMC start); v0 = 0.8: 0.985 / 0.76, ΔH/H = −1.6e-4.  HMC: acceptance
+  1.0, |ΔH/H| 5e-6 (v0 = 0), 4e-7 (0.8).
 
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 

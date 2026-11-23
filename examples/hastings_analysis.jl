@@ -44,17 +44,18 @@ ratio(a, ea, b, eb) = (a / b, abs(a / b) * sqrt((ea / a)^2 + (eb / b)^2))
 
 const SAS = parse.(Int, split(get(ENV, "HA_SAS", "16,54"), ","))     # the entropies per particle to show (HA_SAS, default 16,54)
 fig, axs = subplots(2, 2 * length(SAS), figsize = (4.5 * 2 * length(SAS), 8), squeeze = false)
-COL = Dict("nh" => "#eb6834", "h" => "#2a78d6", "nh_alone" => "#eda100", "h_alone" => "#1baf7a", "sp" => "#eb6834", "hq_sp" => "#1baf7a")
-# HA_SPLIT=1 (campaign hastings_split, step5_plan.tex): tree dynamics / tree HMC, split dynamics / split HMC (hs<sa>_sp_v<v>, hq<sa>_sp_v<v>),
+COL = Dict("nh" => "#eb6834", "h" => "#2a78d6", "nh_alone" => "#eda100", "h_alone" => "#1baf7a", "tr" => "#2a78d6", "sp" => "#eb6834", "hq_sp" => "#1baf7a")
+# HA_SPLIT=1 (campaign hastings_split, split_dynamics.tex): tree dynamics / tree HMC (hs<sa>_tr_v<v>, hq<sa>_tr_v<v>), split dynamics / split HMC (hs<sa>_sp_v<v>, hq<sa>_sp_v<v>),
 # and split HMC / tree HMC (the change of the equal-time spectra with the renormalized Hamiltonian); figure hastings_split_spectra.png
 const SPLITCMP = get(ENV, "HA_SPLIT", "0") == "1"
 for (ci, (sa, v)) in enumerate([(sa, v) for sa in SAS for v in ("0", "0.8")])
-    ref = set_spectra("hq$(sa)_v$(v)", true)
-    ref === nothing && (println("no HMC reference hq$(sa)_v$(v)");  continue)
+    rset = SPLITCMP ? "hq$(sa)_tr_v$(v)" : "hq$(sa)_v$(v)"
+    ref = set_spectra(rset, true)
+    ref === nothing && (println("no HMC reference ", rset);  continue)
     @printf("\ns_a = %d, v0 = %s: HMC reference %d chains\n", sa, v, ref.n)
     for (vi, var) in enumerate(("M_L", "M_T", "E"))
         vi == 3 && all(isnan(ref.m[b][3]) for b in ref.bands) && continue
-        for which in (SPLITCMP ? ("h", "sp", "hq_sp") : ("nh", "h", "nh_alone", "h_alone"))
+        for which in (SPLITCMP ? ("tr", "sp", "hq_sp") : ("nh", "h", "nh_alone", "h_alone"))
             set = occursin("alone", which) ? "hs$(sa)_$(split(which, '_')[1])_alone_v$(v)" :
                   which == "hq_sp" ? "hq$(sa)_sp_v$(v)" : "hs$(sa)_$(which)_v$(v)"
             S = set_spectra(set, which == "hq_sp");  S === nothing && continue
@@ -67,7 +68,7 @@ for (ci, (sa, v)) in enumerate([(sa, v) for sa in SAS for v in ("0", "0.8")])
             vi <= 2 || continue
             ax = axs[vi, ci]
             ax.errorbar(bs, first.(rr), yerr = last.(rr), fmt = occursin("alone", which) ? "s--" : "o-", color = COL[which], lw = 2,
-                        ms = 5, capsize = 2, label = which == "nh" ? "full, without" : which == "h" ? (SPLITCMP ? "tree, dynamics / tree HMC" : "full, with Hastings") :
+                        ms = 5, capsize = 2, label = which == "nh" ? "full, without" : which == "h" ? "full, with Hastings" : which == "tr" ? "tree, dynamics / tree HMC" :
                                                                   which == "sp" ? "split, dynamics / split HMC" :
                                                                   which == "hq_sp" ? "split HMC / tree HMC" :
                                                                   which == "nh_alone" ? "alone, without" : "alone, with Hastings")
