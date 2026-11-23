@@ -15,13 +15,12 @@
 
 # Solves, Newton iterations, failures (no convergence), states with no solution (no start: |M| ≥ ε or s ≤ 0; or the solve ends
 # off the physical branch, det ∂(s,|m|)/∂(T,v) ≤ 0) and cold starts, summed over the run (legendre_counts(), reset_legendre_counts!()).
-const LEG_SOLVES  = Threads.Atomic{Int}(0)
-const LEG_ITERS   = Threads.Atomic{Int}(0)
-const LEG_FAILS   = Threads.Atomic{Int}(0)
-const LEG_NOSTATE = Threads.Atomic{Int}(0)
-const LEG_COLD    = Threads.Atomic{Int}(0)
-reset_legendre_counts!() = foreach(c -> (c[] = 0), (LEG_SOLVES, LEG_ITERS, LEG_FAILS, LEG_NOSTATE, LEG_COLD))
-legendre_counts() = (solves = LEG_SOLVES[], iters = LEG_ITERS[], fails = LEG_FAILS[], nostate = LEG_NOSTATE[], cold = LEG_COLD[])
+# Per-thread counters, one cache line per thread (rows: solves, iterations, failures, no state, cold); an increment does not yield,
+# so no two tasks share a column at once.
+const LEG_CNT = zeros(Int, 8, Threads.maxthreadid())
+@inline legcnt!(i, x = 1) = (@inbounds LEG_CNT[i, Threads.threadid()] += x;  nothing)
+reset_legendre_counts!() = fill!(LEG_CNT, 0)
+legendre_counts() = (t = sum(LEG_CNT; dims = 2);  (solves = t[1], iters = t[2], fails = t[3], nostate = t[4], cold = t[5]))
 
 # the inputs of the last failed forward solve, for diagnosis: (s, S, M, e0, γ0)
 const LEG_LASTFAIL = Ref{Any}(nothing)
@@ -34,22 +33,25 @@ const LEG_MAXIT_COLD = 50     # from a cold start (near the light cone the itera
 # The constants of the model for an equation of state; an error for any other than ConstantCs2EOS.
 struct LegendreConsts
     c2 :: Float64;  n :: Float64;  A :: Float64;  k :: Float64;  K :: Float64;  C :: Float64;  Ts :: Float64
+    ni :: Int                                       # n as an integer when it is one (c_s² = 1/2: 3, 1/4: 5), else 0
 end
 function LegendreConsts(eos::ConstantCs2EOS)
     c2 = eos.cs2_val;  n = 1 + 1 / c2;  A = c2 * eos.T_scale^(-n);  k = 2 + 1.5 / c2
-    return LegendreConsts(c2, n, A, k, 2.5 + k, 1.5 * log(2π * n * A) - 0.5 * log(c2) + 1, eos.T_scale)
+    return LegendreConsts(c2, n, A, k, 2.5 + k, 1.5 * log(2π * n * A) - 0.5 * log(c2) + 1, eos.T_scale, isinteger(n) ? Int(n) : 0)
 end
 LegendreConsts(eos::AbstractEOS) = error("SPH_RENORM=legendre: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
 # The particle at (λ, η) = (ln T_rel, rapidity) and volume V: s, |m|, H, P, T, v, γ and the derivatives of s, |m|, H with respect
-# to (λ, η).  `counter = false` in the forward map of F_t alone (the tests: the counterterm off).
-@inline function legendre_point(λ::Float64, η::Float64, V::Float64, c::LegendreConsts; counter::Bool = true)
+# to (λ, η).  `counter = false` in the forward map of F_t alone (the tests: the counterterm off).  lV = ln V (passed by the solves).
+@inline function legendre_point(λ::Float64, η::Float64, V::Float64, c::LegendreConsts; counter::Bool = true, lV::Float64 = log(V))
     (; c2, n, A, k, K, C) = c
-    Tr = exp(λ);  γ = cosh(η);  sh = sinh(η);  v = sh / γ;  T = Tr / γ
-    q = 1 - c2 * v * v;  Trn = exp(n * λ)                      # T_rel^n
+    Tr = exp(λ);  Trn = c.ni > 0 ? Tr^c.ni : exp(n * λ)         # T_rel^n
+    em = expm1(η);  ie = 1 / (1 + em)                           # cosh, sinh from one expm1 (sinh accurate at small η)
+    γ = (1 + em + ie) / 2;  sh = em * (1 + ie) / 2;  v = sh / γ;  T = Tr / γ
+    q = 1 - c2 * v * v
     a0 = n * A * V * Trn                                        # n A V T_rel^n = w V
     f = counter ? 1.0 : 0.0
-    Δ = 2.5 * log(V) + 2.5 * log(γ) + k * λ + 0.5 * log(q) + C
+    Δ = 2.5 * lV + 2.5 * log(γ) + k * λ + 0.5 * log(q) + C
     s  = a0 * γ / Tr - f * (Δ + k)
     bk = K * γ * γ - c2 / q
     mv = a0 * γ * γ - f * T * bk                                # |m|/v
@@ -76,7 +78,8 @@ end
 @inline function legendre_newton(λ, η, x0, m0, V, c, inverse::Bool, maxit::Int; counter::Bool = true)
     # scales of the residuals; the label s may be small or negative (it is the target's entropy less Δ + k), so its scale has a floor
     xs = abs(x0) + (inverse ? 10.0 * exp(λ) : 10.0);  ms = m0 + (inverse ? xs : xs * exp(λ))
-    pt = legendre_point(λ, η, V, c; counter)
+    lV = log(V)
+    pt = legendre_point(λ, η, V, c; counter, lV)
     r1 = (inverse ? pt.H : pt.s) - x0;  r2 = pt.m - m0
     res = abs(r1) / xs + abs(r2) / ms
     its = 0
@@ -90,7 +93,7 @@ end
         t = 1.0
         while true
             λn = λ - t * dλ;  ηn = η - t * dη
-            ptn = legendre_point(λn, ηn, V, c; counter)
+            ptn = legendre_point(λn, ηn, V, c; counter, lV)
             r1n = (inverse ? ptn.H : ptn.s) - x0;  r2n = ptn.m - m0
             resn = abs(r1n) / xs + abs(r2n) / ms
             # the full step unless the residual is not finite or grows fourfold (near the light cone the iteration overshoots once or
@@ -109,11 +112,11 @@ end
 
 # converged: the Newton solve converged; ok: and on the physical branch
 @inline function legendre_count(its, converged, ok, cold)
-    Threads.atomic_add!(LEG_SOLVES, 1);  Threads.atomic_add!(LEG_ITERS, its)
-    converged || Threads.atomic_add!(LEG_FAILS, 1);  converged && !ok && Threads.atomic_add!(LEG_NOSTATE, 1)
-    cold && Threads.atomic_add!(LEG_COLD, 1)
+    legcnt!(1);  legcnt!(2, its)
+    converged || legcnt!(3);  converged && !ok && legcnt!(4)
+    cold && legcnt!(5)
 end
-@inline legendre_count_nostate() = (Threads.atomic_add!(LEG_SOLVES, 1);  Threads.atomic_add!(LEG_NOSTATE, 1))
+@inline legendre_count_nostate() = (legcnt!(1);  legcnt!(4))
 
 # The start of a solve from a state (T, v⃗) of the particle (a previous solve), or nothing.
 start_from(T, v) = (vm = norm(v);  γ = 1 / sqrt(1 - vm * vm);  (log(γ * T), asinh(γ * vm)))
