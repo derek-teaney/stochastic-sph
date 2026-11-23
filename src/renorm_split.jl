@@ -23,6 +23,7 @@ split_counts() = (t = sum(SPLIT_CNT; dims = 2);  (solves = t[1], iters = t[2], f
 
 # V̄, the reference volume of Δs_dyn (SPH_RENORM_VBAR; default the mean volume L²/N of the run, set by check_split)
 const SPLIT_VBAR = Ref(NaN)
+const SPLIT_VBAR_SETTING = setting("SPH_RENORM_VBAR", 0.0)   # read at load (the run record lists every setting); 0: L²/N
 const SPLIT_FAILLOG = Any[];  const SPLIT_FAILLOCK = ReentrantLock()   # the first 200 solves that did not converge: (e, m, V, u, H − e, ∂H/∂u)
 splitlog(x) = lock(() -> length(SPLIT_FAILLOG) < 200 && push!(SPLIT_FAILLOG, x), SPLIT_FAILLOCK)
 const SPLIT_TOL = 1e-12      # relative residual of the inverse's Newton solve in u: the accuracy of the target's forward solve
@@ -194,6 +195,6 @@ function check_split(params)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2")
     params.measure === :liouville || error("SPH_RENORM=split needs the Liouville measure (SPH_MEASURE=liouville)")
     params.ideal === :grid && error("SPH_RENORM=split is not available with the grid step (SPH_IDEAL=grid)")
-    isfinite(SPLIT_VBAR[]) || (SPLIT_VBAR[] = setting("SPH_RENORM_VBAR", prod(params.L) / params.N))
+    isfinite(SPLIT_VBAR[]) || (SPLIT_VBAR[] = SPLIT_VBAR_SETTING > 0 ? SPLIT_VBAR_SETTING : prod(params.L) / params.N)
     return nothing
 end
