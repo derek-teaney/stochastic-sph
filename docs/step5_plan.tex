@@ -73,8 +73,8 @@ Step 5 keeps the measure of \texttt{SPH\_RENORM=1} for the label part and adds t
 \section{For the NERSC session: working beside the running campaign}
 \label{sec:nersc}
 
-The campaign \texttt{eos\_legendre} is still running (rerun job 61838799, packed job 61851444; \nolinkurl{nersc/LOG.md}) from the worktrees
-\texttt{\textasciitilde/stochastic-sph-legV} and others, each at a fixed commit.  Nothing here may touch them.  The rules:
+The campaign \texttt{eos\_legendre} finished on 2026-11-23 (53d29e4, the branch point of \texttt{split}; \nolinkurl{nersc/LOG.md}).  Its worktrees
+(\texttt{\textasciitilde/stochastic-sph-legV} and others, each at a fixed commit) and its output stay as they are, for reruns and the comparison.  The rules:
 \begin{enumerate}
 \item \emph{Branch.}  \texttt{split} is made from \texttt{legendre} (this note is its first commit).  Work and push only on \texttt{split}; do not commit to
   \texttt{legendre}.  When \texttt{legendre} gets a fix to the shared code (\nolinkurl{src/renorm.jl}, \nolinkurl{src/pointwise.jl}, \nolinkurl{src/stochastic.jl}),
@@ -88,8 +88,8 @@ The campaign \texttt{eos\_legendre} is still running (rerun job 61838799, packed
 \item \emph{Output.}  \texttt{\$SCRATCH/sph/eos\_split/}, its own campaign directory.
 \item \emph{Fairness of the comparison.}  The \texttt{legendre} code path must not change: with \texttt{SPH\_RENORM=legendre}, and with the switch off, the regression
   on \texttt{split} is bit-identical to \texttt{legendre} at the branch point.
-\item \emph{Queue and budget.}  Implementation and tests in \texttt{-q debug} at any time.  Submit the campaign (about $1.1$ node-hours, \Sect{sec:work}F) after the
-  \texttt{eos\_legendre} rerun has finished (\texttt{squeue --me}), or on shared nodes if it is still waiting there; record the estimate in the log first.
+\item \emph{Queue and budget.}  Implementation and tests in \texttt{-q debug} at any time.  Submit the campaign (about $1.1$ node-hours, \Sect{sec:work}F) when no
+  \texttt{eos\_legendre} job is left in the queue (\texttt{squeue --me}); record the estimate in the log first.
 \item \emph{The side-by-side.}  When both are done: \nolinkurl{examples/eos_compare.py}, reading \nolinkurl{docs/figs/legendre_table.csv} and
   \nolinkurl{docs/figs/split_table.csv}, the same panels with the tree level, \texttt{SPH\_RENORM=1}, Legendre and split.
 \end{enumerate}
