@@ -260,6 +260,41 @@ about $0.12$ h at $h/a=2$, $0.45$ h at $h/a=3$) and a factor $1.3$:
 shared QOS, after the rerun of \texttt{eos\_legendre} is done.  The analysis is that of \nolinkurl{examples/eos_legendre.py}, with a third Hamiltonian.
 
 %=============================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{A. The term \texorpdfstring{$\partial\Delta s^{\rm dyn}/\partial u$}{dDs/du}}
+
+\nolinkurl{examples/renorm_quadrature_split.py} has the model \texttt{step5-du0}, $E^{\rm dyn}=T\Delta s^{\rm dyn}$ without the derivative (chosen with
+\texttt{SR\_MODELS}).  Relative deviation of the energy from the target per particle, with the term / without it:
+\begin{center}
+\small
+\begin{tabular}{cc ccc}
+\toprule
+$c_s^2$ & $v$ & $s_a=54$ & $100$ & $200$ \\
+\midrule
+$1/2$ & $0$   & $3.1\times10^{-4}$ / $2.4\times10^{-4}$ & $5.5\times10^{-5}$ / $4.6\times10^{-5}$ & $9.8\times10^{-6}$ / $8.6\times10^{-6}$ \\
+$1/2$ & $0.8$ & $1.3\times10^{-3}$ / $9.3\times10^{-4}$ & $2.9\times10^{-4}$ / $1.9\times10^{-4}$ & $7.1\times10^{-5}$ / $4.5\times10^{-5}$ \\
+$1/4$ & $0$   & $4.7\times10^{-4}$ / $5.4\times10^{-4}$ & $1.0\times10^{-4}$ / $1.1\times10^{-4}$ & $2.4\times10^{-5}$ / $2.5\times10^{-5}$ \\
+$1/4$ & $0.8$ & $7.6\times10^{-5}$ / $6.4\times10^{-4}$ & $-2.4\times10^{-4}$ / $-8.5\times10^{-5}$ & $-6.5\times10^{-5}$ / $-2.8\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Both fall as $1/s_a^2$; the term changes the coefficient by up to a factor of about two, either way.  Without it the residual is smaller at $c_s^2=1/2$
+everywhere and at $c_s^2=1/4$ for $s_a\ge100$; with it, eight times smaller at $c_s^2=1/4$, $s_a=54$, $v=0.8$, where its residual changes sign between
+$s_a=54$ and $100$.  The momentum and the pressure behave alike, and at $s_a=541$ both are below $2\times10^{-5}$.  \emph{Decision} (with the owner): the
+term is dropped,
+\st
+E^{\rm dyn}_a=T_a\,\Delta s^{\rm dyn}_a ,
+\stp
+so the forward map needs only first derivatives of the target state.  The reference curves of the campaign (\nolinkurl{docs/figs/split_quadrature.csv})
+are those of this model.
+
+\subsection{B--D. The code and the tests}
+
+STATUS-CODE
+
+%=============================================================================
 \section{Later}
 \label{sec:later}
 

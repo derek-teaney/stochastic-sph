@@ -95,7 +95,11 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
         (isfinite(r.H) && r.TH > 0) || break
         du = (r.H - e) / r.TH
         un = u - du
-        un <= 0 && (un = u / 2)
+        if un <= c.b                                           # below the label boundary b: the solution, if any, is above it
+            rb = split_H(c.b, mm, m, V, e0, eos, c; sound)    # H is increasing in u: e ≤ H(b) has no state with weight
+            (isfinite(rb.H) && rb.H < e) || (splitcnt!(2, its);  splitcnt!(4);  return fail)
+            un = (u + c.b) / 2
+        end
         if abs(r.H - e) <= SPLIT_TOL * (abs(e) + abs(r.H)) || abs(du) <= 1e-13 * abs(u)
             u = un;  conv = true;  break
         end
