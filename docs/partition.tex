@@ -1429,6 +1429,54 @@ and the quadrature fails.  So the remaining residual is not only the one-loop mi
 to fix $F_{\rm want}$ by matching the exact single-particle quadrature, the ``exact shift'' of \nolinkurl{partition_v2.tex} in this language.  In the code $H_{\rm eff}$ is not explicit in $(s,\bm m,V)$:
 the forward map needs a solve for $(T,\bm v)$, like the present state solve, and the votes the same solve from $(e,\bm m,V)$.
 
+\paragraph{Why not the transform in $s$ alone?}  (Question of 2026-11-23.)  One could keep $\bm m$ as a variable, transform only between $T$ and $s$, and leave the
+integral over $\bm m$ to the ensemble:
+\st
+G(T,\bm m,V)=H-Ts,\qquad s=-\frac{\partial G}{\partial T}\Big|_{\bm m},\qquad
+Z_1\simeq\int d^2m\;e^{(\bm v\cdot\bm m-G)/T} .
+\stp
+The tree level is then the transform of $G$ in $\bm m$, $F=G-\bm v\cdot\bm m$ at $\bm v=\partial G/\partial\bm m$, so choosing $G$ is choosing $F$ through a second transform.  If $G$ is the exact
+transform of $F_{\rm want}$ in $\bm v$, the Hamiltonian is that of Step 5$''$, reached in two steps.  The different choice puts the counterterm in at fixed $\bm m$,
+\st
+G=G_{\rm t}(T,\bm m,V)+T\,\delta\ln Z_1\big(T,\bm v_{\rm t}(T,\bm m),V\big),
+\stp
+with $\bm v_{\rm t}$ the target's velocity.  Step 5 is of this kind for the part of $\delta\ln Z_1$ that depends on $\bm m$: $T_a\Delta s^{\rm dyn}$ added at fixed $(s_{\rm eff},\bm m)$.  It costs
+two things, both from the $\gamma$-dependence of the counterterm.  At large $\gamma$, with $u=\gamma Vs(T_{\rm rel})=wV/T$ the target entropy of the particle, the
+counterterm \Eq{dlnZgeneral} and the target's response are ($d=2$)
+\st
+\delta\ln Z_1\simeq K\ln\gamma,\qquad K=\tfrac32(n+2),\qquad
+\frac{\partial|\bm m|}{\partial v}\Big|_T=Tu\,\gamma^2\big(1+(n+2)\gamma^2v^2\big) .
+\stp
+\begin{enumerate}
+\item \emph{The tree level is $F_{\rm want}$ only to first order.}  By the small-increment theorem the second order remains,
+  \st
+  F-F_{\rm want}\simeq-\frac{T^2\big(\partial_v\delta\ln Z_1\big)^2}{2\,\partial|\bm m|/\partial v|_T}\;\to\;-\frac{K^2}{2(n+2)}\,\frac Tu=-\tfrac98(n+2)\,\frac Tu ,
+  \stp
+  per particle, of the order of the one-loop residual of Step 5$''$, largest for the fast particles.
+\item \emph{The velocity is shifted toward the light cone.}
+  \st
+  \dot{\bm x}=\frac{\partial G}{\partial\bm m}=\bm v_{\rm t}(T,\bm m)+T\,\frac{\partial\,\delta\ln Z_1}{\partial\bm m}\Big|_T,\qquad
+  T\,\frac{\partial\,\delta\ln Z_1}{\partial|\bm m|}\Big|_T\simeq\frac{K}{(n+2)\gamma^2u}=\frac{3}{2\gamma^2u} ,
+  \stp
+  which exceeds the distance to the light cone, $1-v\simeq1/(2\gamma^2)$, for $u<3$, at any $\gamma$ and any $c_s^2$: rare, but in reach of the tails at $s_a=16$.
+\end{enumerate}
+In Step 5$''$, $\bm v$ is the independent variable, so $|\dot{\bm x}|<1$ by construction, and the tree level is $F_{\rm want}$ exactly.  For the conformal fluid
+Step 5 escapes both: its label part is an exact change of variables, and $\Delta s^{\rm dyn}$ is only the bounded sound term, which has no $\ln\gamma$; that is why it
+is more accurate at rest than Step 5$''$ (the check above).  For $c_s^2\neq1/2$ the non-conformal term $-(\mathcal N/c_s^2)\ln T_{\rm rel}$ splits, at fixed label, with $T_{\rm rel}^{\,n-1}\propto u/(\gamma V)$ and $n-1=1/c_s^2$:
+\st
+\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln u,\qquad \Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\stp
+with $\bar V$ a constant (its $\ln\bar V$ goes into the measure).  $K$ above is replaced by $\mathcal N$ ($\tfrac12$ at $c_s^2=1/4$): both costs are then small but no
+longer zero.
+
+Nor does the choice of variables remove the two-valued $H$ found in the campaign (\nolinkurl{legendre_plan.tex}).  With $\det$ the determinant of the Jacobian of
+$(s,|\bm m|)$ with respect to $(T,v)$, minus the Hessian of $F_{\rm want}$,
+\st
+\frac{\partial|\bm m|}{\partial v}\Big|_s=\frac{\det}{\partial s/\partial T|_v},\qquad
+\frac{\partial s}{\partial T}\Big|_{\bm m}=\frac{\det}{\partial|\bm m|/\partial v|_T} ,
+\stp
+so the map of the full transform and that of the transform in $s$ alone fold at the same place, where $F_{\rm want}$ stops being concave.  The fold belongs to $F_{\rm want}$.
+
 \paragraph{Step 6: the stochastic step.}  The votes work with the energies and momenta, so they need the weight as a function of $(e,\bm m,V)$:
 \begin{enumerate}
 \item find the label: $s_{\rm eff}$ with $e_{\rm t}(s_{\rm eff},\bm m,V)+T\,\Delta s^{\rm dyn}=e$, by iterating the target inverse,
@@ -1579,6 +1627,88 @@ For every $c_s^2$ the residuals are $O(T/s_a)$ per particle (they fall by $\sim1
 motion, $R$ cancels and $\mu/T=O(1/s_a)$.  The non-conformal part is removed: a shift in $u$ alone would leave the pressure off by $\mathcal N\bar nT/p=\mathcal N/\sigma$,
 about $5\%$ at $s_a=54$ and $0.5\%$ at $541$ for $c_s^2=1/4$, against the $1.6\%$ and $0.014\%$ here.  The coefficient of the residual grows slowly as $c_s^2$
 decreases.
+
+\subsection{Step 5 for any \texorpdfstring{$c_s^2$}{cs2}: a plan for the comparison with the Legendre transform}
+\label{app:step5plan}
+
+The question (2026-11-23): Step 5 (\App{app:seff}) and the Legendre transform (\App{app:procedure}) are two schemes; both reproduce the target to $O(T/s_a)$ per
+particle.  Which to run is decided by the size of that residual, the cost of the maps, and the behaviour at small $s_a$.  Step 5 was ten times more accurate at rest
+for the conformal fluid, but it has not been written for $c_s^2\neq1/2$.  The first comparison is the single particle, before any code.
+
+\paragraph{The model.}  With $u=s_{\rm eff}$ the label and $\mathcal N=1-d\,c_s^2$ (the split of \App{app:seff}, ``Why not the transform in $s$ alone?''),
+\st
+d\mu=e^{\,u-\Delta s^{\rm lab}(u)}J^{\rm lab}(u)\,du\,d\bm x\,d\bm m,\qquad
+\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln u+{\rm const},\qquad J^{\rm lab}=1-\frac{\tfrac52-\mathcal N}{u},
+\stp
+\st
+H_a=e_{\rm t}(u_a,\bm m_a,V_a)+E^{\rm dyn}_a,\qquad
+E^{\rm dyn}_a=T_a\Big(\Delta s^{\rm dyn}_a+\frac{\partial\Delta s^{\rm dyn}_a}{\partial u}\Big|_{\bm m,V}\Big),\qquad
+\Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\stp
+with $T_a$, $\bm v_a$, $\gamma$ the target's at $(u_a,\bm m_a,V_a)$; the derivative is $-\ln J^{\rm dyn}$ at lowest order, as in Step 5$'$.  The measure vanishes below the label boundary $u=\tfrac52-\mathcal N$.
+
+\begin{algobox}{The single-particle comparison}
+\begin{algorithmic}[1]
+\State Write a new script, \texttt{examples/renorm\_quadrature\_split.py}, for any constant $c_s^2$: the exact quadrature of $Z_1(T,\bm v,V)$ over the label and
+  the momentum, with the label gas, for the tree level, \texttt{SPH\_RENORM}, Step 5 above and the Legendre Hamiltonian (as \texttt{renorm\_quadrature\_legendre.py}).
+\State Leave \texttt{renorm\_quadrature\_moving.py} and \texttt{renorm\_quadrature\_legendre.py} unchanged (the NERSC analysis reads the latter's table).
+\State Check that at $c_s^2=1/2$ it reproduces the table of \App{app:seff} for Step 5 and that of \App{app:procedure} for the Legendre Hamiltonian.
+\State For $c_s^2\in\{1/2,1/4\}$, $s_a\in\{16,54,541\}$, $v\in\{0,0.8\}$: the relative deviations of $E$, $M$, $p$, and $R$, $\mu/T$, for both schemes.
+\State Record, for Step 5, the weight within a few units of the label boundary, and the largest $|\dot{\bm x}|$ on the grid.
+\State Report a table here; then decide, with the owner, whether Step 5 goes behind the two maps of \nolinkurl{src/renorm.jl}.
+\end{algorithmic}
+\end{algobox}
+
+\paragraph{Result} (2026-11-23, \nolinkurl{examples/renorm_quadrature_split.py}; grid of $91^3$ points to $\pm12$ widths, converged at $s_a=16$ where $\pm9$ was not).
+The split adds up to the counterterm of \App{app:procedure} to $10^{-14}$, and at $c_s^2=1/2$ the script reproduces the tables of \App{app:seff} (Step 5 at $s_a=541$)
+and \App{app:procedure} (Legendre).  Relative deviations from the target per particle, with the label gas:
+\begin{center}
+\small
+\begin{tabular}{cccl ccccc}
+\toprule
+$c_s^2$ & $s_a$ & $v$ & & $E$ & $M$ & $p$ & $R$ & $\mu/T$ \\
+\midrule
+$1/2$ & $16$ & $0$ & Step 5 & $+4.1\times10^{-2}$ & & $+4.1\times10^{-2}$ & & $+0.29$ \\
+ & & & Legendre & $+8.5\times10^{-2}$ & & $+7.9\times10^{-2}$ & & $+0.86$ \\
+ & $54$ & $0$ & Step 5 & $+3.1\times10^{-4}$ & & $+3.1\times10^{-4}$ & & $+0.009$ \\
+ & & & Legendre & $+7.0\times10^{-3}$ & & $+7.0\times10^{-3}$ & & $+0.25$ \\
+ & & $0.8$ & Step 5 & $+1.3\times10^{-3}$ & $+1.2\times10^{-3}$ & $+1.3\times10^{-3}$ & $-2.1\times10^{-5}$ & $+0.043$ \\
+ & & & Legendre & $+7.4\times10^{-3}$ & $+7.5\times10^{-3}$ & $+7.2\times10^{-3}$ & $+7.1\times10^{-5}$ & $+0.25$ \\
+ & $541$ & $0.8$ & Step 5 & $+9.7\times10^{-6}$ & $+9.2\times10^{-6}$ & $+1.1\times10^{-5}$ & $-6.6\times10^{-7}$ & $+0.004$ \\
+ & & & Legendre & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+6.7\times10^{-5}$ & $+1.8\times10^{-7}$ & $+0.024$ \\
+\midrule
+$1/4$ & $16$ & $0$ & Step 5 & $+8.2\times10^{-2}$ & & $+1.0\times10^{-1}$ & & $+0.42$ \\
+ & & & Legendre & $+1.8\times10^{-1}$ & & $+1.8\times10^{-1}$ & & $+1.14$ \\
+ & & $0.8$ & Step 5 & $+1.1\times10^{-1}$ & $+1.2\times10^{-1}$ & $+1.1\times10^{-1}$ & $+7.8\times10^{-3}$ & $+0.43$ \\
+ & & & Legendre & $+2.1\times10^{-1}$ & $+2.2\times10^{-1}$ & $+1.7\times10^{-1}$ & $+1.0\times10^{-2}$ & $+1.17$ \\
+ & $54$ & $0$ & Step 5 & $+4.7\times10^{-4}$ & & $+2.4\times10^{-3}$ & & $+0.029$ \\
+ & & & Legendre & $+1.6\times10^{-2}$ & & $+1.6\times10^{-2}$ & & $+0.33$ \\
+ & & $0.8$ & Step 5 & $+7.6\times10^{-5}$ & $+3.9\times10^{-4}$ & $+9.9\times10^{-4}$ & $+2.5\times10^{-4}$ & $-0.003$ \\
+ & & & Legendre & $+1.6\times10^{-2}$ & $+1.6\times10^{-2}$ & $+1.6\times10^{-2}$ & $+1.9\times10^{-4}$ & $+0.32$ \\
+ & $541$ & $0.8$ & Step 5 & $-8.6\times10^{-6}$ & $-6.6\times10^{-6}$ & $+3.1\times10^{-6}$ & $+1.2\times10^{-6}$ & $-0.001$ \\
+ & & & Legendre & $+1.4\times10^{-4}$ & $+1.4\times10^{-4}$ & $+1.4\times10^{-4}$ & $+5.2\times10^{-7}$ & $+0.030$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+What it shows:
+\begin{itemize}
+\item At $s_a=54$ and $541$ the deviations of Step 5 are $5$ to $60$ times smaller than those of the Legendre Hamiltonian (more for single entries), at rest and in motion, for both $c_s^2$; $R$ is of the same
+  size for the two.  The label part alone (\texttt{SPH\_RENORM} generalized, $H=e_{\rm t}$) leaves at $c_s^2=1/4$ the pressure off by $4.6\times10^{-3}$ at $s_a=541$, the
+  predicted $\mathcal N/\sigma$; the $\mathcal N\ln(\gamma V)$ of $E^{\rm dyn}$ removes it.
+\item At $s_a=16$ both are off by several per cent, Step 5 by about half as much.  There $3$--$5\%$ of the weight of Step 5 lies within $3$ of the label boundary, so
+  the boundary matters, and its handling in the votes and the heat bath must be checked in the code.
+\item The velocity $|\dot{\bm x}|=|\partial H/\partial\bm m|$ of Step 5 stays below $1$ on the whole grid (largest $0.997$), at every $s_a$ and $v$.
+\item At $c_s^2=1/2$, $s_a=16$, $v=0.8$ the quadrature fails for both (the Hessian at the saddle is not finite); not resolved.
+\end{itemize}
+
+\paragraph{What it costs in the code, if chosen.}  The same two maps.  The forward map is the target's closed form plus explicit derivatives of
+$E^{\rm dyn}_a$; the inverse for the votes is the fixed-point iteration of Step 6.  The fields change as
+\st
+P_a=P_{\rm t}-\frac{\partial E^{\rm dyn}_a}{\partial V},\qquad
+\dot{\bm x}_a=\bm v_a+\frac{\partial E^{\rm dyn}_a}{\partial\bm m},\qquad
+\frac{\partial H_a}{\partial u}=T_a+\frac{\partial E^{\rm dyn}_a}{\partial u} ,
+\stp
+the last being the temperature of the Liouville term $-\ln T$ in the votes, which also carry $-\Delta s^{\rm lab}+\ln J^{\rm lab}$ as \texttt{SPH\_RENORM} does now.
 
 \subsection{Implementation plan for the root finding}
 \label{app:rootplan}
