@@ -42,7 +42,7 @@ def read(path):
 runs = {}
 for d in sorted(glob.glob(os.path.join(ROOT, "eosL_*"))):
     name = os.path.basename(d);  m = pat.match(name)
-    files = sorted(glob.glob(os.path.join(d, "*_seed*.txt")))
+    files = sorted(glob.glob(os.path.join(d, name + "_seed*.txt")))           # not the provenance files run_seed*.txt
     if not m or not files:
         continue
     seeds = [read(f) for f in files]

@@ -61,24 +61,36 @@ class Model:
             lw, H, mx = self.logweight(P[0], P[1], P[2], Tb, vb, VV)
             m = lw.max();  wt = np.exp(lw - m)
             lz = np.log(wt.sum() * dxi**3 * np.prod(sig)) + m
-            return (lz, (wt * H).sum() / wt.sum(), (wt * mx).sum() / wt.sum()) if avg else lz
-        lz, E, Px = lnZ(V, True)
+            if not avg:
+                return lz
+            W = wt.sum();  Hm = (wt * H).sum() / W;  Mm = (wt * mx).sum() / W
+            cov = lambda a, b: (wt * (a - (wt * a).sum() / W) * (b - (wt * b).sum() / W)).sum() / W
+            K = H - vb * mx                                  # conjugate to beta0 at fixed v (legendre_plan.tex, eq. chifluct)
+            chi = dict(dEdv=cov(H, mx) / (VV * Tb), dMdv=cov(mx, mx) / (VV * Tb), dEdT=cov(H, K) / (VV * Tb**2), dMdT=cov(mx, K) / (VV * Tb**2))
+            return lz, Hm, Mm, chi
+        lz, E, Px, chi = lnZ(V, True)
         hV = 1e-4 * V;  dlz = (lnZ(V + hV) - lnZ(V - hV)) / (2 * hV)
         pV = Tb + Tb * V * dlz;  mu = -(np.log(V) + lz - V * dlz)
         p = A * Tr**nn;  w = nn * p
         Et = V * (w * g * g - p);  Pt = V * w * g * g * vb
         R = Px / (vb * (E + pV)) - 1 if vb > 0 else np.nan
-        return dict(E=E / Et - 1, P=(Px / Pt - 1) if vb > 0 else np.nan, p=pV / (p * V) - 1, R=R, mu=mu)
+        # the target's entries per unit volume (legendre_plan.tex, eq. chitarget), T = Tb
+        ct = dict(dEdT=(w / Tb) * (nn * g * g - 1), dMdT=nn * g * g * vb * w / Tb, dEdv=(nn + 2) * g**4 * vb * w - g * g * vb * w,
+                  dMdv=w * g * g * (1 + (nn + 2) * g * g * vb * vb))
+        chir = {k: (chi[k] / ct[k] - 1 if ct[k] != 0 else chi[k]) for k in chi}
+        return dict(E=E / Et - 1, P=(Px / Pt - 1) if vb > 0 else np.nan, p=pV / (p * V) - 1, R=R, mu=mu, chi=chir)
 
 if __name__ == "__main__":
     c2s = [float(x) for x in sys.argv[1:]] or [0.5]
     for c2 in c2s:
         mdl = Model(c2)
         print(f"c_s^2 = {c2}  (N = 1 - 2 c_s^2 = {1 - 2 * c2:+.3f}):  relative deviations from the target, R, mu/T")
-        for s_a in [54, 541]:
+        for s_a in [int(x) for x in __import__("os").environ.get("SR_SA", "54,541").split(",")]:
             for vb in [0.0, 0.5, 0.8]:
                 try:
                     o = mdl.observables(s_a, vb)
                 except Exception as ex:
                     print(f"  s_a={s_a:4d} v={vb:.1f}  failed: {ex}");  continue
-                print(f"  s_a={s_a:4d} v={vb:.1f}  E {o['E']:+.2e}  M {o['P']:+.2e}  p {o['p']:+.2e}  R {o['R']:+.2e}  mu/T {o['mu']:+.2e}")
+                c = o["chi"]
+                print(f"  s_a={s_a:4d} v={vb:.1f}  E {o['E']:+.2e}  M {o['P']:+.2e}  p {o['p']:+.2e}  R {o['R']:+.2e}  mu/T {o['mu']:+.2e}"
+                      f"  chi-1: EE {c['dEdT']:+.2e} MM {c['dMdv']:+.2e} EM {c['dEdv']:+.2e} ME {c['dMdT']:+.2e}")
