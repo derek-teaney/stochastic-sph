@@ -34,7 +34,9 @@ Hastings correction, the current defaults --- runs with the split Hamiltonian (\
 settings, at the tree level (no renormalization).  The questions: (i) does the dynamics with the split Hamiltonian sample its own
 equilibrium (dynamics against HMC of the same Hamiltonian)? (ii) how much do the equal-time spectra and the standard plots of
 \texttt{docs/inverse\_moment.tex} (shear damping, sound, the correlators along and across the flow at $v_0=0.8$) change when the
-equation of state is renormalized?  The intention is to make \texttt{SPH\_RENORM=split} the default once these answers are in.
+equation of state is renormalized?  The intention is to make \texttt{SPH\_RENORM=split} the default once these answers are in.  Answers (campaign \texttt{hastings\_bath}):
+(i) yes, within 2--5\%; (ii) at the same temperature and velocity the split equal-time spectra agree with the susceptibilities of the
+equation of state, where the tree level is 20--40\% high at $s_a=16$; advection is unchanged, the shear damping is similar.
 \end{abstract}
 
 \maketitle
@@ -66,6 +68,25 @@ run sets & Hamiltonian & what & per set \\ \midrule
 $\langle sa\rangle\in\{16,54\}$, $\langle v\rangle\in\{0,0.8\}$: 256 runs.  Time-step factor 0.6 at $v_0=0.8$; HMC trajectories of random
 length in $[\tau/2,\tau]$, $\tau=L/c_s$, $\delta t$ factor 0.35.
 
+\paragraph{Campaign \texttt{hastings\_bath}} (\texttt{nersc/campaign\_hastings\_bath.txt}, commit \texttt{3262b00}, job 61886625).
+The same 256 tasks, with the hybrid Monte Carlo start at the requested state (\texttt{SR\_BATH=nominal}, the default since this commit):
+the HMC updates and the equilibrium draw that follows them use
+\st
+\beta^0=\frac{\gamma}{T_{\rm rel,0}},\qquad \bm\beta=\frac{\gamma\bm v_0}{T_{\rm rel,0}},
+\label{eq:bath}
+\stp
+with $T_{\rm rel,0}$ the temperature of the rest-frame state at $S_0$ ($140.4$ at $s_a=16$, $258.0$ at $s_a=54$) and $\bm v_0=v_0\hat{\bm x}$.
+The fluid of every run is then at exactly this $(T_{\rm rel},v_0)$, for either Hamiltonian.  \textbf{All results below are from
+\texttt{hastings\_bath}.}
+
+\paragraph{Why \texttt{hastings\_split} is superseded.}  There the start solved for its $\beta^\mu$ from the totals of the set-up state
+(\texttt{beta\_from\_averages}: a Newton solve on a $41^3$ grid of single-particle states), and HMC then thermalized the fluid to that
+$\beta^\mu$, not to \Eq{eq:bath}.  In a moving fluid the solve was far off: from the run records, the split runs at $s_a=16$, $v_0=0.8$
+were at $T_{\rm rel}=208$, $v=0.66$ (with 70\% more momentum than set up), at $s_a=54$ at $293$, $0.78$; the tree runs at $137$--$139$,
+$0.78$.  At rest all were within about 1\%.  The analysis of \texttt{hastings\_split} also compared with hydrodynamics at the set-up
+temperature and the requested $v_0$; \texttt{examples/boost\_analysis.jl} now takes $(T_{\rm rel},v)$ from each run (the recorded
+$\beta^\mu$ of \Eq{eq:bath}, or for older runs the conserved totals through the equation of state).
+
 \paragraph{The earlier campaign \texttt{hastings} is not a reference.}  Campaign \texttt{hastings} and its reruns
 (\texttt{hastings\_s16}, \texttt{hastings\_hq16}, \texttt{hastings\_low}; \texttt{inverse\_moment.tex}, Stage 2, figures
 \texttt{hastings\_nersc\_*}) ran at commits \texttt{927e035}, \texttt{e282211}, \texttt{77cf74f}, before the default was changed to
@@ -84,13 +105,72 @@ so a change of order $1/s_a$ (a few percent at $s_a=16$) is expected there.
 \section{Results}
 \label{sec:results}
 
-\emph{Pending: the campaign is running.  Planned figures (each with its campaign and run sets in the caption):}
-\begin{enumerate}
-\item Equal-time spectra $\avg{|M_{L,\bm k}|^2}$, $\avg{|M_{T,\bm k}|^2}$: tree dynamics / tree HMC, split dynamics / split HMC, split HMC /
-  tree HMC (\texttt{HA\_SPLIT=1 examples/hastings\_analysis.jl}; \texttt{hastings\_split\_spectra.png}).
-\item For $s_a=54$ and $16$ (\texttt{BOOST\_GROUP=SP54}, \texttt{SP16} \texttt{examples/boost\_analysis.jl}): the equal-time correlators,
-  the fitted damping and frequencies against hydrodynamics, and the time correlators (shear and sound at rest; shear, sound, $EE$ along the
-  flow and sound, shear across it at $v_0=0.8$), tree and split overlaid.
-\end{enumerate}
+\paragraph{The dynamics samples the equilibrium of its own Hamiltonian} (\Fig{fig:spectra}).  The equal-time spectra of the full dynamics
+over those of hybrid Monte Carlo of the same Hamiltonian are 1 within 2--5\% at $kh\ge0.78$, for both Hamiltonians, both $s_a$ and both
+velocities; at $kh=0.52$ in the moving fluid the errors are 10--20\%.  The Hastings correction works with the split Hamiltonian.
+
+\paragraph{At the same $(T_{\rm rel},v)$ the tree level fluctuates too much; split does not} (\Fig{fig:spectra}, green; \Fig{fig:equaltime}).
+Split HMC over tree HMC is $0.71$--$0.82$ at $s_a=16$ and $0.87$--$0.96$ at $s_a=54$.  Against the susceptibilities of the target equation
+of state at the bath,
+\st
+\chi_{ij}=\frac{\partial\avg{U_i}}{\partial\theta_j},\qquad \theta=(-\beta^0,\beta^x,\beta^y),\qquad U=(\varepsilon,M_x,M_y),
+\stp
+split gives $C_{AA}(k,0)/\chi_{AA}=0.92$--$1.07$ at the smallest $k$ ($s_a=16$), the tree level $1.2$--$1.4$; at $s_a=54$ split
+$0.97$--$1.05$ (one point at $1.26\pm0.18$), the tree $1.03$--$1.19$.  This is the $O(1/s_a)$ error of the tree level in the
+susceptibilities, removed by split, as in equilibrium (\texttt{eos\_split}).  The same error shows in the conserved totals: at the same
+$T_{\rm rel}$ the tree fluid carries 8--10\% more energy than the target equation of state at $s_a=16$ (smoke test, nersc/LOG.md).
+
+\paragraph{Advection and damping} (\Fig{fig:fit}).  The shear mode along the flow moves with $\Omega/k=0.800\pm0.002$ for both
+Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).  The shear damping is 3--6 times the hydrodynamic $\nu k^2$ for both, as in the
+earlier campaigns (the renormalization of the transport coefficients, \texttt{docs/helfand.tex}, is a separate question); split is
+somewhat more damped at $s_a=16$ (rest: $4.7$--$5.9$ against $3.5$--$4.0$), the two agree at $s_a=54$ ($3.4$--$3.9$ against $3.0$--$3.3$
+at rest, $3.0$--$3.7$ against $3.0$--$4.4$ at $v_0=0.8$).
+
+\paragraph{Open: split at $s_a=16$, $v_0=0.8$} (\Fig{fig:shear16}).  The advected shear mode at $kh=0.52$ decays fast at first and then
+slowly; the fitted window is short ($\tau\le3.9$) and $\Gamma/\text{hydro}=11\pm3$.  The sound mode along the flow is also more damped
+than in the tree runs.  Not understood yet; $s_a=54$ shows nothing of the kind.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/hastings_bath_spectra.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets \texttt{hs<sa>\_tr\_v<v>}, \texttt{hs<sa>\_sp\_v<v>},
+\texttt{hq<sa>\_tr\_v<v>}, \texttt{hq<sa>\_sp\_v<v>}, $s_a=16,54$, $v_0=0,0.8$, 16 each.  Equal-time spectra $\avg{|M_{L,\bm k}|^2}$ (top)
+and $\avg{|M_{T,\bm k}|^2}$ (bottom): tree dynamics / tree HMC (blue), split dynamics / split HMC (orange), split HMC / tree HMC (green).
+\texttt{HA\_SPLIT=1 examples/hastings\_analysis.jl}.}
+\label{fig:spectra}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_equaltime_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_equaltime_SP54_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets \texttt{hs16\_tr\_v<v>}, \texttt{hs16\_sp\_v<v>} (top) and
+\texttt{hs54\_tr\_v<v>}, \texttt{hs54\_sp\_v<v>} (bottom), $v_0=0,0.8$.  $C_{AA}(k,0)/\chi_{AA}$ for $A=E,M_x,M_y$, $\bm k$ along and
+across the flow, $\chi$ of the target equation of state ($c_s^2=1/2$) at the bath \Eq{eq:bath}; tree (blue), split (orange).
+\texttt{BOOST\_GROUP=SP16}, \texttt{SP54} \texttt{examples/boost\_analysis.jl}.}
+\label{fig:equaltime}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_fit_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_fit_SP54_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets \texttt{hs16\_\{tr,sp\}\_v<v>} (top),
+\texttt{hs54\_\{tr,sp\}\_v<v>} (bottom).  Left: the advection speed of the shear mode at the smallest $k$ along the flow.  Right: its
+damping over hydrodynamics, $\nu k^2/\gamma^3$ along the flow and $\nu k^2/\gamma$ across it, $\nu=\eta/(sT_{\rm rel})$.}
+\label{fig:fit}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP16_bath.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP16_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets \texttt{hs16\_tr\_v0.8} (left), \texttt{hs16\_sp\_v0.8}
+(right).  $\mathrm{Re}\,C_{yy}(k,\tau)/C_{yy}(k,0)$ (advected shear, top) and $\mathrm{Re}\,C_{xx}$ (sound, bottom), $\bm k$ along the
+flow, $kh=0.52$, against hydrodynamics at the bath (dashed).  The remaining correlators of \texttt{inverse\_moment.tex}
+(\texttt{boost\_\{shear,soundpar\}\_v0.0}, \texttt{boost\_\{EEpar,soundperp,shearperp\}\_v0.8}, suffixes \texttt{\_SP16\_bath},
+\texttt{\_SP54\_bath}) are in \texttt{docs/figs}.}
+\label{fig:shear16}
+\end{figure}
 
 \end{document}
