@@ -119,7 +119,7 @@ if LEGENDRE
 elseif SPLIT
     particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
                      tol = 1e-12, maxiter = 50, verbose = false) = split_forward(s, S_in, M_vec, e0, eos; M_mag, tol, maxiter, verbose)
-    particle_inverse(e, m, V, eos; guess = nothing) = split_inverse(e, m, V, eos)
+    particle_inverse(e, m, V, eos; guess = nothing) = split_inverse(e, m, V, eos; guess)
 else
     @inline particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
                              tol = 1e-12, maxiter = 50, verbose = false) = target_forward(s, S_in, M_vec, e0, eos; M_mag, tol, maxiter, verbose)

@@ -40,7 +40,7 @@ function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, w
     for pa in ps
         V = pa.s / pa.S_smooth;  r = V / tg.Vref
         ē = V * tg.ε̄;  m̄ = V * tg.M̄;  Lw = sqrt(widen * r) * tg.L;  Hn = tg.Hn / r
-        g = LEGENDRE ? (pa.T, pa.v_over_S * pa.S_smooth) : nothing      # the start of the inverse solves (renorm.jl)
+        g = LEGENDRE ? (pa.T, pa.v_over_S * pa.S_smooth) : SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
         logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville; guess = g) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)

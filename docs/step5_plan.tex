@@ -294,9 +294,9 @@ are those of this model.
 \subsection{B--D. The code and the tests}
 
 \nolinkurl{src/renorm_split.jl}: \texttt{split\_forward} (the target's forward solve, then $E^{\rm dyn}$ and its derivatives by \Eq{chain}, the fields
-\Eq{fields}; no state if $\partial H/\partial u\le0$ or $|\dot{\bm x}|\ge1$), \texttt{split\_inverse} (Newton in $u$ alone from the target's inversion at $e$,
-to a relative residual of $10^{-12}$, the accuracy of the target's forward solve, below which $H(u)$ does not resolve $u$; no state when $e\le H(u_b,\bm m,V)$), and
-\texttt{split\_vote\_entropy}.  \texttt{SPH\_RENORM=split} chooses them at load time (\nolinkurl{src/sph.jl}, \nolinkurl{src/pointwise.jl},
+\Eq{fields}; no state if $\partial H/\partial u\le0$ or $|\dot{\bm x}|\ge1$), \texttt{split\_inverse} (Newton in the target's energy $e_{\rm t}$ for $e_{\rm t}+E^{\rm dyn}=e$, each step the
+target's closed-form inversion at $(e_{\rm t},\bm m,V)$ and $E^{\rm dyn}$ at its state, $de/de_{\rm t}=1+(\partial E^{\rm dyn}/\partial u)/T$, to rounding in 2.9 steps;
+where the target has no state at an iterate, Newton in $u$ through the forward map, with no state when $e\le H(u_b,\bm m,V)$), and \texttt{split\_vote\_entropy}.  \texttt{SPH\_RENORM=split} chooses them at load time (\nolinkurl{src/sph.jl}, \nolinkurl{src/pointwise.jl},
 \nolinkurl{src/stochastic.jl}); hybrid Monte Carlo rejects a trajectory that leaves the domain of $H$, as with Legendre (\nolinkurl{src/hmc.jl}).  $\bar V=L^2/N$
 (\texttt{SPH\_RENORM\_VBAR}), set when the parameters are built.  \texttt{SPH\_RENORM=1} now runs at any $c_s^2$: its $\alpha/2=(1+d+2dc_s^2)/2$ is the $b=\tfrac52-\mathcal N$
 of \Eq{model}, so it is the label part alone, and the campaign runs it at $c_s^2=1/4$ beside split.
@@ -309,8 +309,11 @@ $|\Delta H/H|\propto\delta t^2$ (ratio 16.1), 5 of 5 updates accepted, no failed
 \subsection{E. Speed and smoke runs}
 
 On one node, $h/a=2$, $s_a=54$, 100 updates of hybrid Monte Carlo on 2 threads: tree level 77\,s, Legendre 78\,s, split 76\,s.  The stochastic step
-(\nolinkurl{examples/stability.jl}, $S_0=10^5$, $t=20$) costs 3.4 times that of \texttt{SPH\_RENORM=1} (175\,s against 51\,s, the Newton solves of the votes), and
-$H$ drifts by $\Delta H/H=+4.8\times10^{-5}$ against $+4.2\times10^{-5}$.  At rest, $s_a=54$: at $c_s^2=1/2$, $E/e-1=-0.015$, $P/p-1=-0.039$, the numbers of
+(\nolinkurl{examples/stability.jl}, $S_0=10^5$, $t=20$, 4 threads, the three on one node, debug job 61869262): split 84\,s, \texttt{SPH\_RENORM=1} 51\,s, Legendre
+100\,s; in a second run 86, 71 and 104\,s.  Split costs 1.2--1.6 times the label part alone and less than Legendre.  (The first inverse, Newton in $u$ with a
+forward solve, \texttt{eos\_newton}, at every step, took 175\,s; the warm start of the votes from the particle's label, as Legendre's, did not help: the
+target's closed-form inversion is already as good a start.)  $H$ drifts by $\Delta H/H=+3.6\times10^{-5}$ (split), $+4.2\times10^{-5}$ (\texttt{SPH\_RENORM=1}),
+$+1.9\times10^{-5}$ (Legendre).  At rest, $s_a=54$: at $c_s^2=1/2$, $E/e-1=-0.015$, $P/p-1=-0.039$, the numbers of
 \texttt{SPH\_RENORM=1}; at $c_s^2=1/4$, split $-0.021$, $-0.047$ against \texttt{SPH\_RENORM=1} $-0.020$, $-0.004$ ($\sigma=10.8$): the difference in the
 pressure, $-0.043$, is the error $\mathcal N/\sigma=0.046$ of the label part alone, which $E^{\rm dyn}$ removes.
 
@@ -398,16 +401,16 @@ elsewhere; split's agreement with Legendre is.
 
 \paragraph{Against Legendre.}  Split gives the same answers as the Legendre Hamiltonian at a fraction of the trouble: closed-form maps of the target plus a
 one-dimensional Newton solve in $u$ for the inverse (2.9 iterations), no failed solve and no lost seed in the campaign (Legendre: 425 failures, four NaN
-configurations, acceptance down to $0.78$ at $c_s^2=1/4$, $s_a=16$), hybrid Monte Carlo at the tree level's cost.  Its stochastic step costs 3.4 times that of
-\texttt{SPH\_RENORM=1} (Legendre's 2.6 times the tree level's): every vote is a Newton solve.
+configurations, acceptance down to $0.78$ at $c_s^2=1/4$, $s_a=16$), hybrid Monte Carlo at the tree level's cost.  Its stochastic step costs 1.2--1.6 times that of
+\texttt{SPH\_RENORM=1}, less than Legendre's.
 
 \paragraph{What remains.}  At $s_a\ge54$ the error of every renormalized model is the correction of the positions, $\propto1/(\bar nh^2)$, which no
 single-particle counterterm removes.
 
 \paragraph{In short.}  The split renormalization works as well as the Legendre Hamiltonian and is more robust, and unlike the label part alone it is
-consistent at one loop for any constant $c_s^2$.  Its stochastic step costs 3.4 times that of \texttt{SPH\_RENORM=1}, a price worth paying for the consistency.
-(By the two measurements, that is about $30\%$ above Legendre's, whose votes start their solves from each particle's state; split's start from the target's
-inversion, and the same warm start would cut its iterations.)
+consistent at one loop for any constant $c_s^2$.  With the inverse in the target's energy its stochastic step costs 1.2--1.6 times that of
+\texttt{SPH\_RENORM=1} and less than Legendre's (\Sect{sec:results}, E).  The campaign ran with the first inverse, which gives the same answers to
+$10^{-12}$.
 
 %=============================================================================
 \section{Later}

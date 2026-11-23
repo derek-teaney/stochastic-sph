@@ -728,6 +728,14 @@ is a concatenation).
   docs/step5_plan.tex, "Results".  In short: split = Legendre where comparable (P at s_a = 541, c_s² = 1/4: −0.0168 / −0.0166; R at
   c_s² = 1/2: +0.0033 / +0.0032 at s_a = 16); SPH_RENORM=1 (label only) differs by its one-loop error (P: +𝒩/σ as predicted, 0.0046 and
   0.044 at s_a = 541, 54); positions' correction dominates at s_a ≥ 54.  Split: no solver trouble, stochastic step 3.4× label-only.
+- **Faster inverse** (owner: make it faster and robust): a warm start from the particle's label, as Legendre's votes, did not help
+  (iterations 2.9 → 3.8, and 4.5 in the heat bath): the target's closed-form inversion is already as good a start, and the cost was the
+  forward solve (eos_newton) inside every Newton step in u.  Now Newton in the target's energy e_t, e_t + E_dyn(T, v, V) = e, each step
+  the closed-form inversion at (e_t, m, V): 2.9 steps to rounding (a stop relative to e alone was early near the light cone, e/(Tu) ~ γ²;
+  the step now runs until it stops shrinking), inverse to 8e-13; Newton in u stays as the fallback.  testsplit passes (debug 61868745,
+  then the rounding fix).  Stochastic step, stability.jl t = 20, 4 threads, three runs on one node (debug 61868745, 61869262): split
+  86 / 84 s, SPH_RENORM=1 71 / 51 s, Legendre 104 / 100 s (first inverse: 175 s): split 1.2–1.6× label-only, less than Legendre.
+  The campaign results stand (same answers to 1e-12).
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 

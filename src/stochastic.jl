@@ -238,7 +238,7 @@ end
 if RENORM
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = renorm_vote_entropy(e, m, V, eos, liouville)
 elseif SPLIT
-    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville)
+    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville; guess)
 else
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) =
         liouville ? particle_entropy_lnT(e, m, V, eos; guess) : particle_entropy(e, m, V, eos; guess)
@@ -247,7 +247,7 @@ end
 # its votes and coefficients (renorm.jl; a guess changes the Newton iterations, not the result).  vg(a) is nothing otherwise, and the
 # target's inverse ignores it.
 const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
-@inline vg(a) = LEGENDRE ? @inbounds(VOTE_GUESS[a]) : nothing
+@inline vg(a) = (LEGENDRE || SPLIT) ? @inbounds(VOTE_GUESS[a]) : nothing
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
@@ -638,6 +638,9 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     if LEGENDRE                                      # the starting points of the votes' inverse solves (renorm.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v_over_S * pa.S_smooth);  end
+    elseif SPLIT                                     # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
+        resize!(VOTE_GUESS, N)
+        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
     end
     Sc = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N

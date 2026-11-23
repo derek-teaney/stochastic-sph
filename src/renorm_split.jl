@@ -16,10 +16,10 @@
 # Inverse (the votes, the heat bath): (e, m, V) → u by Newton in u alone, H(u, m, V) = e, from the target's inversion at e.
 # Vote weight (Liouville measure): u − b ln u − ln(∂H/∂u / (1 − b/u)), −∞ for u ≤ b (the label boundary).
 
-const SPLIT_CNT = zeros(Int, 8, Threads.maxthreadid())    # rows: solves, iterations, failures (no convergence), no state
+const SPLIT_CNT = zeros(Int, 8, Threads.maxthreadid())    # rows: solves, iterations, failures (no convergence), no state, cold retries
 @inline splitcnt!(i, x = 1) = (@inbounds SPLIT_CNT[i, Threads.threadid()] += x;  nothing)
 reset_split_counts!() = fill!(SPLIT_CNT, 0)
-split_counts() = (t = sum(SPLIT_CNT; dims = 2);  (solves = t[1], iters = t[2], fails = t[3], nostate = t[4], cold = 0))
+split_counts() = (t = sum(SPLIT_CNT; dims = 2);  (solves = t[1], iters = t[2], fails = t[3], nostate = t[4], cold = t[5]))
 
 # V̄, the reference volume of Δs_dyn (SPH_RENORM_VBAR; default the mean volume L²/N of the run, set by check_split)
 const SPLIT_VBAR = Ref(NaN)
@@ -77,54 +77,108 @@ end
     return (H = u * st.HS + d.E, TH = st.T + d.Eu, xd = vt + d.Em, v = st.v, e = st.e, γ = st.γ)
 end
 
-# Inverse: (u, ẋ, ∂H/∂u) of the particle of energy e, momentum m and volume V; u = −Inf for a state with no solution, or with γ > γ_max.
-function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
-    c = SplitConsts(eos)
-    fail = (-Inf, SVector(NaN, NaN), NaN)
-    splitcnt!(1)
-    # the start: the target's label at the same energy; where the target has no state there (E_dyn < 0 lowers H below the target's
-    # energy, so e can be below what the target needs at this momentum: |M| ≥ ε), at an energy raised step by step until it has one
-    mm = norm(m);  its = 0;  r = nothing;  conv = false
+# Newton in u for H(u, m, V) = e from (u, e0) (e0 the target's rest-frame energy density, the warm start of its forward solve).
+# Returns (status, u, r, its): status :conv (r the state at the last iterate, u the converged label), :nostate (the solution, if any,
+# is below the label boundary b, where the weight is zero) or :fail (no convergence).
+@inline function split_newton(u, e0, e, m, mm, V, eos, c; sound::Bool = true)
+    its = 0;  r = split_H(u, mm, m, V, e0, eos, c; sound)
+    for it in 1:SPLIT_MAXIT
+        it > 1 && (r = split_H(u, mm, m, V, e0, eos, c; sound))
+        its += 1;  e0 = r.e
+        (isfinite(r.H) && r.TH > 0) || return (:fail, u, r, its)
+        du = (r.H - e) / r.TH
+        un = u - du
+        if un <= c.b                                           # below the label boundary b: the solution, if any, is above it
+            rb = split_H(c.b, mm, m, V, e0, eos, c; sound)    # H is increasing in u: e ≤ H(b) has no state with weight
+            (isfinite(rb.H) && rb.H < e) || return (:nostate, u, r, its)
+            un = (u + c.b) / 2
+        end
+        if abs(r.H - e) <= SPLIT_TOL * (abs(e) + abs(r.H)) || abs(du) <= 1e-13 * abs(u)
+            return (:conv, un, r, its)
+        end
+        u = un
+    end
+    return (:fail, u, r, its)
+end
+
+# The cold start: the target's label at the same energy; where the target has no state there (E_dyn < 0 lowers H below the target's
+# energy, so e can be below what the target needs at this momentum: |M| ≥ ε), at an energy raised step by step until it has one;
+# a start at or below the label boundary (where ∂H/∂u can be < 0) moves to 2b, or there is no state.  Returns (u, e0) or (NaN, NaN).
+function split_cold_start(e, m, mm, V, eos, c; sound::Bool = true)
     u, v0, T0 = target_inverse(e, m, V, eos)
     δe = 1e-3 * (abs(e) + mm)
     for _ in 1:40
         (isfinite(u) && u > 0) && break
         u, v0, T0 = target_inverse(max(e, mm) + δe, m, V, eos);  δe *= 2
     end
-    (isfinite(u) && u > 0) || (splitcnt!(4);  return fail)
-    if u <= c.b                                                # a start at or below the label boundary, where ∂H/∂u can be < 0
-        T0 = NaN
+    (isfinite(u) && u > 0) || return (NaN, NaN)
+    if u <= c.b
         rb = split_H(c.b, mm, m, V, 1.0, eos, c; sound)
-        (isfinite(rb.H) && rb.H < e) || (splitcnt!(4);  return fail)
-        u = 2 * c.b
+        (isfinite(rb.H) && rb.H < e) || return (NaN, NaN)
+        return (2 * c.b, rb.e)
     end
-    e0 = isfinite(T0) ? (T0 / sqrt(1 - dot(v0, v0)) / eos.T_scale)^(1 + 1 / eos.cs2_val) : 1.0   # the target's rest-frame energy density
+    return (u, (T0 / sqrt(1 - dot(v0, v0)) / eos.T_scale)^(1 + 1 / eos.cs2_val))
+end
+
+# The fast inverse: Newton in the target's energy e_t for e_t + E_dyn = e, each step the target's closed-form inversion at (e_t, m, V)
+# (eos_from_energy; no forward solve) and E_dyn at its (T, v): g(e_t) = e_t + E_dyn − e, dg/de_t = 1 + (∂E_dyn/∂u)/T (∂e_t/∂u = T at
+# fixed m, V).  Starts from e_t = e − Eg.  Returns (status, u, T, v⃗, d, its).
+@inline function split_newton_et(e, m, mm, V, eos, c, Eg; sound::Bool = true)
+    et = e - Eg;  its = 0;  δprev = Inf
     for it in 1:SPLIT_MAXIT
-        r = split_H(u, mm, m, V, e0, eos, c; sound);  its += 1;  e0 = r.e
-        (isfinite(r.H) && r.TH > 0) || break
-        du = (r.H - e) / r.TH
-        un = u - du
-        if un <= c.b                                           # below the label boundary b: the solution, if any, is above it
-            rb = split_H(c.b, mm, m, V, e0, eos, c; sound)    # H is increasing in u: e ≤ H(b) has no state with weight
-            (isfinite(rb.H) && rb.H < e) || (splitcnt!(2, its);  splitcnt!(4);  return fail)
-            un = (u + c.b) / 2
+        u, v, T = target_inverse(et, m, V, eos)
+        (isfinite(u) && u > 0 && T > 0) || return (:fail, NaN, NaN, v, nothing, its)
+        vt = norm(v);  γ = 1 / sqrt(1 - vt * vt)
+        d = split_dyn(T, vt, γ, u, mm, V, c; sound);  its += 1
+        g = et + d.E - e
+        dg = 1 + d.Eu / T
+        (isfinite(g) && dg > 0) || return (:fail, u, T, v, d, its)
+        δ = g / dg
+        # every step is closed form, so the iteration runs to rounding: until the step is at the rounding of e_t, or stops shrinking
+        # (a test relative to e alone stops early near the light cone, where e/(T u) ~ γ²)
+        if g == 0 || abs(δ) <= 4e-16 * (abs(e) + abs(et)) || (abs(δ) >= abs(δprev) && abs(δ) <= 1e-10 * (abs(e) + abs(et)))
+            return (:conv, u, T, v, d, its)
         end
-        if abs(r.H - e) <= SPLIT_TOL * (abs(e) + abs(r.H)) || abs(du) <= 1e-13 * abs(u)
-            u = un;  conv = true;  break
-        end
-        u = un
+        δprev = δ;  et -= δ
     end
+    return (:fail, NaN, NaN, SVector(NaN, NaN), nothing, its)
+end
+
+# Inverse: (u, ẋ, ∂H/∂u) of the particle of energy e, momentum m and volume V; u = −Inf for a state with no solution, below the label
+# boundary, or with γ > γ_max.  First the fast Newton in the target's energy (split_newton_et); where it fails (the target has no
+# state at an iterate: E_dyn < 0 can put e_t below what the target needs at this momentum), the Newton in u (split_newton) from the
+# cold start.  guess (the particle's label and target energy density, set by the votes and the heat bath) is accepted and not used.
+function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
+    c = SplitConsts(eos)
+    fail = (-Inf, SVector(NaN, NaN), NaN)
+    splitcnt!(1)
+    (isfinite(e) && isfinite(V) && V > 0 && all(isfinite, m)) || (splitcnt!(4);  return fail)
+    mm = norm(m)
+    st, u, T, v, d, its = split_newton_et(e, m, mm, V, eos, c, 0.0; sound)     # from e_t = e (the guess is not needed: the start is closed form)
+    if st === :conv
+        splitcnt!(2, its)
+        u > c.b || (splitcnt!(4);  return fail)
+        TH = T + d.Eu;  vt = norm(v);  xd = vt + d.Em
+        (TH > 0 && abs(xd) < 1 && 1 / sqrt(1 - vt * vt) <= GAMMA_MAX) || (splitcnt!(4);  return fail)
+        return (u, vt > 0 ? v * (xd / vt) : v, TH)
+    end
+    # fallback: Newton in u from the cold start
+    splitcnt!(5)
+    u0, e0 = split_cold_start(e, m, mm, V, eos, c; sound)
+    isfinite(u0) || (splitcnt!(2, its);  splitcnt!(4);  return fail)
+    st, u, r, its2 = split_newton(u0, e0, e, m, mm, V, eos, c; sound);  its += its2
     splitcnt!(2, its)
-    conv || (splitcnt!(3);  splitlog((e, m, V, u, r === nothing ? NaN : r.H - e, r === nothing ? NaN : r.TH));  return fail)
-    r = split_H(u, mm, m, V, e0, eos, c; sound)
+    st === :nostate && (splitcnt!(4);  return fail)
+    st === :conv || (splitcnt!(3);  splitlog((e, m, V, u, r.H - e, r.TH));  return fail)
+    r = split_H(u, mm, m, V, r.e, eos, c; sound)
     (r.TH > 0 && abs(r.xd) < 1 && r.γ <= GAMMA_MAX) || (splitcnt!(4);  return fail)
     vt = norm(r.v)
     return (u, vt > 0 ? r.v * (r.xd / vt) : r.v, r.TH)
 end
 
 # The weight of a state in the votes: s_a(u) = u − b ln u, and with the Liouville measure − ln(∂H/∂u / (1 − b/u)) (∂H/∂s_a).
-@noinline function split_vote_entropy(e, m, V, eos, liouville::Bool; sound::Bool = true)
-    u, _, TH = split_inverse(e, m, V, eos; sound)
+@noinline function split_vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing, sound::Bool = true)
+    u, _, TH = split_inverse(e, m, V, eos; guess, sound)
     (isfinite(u) && TH > 0) || return -Inf
     b = 2.5 - (1 - 2 * eos.cs2_val)
     u > b || return -Inf                                       # the label boundary
