@@ -142,18 +142,67 @@ function legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess = nothing, counter
         cold = true
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
     end
+    phys(pt) = pt.J.det_Tv > 0 && pt.m >= 0
     λ, η, pt, its, ok = legendre_newton(λ, η, s, mm, V, c, false, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
-    if !ok && !cold                                   # a poor warm start: once more from the cold start
+    if !(ok && phys(pt)) && !cold                     # a poor warm start (no convergence, or the other branch): once more cold
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
         λ, η, pt, its2, ok = legendre_newton(λ, η, s, mm, V, c, false, LEG_MAXIT_COLD; counter);  its += its2;  cold = true
     end
-    conv = ok;  ok = ok && pt.J.det_Tv > 0 && pt.m >= 0
+    if !(ok && phys(pt)) && counter                   # both missed the physical branch: bracket it (legendre_bracket_forward)
+        λb, ηb = legendre_bracket_forward(s, mm, V, c)
+        if isfinite(λb)
+            λ, η, pt, its2, ok = legendre_newton(λb, ηb, s, mm, V, c, false, LEG_MAXIT_COLD; counter);  its += its2;  cold = true
+        end
+    end
+    conv = ok;  ok = ok && phys(pt)
     legendre_count(its, conv, ok, cold)
     ok || (LEG_LASTFAIL[] = (s, S_in, M_vec, e0, γ0, conv, pt.J.det_Tv, pt.m);
            logfail((conv ? :forward_branch : :forward, s, s / S_in, norm(M_vec) * s / S_in, pt.T, pt.v, pt.J.det_Tv, e0, γ0, cold));  return nan)
     v = mm > 0 ? (pt.v / mm) * m : zero(SVector{2,Float64})
     return (e = (pt.Tr / c.Ts)^c.n, p = pt.P, T = pt.T, γ = pt.γ, v = v, HS = pt.H / s,
             FS = dot(v, M_vec / S_in) / S_in - pt.P / S_in^2)
+end
+
+# The last resort of the forward map, when Newton from the warm and the cold start converges to the other branch or not at all (near
+# the light cone at labels s ≲ 0).  At fixed rapidity η the label s(λ) is convex in λ = ln T_rel, with its minimum at λ*(η), where
+# ∂s/∂T = 0 (T_rel^(n−1) = k/(n(n−1)AVγ)); the physical branch is λ > λ*, where s rises monotonically.  Along the curve s = s0 there,
+# ∂|m|/∂v at fixed s = det/(∂s/∂T) > 0 wherever det > 0: bracket |m| = m0 on a grid in η (γ up to 2 γ_max), each point by bisection
+# in λ, then bisect in η.  Returns (λ, η) close to the solution (Newton polishes it), or (NaN, NaN) if there is none.
+function legendre_bracket_forward(s0, m0, V, c::LegendreConsts; nη::Int = 400)
+    lV = log(V)
+    λstar(η) = log(c.k / (c.n * (c.n - 1) * c.A * V * cosh(η))) / (c.n - 1)
+    function λof(η)                                   # the λ > λ* with s(λ, η) = s0, or NaN
+        lo = λstar(η)
+        legendre_point(lo, η, V, c; lV).s > s0 && return NaN
+        hi = lo + 1.0
+        while legendre_point(hi, η, V, c; lV).s < s0
+            hi += 2 * (hi - lo);  hi - lo > 200 && return NaN
+        end
+        for _ in 1:80
+            mid = (lo + hi) / 2;  (legendre_point(mid, η, V, c; lV).s < s0 ? (lo = mid) : (hi = mid));  hi - lo < 1e-13 * (1 + abs(lo)) && break
+        end
+        return (lo + hi) / 2
+    end
+    function gm(η)                                    # |m| − m0 on the curve, and det
+        λ = λof(η);  isfinite(λ) || return (NaN, NaN, NaN)
+        pt = legendre_point(λ, η, V, c; lV);  return (pt.m - m0, pt.J.det_Tv, λ)
+    end
+    ηmax = acosh(2 * GAMMA_MAX)
+    ηa = 0.0;  ga = gm(ηa)
+    for i in 1:nη
+        ηb = ηmax * i / nη;  gb = gm(ηb)
+        if isfinite(ga[1]) && isfinite(gb[1]) && ga[1] <= 0 < gb[1] && ga[2] > 0 && gb[2] > 0
+            for _ in 1:80
+                ηm = (ηa + ηb) / 2;  g = gm(ηm)
+                isfinite(g[1]) || break
+                g[1] <= 0 ? (ηa = ηm;  ga = g) : (ηb = ηm;  gb = g)
+                ηb - ηa < 1e-13 * (1 + ηa) && break
+            end
+            return (ga[3], ηa)
+        end
+        ηa, ga = ηb, gb
+    end
+    return (NaN, NaN)
 end
 
 # The cold start of the forward map.  On the physical branch the target's entropy and momentum of the state are s_t = s + Δ + k and
@@ -196,7 +245,7 @@ function legendre_inverse(e, m, V, eos; guess = nothing, counter::Bool = true)
         λ, η = start_from(guess[1], guess[2])
     end
     λ, η, pt, its, ok = legendre_newton(λ, η, e, mm, V, c, true, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
-    if !ok && !cold                                   # a poor guess: once more from the target's inversion
+    if !(ok && pt.J.det_Tv > 0 && pt.m >= 0) && !cold     # a poor guess (no convergence, or the other branch): once more from the target's inversion
         λ, η = legendre_cold_inverse(e, m, V, eos)
         isfinite(λ) || (legendre_count(its, false, false, true);  return fail)
         λ, η, pt, its2, ok = legendre_newton(λ, η, e, mm, V, c, true, LEG_MAXIT_COLD; counter);  its += its2;  cold = true

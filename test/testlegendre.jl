@@ -102,6 +102,24 @@ let worst = 0.0, nw = 0, nc = 0
     check(worst < 1e-13, @sprintf("warm and cold agree to %.1e; iterations per solve: cold %.1f, warm %.1f", worst, nc / 6, nw / 6))
 end
 
+println("5b. states near the light cone at negative labels (campaign eos_legendre, c_s² = 1/4, s_a = 16, h/a = 2)")
+# Newton from the warm and the cold start converged to the other branch; the bracket (legendre_bracket_forward) finds them
+let eos4 = ConstantCs2EOS(cs2_val = 0.25), worst = 0.0, found = 0
+    for (s0, V, m0, e0, γ0) in ((-3.701646564598388, 0.0005105584111477213, 13.100908743039128, 7465.33891696229, 13.099751342102051),
+                                (-4.228451305363242, 0.0005010158199551941, 6.70568165109789, 403603.83728987037, 1.0266072738374323),
+                                (-4.360144143972738, 0.00044821615662484507, 10.564417044412394, 1.2759910013123723e6, 1.000998591390844))
+        m = SVector(m0, 0.0)
+        for (e0_, γ0_) in ((e0, γ0), (0.0, 1.0))                    # the warm start the run had, and cold
+            f = legendre_forward(s0, s0 / V, m / V, e0_, γ0_, eos4)
+            isfinite(f.T) || continue
+            found += 1
+            r = legendre_inverse(s0 * f.HS, m, V, eos4)
+            worst = max(worst, abs(r[1] / s0 - 1), abs(r[3] / f.T - 1))
+        end
+    end
+    check(found == 6 && worst < 1e-10, @sprintf("%d of 6 solves found the state (γ = 12–41); the round trip agrees to %.1e", found, worst))
+end
+
 println("6. hybrid Monte Carlo with the Legendre Hamiltonian")
 function legendre_state(L; seed = 1, sa = 54.0)
     params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> sa / (sqrt(3) / 2 * (0.05 / 2)^2), (x, y) -> SVector(0.0, 0.0);
