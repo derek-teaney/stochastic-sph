@@ -691,7 +691,7 @@ of its own Hamiltonian; nersc/campaign_hastings_split.txt, s_a = 16, 54, v0 = 0,
 c_s^2 = 1/2.  **The old `hastings` runs had c_s^2 = 1/3** (cs2_val = 0.333 in every .toml of $SCRATCH/sph/hastings: 927e035, e282211,
 77cf74f, before the dimfix 8d50d04 made d = d_s), so they are not a reference; the tree lines are rerun here at c_s^2 = 1/2 (owner:
 "the old jobs did not have any renormalization ... we should know what was run").  256 tasks × 4 cores, 8 regular nodes, one wave;
-estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), at most 8 (-t 1:00).
+estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), at most 8 (-t 1:00).  **Submitted** job 61879905 (8 regular nodes) from the pinned worktree ~/stochastic-sph-splitH (8e44845); output $SCRATCH/sph/hastings_split.
 - Smoke (debug 61879181, s_a = 16, t = 3, HMC start of 50 updates; 20 split HMC updates): all four ran, no failures.  v0 = 0: stress /
   residual acceptance 0.93 / 0.51, ΔH/H = +3.6e-3 (short run, short HMC start); v0 = 0.8: 0.985 / 0.76, ΔH/H = −1.6e-4.  HMC: acceptance
   1.0, |ΔH/H| 5e-6 (v0 = 0), 4e-7 (0.8).
