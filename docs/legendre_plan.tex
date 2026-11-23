@@ -369,6 +369,84 @@ changing \texttt{Particle} in a way that breaks reading old \texttt{.jls} files.
 \section{Results}
 \label{sec:results}
 
-(To be filled in by the session that carries out the plan.)
+Carried out at NERSC on 2026-11-22/23, branch \texttt{legendre}; the record of jobs and commits is the entry \texttt{eos\_legendre} of
+\nolinkurl{nersc/LOG.md}.
+
+\subsection{What was implemented}
+
+\begin{itemize}
+\item \emph{Routing} (A): every particle-level use of the equation of state goes through \texttt{particle\_forward(s, S, M, e0, eos; \ldots)} and
+  \texttt{particle\_inverse(e, m, V, eos; guess)} (\nolinkurl{src/pointwise.jl}).  The target's versions, \texttt{target\_forward} and \texttt{target\_inverse},
+  keep the arithmetic of \texttt{solve\_eos!} and \texttt{eos\_from\_energy}; \texttt{solve\_eos!}, \texttt{particle\_energy}, \texttt{particle\_entropy},
+  \texttt{particle\_entropy\_lnT}, \texttt{star\_coef}, the residual step's $\beta_a$, the viscous back maps and \texttt{momentum\_covariance} call them.  Left as
+  they are (not about one particle): \texttt{grid\_forward}/\texttt{grid\_inverse} (the lattice step), the starting guess of \texttt{beta\_from\_averages},
+  \texttt{state\_from\_beta} and \texttt{particle\_moments} (the targets and the proposals).
+\item \emph{The maps} (B, \nolinkurl{src/renorm.jl}): \texttt{legendre\_forward}, \texttt{legendre\_inverse}, Newton in $(\lambda,\eta)=(\ln T_{\rm rel},\text{rapidity})$ with
+  the analytic Jacobian of \Sect{sec:formulas}, the full step unless the residual grows fourfold, a relative residual $10^{-14}$; warm starts from
+  \texttt{pa.e} (the target's rest-frame energy density at $T_{\rm rel}$) and \texttt{pa.}$\gamma$, or from a guess $(T,\bm v)$; cold starts by the fixed
+  point $s_t\leftarrow s+(\Delta+k)(T(s_t))$ (forward) or $e_t\leftarrow e+T(k+v^2b)$ (inverse), the target's closed form at each step, which contracts on the
+  physical branch.  Counters \texttt{legendre\_counts()}: solves, iterations, failures (no convergence), states with no solution, cold starts.
+\item \emph{The switch} (C): \texttt{SPH\_RENORM=legendre}, read at load time (\texttt{LEGENDRE}, \nolinkurl{src/sph.jl}, through \texttt{setting\_peek} so that
+  without it the setting is read and recorded as before); \texttt{check\_legendre} refuses the entropy volume, the smoothed Hamiltonian, $d\ne2$, the
+  Einstein measure and the grid step; \texttt{LegendreConsts} refuses an equation of state other than \texttt{ConstantCs2EOS}.  \texttt{energy\_pressure}
+  reports $\sum_aH_a$ and uses \texttt{pa.p}$=P$ of \Eq{P}.  The votes, the coefficients of the Hastings correction and the heat bath start their inverse
+  solves from the particle's state at the start of the step (\texttt{VOTE\_GUESS}).
+\item \emph{Found on the way.}  (i) The label $s=s_t-(\Delta+k)$ is often negative at $s_a\lesssim50$: $\Delta+k\approx25$ at $c_s^2=1/2$ and $45$ at $1/4$, and
+  the canonical spread of $s$ is $\pm9$ and $\pm20$ at $s_a=54$.  States with $s\le0$, and with $H\le0$ or $H<|\bm m|$, are legitimate; the physical branch is
+  $\det\partial(s,|\bm m|)/\partial(T,v)>0$ with $|\bm m|\ge0$, and the $n$-scheme keeps $V=s/S=1/n_a>0$.  (ii) Hybrid Monte Carlo rejects a trajectory that
+  reaches a state with no $H$ (a label below the edge of the domain at its new volume; \nolinkurl{src/hmc.jl}, with the switch only).  (iii) A non-converged
+  inverse with $e<|\bm m|$ is counted as a state with no solution: any Legendre state has $H-|\bm m|>-kT$, and these are heat-bath proposals $7\sigma$ out in
+  the momentum.  (iv) In motion the bath of \nolinkurl{examples/eos_measure.jl} is the rest start's $T_{\rm rel}$ moving at \texttt{SR\_V}, so that a run in motion
+  and at rest describe the same fluid.  (v) \texttt{beta\_from\_averages} halves a Newton step that leaves the light cone (it never did before).
+\end{itemize}
+
+\subsection{Tests}
+
+\nolinkurl{test/testlegendre.jl} (all pass): the reference values of \Sect{sec:formulas} to $3\times10^{-11}$ (the digits of the table); $\partial H/\partial s=T$,
+$\partial H/\partial\bm m=\bm v$, $-\partial H/\partial V=P$ by central differences to $10^{-9}$; $H(S(e,\bm m,V),\bm m,V)=e$ to $10^{-14}$ for $s_a\in[10,10^4]$,
+$\gamma\in[1,99]$, both $c_s^2$, labels $s<0$ included; with the counterterm off the solves reproduce the target's to $10^{-10}$ (the target's own Newton stops at
+$10^{-12}$); warm and cold starts agree to $10^{-15}$ (2.7 and 3.0 iterations); hybrid Monte Carlo with the Legendre Hamiltonian has an energy error $\propto\delta t^2$
+(ratio $16.1$ for $\delta t/4$) and accepts.  \texttt{test/run.sh all} with the switch off: every unit, physics and load test passes, and the regression against
+the branch point (db139ef) is bit-identical except the \texttt{hast\_lq\_*} datasets, which differ from run to run (thread order; \nolinkurl{nersc/LOG.md}).  With the
+switch on every script loads and 14 unit tests pass; 9 fail by design: \texttt{testeos}, \texttt{testeos2d}, \texttt{testeos\_consistency}, \texttt{testchangerep}
+(they compare the particle maps with the target's closed forms), \texttt{testeqstart} (the target's most probable state), \texttt{testhastings} (the Einstein
+measure, refused), \texttt{testdims} (another refusal message), \texttt{teststochastic\_guard} (calls \texttt{eos\_from\_energy} on particle states, which may have
+$e<|\bm m|$), \texttt{testparticle\_sweep} (the legacy two-level dissipation).
+
+\subsection{Speed}
+
+\nolinkurl{examples/bench_legendre.jl}, 8 threads, $N=9752$, $s_a=54$, $c_s^2=1/2$ (debug jobs 61824228, 61825354; ms per step, tree $\to$ Legendre):
+\begin{center}
+\small
+\begin{tabular}{lccl}
+\toprule
+ & tree & Legendre & solves \\
+\midrule
+ideal step (generalized leapfrog) & 41--49 & 39--40 & $1.1\times10^5$ forward, 1.6 iterations (warm) \\
+stochastic step, cold votes & 36 & 143 & $1.25\times10^6$ inverse, 2.5 iterations \\
+stochastic step, votes from the particle's state & 33 & 102 & 2.9 iterations \\
+the same, cheaper evaluation (debug 61825518) & 37 & 95 & 2.9 iterations \\
+hybrid Monte Carlo update, $N=360$ & 320--350 & 365--370 & $6\times10^5$, 1.4 iterations \\
+\bottomrule
+\end{tabular}
+\end{center}
+The ideal step costs nothing more (the warm forward solves converge in 0--1 iterations).  The stochastic step makes 128 inverse solves per particle (its
+votes and the Hastings coefficients), each about $0.6\,\mu$s against $0.23\,\mu$s for the target's closed form: about three Newton steps to $10^{-14}$ even
+from the particle's state.  Applied from the list of \Sect{sec:speed}: the start of the votes' solves from the particle's state (143 $\to$ 102 ms) and a
+cheaper evaluation of a point ($\ln V$ once per solve, an integer power for $T_{\rm rel}^n$, $\cosh$ and $\sinh$ from one \texttt{expm1}, per-thread counters;
+$\to95$ ms).  The stochastic step remains 2.6 times the tree's, the solves about 60\% of it; hybrid Monte Carlo, used by the campaign, 1.1 times.  Not done:
+skipping unchanged particles (every vote changes $\bm m$) and a looser tolerance.
+
+\subsection{Smoke runs}
+
+At rest, $L=0.45$, $h/a=2$, $s_a=54$, 200 updates, two seeds: at $c_s^2=1/2$ the Legendre Hamiltonian gives $E/\er-1=-0.010$, $\pr_{\rm model}/\pr-1=-0.032$ at
+$\sigma_{\rm p}=22.7$, against $-0.015$, $-0.039$ at $18.0$ for \texttt{SPH\_RENORM=1}: within the single-particle residual, both dominated by the correction of
+the positions; the tree level $+0.134$, $+0.106$.  The acceptance is $0.985$--$0.995$ for all three.  A dynamical run (\nolinkurl{examples/stability.jl}, the
+stochastic step on, $S_0=10^5$, $t=20$) drifts by $\Delta H/H=+4.8\times10^{-5}$ (Legendre) against $+4.2\times10^{-5}$ (\texttt{SPH\_RENORM=1}).  Newton failures
+(no convergence) in hybrid Monte Carlo: none to $3\times10^{-7}$ of the solves, all inverse, at proposals near the light cone.
+
+\subsection{The campaign}
+
+STATUS-CAMPAIGN
 
 \end{document}
