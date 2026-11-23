@@ -741,6 +741,11 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
 - **cs13** (nersc/campaign_cs13.txt, 09c10bf: SR_CS2=1/3, SR_ZETAS=(η/s)/3, i.e. ζ_eff = η/3 as before 8d50d04): the hastings tree runs with
   the present code, job **61890225** (2 nodes) from ~/stochastic-sph-splitC13.
 
+- **cs13 done** (61890225, 64/64): tree at c_s^2 = 1/3, ζ_eff = η/3 with the present code: shear Γ/hydro 0.93–0.98 (s_a = 16 rest),
+  0.98–1.10 (54 rest), 1.01–1.26 (54, v = 0.8), as hastings (1.17–1.23, 0.94–1.10, 0.96–1.20).  The c_s^2 = 1/2 excess is the small ν0,
+  not the code.  Equal time differs (cs13 1.5, hastings 0.85 at s_a = 16): hastings started at the right energy with a bath 14% cooler
+  (T0 = 24.3 vs 28.1); (28.1/24.3)^4 = 1.79 vs measured 1.76; s_a = 54: 1.17 vs 1.18.  The tree's O(1/s) T–energy mismatch.
+
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
 Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
