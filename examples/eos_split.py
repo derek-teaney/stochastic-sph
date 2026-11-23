@@ -88,8 +88,10 @@ def expect(q, scheme, c2, s, v=0.8):
         return np.where((1 / s >= x[0]) & (1 / s <= x[-1]), np.interp(1 / s, x, y), np.nan)
     if v > 0 and q != "R":                            # the one-loop entries in motion are not in the plan's table
         return np.nan * s
-    if q == "P":   return 2.5 / sig if scheme == "tree" else 0 * s
-    if q == "E":   return k * (1 + c2) / s if scheme == "tree" else 0 * s
+    # SPH_RENORM=1 is the label part alone: at c2 != 1/2 its pressure is off by N/sigma, N = 1 - 2 c2 (step5_plan.tex), its energy by
+    # a term of the same order not written here
+    if q == "P":   return 2.5 / sig if scheme == "tree" else (1 - 2 * c2) / sig
+    if q == "E":   return k * (1 + c2) / s if scheme == "tree" else (0 * s if c2 == 0.5 else np.nan * s)
     if q == "chiMM": return (2.5 + k - c2) / s if scheme == "tree" else -c2 / s
     if q == "R":   return -c2 * (1 - v * v)**2 / ((1 - c2 * v * v) * s)
     return np.nan * s

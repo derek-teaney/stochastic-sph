@@ -293,7 +293,58 @@ are those of this model.
 
 \subsection{B--D. The code and the tests}
 
-STATUS-CODE
+\nolinkurl{src/renorm_split.jl}: \texttt{split\_forward} (the target's forward solve, then $E^{\rm dyn}$ and its derivatives by \Eq{chain}, the fields
+\Eq{fields}; no state if $\partial H/\partial u\le0$ or $|\dot{\bm x}|\ge1$), \texttt{split\_inverse} (Newton in $u$ alone from the target's inversion at $e$,
+to a relative residual of $10^{-12}$, the accuracy of the target's forward solve, below which $H(u)$ does not resolve $u$; no state when $e\le H(u_b,\bm m,V)$), and
+\texttt{split\_vote\_entropy}.  \texttt{SPH\_RENORM=split} chooses them at load time (\nolinkurl{src/sph.jl}, \nolinkurl{src/pointwise.jl},
+\nolinkurl{src/stochastic.jl}); hybrid Monte Carlo rejects a trajectory that leaves the domain of $H$, as with Legendre (\nolinkurl{src/hmc.jl}).  $\bar V=L^2/N$
+(\texttt{SPH\_RENORM\_VBAR}), set when the parameters are built.  \texttt{SPH\_RENORM=1} now runs at any $c_s^2$: its $\alpha/2=(1+d+2dc_s^2)/2$ is the $b=\tfrac52-\mathcal N$
+of \Eq{model}, so it is the label part alone, and the campaign runs it at $c_s^2=1/4$ beside split.
+
+\nolinkurl{test/testsplit.jl}, all 33 checks pass: the split adds up to the counterterm (to $4\times10^{-16}$); $H$ against the quadrature's model (to
+$7\times10^{-13}$); $\partial H/\partial u$, $\dot{\bm x}$, $P$ against central differences of $H$ (to $6\times10^{-10}$); the inverse of the forward map (to
+$2\times10^{-12}$); at $c_s^2=1/2$ without the sound term, the votes of \texttt{SPH\_RENORM=1} (to $3\times10^{-15}$); hybrid Monte Carlo at both $c_s^2$,
+$|\Delta H/H|\propto\delta t^2$ (ratio 16.1), 5 of 5 updates accepted, no failed solve in $10^4$ (2.9 Newton iterations per solve).
+
+\subsection{E. Speed and smoke runs}
+
+On one node, $h/a=2$, $s_a=54$, 100 updates of hybrid Monte Carlo on 2 threads: tree level 77\,s, Legendre 78\,s, split 76\,s.  The stochastic step
+(\nolinkurl{examples/stability.jl}, $S_0=10^5$, $t=20$) costs 3.4 times that of \texttt{SPH\_RENORM=1} (175\,s against 51\,s, the Newton solves of the votes), and
+$H$ drifts by $\Delta H/H=+4.8\times10^{-5}$ against $+4.2\times10^{-5}$.  At rest, $s_a=54$: at $c_s^2=1/2$, $E/e-1=-0.015$, $P/p-1=-0.039$, the numbers of
+\texttt{SPH\_RENORM=1}; at $c_s^2=1/4$, split $-0.021$, $-0.047$ against \texttt{SPH\_RENORM=1} $-0.020$, $-0.004$ ($\sigma=10.8$): the difference in the
+pressure, $-0.043$, is the error $\mathcal N/\sigma=0.046$ of the label part alone, which $E^{\rm dyn}$ removes.
+
+\subsection{F. The campaign}
+\label{sec:campaign_results}
+
+\emph{Running} (jobs 61863928, 61863936; \nolinkurl{nersc/LOG.md}).  The figures below are regenerated as the runs finish.  Split and
+\texttt{SPH\_RENORM=1} at $c_s^2=1/4$ and at rest are new (output \texttt{\$SCRATCH/sph/eos\_split/}); the tree level and \texttt{SPH\_RENORM=1} at
+$c_s^2=1/2$, $v=0.8$ are the runs of \texttt{eos\_legendre}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_EP.png}
+\caption{At rest: $E/e-1$, $P/p-1$ and $\chi_{MM}/(Tw)-1$ against $1/s$ ($s$ the measured entropy per particle), $c_s^2=1/2$ (top) and $1/4$ (bottom),
+$h/a=2$ (filled) and $3$ (open).  Blue: tree level; green: \texttt{SPH\_RENORM=1}, the label part alone; orange: split.  Dashed: one loop for the tree level
+and \texttt{SPH\_RENORM=1} (at $c_s^2=1/4$ its pressure error $\mathcal N/\sigma$), the exact single particle for split; without the positions.}
+\label{fig:split_EP}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_moving.png}
+\caption{At $v=0.8$: the lab-frame $E/e-1$, $T^{yy}/p-1$, $M/(w\gamma^2v)-1$ and $R=M/(v(E+T^{yy}))-1$ against $1/s$.  Colours as in \Fig{fig:split_EP};
+dashed in the last column: the one-loop $R$ of the tree level and \texttt{SPH\_RENORM=1}, and the exact single particle of split.}
+\label{fig:split_moving}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_chi.png}
+\caption{The susceptibility matrix from the canonical covariances relative to the target, at $v=0.8$ and (last column) $\partial E/\partial T$ at rest.  Colours
+as in \Fig{fig:split_EP}.}
+\label{fig:split_chi}
+\end{figure}
 
 %=============================================================================
 \section{Later}
