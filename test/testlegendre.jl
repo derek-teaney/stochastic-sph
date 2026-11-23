@@ -1,7 +1,8 @@
 # testlegendre.jl — the renormalized Hamiltonian as a Legendre transform (src/renorm.jl, SPH_RENORM=legendre; docs/legendre_plan.tex, D):
 #   1. the reference values of the plan (examples/renorm_quadrature_legendre.py), to 1e-10 relative;
 #   2. the Legendre identities by central differences: ∂H/∂s = T, ∂H/∂m = v, ∂H/∂V = −P;
-#   3. forward and inverse are inverses, H(S(e, m, V), m, V) = e to 1e-13, for s_a in [10, 1e4], γ in [1, 100], c_s² = 1/2 and 1/4;
+#   3. forward and inverse are inverses, H(S(e, m, V), m, V) = e to 1e-13, for s_a in [10, 1e4], γ in [1, 100], c_s² = 1/2 and 1/4
+#      (the label s = the target's entropy less Δ + k is negative at the smallest s_a: allowed);
 #   4. with the counterterm off the solves reproduce the target's (eos_newton, eos_from_energy) to roundoff;
 #   5. warm and cold starts give the same answer, and the iterations per solve;
 #   6. hybrid Monte Carlo with the Legendre Hamiltonian: the energy error of a trajectory falls as δt² (the forces are −∂H/∂x),
@@ -52,19 +53,20 @@ end
 
 println("3. forward and inverse are inverses")
 for c2 in (0.5, 0.25)
-    eos = ConstantCs2EOS(cs2_val = c2);  c = LegendreConsts(eos);  worst = 0.0;  worst_s = 0.0;  n = 0
+    eos = ConstantCs2EOS(cs2_val = c2);  c = LegendreConsts(eos);  worst = 0.0;  worst_s = 0.0;  n = 0;  nneg = 0
     for sa in (10.0, 30.0, 100.0, 1e3, 1e4), γ in (1.0, 1.5, 3.0, 10.0, 30.0, 99.0), V in (1e-3, 1.0)
         v = sqrt(1 - 1 / γ^2)
         Tr = (sa / (c.n * c.A * V * γ))^(1 / (c.n - 1));  T = Tr / γ       # the target's entropy s_a at (T, v)
         local r = legendre_at(T, v, V, eos)
-        r.s > 0 || continue
+        legendre_point(log(γ * T), atanh(v), V, c).J.det_Tv > 0 && r.m >= 0 || continue   # the physical branch (m̂ = v̂) only
         m = SVector(0.6, -0.8) * r.m
         si, vi, Ti = legendre_inverse(r.H, m, V, eos)
         isfinite(si) || (worst = Inf;  continue)
         e = Hof(si, m, V, eos)
-        worst = max(worst, abs(e / r.H - 1));  worst_s = max(worst_s, abs(si / r.s - 1));  n += 1
+        worst = max(worst, abs(e / r.H - 1));  worst_s = max(worst_s, abs(si - r.s) / (abs(r.s) + 10));  n += 1;  nneg += r.s < 0
     end
-    check(worst < 1e-13, @sprintf("c_s² = %.2f: %d states, max |H(S(e)) / e − 1| = %.1e (|S(e)/s − 1| ≤ %.1e)", c2, n, worst, worst_s))
+    check(worst < 1e-13, @sprintf("c_s² = %.2f: %d states (%d with s < 0), max |H(S(e)) / e − 1| = %.1e (|S(e) − s|/(|s| + 10) ≤ %.1e)",
+                                  c2, n, nneg, worst, worst_s))
 end
 
 println("4. the counterterm off: the target's maps")

@@ -153,7 +153,13 @@ function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64
         ms = mom.(V);  X = sum(p.mean for p in ms);  Ct = sum(p.cov for p in ms)
         r = target - X
         abs(r[1]) <= 1e-12 * abs(E) && norm(r[2:3]) <= 1e-12 * abs(E) && break
-        θ = θ + Ct \ r
+        δθ = Ct \ r
+        # a step that leaves the light cone (|β/β⁰| ≥ 1, or β⁰ ≤ 0) is halved (in motion, from the target's guess with
+        # SPH_RENORM=legendre); a step inside it, as in every run before, is taken whole
+        while !(θ[1] + δθ[1] < 0 && (θ[2] + δθ[2])^2 + (θ[3] + δθ[3])^2 < (θ[1] + δθ[1])^2)
+            δθ = δθ / 2
+        end
+        θ = θ + δθ
     end
     return -θ[1], SVector(θ[2], θ[3]), mom
 end

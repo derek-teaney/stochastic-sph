@@ -70,21 +70,26 @@ end
 setx!(ps, params, cl, x) = (for (a, q) in enumerate(ps);  q.x = x[a];  end;  wrap_positions!(ps, params.L);  rebuild_cell_list!(cl, ps))
 setm!(ps, m) = (for (a, q) in enumerate(ps);  q.m = m[a];  end)
 
-# One step of the generalized leapfrog (implicit half steps iterated to tol).  Returns the iterations used.
+# One step of the generalized leapfrog (implicit half steps iterated to tol).  Returns the iterations used, or −1 if the step reached
+# a state with no Hamiltonian (a force or a velocity not finite: with SPH_RENORM=legendre a particle whose label is below the edge of
+# the single-particle domain at its new volume; renorm.jl): H = +∞ there, and the trajectory is rejected (hmc_update!).
 function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, maxit = 60)
     N = length(ps);  m0 = [q.m for q in ps];  x0 = [q.x for q in ps];  mh = copy(m0)
     msc = maximum(norm, m0) + eps();  its = 0
     for it in 1:maxit                                     # m½ = m − δt/2 ∂H/∂x(x, m½)
         setm!(ps, mh);  hmc_force!(F, ps, params, cl, eos)
+        LEGENDRE && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
         d = 0.0
         for a in 1:N;  mn = m0[a] + (dt / 2) * F[a];  d = max(d, norm(mn - mh[a]));  mh[a] = mn;  end
         its += 1;  d <= tol * msc && break
         it == maxit && @warn "generalized_leapfrog!: momentum half step not converged" d / msc
     end
     setm!(ps, mh);  hmc_velocity!(v0, ps, params, cl, eos)
+    LEGENDRE && !all(v -> isfinite(v[1]) && isfinite(v[2]), v0) && return -1
     xn = [x0[a] + dt * v0[a] for a in 1:N]                # x′ = x + δt/2 [v(x, m½) + v(x′, m½)]
     for it in 1:maxit
         setx!(ps, params, cl, xn);  hmc_velocity!(v1, ps, params, cl, eos)
+        LEGENDRE && !all(v -> isfinite(v[1]) && isfinite(v[2]), v1) && return -1
         d = 0.0
         for a in 1:N
             xa = x0[a] + (dt / 2) * (v0[a] + v1[a])
@@ -94,6 +99,7 @@ function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, 
         it == maxit && @warn "generalized_leapfrog!: position step not converged" d / params.a
     end
     setx!(ps, params, cl, xn);  hmc_force!(F, ps, params, cl, eos)
+    LEGENDRE && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
     setm!(ps, [mh[a] + (dt / 2) * F[a] for a in 1:N])     # m′ = m½ − δt/2 ∂H/∂x(x′, m½)
     return its
 end
@@ -101,7 +107,11 @@ end
 # 2. A trajectory of nsteps generalized leapfrog steps; no acceptance test.  Returns the iterations used.
 function hmc_trajectory!(ps, params, cl, eos, dt, nsteps; kw...)
     N = length(ps);  F = zeros(SVector{2,Float64}, N);  v0 = similar(F);  v1 = similar(F);  its = 0
-    for _ in 1:nsteps;  its += generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; kw...);  end
+    for _ in 1:nsteps
+        i = generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; kw...)
+        i < 0 && return -1                                # no Hamiltonian at the state reached: reject
+        its += i
+    end
     return its
 end
 
@@ -116,6 +126,10 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     H0, P0, lnT0 = hmc_measure!(ps, params, cl, eos)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
     its = hmc_trajectory!(ps, params, cl, eos, dt, nsteps)
+    if its < 0                                            # the trajectory left the domain of H (SPH_RENORM=legendre): rejected
+        setm!(ps, m0);  setx!(ps, params, cl, x0);  hmc_measure!(ps, params, cl, eos)
+        return (accepted = false, dH = NaN, dlnpi = -Inf, heatbath = hb, iters = NaN)
+    end
     H1, P1, lnT1 = hmc_measure!(ps, params, cl, eos)
     # Einstein measure: the trajectory changes the T_a at fixed s_a, hence Δ Σ ln T_a; the Liouville measure is invariant
     dlnπ = -tg.β0 * (H1 - H0) + dot(tg.β, P1 - P0) + (params.measure === :liouville ? 0.0 : lnT1 - lnT0)

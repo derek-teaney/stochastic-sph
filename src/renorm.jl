@@ -23,8 +23,13 @@ const LEG_COLD    = Threads.Atomic{Int}(0)
 reset_legendre_counts!() = foreach(c -> (c[] = 0), (LEG_SOLVES, LEG_ITERS, LEG_FAILS, LEG_NOSTATE, LEG_COLD))
 legendre_counts() = (solves = LEG_SOLVES[], iters = LEG_ITERS[], fails = LEG_FAILS[], nostate = LEG_NOSTATE[], cold = LEG_COLD[])
 
+# the inputs of the last failed forward solve, for diagnosis: (s, S, M, e0, γ0)
+const LEG_LASTFAIL = Ref{Any}(nothing)
+const LEG_FAILLOG = Any[];  const LEG_FAILLOCK = ReentrantLock()      # the first 2000 failures, (:forward or :inverse, inputs, result)
+logfail(x) = lock(() -> length(LEG_FAILLOG) < 2000 && push!(LEG_FAILLOG, x), LEG_FAILLOCK)
 const LEG_TOL = 1e-14         # relative residual, both equations
-const LEG_MAXIT = 8           # Newton iterations per solve (a cold start gets a second round from its shifted start)
+const LEG_MAXIT = 8           # Newton iterations per solve from a warm start or a guess; a solve that fails then starts again cold
+const LEG_MAXIT_COLD = 30     # from a cold start (near the light cone the iteration is slow: 8–10 steps at v ≈ 0.997)
 
 # The constants of the model for an equation of state; an error for any other than ConstantCs2EOS.
 struct LegendreConsts
@@ -68,7 +73,8 @@ end
 
 # Newton on (λ, η) for the residuals (x(λ, η) − x0, |m|(λ, η) − m0), x = s (forward) or H (inverse), with step halving.
 @inline function legendre_newton(λ, η, x0, m0, V, c, inverse::Bool, maxit::Int; counter::Bool = true)
-    xs = abs(x0);  ms = m0 + (inverse ? abs(x0) : abs(x0) * exp(λ))     # scales of the residuals
+    # scales of the residuals; the label s may be small or negative (it is the target's entropy less Δ + k), so its scale has a floor
+    xs = abs(x0) + (inverse ? 10.0 * exp(λ) : 10.0);  ms = m0 + (inverse ? xs : xs * exp(λ))
     pt = legendre_point(λ, η, V, c; counter)
     r1 = (inverse ? pt.H : pt.s) - x0;  r2 = pt.m - m0
     res = abs(r1) / xs + abs(r2) / ms
@@ -109,14 +115,17 @@ end
 # The start of a solve from a state (T, v⃗) of the particle (a previous solve), or nothing.
 start_from(T, v) = (vm = norm(v);  γ = 1 / sqrt(1 - vm * vm);  (log(γ * T), asinh(γ * vm)))
 
-# Forward: the state of the particle of entropy s, momentum m = M V and volume V = s/S (S, M the densities, as solve_eos!).
+# Forward: the state of the particle of entropy s, momentum m = M V and volume V = s/S (S, M the densities, as solve_eos!).  The label s
+# may be negative: it is the target's entropy less Δ + k (≈ 25 at c_s² = 1/2, 45 at 1/4), and the canonical ensemble reaches it in the
+# tails at s_a ≲ 50; the n-scheme keeps V = s/S = 1/n_a > 0 (S_smooth = s n_a).
 # Warm start from the stored state (e0 = the target's rest-frame energy density at T_rel, γ0), or guess = (T, v⃗); cold start from
 # the target's state at the entropy and momentum shifted by the counterterm.  Returns the fields of particle_forward (pointwise.jl);
 # a failed solve returns NaN, and is counted.
 function legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess = nothing, counter::Bool = true)
     c = LegendreConsts(eos)
     nan = (e = NaN, p = NaN, T = NaN, γ = NaN, v = SVector(NaN, NaN), HS = NaN, FS = NaN)
-    (isfinite(s) && s > 0 && isfinite(S_in) && S_in > 0 && all(isfinite, M_vec)) || (legendre_count_nostate();  return nan)
+    (isfinite(s) && s != 0 && isfinite(S_in) && s / S_in > 0 && all(isfinite, M_vec)) ||
+        (legendre_count_nostate();  logfail((:forward_input, s, S_in, M_vec));  return nan)
     V = s / S_in;  m = M_vec * V;  mm = norm(m)
     cold = false
     if guess !== nothing
@@ -127,31 +136,43 @@ function legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess = nothing, counter
         cold = true
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
     end
-    λ, η, pt, its, ok = legendre_newton(λ, η, s, mm, V, c, false, LEG_MAXIT; counter)
+    λ, η, pt, its, ok = legendre_newton(λ, η, s, mm, V, c, false, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
     if !ok && !cold                                   # a poor warm start: once more from the cold start
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
-        λ, η, pt, its2, ok = legendre_newton(λ, η, s, mm, V, c, false, LEG_MAXIT; counter);  its += its2;  cold = true
+        λ, η, pt, its2, ok = legendre_newton(λ, η, s, mm, V, c, false, LEG_MAXIT_COLD; counter);  its += its2;  cold = true
     end
     conv = ok;  ok = ok && pt.J.det_Tv > 0 && pt.m >= 0
     legendre_count(its, conv, ok, cold)
-    ok || return nan
+    ok || (LEG_LASTFAIL[] = (s, S_in, M_vec, e0, γ0, conv, pt.J.det_Tv, pt.m);
+           logfail((conv ? :forward_branch : :forward, s, s / S_in, norm(M_vec) * s / S_in, pt.T, pt.v, pt.J.det_Tv, e0, γ0, cold));  return nan)
     v = mm > 0 ? (pt.v / mm) * m : zero(SVector{2,Float64})
     return (e = (pt.Tr / c.Ts)^c.n, p = pt.P, T = pt.T, γ = pt.γ, v = v, HS = pt.H / s,
             FS = dot(v, M_vec / S_in) / S_in - pt.P / S_in^2)
 end
 
-# The cold start of the forward map: the target's state at (s, m), then at the entropy and momentum shifted by the counterterm
-# evaluated there (s + Δ + k, |m| + T v [Kγ² − c_s²/q]).
+# The cold start of the forward map.  On the physical branch the target's entropy and momentum of the state are s_t = s + Δ + k and
+# |m|_t = |m| + T v [Kγ² − c_s²/q], with Δ logarithmic in T_rel; the fixed point s_t ← s + (Δ + k)(T(s_t)) (T from the target's state at
+# (s_t, |m|_t)) contracts where (n − 1) s_t > k, the physical branch, so a few iterations from a hot start reach it (also for labels
+# s ≤ 0, at small s_a).
 function legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter::Bool = true)
-    st = target_forward(s, S_in, M_vec, S_in, eos)
-    λ = log(st.T * st.γ);  η = asinh(st.γ * norm(st.v))
-    counter || return (λ, η)
-    pt = legendre_point(λ, η, V, c)
-    Δk = c.n * c.A * V * pt.γ * exp((c.n - 1) * λ) - pt.s           # = Δ + k at the guess
-    dm = pt.T * pt.v * (c.K * pt.γ^2 - c.c2 / (1 - c.c2 * pt.v^2))
-    s2 = s + Δk;  M2 = mm > 0 ? M_vec * ((mm + dm) / mm) : M_vec
-    st = target_forward(s2, s2 / V, M2, st.e, eos)
-    return log(st.T * st.γ), asinh(st.γ * norm(st.v))
+    if !counter
+        st = target_forward(s, S_in, M_vec, S_in, eos)
+        return log(st.T * st.γ), asinh(st.γ * norm(st.v))
+    end
+    floor_t = 2 * c.k / (c.n - 1)                      # well inside the physical branch
+    st_ = max(s + 2c.k, floor_t);  mt = mm;  e0 = 0.0;  λ = η = 0.0
+    for _ in 1:6
+        M2 = mm > 0 ? M_vec * (mt / mm) : M_vec
+        st = target_forward(st_, st_ / V, M2, e0 > 0 ? e0 : st_ / V, eos);  e0 = st.e
+        λ = log(st.T * st.γ);  η = asinh(st.γ * norm(st.v))
+        pt = legendre_point(λ, η, V, c)
+        Δk = c.n * c.A * V * pt.γ * exp((c.n - 1) * λ) - pt.s           # = Δ + k there
+        dm = pt.T * pt.v * (c.K * pt.γ^2 - c.c2 / (1 - c.c2 * pt.v^2))
+        st_new = max(s + Δk, floor_t / 2);  mt = mm + dm
+        abs(st_new - st_) < 1e-3 * abs(st_) && break
+        st_ = st_new
+    end
+    return λ, η
 end
 
 # Inverse: (s, v⃗, T) of the particle of energy e, momentum m and volume V; s = −Inf for a state with no solution (the solve fails or
@@ -159,7 +180,7 @@ end
 function legendre_inverse(e, m, V, eos; guess = nothing, counter::Bool = true)
     c = LegendreConsts(eos)
     fail = (-Inf, SVector(NaN, NaN), NaN)
-    (isfinite(e) && e > 0 && isfinite(V) && V > 0) || return fail
+    (isfinite(e) && isfinite(V) && V > 0) || return fail          # e ≤ 0 is possible: H = E_target − T(k + …) at small labels
     mm = norm(m)
     cold = guess === nothing
     if cold
@@ -168,27 +189,41 @@ function legendre_inverse(e, m, V, eos; guess = nothing, counter::Bool = true)
     else
         λ, η = start_from(guess[1], guess[2])
     end
-    λ, η, pt, its, ok = legendre_newton(λ, η, e, mm, V, c, true, LEG_MAXIT; counter)
+    λ, η, pt, its, ok = legendre_newton(λ, η, e, mm, V, c, true, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
     if !ok && !cold                                   # a poor guess: once more from the target's inversion
         λ, η = legendre_cold_inverse(e, m, V, eos)
         isfinite(λ) || (legendre_count(its, false, false, true);  return fail)
-        λ, η, pt, its2, ok = legendre_newton(λ, η, e, mm, V, c, true, LEG_MAXIT; counter);  its += its2;  cold = true
+        λ, η, pt, its2, ok = legendre_newton(λ, η, e, mm, V, c, true, LEG_MAXIT_COLD; counter);  its += its2;  cold = true
     end
-    conv = ok;  ok = ok && pt.J.det_Tv > 0 && pt.m >= 0
+    # a solve that does not converge with e < |m| is counted as a state with no solution: any Legendre state has H − |m| > −kT (from
+    # H = E_t − T(k + v²b), |m| = |m|_t − T v b, E_t > |m|_t), and these are proposals in the far tail (|m| ~ 7σ of the momentum)
+    conv = ok || e < mm;  ok = ok && pt.J.det_Tv > 0 && pt.m >= 0
     legendre_count(its, conv, ok, cold)
+    conv || logfail((:inverse, e, V, mm, pt.T, pt.v, pt.J.det_Tv, pt.s))
     ok || return fail
     pt.γ <= GAMMA_MAX || return fail
     v = mm > 0 ? (pt.v / mm) * m : zero(SVector{2,Float64})
     return (pt.s, v, pt.T)
 end
 
-# The cold start of the inverse map: the target's state at (e, m) (without the cap on γ: the counterterm moves γ), or NaN.
+# The cold start of the inverse map.  H = E_target(T, v) − T (k + v² [Kγ² − c_s²/q]) and |m| = |m|_target − T v [Kγ² − c_s²/q] at the
+# same (T, v): the target's state at the energy and momentum raised by these terms, iterated (as legendre_cold_forward); without
+# the cap on γ (the counterterm moves γ).  NaN if the target has no state at (e, m).
 function legendre_cold_inverse(e, m, V, eos)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return (NaN, NaN)
-    S, v, T = eos_from_energy(ε, M, eos)
-    (isfinite(T) && T > 0 && dot(v, v) < 1) || return (NaN, NaN)
-    return start_from(T, v)
+    c = LegendreConsts(eos);  mm = norm(m)
+    et = max(e, 0.0) + mm + 1e-3 * (abs(e) + mm);  mt = mm;  λ = η = NaN     # a start the target can invert (ε > |M|)
+    for _ in 1:6
+        ε = et / V;  M = (mm > 0 ? m * (mt / mm) : m) / V
+        (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return (λ, η)
+        S, v, T = eos_from_energy(ε, M, eos)
+        (isfinite(T) && T > 0 && dot(v, v) < 1) || return (λ, η)
+        λ, η = start_from(T, v)
+        vv = norm(v);  γ = cosh(η);  bk = c.K * γ^2 - c.c2 / (1 - c.c2 * vv^2)
+        etn = max(e + T * (c.k + vv^2 * bk), (mm + T * vv * bk) * (1 + 1e-9));  mt = mm + T * vv * bk
+        abs(etn - et) < 1e-3 * abs(et) && break
+        et = etn
+    end
+    return λ, η
 end
 
 # The state at (T, |v|, V) in the plan's variables, for the tests: (s, |m|, H, P).
