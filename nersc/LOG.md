@@ -655,6 +655,15 @@ before going over 20).
 - **Rerun**: pending/running c_s² = 1/4 Legendre tasks of 61825274 cancelled (array 289–384); old output of the 14 affected lines in
   `$SCRATCH/sph/eos_legendre/old_3c6fd46/`; `nersc/campaign_eos_legendre_rerun.txt` (14 lines, 112 tasks) submitted from worktree
   `~/stochastic-sph-legS` (b351f3a): job **61831354**, shared, -t 2 h (~0.7 node-hours).
+- **Rerun 61831354 done (112/112)**, but c_s² = 1/4, s_a = 16 still had E = NaN, now mostly in motion (3–8% of the configurations at
+  v = 0.8; acceptance 0.78–0.90).  Reproduced with b351f3a (debug 61836018, 61836717, the heat bath instrumented): the heat bath accepted
+  proposals at e < 0 (e = −53, |m| = 31) for which the inverse, from the guess, converged to a point with det > 0 and |m| ≥ 0 but **v < 0**
+  (the velocity against the momentum, |m|/v < 0): a label (s = −5.5 to −8.7) whose (s, m, V) has no state with γ ≤ 100.  Fixed in
+  **34b8161**: the physical branch also requires v ≥ 0 (`legendre_physical`); test 5c.  Check (debug 61837367): testlegendre all pass;
+  that line, 4 seeds × 300 updates: no NaN, acceptance 0.98–1.0 (was 0.90).  Such accepted proposals could also bias the other Legendre
+  runs silently (a wrong weight where some other state exists), so **every Legendre line is rerun**: `nersc/campaign_eos_legendre_rerun2.txt`
+  (24 lines, 192 tasks), worktree `~/stochastic-sph-legV` (34b8161), job **61838799**, shared, -t 2 h (~1.2 node-hours).  Earlier Legendre
+  output moved to `$SCRATCH/sph/eos_legendre/old_legendre_v1/` (and `old_3c6fd46/`); the tree and SPH_RENORM=1 runs stand.
 - **Found while at it — the Legendre H is two-valued at very negative labels** (c_s² = 1/2): for s < −5.65 (independent of V) the curve
   s = const in (T_rel, rapidity) has two segments with det ∂(s,|m|)/∂(T,v) > 0 separated by a fold (det < 0, rapidity ≈ 1.2–1.8), and their
   |m| ranges overlap: two physical states (a hot slow one and a cold fast one, γ ~ 15–65) with the same (s, |m|, V).  At c_s² = 1/4 it is
