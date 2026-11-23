@@ -45,7 +45,7 @@ function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, w
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
         x = SVector(e - ē, pa.m[1] - m̄[1], pa.m[2] - m̄[2]);  wx = logp(x) - logq(x)
-        LEGENDRE && isnan(wx) && (wx = -Inf)             # a current state with no weight (a failed solve): any valid proposal leaves it
+        HAS_DOMAIN && isnan(wx) && (wx = -Inf)             # a current state with no weight (a failed solve): any valid proposal leaves it
         for _ in 1:nmh
             y = Lw * SVector(randn(rng), randn(rng), randn(rng));  wy = logp(y) - logq(y)
             if isfinite(wy) && log(rand(rng)) < wy - wx
@@ -80,18 +80,18 @@ function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, 
     msc = maximum(norm, m0) + eps();  its = 0
     for it in 1:maxit                                     # m½ = m − δt/2 ∂H/∂x(x, m½)
         setm!(ps, mh);  hmc_force!(F, ps, params, cl, eos)
-        LEGENDRE && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
+        HAS_DOMAIN && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
         d = 0.0
         for a in 1:N;  mn = m0[a] + (dt / 2) * F[a];  d = max(d, norm(mn - mh[a]));  mh[a] = mn;  end
         its += 1;  d <= tol * msc && break
         it == maxit && @warn "generalized_leapfrog!: momentum half step not converged" d / msc
     end
     setm!(ps, mh);  hmc_velocity!(v0, ps, params, cl, eos)
-    LEGENDRE && !all(v -> isfinite(v[1]) && isfinite(v[2]), v0) && return -1
+    HAS_DOMAIN && !all(v -> isfinite(v[1]) && isfinite(v[2]), v0) && return -1
     xn = [x0[a] + dt * v0[a] for a in 1:N]                # x′ = x + δt/2 [v(x, m½) + v(x′, m½)]
     for it in 1:maxit
         setx!(ps, params, cl, xn);  hmc_velocity!(v1, ps, params, cl, eos)
-        LEGENDRE && !all(v -> isfinite(v[1]) && isfinite(v[2]), v1) && return -1
+        HAS_DOMAIN && !all(v -> isfinite(v[1]) && isfinite(v[2]), v1) && return -1
         d = 0.0
         for a in 1:N
             xa = x0[a] + (dt / 2) * (v0[a] + v1[a])
@@ -101,7 +101,7 @@ function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, 
         it == maxit && @warn "generalized_leapfrog!: position step not converged" d / params.a
     end
     setx!(ps, params, cl, xn);  hmc_force!(F, ps, params, cl, eos)
-    LEGENDRE && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
+    HAS_DOMAIN && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
     setm!(ps, [mh[a] + (dt / 2) * F[a] for a in 1:N])     # m′ = m½ − δt/2 ∂H/∂x(x′, m½)
     return its
 end

@@ -685,6 +685,23 @@ before going over 20).
   single-valued down to s = −10.  The warm-started Newton follows the sheet it is on; the bracket picks the slow one.  Deep in the tail
   (|m| ≈ 85 at V = 5.6e-4 at the onset), so negligible for the campaign's averages, but H(s, m, V) is not a function there: for the owner.
 
+### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
+
+Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
+is a concatenation).
+- **A. ∂Δs_dyn/∂u** (examples/renorm_quadrature_split.py, new switch: model `step5-du0`, `SR_MODELS`; login node, ~1 min per c_s²): with
+  and without the term T ∂Δs_dyn/∂u in E_dyn, s_a = 16, 54, 100, 200, 541, v = 0, 0.8.  Both residuals fall as 1/s²; the term changes the
+  coefficient by up to ~2 either way (without it smaller at c_s² = 1/2 everywhere and at c_s² = 1/4 for s_a ≥ 100; with it 8× smaller at
+  c_s² = 1/4, s_a = 54, v = 0.8, near a sign change of its residual).  Decision (agreed with the owner): drop it, E_dyn = T Δs_dyn —
+  first derivatives of the target state only.
+- **B–C.** `src/renorm_split.jl` (split_forward, split_inverse = Newton in u from the target's inversion, split_vote_entropy, check_split,
+  V̄ = SPH_RENORM_VBAR, default L²/N); `SPH_RENORM=split` chosen at load time in sph.jl (`SPLIT`, `HAS_DOMAIN = LEGENDRE || SPLIT` for the
+  rejections in hmc.jl), pointwise.jl, stochastic.jl.  Counters reported as legendre_* by eos_measure.jl, V̄ as split_vbar.
+- **SPH_RENORM=1 at any c_s²** (owner, 2026-11-23): its conformal-only check removed (stochastic.jl, renorm_vote_entropy); its α/2 =
+  (1 + d + 2d c_s²)/2 is split's b = 5/2 − 𝒩, so it is the label part alone.  Campaign `nersc/campaign_eos_ren1.txt` (144 tasks:
+  c_s² = 1/4 at rest and v = 0.8, c_s² = 1/2 at rest), beside `nersc/campaign_eos_split.txt` (192 tasks).
+- Note: an `srun` without `-n 1` on a debug node runs 32 copies (job 61861667, testsplit, wasted a few node-minutes).
+
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
 The equation of state of the model with the tree-level and the renormalized Hamiltonian (`SPH_RENORM=1`, docs/partition_v2.tex

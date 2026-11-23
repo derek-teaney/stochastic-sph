@@ -96,6 +96,10 @@ const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
 # energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.  SPH_RENORM=1 (the entropy shift,
 # stochastic.jl) is read as before; without SPH_RENORM=legendre the setting is read exactly as before (as a Bool).
 const LEGENDRE = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "legendre";  end
+# SPH_RENORM=split (docs/step5_plan.tex): Step 5, the label part of the counterterm in the measure, the rest in H (renorm_split.jl).
+const SPLIT = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "split";  end
+# the Hamiltonian has a domain (legendre, split): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
+const HAS_DOMAIN = LEGENDRE || SPLIT
 const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
@@ -180,6 +184,7 @@ end
 # Stochastic runs (the stochastic step, hybrid Monte Carlo) are two-dimensional (dimension.tex).
 function check_stochastic_dims(params::SimParams)
     check_legendre(params)                        # SPH_RENORM=legendre: the schemes it supports (renorm.jl)
+    check_split(params)                           # SPH_RENORM=split (renorm_split.jl)
     sim_dim(params) == 2 || error("stochastic runs need sim_dim = 2; one-dimensional stochastic runs were removed (dimension.tex)")
     params.phys_dim == sim_dim(params) ||
         error("stochastic runs need phys_dim = sim_dim (= 2), got phys_dim = $(params.phys_dim): with fluctuations the fluid is the " *

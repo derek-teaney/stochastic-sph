@@ -7,11 +7,14 @@
 #   tree     label u, measure e^u du d^2m, H = e_t(u, m, V)
 #   label    the label part only: measure e^{u - Δs_lab(u)} J_lab du d^2m, J_lab = 1 - (5/2 - N)/u, H = e_t  (= SPH_RENORM at c_s^2 = 1/2)
 #   step5    the label part in the measure, H = e_t + T_a [Δs_dyn + ∂Δs_dyn/∂u|_{m,V}]  (the last term is -ln J_dyn at lowest order)
+#   step5-du0  the same without the term ∂Δs_dyn/∂u (step5_plan.tex, A: keep it only if it changes the residual at s_a >= 54)
 #   legendre the Legendre Hamiltonian (examples/renorm_quadrature_legendre.py, imported unchanged)
 # The quadrature for tree/label/step5 runs over the target's (T, v_x, v_y): du d^2m = |∂(u,M)/∂(T,v)| (M/v) dT d^2v.
 # Also reported for step5: the weight within 3 of the label boundary u = 5/2 - N, and the largest |dx/dt| = |∂H/∂m| on the grid
 # (and the weight beyond the light cone).
 #   python3 examples/renorm_quadrature_split.py [c_s^2 ...]     (default 0.5 0.25; SR_SA, SR_V as in the Legendre script)
+# SR_MODELS: the models to run (default tree,label,step5,legendre; also step5-du0).  SR_CSV=<file>: write the rows of the first model
+# as c2,s,v,E,M,p,R (s = s_a), the single-particle reference of examples/eos_split.py (docs/figs/split_quadrature.csv, step5-du0).
 import os, sys
 import numpy as np
 from scipy.optimize import minimize
@@ -46,14 +49,14 @@ class Split:
         g = 1 / np.sqrt(1 - v * v)
         return self.N * np.log(g * V) + 0.5 * np.log(1 - self.c2 * v * v)
 
-    def dyn_energy(self, T, v, V):
+    def dyn_energy(self, T, v, V, du=True):
         """T_a [Δs_dyn + ∂Δs_dyn/∂u|_{m,V}] at the target state (T, v)"""
         u, Mv, e, uT, uv, Mvv = self.target(T, v, V)
         det = uT * Mvv - uv * uv
         dvdu = -uv / det                                           # ∂v/∂u at fixed m (Cramer)
         g2 = 1 / (1 - v * v)
         dDdv = self.N * g2 * v - self.c2 * v / (1 - self.c2 * v * v)
-        return T * (self.ds_dyn(v, V) + dDdv * dvdu)
+        return T * (self.ds_dyn(v, V) + (dDdv * dvdu if du else 0.0))
 
     def logweight(self, name, T, vx, vy, Tb, vb, V):
         if name == "legendre":
@@ -71,16 +74,16 @@ class Split:
             ok = ok & (u > self.blab)
             us = np.where(ok, u, 2 * self.blab + 1)
             lw = u - self.ds_lab(us) + np.log(1 - self.blab / us)
-            H = e + (self.dyn_energy(T, v, V) if name == "step5" else 0.0)
+            H = e + (self.dyn_energy(T, v, V, name == "step5") if name.startswith("step5") else 0.0)
         lw = lw - (H - vb * mx) / Tb + np.log(np.where(ok, det * Mv, 1.0))
         return np.where(ok, lw, -np.inf), np.where(ok, H, 0.0), np.where(ok, mx, 0.0)
 
-    def xdot(self, T, vx, vy, V, h=1e-6):
+    def xdot(self, T, vx, vy, V, h=1e-6, du=True):
         """|∂H/∂m| at fixed (u, V) for step5: v + ∂(T Δ)/∂m, by the chain rule through (T, |v|) (along m)"""
         v = np.hypot(vx, vy)
         u, Mv, e, uT, uv, Mvv = self.target(T, v, V)
         det = uT * Mvv - uv * uv
-        f = lambda TT, vv: self.dyn_energy(TT, vv, V)
+        f = lambda TT, vv: self.dyn_energy(TT, vv, V, du)
         fT = (f(T * (1 + h), v) - f(T * (1 - h), v)) / (2 * h * T)
         fv = (f(T, v + h * (1 - v)) - f(T, v - h * (1 - v))) / (2 * h * (1 - v))
         return v + (-uv * fT + uT * fv) / det                      # ∂f/∂|m| at fixed u
@@ -116,14 +119,14 @@ class Split:
             lz = np.log(wt.sum() * dxi**3 * np.prod(sig)) + m
             if avg:
                 W = wt.sum();  out["E"] = (wt * H).sum() / W;  out["M"] = (wt * mx).sum() / W
-                if name in ("label", "step5"):
+                if name in ("label", "step5", "step5-du0"):
                     ok = np.isfinite(lw) & (P[0] > 0)
                     vv = np.hypot(P[1], P[2]);  u = np.where(ok, self.target(np.where(ok, P[0], 1.0), np.where(ok, vv, 0.0), VV)[0], np.inf)
                     out["edge"] = wt[u < self.blab + 3].sum() / W
                     # the edge of the grid: the weight on the outer shell, to see that the quadrature holds the particle
-                if name == "step5":
+                if name.startswith("step5"):
                     sig_w = wt > 1e-12 * wt.max()
-                    xd = np.where(sig_w, self.xdot(np.where(sig_w, P[0], 1.0), np.where(sig_w, P[1], 0.0), np.where(sig_w, P[2], 0.0), VV), 0.0)
+                    xd = np.where(sig_w, self.xdot(np.where(sig_w, P[0], 1.0), np.where(sig_w, P[1], 0.0), np.where(sig_w, P[2], 0.0), VV, du=(name == "step5")), 0.0)
                     out["xdot"] = np.abs(xd).max();  out["fast"] = wt[np.abs(xd) >= 1].sum() / W
             return lz
         lz = lnZ(V, True)
@@ -141,21 +144,29 @@ if __name__ == "__main__":
     c2s = [float(x) for x in sys.argv[1:]] or [0.5, 0.25]
     sas = [float(x) for x in os.environ.get("SR_SA", "16,54,541").split(",")]
     vbs = [float(x) for x in os.environ.get("SR_V", "0,0.8").split(",")]
+    models = os.environ.get("SR_MODELS", "tree,label,step5,legendre").split(",")   # also step5-du0
+    csv = os.environ.get("SR_CSV")
+    if csv:
+        with open(csv, "w") as f:
+            f.write("c2,s,v,E,M,p,R\n")
     for c2 in c2s:
         mdl = Split(c2)
         print(f"c_s^2 = {c2}  (N = {mdl.N:+.3f}, label boundary u = {mdl.blab:.2f}; check of the split: {mdl.check_split():.1e})")
         for s_a in sas:
             for vb in vbs:
-                for name in ["tree", "label", "step5", "legendre"]:
+                for name in models:
                     try:
                         o = mdl.observables(name, s_a, vb)
                     except Exception as ex:
                         print(f"  s_a={s_a:6.1f} v={vb:.1f} {name:8s} failed: {ex}");  continue
+                    if csv and name == models[0]:
+                        with open(csv, "a") as f:
+                            f.write(f"{c2},{s_a},{vb},{o['E']},{o['M']},{o['p']},{o['R']}\n")
                     extra = ""
                     if "edge" in o:
                         extra += f"  w(u<b+3) {o['edge']:.1e}"
                     if "xdot" in o:
                         extra += f"  max|xdot| {o['xdot']:.4f}  w(|xdot|>=1) {o['fast']:.1e}"
-                    print(f"  s_a={s_a:6.1f} v={vb:.1f} {name:8s}  E {o['E']:+.2e}  M {o['M']:+.2e}  p {o['p']:+.2e}"
+                    print(f"  s_a={s_a:6.1f} v={vb:.1f} {name:9s}  E {o['E']:+.2e}  M {o['M']:+.2e}  p {o['p']:+.2e}"
                           f"  R {o['R']:+.2e}  mu/T {o['mu']:+.2e}{extra}", flush=True)
             print()

@@ -1,0 +1,22 @@
+# Campaign `eos_ren1` (branch split, docs/step5_plan.tex): SPH_RENORM=1, the label part of the counterterm alone, on the lines of eos_split:
+# c_s^2 = 1/4 at rest and at v = 0.8 (allowed since branch split), and c_s^2 = 1/2 at rest (eos_legendre had SPH_RENORM=1 at v = 0.8 only;
+# at rest it was in eos_renorm, other settings).  L = 0.45, 8 seeds of 300 updates.  144 tasks on 2 threads.
+# Output $SCRATCH/sph/eos_split/ (runs eosS_ren1_*).
+eosS_ren1_c05_s16_ha2_v0        8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ren1_c05_s16_ha2_v0
+eosS_ren1_c05_s16_ha3_v0        8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ren1_c05_s16_ha3_v0
+eosS_ren1_c05_s54_ha2_v0        8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ren1_c05_s54_ha2_v0
+eosS_ren1_c05_s54_ha3_v0        8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ren1_c05_s54_ha3_v0
+eosS_ren1_c05_s541_ha2_v0       8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ren1_c05_s541_ha2_v0
+eosS_ren1_c05_s541_ha3_v0       8  SPH_RENORM=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ren1_c05_s541_ha3_v0
+eosS_ren1_c025_s16_ha2_v0       8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ren1_c025_s16_ha2_v0
+eosS_ren1_c025_s16_ha3_v0       8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ren1_c025_s16_ha3_v0
+eosS_ren1_c025_s54_ha2_v0       8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ren1_c025_s54_ha2_v0
+eosS_ren1_c025_s54_ha3_v0       8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ren1_c025_s54_ha3_v0
+eosS_ren1_c025_s541_ha2_v0      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ren1_c025_s541_ha2_v0
+eosS_ren1_c025_s541_ha3_v0      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ren1_c025_s541_ha3_v0
+eosS_ren1_c025_s16_ha2_v08      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ren1_c025_s16_ha2_v08
+eosS_ren1_c025_s16_ha3_v08      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ren1_c025_s16_ha3_v08
+eosS_ren1_c025_s54_ha2_v08      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ren1_c025_s54_ha2_v08
+eosS_ren1_c025_s54_ha3_v08      8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ren1_c025_s54_ha3_v08
+eosS_ren1_c025_s541_ha2_v08     8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ren1_c025_s541_ha2_v08
+eosS_ren1_c025_s541_ha3_v08     8  SPH_RENORM=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ren1_c025_s541_ha3_v08
