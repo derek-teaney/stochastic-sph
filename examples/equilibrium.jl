@@ -25,6 +25,11 @@ const NREAL = parse(Int, ARGS[4])
 const RECN  = length(ARGS) > 4 ? parse(Int, ARGS[5]) : 2          # record every RECN steps
 const TAG   = length(ARGS) > 5 ? ARGS[6] : "L$(LBOX)_ha$(HA)"
 const ETAS  = setting("SR_ETAS", 0.2)
+# SR_CS2: the speed of sound of the constant-c_s² EOS (default 0: the conformal fluid in d = 2, c_s² = 1/2).  SR_CS2=1/3 with
+# SR_ZETAS = (η/s)/3 reproduces the stochastic step of the runs before the dimension fix (8d50d04: c_s² = 1/3, ζ_eff = η/3) at d = 2:
+# the dimension enters the tree-level step only through ζ_eff = max(ζ + 2η(1/2 − 1/d), 0.01 η).  SR_ZETAS: ζ/s (default 0).
+const CS2V  = setting("SR_CS2", 0.0)
+const ZETAS = setting("SR_ZETAS", 0.0)
 const S0    = setting("SR_S0", 1e6)
 const KHMAX = setting("SR_KHMAX", 1.5)
 const START = setting("SR_START", :eq)
@@ -148,7 +153,8 @@ end
 
 function one_realization(seed)
     base = joinpath(OUT, "equilibrium_$(TAG)_r$(seed)");  chk = base * ".chk"
-    eos = conformal_eos(default_phys_dim(); η_by_s = ETAS)
+    eos = CS2V > 0 ? ConstantCs2EOS(; cs2_val = CS2V, η_by_s = ETAS, ζ_by_s = ZETAS) :
+                     conformal_eos(default_phys_dim(); η_by_s = ETAS, ζ_by_s = ZETAS)
     if isfile(chk)
         st = load_checkpoint(chk)
         restore_guards!(st.guards)
