@@ -630,7 +630,18 @@ before going over 20).
   P/p−1 = −0.032 (σ = 22.7) against SPH_RENORM=1 −0.015, −0.039 (σ = 18.0): within the single-particle residual, both dominated
   by the positions; acceptance 0.985–0.995 for all; tree 0.134, 0.106.  Dynamics (stability.jl, S0 = 1e5, t = 20): ΔH/H = +4.8e-5
   Legendre, +4.2e-5 SPH_RENORM=1.
-- Campaign file `nersc/campaign_eos_legendre.txt` (432 tasks, aa85f5c); smoke test of two tasks (60 updates): debug job 61824455.
+- Campaign file `nersc/campaign_eos_legendre.txt` (432 tasks, aa85f5c); smoke test of two tasks (60 updates): debug job 61824455 —
+  eosL_leg_c025_s16_ha2_v08 seed 0 stuck (a cold inverse at v ≈ 0.997 stalled under step halving; one NaN particle then kept the
+  heat bath from moving it): fixed in 3c6fd46 (full Newton steps unless the residual grows fourfold; 50 cold iterations; the heat bath
+  leaves a state with no weight).  Again, debug job 61824956: both COMPLETED, acceptance 0.98 and 1.0, no failures; 0.75 s per update
+  at h/a = 2 (N = 360), 3.5 s at h/a = 3 (N = 864), Legendre, 2 threads.
+- Unit tests with the switch on (186124b): 14 pass; 9 fail by design — testeos, testeos2d, testeos_consistency, testchangerep (they
+  compare the particle maps with the target's closed forms), testeqstart (the target's most probable state), testhastings (Einstein
+  measure, refused), testdims (a different refusal message), teststochastic_guard (calls eos_from_energy directly on particle states;
+  a Legendre particle may have e < |m|), testparticle_sweep (the legacy two-level dissipation); every script loads.  With the switch
+  off: all unit, physics and load tests pass; regression against db139ef bit-identical except hast_lq_*.
+- **Campaign submitted**: job **61825274** (432 tasks, shared, -c 2, -t 2 h), run checkout `~/stochastic-sph-legR` (worktree at
+  3c6fd46), output `$SCRATCH/sph/eos_legendre/`.  Estimate 216 × 5 min + 216 × 19 min on 2 threads ≈ 1.4 node-hours.
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
