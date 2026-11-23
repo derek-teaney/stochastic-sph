@@ -4,7 +4,7 @@
 #   3. forward and inverse are inverses, H(S(e, m, V), m, V) = e to 1e-13, for s_a in [10, 1e4], γ in [1, 100], c_s² = 1/2 and 1/4
 #      (the label s = the target's entropy less Δ + k is negative at the smallest s_a: allowed);
 #   4. with the counterterm off the solves reproduce the target's (eos_newton, eos_from_energy) to roundoff;
-#   5. warm and cold starts give the same answer, and the iterations per solve;
+#   5. warm and cold starts give the same answer, and the iterations per solve; 5b, 5c: the campaign's failing states;
 #   6. hybrid Monte Carlo with the Legendre Hamiltonian: the energy error of a trajectory falls as δt² (the forces are −∂H/∂x),
 #      and a few updates are accepted with the total momentum unchanged by the trajectories.
 ENV["SPH_RENORM"] = "legendre"
@@ -118,6 +118,24 @@ let eos4 = ConstantCs2EOS(cs2_val = 0.25), worst = 0.0, found = 0
         end
     end
     check(found == 6 && worst < 1e-10, @sprintf("%d of 6 solves found the state (γ = 12–41); the round trip agrees to %.1e", found, worst))
+end
+
+println("5c. heat-bath proposals with no state (e < 0): the inverse must not return a point with v < 0")
+let eos4 = ConstantCs2EOS(cs2_val = 0.25), bad = 0
+    for (e, m, V, g) in ((-52.6904936029332, SVector(-15.149293494605445, 26.993310483648635), 0.0004702561003668446,
+                          (8.024846998070426, SVector(0.8376620274049337, 0.005914579786578995))),
+                         (-38.118200373637706, SVector(-2.022086830333933, -20.748100871888123), 0.000569020443935683,
+                          (7.525107324087005, SVector(0.8213736460156041, -0.07003512497206414))))
+        for gg in (g, nothing)
+            r = legendre_inverse(e, m, V, eos4; guess = gg)
+            # a state, if returned, must have its velocity along m and a forward map back to it
+            if isfinite(r[1])
+                f = legendre_forward(r[1], r[1] / V, m / V, 0.0, 1.0, eos4)
+                (dot(r[2], m) >= 0 && isfinite(f.T)) || (bad += 1)
+            end
+        end
+    end
+    check(bad == 0, "the two proposals of the campaign: no state returned with v against m, or without a forward map ($bad bad)")
 end
 
 println("6. hybrid Monte Carlo with the Legendre Hamiltonian")

@@ -64,14 +64,31 @@ for d in sorted(glob.glob(os.path.join(ROOT, "eosL_*"))):
     runs[name] = out
 print(f"{len(runs)} runs")
 
+# the Legendre single-particle reference: the exact quadrature (examples/renorm_quadrature_legendre.py, SR_CSV), if present
+QCSV = os.path.join(FIG, "legendre_quadrature.csv")
+quad = np.genfromtxt(QCSV, delimiter=",", names=True) if os.path.exists(QCSV) else None
+QCOL = {"E": "E", "P": "p", "Tyy": "p", "M": "M", "R": "R", "chiMM": "chi_MM", "chiEE": "chi_EE", "chiEv": "chi_EM", "chiMT": "chi_ME"}
+
 kk = lambda c2: 2 + 1.5 / c2
 def expect(q, scheme, c2, s, v=0.8):
+    """one loop for tree and SPH_RENORM=1 (without the positions); the exact single particle for Legendre (NaN where unknown)"""
     k = kk(c2);  sig = c2 * s / (1 + c2)
+    if scheme == "leg":
+        if quad is None or q not in QCOL:
+            return np.nan * s
+        # s >= 20: below, the Gaussian grid of the quadrature does not hold the particle in motion (not smooth in s, or no answer)
+        r = quad[(np.abs(quad["c2"] - c2) < 1e-9) & (np.abs(quad["v"] - v) < 1e-9) & (quad["s"] >= 20) & np.isfinite(quad[QCOL[q]])]
+        if len(r) < 2:
+            return np.nan * s
+        o = np.argsort(1 / r["s"]);  x = 1 / r["s"][o];  y = r[QCOL[q]][o]
+        return np.where((1 / s >= x[0]) & (1 / s <= x[-1]), np.interp(1 / s, x, y), np.nan)
+    if v > 0 and q != "R":                            # the one-loop entries in motion are not in the plan's table
+        return np.nan * s
     if q == "P":   return 2.5 / sig if scheme == "tree" else 0 * s
     if q == "E":   return k * (1 + c2) / s if scheme == "tree" else 0 * s
-    if q == "chiMM": return (2.5 + k - c2) / s if scheme == "tree" else (-c2 / s if scheme == "ren1" else 0 * s)
-    if q == "R":   return -c2 * (1 - v * v)**2 / ((1 - c2 * v * v) * s) if scheme in ("tree", "ren1") else 0 * s
-    return 0 * s
+    if q == "chiMM": return (2.5 + k - c2) / s if scheme == "tree" else -c2 / s
+    if q == "R":   return -c2 * (1 - v * v)**2 / ((1 - c2 * v * v) * s)
+    return np.nan * s
 
 COL = {"tree": "C0", "ren1": "C2", "leg": "C3"};  LAB = {"tree": "tree", "ren1": "SPH_RENORM=1", "leg": "Legendre"}
 MK = {2: "o", 3: "s"}
@@ -81,7 +98,7 @@ def sel(scheme, c2, v, ha=None):
     return sorted(r, key=lambda x: x["s_t"])
 
 def panel(ax, key, c2, v, qexp, ylabel, schemes=("tree", "ren1", "leg")):
-    xs = np.linspace(0, 0.2, 100)
+    xs = np.linspace(0.0015, 0.1, 200)
     for sc in schemes:
         for ha in (2, 3):
             r = sel(sc, c2, v, ha)
@@ -91,7 +108,7 @@ def panel(ax, key, c2, v, qexp, ylabel, schemes=("tree", "ren1", "leg")):
             ax.errorbar(x, y, e, fmt=MK[ha], color=COL[sc], mfc=COL[sc] if ha == 2 else "none", ms=5,
                         label=f"{LAB[sc]}, h/a={ha}")
         if qexp and sel(sc, c2, v):
-            ax.plot(xs, expect(qexp, sc, c2, 1 / np.maximum(xs, 1e-9), v if v > 0 else 0.8), "--", color=COL[sc], lw=1)
+            ax.plot(xs, expect(qexp, sc, c2, 1 / np.maximum(xs, 1e-9), v), "--", color=COL[sc], lw=1)
     ax.axhline(0, color="k", lw=0.6);  ax.set_xlabel("1/s");  ax.set_ylabel(ylabel)
     ax.set_title(f"c_s² = {c2:g}, v = {v:g}", fontsize=9)
 
@@ -102,30 +119,30 @@ for i, c2 in enumerate((0.5, 0.25)):
     panel(axs[i, 1], "P_over_p_minus1", c2, 0.0, "P", "P/p − 1")
     panel(axs[i, 2], "chi_dMdv_over_target_minus1", c2, 0.0, "chiMM", "χ_MM/(T w) − 1")
 axs[0, 0].legend(fontsize=7)
-fig.suptitle("At rest (dashed: one loop, without the positions)", fontsize=10)
+fig.suptitle("At rest (dashed: one loop for tree and SPH_RENORM=1, the exact single particle for Legendre; without the positions)", fontsize=10)
 fig.tight_layout();  fig.savefig(os.path.join(FIG, "legendre_EP.png"), dpi=140)
 
 # 2. in motion: E, T^yy, M, R
 fig, axs = plt.subplots(2, 4, figsize=(19, 8))
 for i, c2 in enumerate((0.5, 0.25)):
-    panel(axs[i, 0], "E_over_e_minus1", c2, 0.8, None, "E/e − 1 (lab)")
-    panel(axs[i, 1], "Tyy_over_p_minus1", c2, 0.8, None, "T^yy/p − 1")
-    panel(axs[i, 2], "M_over_target_minus1", c2, 0.8, None, "M/(wγ²v) − 1")
+    panel(axs[i, 0], "E_over_e_minus1", c2, 0.8, "E", "E/e − 1 (lab)")
+    panel(axs[i, 1], "Tyy_over_p_minus1", c2, 0.8, "Tyy", "T^yy/p − 1")
+    panel(axs[i, 2], "M_over_target_minus1", c2, 0.8, "M", "M/(wγ²v) − 1")
     panel(axs[i, 3], "R", c2, 0.8, "R", "R = M/(v(E + T^yy)) − 1")
 axs[0, 0].legend(fontsize=7)
-fig.suptitle("v = 0.8 (dashed: one-loop R)", fontsize=10)
+fig.suptitle("v = 0.8 (dashed: one-loop R for tree and SPH_RENORM=1; red: the exact single particle, Legendre)", fontsize=10)
 fig.tight_layout();  fig.savefig(os.path.join(FIG, "legendre_moving.png"), dpi=140)
 
 # 3. the susceptibility matrix against the target's entries
 fig, axs = plt.subplots(2, 5, figsize=(23, 8))
 for i, c2 in enumerate((0.5, 0.25)):
-    panel(axs[i, 0], "chi_dEdT_over_target_minus1", c2, 0.8, None, "(∂E/∂T)_v / target − 1")
-    panel(axs[i, 1], "chi_dMdv_over_target_minus1", c2, 0.8, None, "(∂M/∂v)_T / target − 1")
-    panel(axs[i, 2], "chi_dEdv_over_target_minus1", c2, 0.8, None, "(∂E/∂v)_T / target − 1")
-    panel(axs[i, 3], "chi_dMdT_over_target_minus1", c2, 0.8, None, "(∂M/∂T)_v / target − 1")
-    panel(axs[i, 4], "chi_dEdT_over_target_minus1", c2, 0.0, None, "(∂E/∂T) / target − 1, v = 0")
+    panel(axs[i, 0], "chi_dEdT_over_target_minus1", c2, 0.8, "chiEE", "(∂E/∂T)_v / target − 1")
+    panel(axs[i, 1], "chi_dMdv_over_target_minus1", c2, 0.8, "chiMM", "(∂M/∂v)_T / target − 1")
+    panel(axs[i, 2], "chi_dEdv_over_target_minus1", c2, 0.8, "chiEv", "(∂E/∂v)_T / target − 1")
+    panel(axs[i, 3], "chi_dMdT_over_target_minus1", c2, 0.8, "chiMT", "(∂M/∂T)_v / target − 1")
+    panel(axs[i, 4], "chi_dEdT_over_target_minus1", c2, 0.0, "chiEE", "(∂E/∂T) / target − 1, v = 0")
 axs[0, 0].legend(fontsize=7)
-fig.suptitle("The susceptibility matrix from the canonical covariances, v = 0.8 (last column: v = 0)", fontsize=10)
+fig.suptitle("The susceptibility matrix from the canonical covariances, v = 0.8 (last column: v = 0); red dashed: the exact Legendre single particle", fontsize=10)
 fig.tight_layout();  fig.savefig(os.path.join(FIG, "legendre_chi.png"), dpi=140)
 
 # 4. the table

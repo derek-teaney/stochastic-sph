@@ -73,6 +73,11 @@ LegendreConsts(eos::AbstractEOS) = error("SPH_RENORM=legendre: implemented for C
     return (s = s, m = m, H = H, P = P, T = T, v = v, γ = γ, Tr = Tr, J = J)
 end
 
+# The physical branch: the susceptibility determinant det ∂(s,|m|)/∂(T,v) > 0, |m| ≥ 0, and the velocity along the momentum, v ≥ 0
+# (|m|/v > 0).  Without the last condition Newton can return a point with v < 0 and |m|/v < 0 — det > 0 and |m| ≥ 0 there too — whose
+# (s, m, V) has no physical state (campaign eos_legendre, c_s² = 1/4, s_a = 16: heat-bath proposals at e < 0).
+@inline legendre_physical(pt) = pt.J.det_Tv > 0 && pt.m >= 0 && pt.v >= 0
+
 # Newton on (λ, η) for the residuals (x(λ, η) − x0, |m|(λ, η) − m0), x = s (forward) or H (inverse), with step halving when a step makes
 # the residual non-finite or four times larger.
 @inline function legendre_newton(λ, η, x0, m0, V, c, inverse::Bool, maxit::Int; counter::Bool = true)
@@ -142,7 +147,7 @@ function legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess = nothing, counter
         cold = true
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
     end
-    phys(pt) = pt.J.det_Tv > 0 && pt.m >= 0
+    phys = legendre_physical
     λ, η, pt, its, ok = legendre_newton(λ, η, s, mm, V, c, false, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
     if !(ok && phys(pt)) && !cold                     # a poor warm start (no convergence, or the other branch): once more cold
         λ, η = legendre_cold_forward(s, S_in, M_vec, mm, V, c, eos; counter)
@@ -245,14 +250,14 @@ function legendre_inverse(e, m, V, eos; guess = nothing, counter::Bool = true)
         λ, η = start_from(guess[1], guess[2])
     end
     λ, η, pt, its, ok = legendre_newton(λ, η, e, mm, V, c, true, cold ? LEG_MAXIT_COLD : LEG_MAXIT; counter)
-    if !(ok && pt.J.det_Tv > 0 && pt.m >= 0) && !cold     # a poor guess (no convergence, or the other branch): once more from the target's inversion
+    if !(ok && legendre_physical(pt)) && !cold     # a poor guess (no convergence, or the other branch): once more from the target's inversion
         λ, η = legendre_cold_inverse(e, m, V, eos)
         isfinite(λ) || (legendre_count(its, false, false, true);  return fail)
         λ, η, pt, its2, ok = legendre_newton(λ, η, e, mm, V, c, true, LEG_MAXIT_COLD; counter);  its += its2;  cold = true
     end
     # a solve that does not converge with e < |m| is counted as a state with no solution: any Legendre state has H − |m| > −kT (from
     # H = E_t − T(k + v²b), |m| = |m|_t − T v b, E_t > |m|_t), and these are proposals in the far tail (|m| ~ 7σ of the momentum)
-    conv = ok || e < mm;  ok = ok && pt.J.det_Tv > 0 && pt.m >= 0
+    conv = ok || e < mm;  ok = ok && legendre_physical(pt)
     legendre_count(its, conv, ok, cold)
     conv || logfail((:inverse, e, V, mm, pt.T, pt.v, pt.J.det_Tv, pt.s))
     ok || return fail

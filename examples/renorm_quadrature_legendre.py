@@ -81,16 +81,23 @@ class Model:
         return dict(E=E / Et - 1, P=(Px / Pt - 1) if vb > 0 else np.nan, p=pV / (p * V) - 1, R=R, mu=mu, chi=chir)
 
 if __name__ == "__main__":
+    # SR_SA: comma-separated entropies per particle (default 54,541); SR_V: comma-separated velocities (default 0,0.5,0.8);
+    # SR_CSV: also write the rows to this file (read by examples/eos_legendre.py as the single-particle reference)
+    import os
     c2s = [float(x) for x in sys.argv[1:]] or [0.5]
+    vbs = [float(x) for x in os.environ.get("SR_V", "0,0.5,0.8").split(",")]
+    csv = open(os.environ["SR_CSV"], "w") if "SR_CSV" in os.environ else None
+    csv and csv.write("c2,s,v,E,M,p,R,chi_EE,chi_MM,chi_EM,chi_ME\n")
     for c2 in c2s:
         mdl = Model(c2)
         print(f"c_s^2 = {c2}  (N = 1 - 2 c_s^2 = {1 - 2 * c2:+.3f}):  relative deviations from the target, R, mu/T")
-        for s_a in [int(x) for x in __import__("os").environ.get("SR_SA", "54,541").split(",")]:
-            for vb in [0.0, 0.5, 0.8]:
+        for s_a in [float(x) for x in os.environ.get("SR_SA", "54,541").split(",")]:
+            for vb in vbs:
                 try:
                     o = mdl.observables(s_a, vb)
                 except Exception as ex:
-                    print(f"  s_a={s_a:4d} v={vb:.1f}  failed: {ex}");  continue
+                    print(f"  s_a={s_a:6.1f} v={vb:.1f}  failed: {ex}");  continue
                 c = o["chi"]
-                print(f"  s_a={s_a:4d} v={vb:.1f}  E {o['E']:+.2e}  M {o['P']:+.2e}  p {o['p']:+.2e}  R {o['R']:+.2e}  mu/T {o['mu']:+.2e}"
+                csv and (csv.write(f"{c2},{s_a},{vb},{o['E']},{o['P']},{o['p']},{o['R']},{c['dEdT']},{c['dMdv']},{c['dEdv']},{c['dMdT']}\n"), csv.flush())
+                print(f"  s_a={s_a:6.1f} v={vb:.1f}  E {o['E']:+.2e}  M {o['P']:+.2e}  p {o['p']:+.2e}  R {o['R']:+.2e}  mu/T {o['mu']:+.2e}"
                       f"  chi-1: EE {c['dEdT']:+.2e} MM {c['dMdv']:+.2e} EM {c['dEdv']:+.2e} ME {c['dMdT']:+.2e}")
