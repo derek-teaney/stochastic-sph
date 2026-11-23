@@ -701,6 +701,15 @@ is a concatenation).
   (1 + d + 2d c_s²)/2 is split's b = 5/2 − 𝒩, so it is the label part alone.  Campaign `nersc/campaign_eos_ren1.txt` (144 tasks:
   c_s² = 1/4 at rest and v = 0.8, c_s² = 1/2 at rest), beside `nersc/campaign_eos_split.txt` (192 tasks).
 - Note: an `srun` without `-n 1` on a debug node runs 32 copies (job 61861667, testsplit, wasted a few node-minutes).
+- **D. testsplit** (debug 61861873 → fixes → 61862296): all 33 checks pass.  Two fixes on the way (878ddaa): the inverse asked for 1e-14,
+  but H(u) through the target's forward solve (eos_newton, tol 1e-12) is resolved only to ~1e-13, so Newton stalled (now 1e-12 relative,
+  or a step below 1e-13 u); and heat-bath proposals in the tail drove Newton below the label boundary b without converging (now: if an
+  iterate falls below b and e ≤ H(b), no state; else bisect toward b).  HMC: |ΔH/H| ∝ δt² (ratio 16.1), 5/5 accepted at both c_s²;
+  10080 inverse solves, 2.9 iterations per solve, 0 failures; ~7% of the heat-bath proposals have e < |m| (no fluid state; the tree
+  level rejects them the same way).
+- Regressions submitted against 53d29e4 from the pinned worktree `~/stochastic-sph-splitR` (4482c91): switch off, MODE=all (job
+  61862061), and SPH_RENORM=legendre, MODE=regress (job 61862064); shared -c 64.  Smoke runs: debug 61862298
+  (`$SCRATCH/sph/eos_split/smoke/smoke.sh`).
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
