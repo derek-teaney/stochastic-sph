@@ -72,18 +72,60 @@ function rest_energy(ε::Float64, M2::Float64, eos::ConstantCs2EOS; tol=1e-15, m
     return 2 * (ε^2 - M2) / ((1 - c2) * ε + sqrt((1 + c2)^2 * ε^2 - 4c2 * M2))
 end
 
-# Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state.
+# ── The two particle-level maps (docs/legendre_plan.tex, A) ──────────────────
+# Every particle-level use of the equation of state goes through these two (the field-level uses, which are not about one
+# particle, are not: grid.jl's grid_forward/grid_inverse (the lattice step), the starting guess of beta_from_averages
+# (measure.jl), state_from_beta and particle_moments (the targets and the proposals)).
+#   forward  particle_forward(s, S, M, e0, eos; M_mag, γ0, guess, tol, maxiter, verbose): the state of a particle of entropy s at
+#            the entropy density S = s/V and momentum density M = m/V (warm start e0, the rest-frame energy density, and γ0);
+#            returns (e = rest-frame energy density, p = the particle's pressure, T = ∂H/∂s, γ, v, HS = H/s, FS)
+#   inverse  particle_inverse(e, m, V, eos; guess): (s, v, T) of the particle of energy e, momentum m and volume V; s = −Inf for a
+#            state no fluid can have (the inversion fails, |M| ≥ ε, or γ > γ_max; sph.jl, SPH_GAMMA_MAX)
+# The target's (default): the arithmetic of solve_eos! and eos_from_energy, unchanged.  SPH_RENORM=legendre: renorm.jl.
+@inline function target_forward(s, S_in, M_vec, e0, eos::AbstractEOS; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2),
+                                tol = 1e-12, maxiter = 50, verbose = false)
+    e = eos_newton(S_in, M_mag, e0, eos; tol, maxiter, verbose)
+    w = e + pressure(eos, e)
+    G, _ = eos_wgamma(w, M_mag)
+    γ = G / w
+    v = M_vec * (w / G^2)            # M = w γ² v
+    p = pressure(eos, e)
+    return (e = e, p = p, T = w / S_in, γ = γ, v = v, HS = (w * γ^2 - p) / S_in, FS = dot(v, M_vec / S_in) / S_in - p / S_in^2)
+end
+@inline function target_inverse(e, m, V, eos::AbstractEOS)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return (-Inf, SVector(NaN, NaN), NaN)     # |M| < ε is necessary (p ≤ e)
+    r = try
+        eos_from_energy(ε, M, eos)
+    catch
+        return (-Inf, SVector(NaN, NaN), NaN)
+    end
+    S, v, T = r
+    return ((isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf, v, T)
+end
+# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots have positive arguments), so the try block,
+# about 17% of a call, is not needed.  Same arithmetic: bit-identical results.
+@inline function target_inverse(e, m, V, eos::ConstantCs2EOS)
+    ε = e / V;  M = m / V
+    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return (-Inf, SVector(NaN, NaN), NaN)
+    S, v, T = eos_from_energy(ε, M, eos)
+    return ((isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf, v, T)
+end
+# the methods are chosen at load time, so that without SPH_RENORM=legendre the code is exactly that of before
+if LEGENDRE
+    particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
+                     tol = 1e-12, maxiter = 50, verbose = false) = legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess)
+    particle_inverse(e, m, V, eos; guess = nothing) = legendre_inverse(e, m, V, eos; guess)
+else
+    @inline particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
+                             tol = 1e-12, maxiter = 50, verbose = false) = target_forward(s, S_in, M_vec, e0, eos; M_mag, tol, maxiter, verbose)
+    @inline particle_inverse(e, m, V, eos; guess = nothing) = target_inverse(e, m, V, eos)
+end
+
+# Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state, through the forward map.
 # (Same arithmetic as solve_eos! on a copy with M_smooth = m_a S_a/s_a, without the copy.)
 function particle_energy(pa::Particle, eos::AbstractEOS)
-    S_in  = pa.S_smooth
-    M_vec = pa.m * (pa.S_smooth / pa.s)
-    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
-    e     = eos_newton(S_in, M_mag, pa.e, eos)
-    w     = e + pressure(eos, e)
-    G, _  = eos_wgamma(w, M_mag)
-    γ     = G / w
-    p_v   = pressure(eos, e)
-    return pa.s * ((w * γ^2 - p_v) / S_in)
+    return pa.s * particle_forward(pa.s, pa.S_smooth, pa.m * (pa.S_smooth / pa.s), pa.e, eos; γ0 = pa.γ).HS
 end
 
 # ── Gradient-corrected conversion map (docs/changerep.tex, appendix) ──────────

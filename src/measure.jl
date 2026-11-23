@@ -7,7 +7,7 @@ using FFTW, BinningAnalysis, HDF5, Serialization
 # Single-particle covariance of δm at fixed e_a: [−∂²S_a/∂m∂m]⁻¹ (numerical Hessian).
 function momentum_covariance(e, m0, V, eos)
     f(x, y) = particle_entropy(e, m0 + SVector(x, y), V, eos)
-    T = eos_from_energy(e / V, m0 / V, eos)[3]
+    T = particle_inverse(e, m0, V, eos)[3]
     h = 0.05 * sqrt(e * T)                  # a twentieth of the thermal momentum, ≈ √(V w T)
     Hxx = (f(h, 0) - 2f(0, 0) + f(-h, 0)) / h^2
     Hyy = (f(0, h) - 2f(0, 0) + f(0, -h)) / h^2

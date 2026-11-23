@@ -449,8 +449,7 @@ function viscous_step_exact!(particles::Vector{Particle}, params::SimParams,
     for a in eachindex(particles)
         pa = particles[a]
         pa.m += dt .* dotm[a]
-        Snew, _, _ = eos_from_energy(e[a] / V[a], pa.m / V[a], eos)
-        snew = V[a] * Snew
+        snew = particle_inverse(e[a], pa.m, V[a], eos)[1]
         ΣΔs += snew - pa.s
         pa.s = snew
     end
@@ -489,8 +488,7 @@ function viscous_step_grad!(particles::Vector{Particle}, params::SimParams,
         pa = particles[a]
         G′, Q = star_fit(stars[a], μ′)
         e_new = e′[a] + gradient_energy(pa.s, C[a], G′, Q)
-        Snew, _, _ = eos_from_energy(e_new / V[a], pa.m / V[a], eos)
-        snew = V[a] * Snew
+        snew = particle_inverse(e_new, pa.m, V[a], eos)[1]
         ΣΔs += snew - pa.s
         pa.s = snew
     end

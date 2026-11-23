@@ -92,6 +92,10 @@ default_dissipation(sim_dim = 2) =
 # the equation of state loses accuracy as 1e-16 γ² (relative, in 1 − v², T, S), and the comoving metric and the residual coefficients
 # become singular; nothing in our flows needs γ ≳ 10.  Default 100 (|v|² ≤ 1 − 10⁻⁴).
 const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
+# SPH_RENORM=legendre (docs/legendre_plan.tex): the particle Hamiltonian is the Legendre transform of the wanted single-particle free
+# energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.  SPH_RENORM=1 (the entropy shift,
+# stochastic.jl) is read as before; without SPH_RENORM=legendre the setting is read exactly as before (as a Bool).
+const LEGENDRE = lowercase(strip(get(ENV, "SPH_RENORM", ""))) == "legendre"
 const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
@@ -410,28 +414,19 @@ function eos_newton(S_in::Float64, M_mag::Float64, e0::Float64, eos::AbstractEOS
     return e
 end
 
+# The state of a particle at its smoothed fields, through the forward map particle_forward (pointwise.jl; legendre_plan.tex, A):
+# with SPH_RENORM=legendre the Legendre Hamiltonian (renorm.jl), whose pa.e is the target's rest-frame energy density at T_rel
+# (the warm start, with pa.γ) and pa.p the particle's pressure −∂H/∂V.
 function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
-    S_in  = pa.S_smooth
-    M_vec = pa.M_smooth
-    M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2)
-    # warm start from stored e; cold start falls back to e ~ S_in
-    e = eos_newton(S_in, M_mag, pa.e, eos; tol, maxiter, verbose)
-
-    # post-convergence expressions (§II.4)
-    w    = e + pressure(eos, e)
-    G, _ = eos_wgamma(w, M_mag)
-    γ    = G / w
-    v    = M_vec * (w / G^2)        # M = w γ² v
-    p_v = pressure(eos, e)
-    S   = S_in
-
-    pa.e        = e
-    pa.p        = p_v
-    pa.T        = w / S        # T = T_rel/γ = (e+p)/S
-    pa.γ        = γ
-    pa.v_over_S = v / S
-    pa.F_over_S = dot(v, M_vec / S) / S - p_v / S^2
-    pa.H_over_S = (w * γ^2 - p_v) / S
+    S   = pa.S_smooth
+    st  = particle_forward(pa.s, S, pa.M_smooth, pa.e, eos; γ0 = pa.γ, tol, maxiter, verbose)
+    pa.e        = st.e
+    pa.p        = st.p
+    pa.T        = st.T          # T = T_rel/γ = (e+p)/S
+    pa.γ        = st.γ
+    pa.v_over_S = st.v / S
+    pa.F_over_S = st.FS
+    pa.H_over_S = st.HS
 end
 
 function update_thermodynamics!(particles::Vector{Particle}, eos::AbstractEOS)

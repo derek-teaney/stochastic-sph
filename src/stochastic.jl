@@ -204,41 +204,15 @@ end
 # Particle entropy S_a(e, m) at volume V; −Inf for a state no fluid can have (the
 # inversion fails, or γ > γ_max, i.e. |v|² > 1 − 1/γ_max²; sph.jl, SPH_GAMMA_MAX).  Such states have zero weight under e^𝕊: a move that
 # reaches one is rejected (docs/plan.tex, "Guarding against superluminal proposals").
-function particle_entropy(e, m, V, eos)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf      # |M| < ε is necessary (p ≤ e)
-    r = try
-        eos_from_energy(ε, M, eos)
-    catch
-        return -Inf
-    end
-    S, v, _ = r
-    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
-end
-
-# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
-# have positive arguments), so the try block, about 17% of a call, is not needed.
-# Same arithmetic as the general method: bit-identical results.
-function particle_entropy(e, m, V, eos::ConstantCs2EOS)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
-    S, v, _ = eos_from_energy(ε, M, eos)
-    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
-end
+# (the inverse map, pointwise.jl)
+particle_entropy(e, m, V, eos; guess = nothing) = particle_inverse(e, m, V, eos; guess)[1]
 
 # The entropy that weights a state in the votes.  measure = :einstein: S_a itself (flat in e_a, m_a).  measure = :liouville
 # (equilibrium_positions.tex, Appendix A): the measure flat in s_a, which at fixed e_a and V_a induces e^{S_a}/T_a in m_a, so the
 # votes use S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (the third return of eos_from_energy).  −Inf as particle_entropy.
-function particle_entropy_lnT(e, m, V, eos)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
-    r = try
-        eos_from_energy(ε, M, eos)
-    catch
-        return -Inf
-    end
-    S, v, T = r
-    return (isfinite(S) && dot(v, v) <= V2MAX && T > 0) ? V * S - log(T) : -Inf
+function particle_entropy_lnT(e, m, V, eos; guess = nothing)
+    s, _, T = particle_inverse(e, m, V, eos; guess)
+    return (isfinite(s) && T > 0) ? s - log(T) : -Inf
 end
 # SPH_RENORM (default off; docs/partition_v2.tex, "A Hamiltonian that does it"): the renormalized Hamiltonian, whose single-particle
 # free energy is the target one, F_1/T = −pV/T + ln V + const (bulk modulus of the labels B = 0).  The energy of a particle is that of
@@ -248,16 +222,13 @@ end
 # Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
 # T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
 # HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
-const RENORM = setting("SPH_RENORM", false)
+const RENORM = LEGENDRE ? (setting("SPH_RENORM", :off); false) : setting("SPH_RENORM", false)   # LEGENDRE: sph.jl
 @noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
-    S, v, T = eos_from_energy(ε, M, eos)
-    (isfinite(S) && dot(v, v) <= V2MAX && T > 0) || return -Inf
-    d = 2;  c2 = cs2(eos, ε)
+    u, _, T = particle_inverse(e, m, V, eos)
+    (isfinite(u) && T > 0) || return -Inf
+    d = 2;  c2 = cs2(eos, e / V)
     abs(d * c2 - 1) < 1e-12 || error("SPH_RENORM: implemented for the conformal fluid, d c_s² = 1 (got c_s² = $c2)")
     α = 1 + d + 2d * c2
-    u = V * S
     u > α / 2 || return -Inf                                   # the shift is monotonic only for u > α/2
     s = u - (α / 2) * log(u)
     return liouville ? s - log(T / (1 - α / (2u))) : s
@@ -370,7 +341,7 @@ end
 function resid_deterministic!(m, Sc, e, V, stars, dt, eos)
     N = length(m)
     β = map(1:N) do a
-        S, v, T = eos_from_energy(e[a] / V[a], m[a] / V[a], eos);  v / T
+        _, v, T = particle_inverse(e[a], m[a], V[a], eos);  v / T
     end
     Δm = zeros(SVector{2,Float64}, N)
     for a in 1:N
@@ -421,11 +392,11 @@ end
 
 # nothing for a state no fluid can have
 function star_coef(e, m, V, eos, d)
-    s = particle_entropy(e, m, V, eos);  isfinite(s) || return nothing
-    S_in = s / V;  M = m / V;  Mm = norm(M)
-    ε = eos_newton(S_in, Mm, e / V, eos)
-    w = ε + pressure(eos, ε);  G, _ = eos_wgamma(w, Mm);  γ = G / w;  v = M * (w / G^2)
-    Ta = (w / S_in) * γ;  sr = srel(eos, ε)
+    s, vi, Ti = particle_inverse(e, m, V, eos);  isfinite(s) || return nothing
+    S_in = s / V;  M = m / V
+    st = particle_forward(s, S_in, M, e / V, eos; M_mag = norm(M), guess = (Ti, vi))   # the state at (s, m, V)
+    ε = st.e;  γ = st.γ;  v = st.v
+    Ta = st.T * γ;  sr = srel(eos, ε)
     ℓ, ℓi, P, Pℓ = comoving_structures(v, cs2(eos), 2)
     κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η
     ℓh = sqrt_comoving(v)
