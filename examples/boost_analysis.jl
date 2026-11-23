@@ -110,14 +110,16 @@ const T0BURN = parse(Float64, get(ENV, "BOOST_BURN", "5.0"))   # burn-in (BOOST_
 const DTS = 0.05;  const TAUMAX = 100.0
 # with a burn-in other than 5 the figures get the suffix _burn<t>
 const SUFFIX = (GROUP == "L12" ? "" : "_" * GROUP) * (T0BURN == 5.0 ? "" : "_burn$(round(Int, T0BURN))")
-const CS2 = 1 / 3                                    # the runs of campaign boost, before dimfix
-pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
+# The speed of sound of the runs (the constant-c_s² EOS with T_scale = 1: e = T^((1+c_s²)/c_s²)), read from the first run of the group:
+# 1/3 for the runs before dimfix (8d50d04, e = T⁴), 1/2 after (conformal in d = 2, e = T³).  The runs of one group must agree.
+const CS2R = Ref(NaN)
+set_cs2(cs) = isnan(CS2R[]) ? (CS2R[] = cs) : (abs(cs - CS2R[]) < 1e-12 || error("runs with different cs² in one group: $(CS2R[]), $cs"))
 mean_(v) = sum(v) / length(v)
 
 # ── thermodynamics of the boosted conformal fluid (e = T⁴ in code units) ─────────────────
 function Uof(θ)                     # θ = (−β⁰, β^x, β^y) → (ε, M_x, M_y)
     β0 = -θ[1];  b = SVector(θ[2], θ[3]);  T = 1 / sqrt(β0^2 - dot(b, b));  v = b / β0
-    γ2 = 1 / (1 - dot(v, v));  e = T^4;  p = CS2 * e;  w = e + p
+    γ2 = 1 / (1 - dot(v, v));  e = T^((1 + CS2R[]) / CS2R[]);  p = CS2R[] * e;  w = e + p
     SVector(w * γ2 - p, w * γ2 * v[1], w * γ2 * v[2])
 end
 function chi(Trel, v)               # susceptibilities per unit volume
@@ -130,10 +132,10 @@ function chi(Trel, v)               # susceptibilities per unit volume
 end
 # ideal fluxes F_j(U), U = (ε, M_x, M_y): F_j = (M_j, M_x v_j + p δ_jx, M_y v_j + p δ_jy)
 function vel(U)                     # conformal: M = (ε + p) v, p = c_s²(ε − M·v); solve |v|
-    ε = U[1];  M = SVector(U[2], U[3]);  m = norm(M);  m == 0 && return (zero(M), CS2 * ε)
-    f(x) = (ε + CS2 * (ε - m * x)) * x - m;  lo, hi = 0.0, 1.0
+    ε = U[1];  M = SVector(U[2], U[3]);  m = norm(M);  m == 0 && return (zero(M), CS2R[] * ε)
+    f(x) = (ε + CS2R[] * (ε - m * x)) * x - m;  lo, hi = 0.0, 1.0
     for _ in 1:200;  mid = (lo + hi) / 2;  f(mid) > 0 ? (hi = mid) : (lo = mid);  end
-    x = (lo + hi) / 2;  (M / m * x, CS2 * (ε - m * x))
+    x = (lo + hi) / 2;  (M / m * x, CS2R[] * (ε - m * x))
 end
 flux(U, j) = (v = vel(U);  p = v[2];  vv = v[1];
               SVector(U[1 + j], U[2] * vv[j] + (j == 1 ? p : 0.0), U[3] * vv[j] + (j == 2 ? p : 0.0)))
@@ -158,7 +160,7 @@ function predict(Trel, v, ν, k, τs)
         if abs(Ω) < 1e-3 * norm(k)                        # shear
             Γ′ = ν * k2′;  dΩ = 0.0
         else                                              # sound
-            Γ′ = 0.5 * (4 / 3) * ν * k2′;  dΩ = CS2 * kx′ / Ω
+            Γ′ = (1 - CS2R[]) * ν * k2′;  dΩ = CS2R[] * kx′ / Ω   # conformal, ζ = 0: (d−1)/d ν k², d = 1/c_s²
         end
         push!(ωs, ω - im * Γ′ / (γ * (1 + v * dΩ)))
     end
@@ -214,7 +216,7 @@ for (run, dirs, v, col) in SETS
     fs = vcat([files(joinpath(DIR, d)) for d in dirs]...);  isempty(fs) && continue
     rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000 && get(r.meta, :complete, true), rs)   # complete runs only (not checkpoints of runs in progress)
     isempty(rs) && continue
-    m = rs[1].meta;  pre_dimfix(get(m, :cs2, 1 / 3));  ks = rs[1].rec.ks;  NV = m.N * m.V
+    m = rs[1].meta;  set_cs2(get(m, :cs2, 1 / 3));  ks = rs[1].rec.ks;  NV = m.N * m.V
     ipar = sort([i for i in eachindex(ks) if abs(ks[i][2]) < 1e-9 && ks[i][1] > 0], by = i -> ks[i][1])
     iperp = sort([i for i in eachindex(ks) if abs(ks[i][1]) < 1e-9 && ks[i][2] > 0], by = i -> ks[i][2])
     C = Dict{Tuple{Symbol,Int},Any}()

@@ -696,6 +696,23 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
   residual acceptance 0.93 / 0.51, ΔH/H = +3.6e-3 (short run, short HMC start); v0 = 0.8: 0.985 / 0.76, ΔH/H = −1.6e-4.  HMC: acceptance
   1.0, |ΔH/H| 5e-6 (v0 = 0), 4e-7 (0.8).
 
+- **Done** (61879905, 8 nodes, 14 min ≈ 1.9 node-hours): 256/256 complete, cs2_val = 0.5 everywhere, SPH_RENORM recorded false / split.
+  Split costs ≈ 1.6× the tree per run (rest 304 / 185 s, v0 = 0.8 488 / 289 s at s_a = 16).  **Dynamics against its own HMC: ≈ 1 for both
+  Hamiltonians** (M_L, M_T, E at kh 0.52–1.56, within 2–5%): the Hastings correction works with the split Hamiltonian.
+- **But the tree/split comparison is not at the same bath in motion.**  The HMC start (equilibrium_init!, beta_from_averages) fixes β^μ so
+  that the single-particle canonical averages equal the set-up totals.  The set-up states are identical (E_tot 3.69e6 / 3.68e6 at s_a = 16,
+  v0 = 0.8), but the bath is: tree T = 81.1, v = 0.794 (nominal 84.2, 0.8); split T = 158, v = 0.658.  Cause: particle_moments' quadrature
+  (41³ points, ±9σ boxes along the axes) is under-resolved at s_a = 16 in motion: with nq = 81 the averages move (tree ⟨e⟩/ē − 1 +0.18 →
+  +0.27, split +0.06 → −0.005), and d⟨e⟩/dθ⁰ differs from Cov(e, e) by up to 1.7 (split); the Newton iteration of beta_from_averages then
+  oscillates and diverges for split (T 84 → 79 → 99 → 71 → 515 → …), and lands slightly off for the tree.  At rest split's bath is right
+  (T = 139.5, nominal 140.4); the tree's is 120.5 (its O(1/s) error at fixed energy).  Pre-existing (not split code); every equilibrium.jl /
+  hmc_positions.jl run with low s_a and v0 ≠ 0 has a bath from this solver.  The second draw (SR_START=eq after the HMC start) uses it too.
+  So: split dynamics/HMC valid; split/tree at v0 = 0.8 not a comparison at the same (T, v); boost_analysis χ uses the nominal T, v.
+- boost_analysis.jl now reads c_s² from the runs (was hard-wired to 1/3 and refused c_s² = 1/2; sound damping (1 − c_s²)νk²).
+- **Final regressions at 9c01b6c** (61871467 switch off, all; 61871469 legendre): only the known differences — stability drivers IDENTICAL,
+  equilibrium drivers only hast_lq_*, unit output only paths / wall clock, and testrunrecord now passes (one more setting, the
+  renorm_split.jl line).  Split leaves the switch-off and SPH_RENORM=legendre paths bit-identical to 53d29e4.
+
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
 Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
