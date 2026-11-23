@@ -668,6 +668,17 @@ before going over 20).
   on 3 regular nodes, `node.sh` THREADS=2 (job 61851444); the held array tasks were cancelled when it started.  It failed in 43 s: the
   campaign file is not in the run worktree (committed after 34b8161; give node.sh the main checkout's copy, as the array had it).
   Resubmitted as job **61852069** (-t 1:15, ≤ 3.75 node-hours), tasks 21–192; tasks 1–20 finished on shared.
+- **eos_legendre done (2026-11-23 05:40).**  61852069: 172 tasks in 18 min on 3 nodes (0.92 node-hours).  Campaign total ≈ 2.1 node-hours
+  (61825274 0.88, 61831354 0.24, 61838799 0.04, 61851444 0.04 (failed at start), 61852069 0.92).  All 24 Legendre lines have 8 seeds; 425 Newton
+  failures in 4.6e10 solves (415 at c_s² = 1/4, s_a = 16); 4 kept configurations with E = NaN (c_s² = 1/4, s_a = 16, h/a = 3), which make the
+  per-seed summary NaN: those two lines average 6 and 7 seeds.  Lesson: node.sh needs the campaign file of the main checkout when the run worktree
+  predates it; the shared QOS can sit at 2 running tasks (packing 3 regular nodes took 18 min including the queue wait of 10).
+  Results in docs/legendre_plan.tex, "The campaign" (figures docs/figs/legendre_*.png, table docs/figs/legendre_table.csv).  In short: the Legendre
+  H removes the O(1/s) of the tree level; its single particle keeps a large O(1/s²) (E/e−1 = +0.03 at s = 28, c_s² = 1/2); at s_a = 541 the
+  positions' part is the same for Legendre and SPH_RENORM=1 (E/e−1 −0.004 at h/a = 2, ∝ 1/(n̄h²)) and includes R ≈ +0.0008 in motion; at small s
+  it grows and is not additive (R at s_a = 16 is the Legendre single particle's, +0.0032, and SPH_RENORM=1's is +0.0004 instead of one loop −0.006);
+  c_s² = 1/4, s_a = 16, v = 0.8: E/e−1 ≈ +0.01–0.03 against the quadrature's +0.14, not understood; χ: errors 0.02–0.05, a positions' part ≈ −0.04
+  (h/a = 2), −0.01 (h/a = 3) at s_a = 541.  Open for the owner: H two-valued at s < −5.65 (c_s² = 1/2).
 - **Found while at it — the Legendre H is two-valued at very negative labels** (c_s² = 1/2): for s < −5.65 (independent of V) the curve
   s = const in (T_rel, rapidity) has two segments with det ∂(s,|m|)/∂(T,v) > 0 separated by a fold (det < 0, rapidity ≈ 1.2–1.8), and their
   |m| ranges overlap: two physical states (a hot slow one and a cold fast one, γ ~ 15–65) with the same (s, |m|, V).  At c_s² = 1/4 it is

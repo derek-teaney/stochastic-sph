@@ -463,10 +463,97 @@ stochastic step on, $S_0=10^5$, $t=20$) drifts by $\Delta H/H=+4.8\times10^{-5}$
 
 \subsection{The campaign}
 
-\emph{Running.}  The tree-level and \texttt{SPH\_RENORM=1} lines are final.  Every Legendre line is being rerun with the fixes of
-items (vi) and (vii) (job 61838799, the rest packed on regular nodes, job 61851444); the figures below are regenerated as its runs
-finish, and so far show the Legendre Hamiltonian (red) only at rest, at $c_s^2=1/2$, $s_a=16$ and (partly) $s_a=54$.  The analysis,
-the table against the expectations, and the reading of the figures follow when the rerun is done.
+\paragraph{Runs and cost.}  As planned (\Sect{sec:campaign}): $L=0.45$, 8 seeds of 300 updates per line, 54 lines.  The first submission, job
+61825274 (432 tasks, shared), ran the tree-level and \texttt{SPH\_RENORM=1} lines; they are final.  Its Legendre lines were rerun twice, after the fixes
+(vii) (job 61831354, the 14 lines at $c_s^2=1/4$) and (vi) (all 24 Legendre lines: job 61838799 on the shared QOS, which started only two tasks at a
+time, and job 61852069, the remaining 172 tasks packed on three regular nodes with \nolinkurl{nersc/node.sh}, 18 minutes).  In all about 2.1 node-hours.
+The earlier Legendre output is kept in \texttt{\$SCRATCH/sph/eos\_legendre/old\_*}.
+
+\paragraph{The solves.}  Over the $4.6\times10^{10}$ solves of the Legendre lines, Newton failed to converge 425 times, 415 of them at $c_s^2=1/4$,
+$s_a=16$ (the next most: 3).  Four kept configurations, all at $c_s^2=1/4$, $s_a=16$, $h/a=3$ (three at rest, one in motion), have a particle with no
+state when $E$ is measured ($E=$ NaN, $H$ finite); the per-seed summary of \nolinkurl{examples/eos_measure.jl} is then NaN, so those lines average 6 (at
+rest) and 7 (in motion) of their 8 seeds.  The acceptance is $0.98$--$1.0$ everywhere except $c_s^2=1/4$, $s_a=16$ at rest: $0.95$ ($h/a=2$) and
+$0.89$ ($h/a=3$, seeds $0.78$--$0.94$).
+
+\paragraph{The table.}  For each Legendre line: the measured entropy per particle $s=(1+c_s^2)\sigma/c_s^2$; the measured value and the exact single-particle
+quadrature (\nolinkurl{examples/renorm_quadrature_legendre.py}, interpolated in $1/s$ to the measured $s$; \nolinkurl{docs/figs/legendre_quadrature.csv}),
+which leaves out the positions; $R$ also for \texttt{SPH\_RENORM=1} at the same $s_a$, $h/a$; and two entries of the susceptibility relative to the target,
+with the jackknife error in the last digits.  At $v=0.8$ the pressure column is $T^{yy}/p-1$.  The full table, all lines and entries:
+\nolinkurl{docs/figs/legendre_table.csv}.
+\begin{center}
+\scriptsize
+\resizebox{\linewidth}{!}{\begin{tabular}{cccc c cc cc ccc cc cc}
+\toprule
+$c_s^2$ & $v$ & $s_a$ & $h/a$ & $s$ & \multicolumn{2}{c}{$E/e-1$} & \multicolumn{2}{c}{$P/p-1$} & \multicolumn{3}{c}{$R$} & \multicolumn{2}{c}{$(\partial E/\partial T)_v$} & \multicolumn{2}{c}{$(\partial M/\partial v)_T$}\\
+ & & & & & meas. & quad. & meas. & quad. & meas. & quad. & ren1 & meas. & quad. & meas. & quad. \\
+\midrule
+0.5 & 0 & 16 & 2 & 28 & $+0.008$ & $+0.029$ & $-0.022$ & $+0.029$ & -- & -- & -- & $-0.09(4)$ & $-0.01$ & $-0.03(3)$ & $+0.03$ \\
+0.5 & 0 & 16 & 3 & 28 & $+0.020$ & $+0.029$ & $+0.006$ & $+0.029$ & -- & -- & -- & $-0.07(5)$ & $-0.01$ & $+0.00(3)$ & $+0.03$ \\
+0.5 & 0 & 54 & 2 & 68 & $-0.009$ & $+0.004$ & $-0.032$ & $+0.004$ & -- & -- & -- & $-0.00(5)$ & $-0.00$ & $-0.06(4)$ & $+0.00$ \\
+0.5 & 0 & 54 & 3 & 68 & $-0.001$ & $+0.004$ & $-0.011$ & $+0.004$ & -- & -- & -- & $-0.01(4)$ & $-0.00$ & $-0.04(4)$ & $+0.00$ \\
+0.5 & 0 & 541 & 2 & 561 & $-0.004$ & $+0.000$ & $-0.013$ & $+0.000$ & -- & -- & -- & $-0.02(3)$ & $-0.00$ & $-0.06(2)$ & $+0.00$ \\
+0.5 & 0 & 541 & 3 & 561 & $-0.002$ & $+0.000$ & $-0.005$ & $+0.000$ & -- & -- & -- & $-0.02(3)$ & $-0.00$ & $+0.01(2)$ & $+0.00$ \\
+\hline
+0.5 & 0.8 & 16 & 2 & 28 & $-0.006$ & $+0.045$ & $-0.032$ & $+0.033$ & $+0.0032$ & $+0.0033$ & $+0.0004$ & $-0.01(4)$ & $-0.04$ & $+0.00(5)$ & $-0.05$ \\
+0.5 & 0.8 & 16 & 3 & 28 & $+0.002$ & $+0.045$ & $-0.009$ & $+0.033$ & $+0.0014$ & $+0.0034$ & $-0.0016$ & $+0.02(4)$ & $-0.04$ & $+0.00(3)$ & $-0.05$ \\
+0.5 & 0.8 & 54 & 2 & 68 & $-0.008$ & $+0.005$ & $-0.026$ & $+0.005$ & $+0.0022$ & $+0.0001$ & $+0.0013$ & $+0.03(3)$ & $-0.00$ & $+0.05(3)$ & $-0.00$ \\
+0.5 & 0.8 & 54 & 3 & 68 & $-0.003$ & $+0.005$ & $-0.011$ & $+0.005$ & $+0.0010$ & $+0.0001$ & $-0.0000$ & $-0.01(5)$ & $-0.00$ & $-0.03(4)$ & $-0.00$ \\
+0.5 & 0.8 & 541 & 2 & 561 & $-0.003$ & $+0.000$ & $-0.010$ & $+0.000$ & $+0.0008$ & $+0.0000$ & $+0.0007$ & $-0.02(3)$ & $-0.00$ & $-0.01(3)$ & $-0.00$ \\
+0.5 & 0.8 & 541 & 3 & 561 & $-0.001$ & $+0.000$ & $-0.004$ & $+0.000$ & $+0.0003$ & $+0.0000$ & $+0.0002$ & $-0.01(4)$ & $-0.00$ & $-0.02(4)$ & $-0.00$ \\
+\hline
+0.25 & 0 & 16 & 2 & 22 & $+0.072$ & $+0.111$ & $+0.035$ & $+0.110$ & -- & -- & -- & $-0.02(2)$ & $-0.07$ & $+0.12(2)$ & $+0.11$ \\
+0.25 & 0 & 16 & 3 & 21 & $+0.092$ & $+0.116$ & $+0.076$ & $+0.114$ & -- & -- & -- & $-0.08(3)$ & $-0.07$ & $+0.09(3)$ & $+0.11$ \\
+0.25 & 0 & 54 & 2 & 62 & $-0.007$ & $+0.012$ & $-0.035$ & $+0.012$ & -- & -- & -- & $+0.03(3)$ & $-0.01$ & $+0.02(5)$ & $+0.01$ \\
+0.25 & 0 & 54 & 3 & 62 & $+0.003$ & $+0.012$ & $-0.009$ & $+0.012$ & -- & -- & -- & $+0.01(5)$ & $-0.01$ & $+0.04(3)$ & $+0.01$ \\
+0.25 & 0 & 541 & 2 & 555 & $-0.005$ & $+0.000$ & $-0.017$ & $+0.000$ & -- & -- & -- & $-0.03(2)$ & $-0.00$ & $-0.06(3)$ & $+0.00$ \\
+0.25 & 0 & 541 & 3 & 554 & $-0.002$ & $+0.000$ & $-0.007$ & $+0.000$ & -- & -- & -- & $-0.02(3)$ & $-0.00$ & $+0.01(2)$ & $+0.00$ \\
+\hline
+0.25 & 0.8 & 16 & 2 & 22 & $+0.011$ & $+0.140$ & $-0.021$ & $+0.106$ & $+0.0024$ & $+0.0078$ & -- & $-0.07(3)$ & $-0.08$ & $-0.04(3)$ & $-0.08$ \\
+0.25 & 0.8 & 16 & 3 & 21 & $+0.026$ & $+0.146$ & $+0.012$ & $+0.110$ & $+0.0010$ & $+0.0082$ & -- & $-0.02(4)$ & $-0.08$ & $+0.01(4)$ & $-0.09$ \\
+0.25 & 0.8 & 54 & 2 & 62 & $-0.011$ & $+0.013$ & $-0.034$ & $+0.012$ & $+0.0017$ & $+0.0003$ & -- & $+0.08(2)$ & $-0.01$ & $+0.08(2)$ & $-0.01$ \\
+0.25 & 0.8 & 54 & 3 & 62 & $-0.002$ & $+0.013$ & $-0.012$ & $+0.012$ & $+0.0007$ & $+0.0003$ & -- & $-0.05(2)$ & $-0.01$ & $-0.02(3)$ & $-0.01$ \\
+0.25 & 0.8 & 541 & 2 & 555 & $-0.004$ & $+0.000$ & $-0.013$ & $+0.000$ & $+0.0006$ & $+0.0000$ & -- & $-0.02(3)$ & $-0.00$ & $-0.01(3)$ & $-0.00$ \\
+0.25 & 0.8 & 541 & 3 & 554 & $-0.002$ & $+0.000$ & $-0.005$ & $+0.000$ & $+0.0003$ & $+0.0000$ & -- & $+0.00(4)$ & $-0.00$ & $-0.01(4)$ & $-0.00$ \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\paragraph{What agrees with the expectations.}
+\begin{itemize}
+\item The tree level is the one-loop expectation plus the positions, as in \texttt{eos\_renorm}: at $c_s^2=1/2$, $s=11.7$, $E/e-1=0.576$ against
+  $7.5/s=0.64$; $\chi_{MM}/(Tw)-1$ follows $(\tfrac52+k-c_s^2)/s$ (\Fig{fig:legendre_EP}).  The Legendre Hamiltonian removes these $O(1/s)$ terms: at
+  $s_a=16$ its $E/e-1$ is $0.01$--$0.09$ where the tree level's is $0.58$--$0.91$.
+\item The Legendre single particle has a large $O(1/s^2)$ remainder (the quadrature: $E/e-1=+0.029$ at $s=28$, $c_s^2=1/2$, and $+0.11$ at $s=21$,
+  $c_s^2=1/4$); with it, $\chi_{MM}$ at rest agrees with the quadrature at both $c_s^2$ (\Fig{fig:legendre_EP}, last column).
+\item At $s_a=541$ the measured values minus the quadrature are the positions' part, and it is the same for both Hamiltonians: in motion at $c_s^2=1/2$,
+  $h/a=2$, $E/e-1=-0.0031$ (Legendre) and $-0.0033$ (\texttt{SPH\_RENORM=1}), $T^{yy}/p-1=-0.0098$ and $-0.0099$, $R=+0.0008$ and $+0.0007$.  It
+  scales as $1/(\bar nh^2)$: from $h/a=2$ to $3$, $E/e-1$ goes from $-0.0041$ to $-0.0017$ at rest (ratio $2.4$; $(3/2)^2=2.25$), and it hardly depends on
+  $c_s^2$ ($-0.0055$, $-0.0023$ at $c_s^2=1/4$).
+\item The positions do add their own $R$ in motion (the open question of the plan): $R=+0.0006$--$0.0008$ ($h/a=2$) and $+0.0002$--$0.0003$ ($h/a=3$) at
+  $s_a=541$, for all three Hamiltonians and both $c_s^2$, where the single particle gives $10^{-6}$.
+\end{itemize}
+
+\paragraph{What does not.}
+\begin{itemize}
+\item \emph{At small $s$ the positions' part is not a constant and does not add to the single particle.}  At fixed $h/a$ the correction of the positions,
+  $\propto1/(\bar nh^2)$, should not depend on $s_a$.  The measured minus the quadrature does: at $c_s^2=1/2$, at rest, $h/a=2$, $E/e-1$ minus the quadrature
+  is $-0.004$, $-0.014$, $-0.021$ at $s_a=541$, $54$, $16$ ($P/p-1$: $-0.013$, $-0.036$, $-0.051$).  In $R$ the two Hamiltonians part: the measured $R$ minus
+  the single particle (for \texttt{SPH\_RENORM=1} the moving quadrature, \nolinkurl{examples/renorm_quadrature_moving.py}, which agrees with one loop:
+  $-0.0047$ at $s=16$) is, at $h/a=2$, $+0.0009$, $+0.0030$, $+0.0051$ for \texttt{SPH\_RENORM=1} and $+0.0008$, $+0.0021$, $-0.0002$ for Legendre at
+  $s_a=541$, $54$, $16$ ($h/a=3$: $+0.0004$, $+0.0017$, $+0.0031$ and $+0.0003$, $+0.0009$, $-0.0020$).  So at $s_a=16$ the measured $R$ of the Legendre
+  Hamiltonian is its single particle's ($+0.0032$ against $+0.0034$), and that of \texttt{SPH\_RENORM=1} is near zero ($+0.0004$) rather than at one loop
+  ($-0.006$): neither is single particle plus a fixed positions' part.
+\item \emph{$c_s^2=1/4$, $s_a=16$, $v=0.8$.}  The measured $E/e-1$ is $+0.012$ ($h/a=2$) and $+0.026$ ($h/a=3$) where the single particle gives $+0.14$;
+  at rest the difference is $-0.04$ and $-0.02$.  Not understood.  The quadrature there ($s=21$, the edge of its range: it fails at $s\le15$ in motion) may
+  not be reliable; the line also carries the solver's failures and the NaN seed.
+\item \emph{The susceptibility is too noisy to see $O(1/s^2)$.}  The errors are $0.02$--$0.05$; the Legendre entries agree with the quadrature within about
+  $2\sigma$ (\Fig{fig:legendre_chi}), except at $c_s^2=1/4$, $s_a=54$, $h/a=2$, $v=0.8$: $+0.08(2)$ for both entries against $-0.015$, not seen at $h/a=3$
+  ($-0.05(2)$, $-0.02(3)$).  At $s_a=541$ the 28 entries for each $h/a$ (the four entries of the five lines in motion and the two of the four lines at rest, all
+  three Hamiltonians) average $-0.041$ at $h/a=2$ and $-0.012$ at $h/a=3$, with $\chi^2/{\rm dof}=0.5$: a positions' part of the
+  susceptibility of a few per cent, ten times that in $E$, with a ratio close to $(3/2)^2$ (the entries of one run are correlated, so the error of the mean,
+  $\pm0.005$, is optimistic).  The Maxwell relation was not checked.
+\item \emph{$H$ is two-valued at very negative labels} at $c_s^2=1/2$ (item (viii)): it does not affect the campaign's averages, but it is a question for the owner.
+\end{itemize}
 
 \begin{figure}[h]
 \centering
@@ -482,7 +569,7 @@ Dashed: the one-loop expectation for the tree level, and the exact single-partic
 \centering
 \includegraphics[width=\textwidth]{figs/legendre_moving.png}
 \caption{At $v=0.8$: the lab-frame $E/e-1$, $T^{yy}/p-1$, $M/(w\gamma^2v)-1$, and $R=M/(v(E+T^{yy}))-1$ against $1/s$.  Blue: tree
-level; green: \texttt{SPH\_RENORM=1}; red (when finished): the Legendre Hamiltonian.  Dashed in the last column: the one-loop
+level; green: \texttt{SPH\_RENORM=1}; red: the Legendre Hamiltonian.  Dashed in the last column: the one-loop
 $R=-c_s^2(1-v^2)^2/((1-c_s^2v^2)s)$ for the tree level and \texttt{SPH\_RENORM=1}; red: the exact Legendre single particle.}
 \label{fig:legendre_moving}
 \end{figure}
