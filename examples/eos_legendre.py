@@ -21,7 +21,7 @@ ROOT = sys.argv[1]
 FIG = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "docs", "figs")
 os.makedirs(FIG, exist_ok=True)
 pat = re.compile(r"eosL_(tree|leg|ren1)_c(05|025)_s(\d+)_ha(\d)_v(0|08)$")
-KEYS = ["sigma", "T0", "v", "acceptance", "E_over_e_minus1", "P_over_p_minus1", "Tyy_over_p_minus1", "M_over_target_minus1", "R",
+KEYS = ["sigma", "T0", "acceptance", "E_over_e_minus1", "P_over_p_minus1", "Tyy_over_p_minus1", "M_over_target_minus1", "R",
         "trace_over_nT", "Pkin_over_nT", "cs2_fixed_n", "dEdT_over_target_minus1", "dPdT_over_target_minus1",
         "chi_dEdT_over_target_minus1", "chi_dMdv_over_target_minus1", "chi_dEdv", "chi_dEdv_target", "chi_dMdT", "chi_dMdT_target",
         "chi_yy_over_target_minus1", "nbar_h2", "legendre_solves", "legendre_fails", "legendre_nostate", "seconds"]
@@ -58,6 +58,9 @@ for d in sorted(glob.glob(os.path.join(ROOT, "eosL_*"))):
         out[k + "_over_target_minus1"] = out[k] / out[k + "_target"] - 1 if out["v"] > 0 else np.nan
         out[k + "_over_target_minus1_sd"] = out[k + "_sd"] / abs(out[k + "_target"]) if out["v"] > 0 else np.nan
     c2 = out["c2"];  out["s_t"] = (1 + c2) * out["sigma"] / c2
+    # M and R are 0/0 at rest; at v = 0.8 the isotropic P is not compared with the rest-frame p (T^yy is)
+    for k in (("M_over_target_minus1", "R") if out["v"] == 0 else ("P_over_p_minus1",)):
+        out[k] = out[k + "_sd"] = np.nan
     runs[name] = out
 print(f"{len(runs)} runs")
 

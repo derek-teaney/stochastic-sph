@@ -642,6 +642,9 @@ before going over 20).
   off: all unit, physics and load tests pass; regression against db139ef bit-identical except hast_lq_*.
 - **Campaign submitted**: job **61825274** (432 tasks, shared, -c 2, -t 2 h), run checkout `~/stochastic-sph-legR` (worktree at
   3c6fd46), output `$SCRATCH/sph/eos_legendre/`.  Estimate 216 × 5 min + 216 × 19 min on 2 threads ≈ 1.4 node-hours.
+- Clean switch-off regression of b474aef against db139ef (job 61825713, shared -c 64, 38 min): step.jl and stability drivers
+  IDENTICAL; equilibrium drivers differ only in hast_lq_* (known, thread order); unit-test output differs only in testcheckpoint
+  (wall-clock seconds) and testrunrecord (src/renorm.jl in the file list).  The suite reports FAIL for these reasons only.
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
