@@ -710,6 +710,18 @@ is a concatenation).
 - Regressions submitted against 53d29e4 from the pinned worktree `~/stochastic-sph-splitR` (4482c91): switch off, MODE=all (job
   61862061), and SPH_RENORM=legendre, MODE=regress (job 61862064); shared -c 64.  Smoke runs: debug 61862298
   (`$SCRATCH/sph/eos_split/smoke/smoke.sh`).
+- **E. Smoke** (debug 61862298, 61863427; L = 0.45, h/a = 2, s_a = 54, 200 updates): c_s² = 1/4 split crashed at first in
+  equilibrium_init (V̄ unset: check_split ran only in the HMC update; now called when SimParams is built, 08962be).  2 inverse solves
+  in 2.6e5 did not converge (proposals with e < |m| whose raised-energy start fell below b; fixed, 0 since; probe on debug 61863010).
+  Results: c_s² = 1/2 at rest E/e−1 = −0.015, P/p−1 = −0.039 (σ = 18.0; = SPH_RENORM=1 of legendre_plan.tex); c_s² = 1/4 at rest split
+  −0.021, −0.047 against SPH_RENORM=1 −0.020, −0.004 (σ = 10.8): the difference −0.043 is the label-only pressure error 𝒩/σ = 0.046 that
+  E_dyn removes.  In motion and at s_a = 16 no failures, acceptance 0.985–1.0.  HMC, 100 updates on 2 threads, same node: tree 77 s,
+  Legendre 78 s, split 76 s.  Dynamics (stability.jl, S0 = 1e5, t = 20): ΔH/H = +4.8e-5 (split), +4.2e-5 (SPH_RENORM=1); the stochastic
+  step with split costs 3.4× SPH_RENORM=1's (175 s against 51 s; the votes' Newton solves; Legendre 2.6× the tree).
+- Regressions resubmitted at 08962be (the SimParams change touches sph.jl): 61863441 (switch off, all), 61863444 (legendre, regress).
+- **F. Campaigns** from the pinned worktree `~/stochastic-sph-splitC` (08962be), packed with node.sh, THREADS = 2: eos_split (192 tasks)
+  on 3 regular nodes and eos_ren1 (144) on 2, one wave each, ~20 min (h/a = 3 tasks ~15 min on dedicated nodes): estimate ≈ 1.7
+  node-hours, at most 5 (-t 1:00).
 
 ### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
 
