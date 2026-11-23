@@ -398,6 +398,20 @@ Carried out at NERSC on 2026-11-22/23, branch \texttt{legendre}; the record of j
   inverse with $e<|\bm m|$ is counted as a state with no solution: any Legendre state has $H-|\bm m|>-kT$, and these are heat-bath proposals $7\sigma$ out in
   the momentum.  (iv) In motion the bath of \nolinkurl{examples/eos_measure.jl} is the rest start's $T_{\rm rel}$ moving at \texttt{SR\_V}, so that a run in motion
   and at rest describe the same fluid.  (v) \texttt{beta\_from\_averages} halves a Newton step that leaves the light cone (it never did before).
+  (vi) Found by the campaign (\nolinkurl{nersc/LOG.md}): Newton can converge to a point with $\det>0$ and $|\bm m|\ge0$ but $v<0$, the velocity against
+  the momentum ($|\bm m|/v<0$).  The physical branch is therefore
+  \st
+  \det\frac{\partial(s,|\bm m|)}{\partial(T,v)}>0,\qquad |\bm m|\ge0,\qquad v\ge0
+  \stp
+  (\texttt{legendre\_physical}; 34b8161).  Before, the inverse accepted such points for heat-bath proposals at $e<0$ and left the particle with a label
+  that has no state.  (vii) Newton from the warm and the cold start can also miss the physical branch of the forward map near the light cone at
+  labels $s\lesssim-3$ ($\gamma\sim10$--$40$); a solve that converges to the other branch is now retried cold, and the last resort brackets the
+  branch: at fixed rapidity $\eta$ the label is convex in $\lambda$, rising on $\lambda>\lambda^*(\eta)$ (where $\partial s/\partial T>0$), and along
+  $s=s_0$ there $\partial|\bm m|/\partial v|_s=\det/(\partial s/\partial T)>0$ (\texttt{legendre\_bracket\_forward}; b351f3a).
+  (viii) \emph{$H(s,\bm m,V)$ is two-valued at very negative labels} at $c_s^2=1/2$: for $s<-5.65$ (independent of $V$) the curve $s=s_0$ in
+  $(\lambda,\eta)$ has two segments with $\det>0$, separated by a fold at $\eta\approx1.2$--$1.8$, whose $|\bm m|$ ranges overlap: a hot slow state and a
+  cold fast one ($\gamma\sim15$--$65$) with the same $(s,\bm m,V)$.  At $c_s^2=1/4$ it is single-valued down to $s=-10$.  The warm-started Newton
+  follows the sheet it is on.  This is deep in the tail (at the onset the two sheets overlap only at $|\bm m|\approx84$--$86$, $V=5.6\times10^{-4}$), so it does not matter for the campaign, but there $H$ is not a function of $(s,\bm m,V)$: a question for the owner.
 \end{itemize}
 
 \subsection{Tests}
@@ -405,7 +419,8 @@ Carried out at NERSC on 2026-11-22/23, branch \texttt{legendre}; the record of j
 \nolinkurl{test/testlegendre.jl} (all pass): the reference values of \Sect{sec:formulas} to $3\times10^{-11}$ (the digits of the table); $\partial H/\partial s=T$,
 $\partial H/\partial\bm m=\bm v$, $-\partial H/\partial V=P$ by central differences to $10^{-9}$; $H(S(e,\bm m,V),\bm m,V)=e$ to $10^{-14}$ for $s_a\in[10,10^4]$,
 $\gamma\in[1,99]$, both $c_s^2$, labels $s<0$ included; with the counterterm off the solves reproduce the target's to $10^{-10}$ (the target's own Newton stops at
-$10^{-12}$); warm and cold starts agree to $10^{-15}$ (2.7 and 3.0 iterations); hybrid Monte Carlo with the Legendre Hamiltonian has an energy error $\propto\delta t^2$
+$10^{-12}$); warm and cold starts agree to $10^{-15}$ (2.7 and 3.0 iterations); the campaign's failing states are solved (5b: the forward map finds
+the state at $\gamma=12$--$41$ from the warm start the run had and from cold) or refused (5c: no point with $v$ against $\bm m$); hybrid Monte Carlo with the Legendre Hamiltonian has an energy error $\propto\delta t^2$
 (ratio $16.1$ for $\delta t/4$) and accepts.  \texttt{test/run.sh all} with the switch off: every unit, physics and load test passes, and the regression against
 the branch point (db139ef) is bit-identical except the \texttt{hast\_lq\_*} datasets, which differ from run to run (thread order; \nolinkurl{nersc/LOG.md}).  With the
 switch on every script loads and 14 unit tests pass; 9 fail by design: \texttt{testeos}, \texttt{testeos2d}, \texttt{testeos\_consistency}, \texttt{testchangerep}

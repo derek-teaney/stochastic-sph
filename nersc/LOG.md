@@ -664,6 +664,8 @@ before going over 20).
   runs silently (a wrong weight where some other state exists), so **every Legendre line is rerun**: `nersc/campaign_eos_legendre_rerun2.txt`
   (24 lines, 192 tasks), worktree `~/stochastic-sph-legV` (34b8161), job **61838799**, shared, -t 2 h (~1.2 node-hours).  Earlier Legendre
   output moved to `$SCRATCH/sph/eos_legendre/old_legendre_v1/` (and `old_3c6fd46/`); the tree and SPH_RENORM=1 runs stand.
+  2026-11-23 05:10: the shared queue ran only 2 tasks at a time (16 done in 3 h, ~29 h to go), so tasks 21–192 were held and packed
+  on 3 regular nodes, `node.sh` THREADS=2 (job **61851444**, -t 1:15, ≤ 3.75 node-hours); the held array tasks are cancelled when it starts.
 - **Found while at it — the Legendre H is two-valued at very negative labels** (c_s² = 1/2): for s < −5.65 (independent of V) the curve
   s = const in (T_rel, rapidity) has two segments with det ∂(s,|m|)/∂(T,v) > 0 separated by a fold (det < 0, rapidity ≈ 1.2–1.8), and their
   |m| ranges overlap: two physical states (a hot slow one and a cold fast one, γ ~ 15–65) with the same (s, |m|, V).  At c_s² = 1/4 it is
