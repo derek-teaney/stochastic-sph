@@ -135,7 +135,49 @@ alike).  What differs: at the same $S_0$ the temperature is $T_{\rm rel}=140$ in
 \stp
 is five times smaller, at the same resolution; and the stochastic step changed with the dimension fix (\texttt{8d50d04}: $d=d_s=2$,
 the bulk channel $\zeta_{\rm eff}=\max(\zeta+2\eta(1/2-1/d),\,0.01\,\eta)$, which was $\eta/3$ at $c_s^2=1/3$).  Campaign
-\texttt{damping\_scan} (below) separates the two.
+\texttt{damping\_scan} separates the two.
+
+\paragraph{Campaign \texttt{damping\_scan}} (\texttt{nersc/campaign\_damping\_scan.txt}, commit \texttt{3262b00}, job 61889391; tree level at
+rest, the seeds of \texttt{hs<sa>\_tr\_v0}; \Fig{fig:dscan}).  The shear damping at $kh=0.52$, against the hydrodynamics of
+$\eta/s=0.2$:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+ & $s_a=16$ & $s_a=54$ \\ \midrule
+$\eta/s=0.2$ (\texttt{hastings\_bath}) & $3.9$--$4.0$ & $3.3$ \\
+$\eta/s=1.0$, against its own hydrodynamics & $1.09$--$1.16$ & $1.18$--$1.20$ \\
+no viscous step (\texttt{SR\_NOVISC=1}) & $7.3$--$7.9$ & $5.8$--$6.2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Without the viscous step the energy is conserved to $2\times10^{-6}$ and the momentum fluctuations are unchanged, yet the shear mode
+decorrelates fastest: the excess is not dissipation by the viscous step but the scrambling of the mode by its nonlinear coupling to
+the thermal fluctuations, which the viscous step reduces.  This is the form of the fluctuation (mode-coupling) correction to the
+viscosity,
+\st
+\Gamma=\nu_0k^2+\frac{A}{\nu_0}k^2,\qquad \frac{A}{\nu_0}\propto\frac{T}{w\,\nu_0}=\frac{1}{s\,\nu_0},
+\label{eq:loop}
+\stp
+with $\nu_0=(\eta/s)/T_{\rm rel}$ the bare value.  Fixing $A$ from $\eta/s=0.2$ ($\Gamma/\nu_0k^2=4.0$, $A=3\nu_0^2$) predicts
+$1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $1.09$--$1.16$) and $1.09$ at $s_a=54$ (measured $1.11$--$1.20$).  For the
+conformal fluid in $d=2$, $s\propto T^2$ and $\nu_0\propto1/T$, so the relative correction $A/\nu_0^2\propto1/(\eta/s)^2$ does not
+depend on $s_a$: $s_a=54$ is nearly as far from hydrodynamics as $s_a=16$.  At $c_s^2=1/3$ and the same $S_0$, $\nu_0$ was five times
+larger and the correction about 25 times smaller.  Campaign \texttt{cs13} (\texttt{nersc/campaign\_cs13.txt}, commit
+\texttt{09c10bf}, job 61890225) repeats the tree-level runs of \texttt{hastings} with the present code at $c_s^2=1/3$, $\zeta/s=(\eta/s)/3$
+($\zeta_{\rm eff}=\eta/3$ as before the dimension fix), to check that the old agreement is reproduced.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_DS16.png}
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_DS54.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_DS16.png}
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_DS54.png}
+\caption{Campaign \texttt{damping\_scan} (commit \texttt{3262b00}); run sets \texttt{ds<sa>\_e1} ($\eta/s=1.0$), \texttt{ds<sa>\_nv} (no viscous
+step) and, for $\eta/s=0.2$, \texttt{hastings\_bath/hs<sa>\_tr\_v0}; tree level at rest, $s_a=16$ ($T_{\rm rel}=140.4$) and $54$ ($258.0$).
+Top: the fitted shear damping over hydrodynamics (the no-viscosity runs against $\eta/s=0.2$).  Bottom: $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$
+at $kh=0.52$ against hydrodynamics (dashed).  \texttt{BOOST\_GROUP=DS16}, \texttt{DS54}.}
+\label{fig:dscan}
+\end{figure}
 
 \paragraph{The energy against time} (\Fig{fig:energy}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
 $+6\times10^{-4}$ (tree) and $+9\times10^{-4}$ (split) at $s_a=16$ at rest, $4$--$8\times10^{-5}$ at $s_a=54$, smaller than the
