@@ -137,6 +137,23 @@ is five times smaller, at the same resolution; and the stochastic step changed w
 the bulk channel $\zeta_{\rm eff}=\max(\zeta+2\eta(1/2-1/d),\,0.01\,\eta)$, which was $\eta/3$ at $c_s^2=1/3$).  Campaign
 \texttt{damping\_scan} (below) separates the two.
 
+\paragraph{The energy against time} (\Fig{fig:energy}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
+$+6\times10^{-4}$ (tree) and $+9\times10^{-4}$ (split) at $s_a=16$ at rest, $4$--$8\times10^{-5}$ at $s_a=54$, smaller than the
+fluctuations of single runs ($\pm3\times10^{-3}$ at $s_a=16$).  The momentum fluctuations over their tree-level equilibrium value
+$2(N-1)VwT$ are $1.40$ (tree) and $1.01$ (split) at $s_a=16$, $1.11$ and $0.99$ at $s_a=54$, flat from $t=0$; the c$_s^2=1/3$ runs of
+campaign \texttt{hastings} gave $0.85$ and $0.95$ (\texttt{energy\_time\_hastings\_old\_cs2\_1\_3.png}).  So the over-damping is not a
+heating or cooling of the fluid.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{figs/energy_time_hastings_bath.png}
+\caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets, left to right, \texttt{hs16\_\{tr,sp\}\_v0},
+\texttt{hs54\_\{tr,sp\}\_v0}, \texttt{hs16\_\{tr,sp\}\_v0.8}, \texttt{hs54\_\{tr,sp\}\_v0.8}; tree blue, split orange.  Top: $\Delta H/H$
+against $t$; bottom: the momentum fluctuations $\mathrm{KE}/2(N-1)VwT$ ($w$, $T$ of the set-up state).  Each run thin, the mean thick.
+\texttt{examples/energy\_time.jl}.}
+\label{fig:energy}
+\end{figure}
+
 \paragraph{Open: split at $s_a=16$, $v_0=0.8$} (\Fig{fig:corr16}, third row).  The advected shear mode at $kh=0.52$ decays fast at first and then
 slowly; the fitted window is short ($\tau\le3.9$) and $\Gamma/\text{hydro}=11\pm3$.  The sound mode along the flow is also more damped
 than in the tree runs.  Not understood yet; $s_a=54$ shows nothing of the kind.
