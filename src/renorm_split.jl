@@ -35,7 +35,7 @@ struct SplitConsts
 end
 function SplitConsts(eos::ConstantCs2EOS)
     c2 = eos.cs2_val;  n = 1 + 1 / c2;  N = 1 - 2c2
-    N != 0 && !isfinite(SPLIT_VBAR[]) && error("SPH_RENORM=split: V̄ not set (check_split(params), called when SimParams is built)")
+    N != 0 && !isfinite(SPLIT_VBAR[]) && error("SPH_RENORM=split: V̄ not set (check_split(params), called when SimParams is built); split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level")
     return SplitConsts(c2, n, c2 * eos.T_scale^(-n), N, 2.5 - N, log(SPLIT_VBAR[]))
 end
 SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
@@ -190,11 +190,12 @@ end
 # The schemes Step 5 supports (as check_legendre), and V̄.
 function check_split(params)
     SPLIT || return nothing
+    hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level, or SPH_RENORM=legendre"
     params.volume === :number && params.hamiltonian === :energy ||
-        error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number")
-    sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2")
-    params.measure === :liouville || error("SPH_RENORM=split needs the Liouville measure (SPH_MEASURE=liouville)")
-    params.ideal === :grid && error("SPH_RENORM=split is not available with the grid step (SPH_IDEAL=grid)")
+        error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number" * hint)
+    sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2" * hint)
+    params.measure === :liouville || error("SPH_RENORM=split needs the Liouville measure (SPH_MEASURE=liouville)" * hint)
+    params.ideal === :grid && error("SPH_RENORM=split is not available with the grid step (SPH_IDEAL=grid)" * hint)
     isfinite(SPLIT_VBAR[]) || (SPLIT_VBAR[] = SPLIT_VBAR_SETTING > 0 ? SPLIT_VBAR_SETTING : prod(params.L) / params.N)
     return nothing
 end

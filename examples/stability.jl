@@ -30,13 +30,13 @@ setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=g
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s
-const S0    = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
+const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
 const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
 const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
 const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL
 const START = setting("SR_START", :eq)                       # eq (hot) | cold | thermal (initial_state!)
 const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") * (GRAD ? "_grad" : "") *
-              (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (S0 == 1e6 ? "" : "_S$(S0)") * (HFIX ? "_hfix" : "") *
+              (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (SREL0 == 1e6 ? "" : "_S$(SREL0)") * (HFIX ? "_hfix" : "") *
               (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
 
 const RECORD = Ref{Any}(NamedTuple());  const RECORD_LOCK = ReentrantLock()   # for the run record
@@ -69,7 +69,7 @@ end
 
 function run(kind, seed=1)
     eos = conformal_eos(default_phys_dim(); η_by_s = ETAS)
-    params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+    params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                    L=0.6, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
     p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  eq = N * V * w * T
@@ -155,7 +155,7 @@ function record(complete, wall)
         params = get(r, :params, nothing), eos = get(r, :eos, nothing),
         opts = length(KINDS) == 1 ? get(get(r, :opts, Dict()), KINDS[1], nothing) : nothing,
         driver = (h_over_a = HA, t_end = TEND, nreal = NREAL, kinds = collect(KINDS), vote = VOTE, dt_factor = 0.5 * DTF,
-                  dt_mode = "viscous", record_split = SPLIT, gradient = GRAD, S0 = S0,
+                  dt_mode = "viscous", record_split = SPLIT, gradient = GRAD, S0 = SREL0,   # record key S0 = s_rel,0 (kept: the regression compares records)
                   stochastic_by_kind = Dict(string(k) => o for (k, o) in get(r, :opts, Dict()))),
         start = (type = string(START),), outcome = (complete = complete, wall_s = wall))
 end

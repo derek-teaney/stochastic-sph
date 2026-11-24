@@ -224,7 +224,7 @@ end
 # Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
 # T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
 # HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
-const RENORM = (LEGENDRE || SPLIT) ? (setting("SPH_RENORM", :off); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
+const RENORM = (LEGENDRE || SPLIT) ? (setting("SPH_RENORM", :split); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
 @noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
     u, _, T = particle_inverse(e, m, V, eos)
     (isfinite(u) && T > 0) || return -Inf

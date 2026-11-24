@@ -6,6 +6,7 @@
 #      subspace of the 2n bond components (from their covariance, projected on an orthonormal basis of the subspace);
 #   4. a stochastic step with the correction runs, conserves momentum, and leaves the entropies S_a(e_a, m_a).
 using StaticArrays, LinearAlgebra, Printf, Random
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true

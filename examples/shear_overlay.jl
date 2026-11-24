@@ -22,7 +22,7 @@ for (ci, (lab, d)) in enumerate(SETS)
     C = real.(sum(c[1][1:nl] for c in cs) / length(cs));  y = C ./ C[1]
     toml = replace(fs[1], r"\.h5$" => ".toml");  Tr = m.Trel
     if isfile(toml);  t = TOML.parsefile(toml)["start"];  haskey(t, "T0") && get(t, "bath", "") == "nominal" && (Tr = t["T0"]);  end
-    ν0 = m.etas / Tr;  col = "C$(ci - 1)";  sa = m.S0 * m.a^2 * sqrt(3) / 2
+    ν0 = m.etas / Tr;  col = "C$(ci - 1)";  sa = srel0_of(m) * m.a^2 * sqrt(3) / 2
     full = @sprintf("%s: s_a=%.0f, T_rel=%.1f, ν0=%.2e%s", lab, sa, Tr, ν0, get(m, :novisc, false) ? " (dashed: η/s=0.2)" : "")
     for (ax, x) in ((axs[1], τ), (axs[2], τ .* ν0 .* k^2))
         ax.semilogy(x, abs.(y), color = col, lw = 1.8, label = full)

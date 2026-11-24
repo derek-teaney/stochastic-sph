@@ -266,7 +266,7 @@ for (run, dirs, v, col) in SETS
     end
     ν = m.etas / Trel
     nk = minimum(length(r.KE) for r in rs)
-    sa = m.S0 * m.a^2 * sqrt(3) / 2                 # entropy per particle, rest frame: S0 · vol, vol = a²√3/2 (hexagonal lattice)
+    sa = srel0_of(m) * m.a^2 * sqrt(3) / 2                 # entropy per particle, rest frame: S0 · vol, vol = a²√3/2 (hexagonal lattice)
     res[run] = (; v = vm, vreq, col, C, lab = run * @sprintf(", s_a=%.0f", sa), sa, Trel, ν, how, Trel_setup = m.Trel, h = m.h, n = length(rs), t = rs[1].rec.t[end],
                 KE = mean_([mean_(r.KE[nk÷2:nk]) for r in rs]), dH = mean_([r.H[nk] for r in rs]))
     @printf("%-15s SR_BOOST=%.1f  %2d runs  t=%.0f  state (%s): T_rel=%.1f±%.1f v=%.3f±%.3f  (set-up T_rel=%.1f)  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n",

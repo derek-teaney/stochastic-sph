@@ -2,6 +2,7 @@
 # Hydrodynamics: Γ = (η/s) k²/T_rel.  The SPH wave damps faster, by 21%, 8.5% and 3.4% on
 # 2026-11-12 (the error falls by 2.5 per halving of kh); the tolerances hold that, with a
 # margin.
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level: deterministic waves at s_a ≪ 1, below the label boundary of split
 include(joinpath(@__DIR__, "..", "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "lib", "waves.jl"))
 rs = wave_report("shear", [wave_run(:shear; kh, etas = 0.02) for kh in (1.4, 0.7, 0.35)])

@@ -18,6 +18,7 @@
 #
 # Run:  julia --project test/testeos_consistency.jl
 using StaticArrays, LinearAlgebra, Printf
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 eos = ConstantCs2EOS(1/3, 1.0, 0.0, 0.0)

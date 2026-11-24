@@ -625,6 +625,9 @@ load_checkpoint(path::AbstractString) = open(deserialize, path)
 
 # Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE),
 # with meta a NamedTuple of the attributes and rec a Recorder.
+# s_rel,0, the rest-frame entropy density of a run, from its record (key srel0 since 2026-11-23; S0 before)
+srel0_of(m) = haskey(m, :srel0) ? m.srel0 : m.S0
+
 function read_equilibrium(path::AbstractString)
     endswith(path, ".jls") && return deserialize(path)
     h5open(path, "r") do f

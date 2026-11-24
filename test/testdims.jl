@@ -4,6 +4,7 @@
 #   (3) the guard: the stochastic step and hybrid Monte Carlo refuse phys_dim ≠ sim_dim and sim_dim = 1;
 #   (4) ζ_eff = ζ + 2η(1/2 − 1/d) is ζ at d = 2, floored at ε η (SPH_ZETA_FLOOR) in the stochastic step.
 using StaticArrays, LinearAlgebra, Printf, Random
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 println("testdims.jl — physical dimension and the constant-cs² EOS")

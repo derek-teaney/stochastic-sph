@@ -18,7 +18,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
 # SR_H: the kernel scale h (default 0.05).  The spacing is a = h/HA, so h/a can be raised at fixed a (and fixed N in the box L)
-# by raising SR_H with HA (docs/hbya.tex); with SR_SREL0 fixed the entropy per particle s_a = S0·a²·√3/2 is then fixed too.
+# by raising SR_H with HA (docs/hbya.tex); with SR_SREL0 fixed the entropy per particle s_a = s_rel,0·a²·√3/2 is then fixed too.
 const HKER  = setting("SR_H", 0.05)
 const TEND  = parse(Float64, ARGS[3])
 const NREAL = parse(Int, ARGS[4])
@@ -30,7 +30,7 @@ const ETAS  = setting("SR_ETAS", 0.2)
 # the dimension enters the tree-level step only through ζ_eff = max(ζ + 2η(1/2 − 1/d), 0.01 η).  SR_ZETAS: ζ/s (default 0).
 const CS2V  = setting("SR_CS2", 0.0)
 const ZETAS = setting("SR_ZETAS", 0.0)
-const S0    = setting("SR_SREL0", 1e6)        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
+const SREL0 = setting("SR_SREL0", 1e6)        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
 const KHMAX = setting("SR_KHMAX", 1.5)
 const START = setting("SR_START", :eq)
 const OUT   = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data")));  mkpath(OUT)
@@ -74,15 +74,15 @@ const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.35)
 # value), τ = L/2c_s the next one (campaign hmc_tau_test, 2026-11-14).  Random lengths remove these resonances.
 const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
-# is S0 as before; in the lab (density frame) S = γ S0 and M = (w0 γ² v, 0), w0 the rest-frame
-# enthalpy at S0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
+# is s_rel,0 as before; in the lab (density frame) S = γ s_rel,0 and M = (w0 γ² v, 0), w0 the rest-frame
+# enthalpy at s_rel,0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
 # boost the energy Fourier modes E_k are recorded too (SR_RECORD_E=1 forces them at rest).
 const BOOST  = setting("SR_BOOST", 0.0)
 const GAMMA  = 1 / sqrt(1 - BOOST^2)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
 # SR_BATH: the multipliers β^μ of the hybrid Monte Carlo start and of the equilibrium draw (SR_START=eq).
 #   nominal (default since 2026-11-23): the requested state, β⁰ = γ/T_rel0, β = γ v/T_rel0 x̂, with T_rel0 the temperature
-#           of the rest-frame state at S0 and v = SR_BOOST: the fluid of the run is at this (T_rel, v), exactly, for any Hamiltonian.
+#           of the target fluid at s_rel,0 and v = SR_BOOST: the fluid of the run is at this (T_rel, v), exactly, for any Hamiltonian.
 #   totals: (before 2026-11-23) β^μ solved from the totals of the set-up state (beta_from_averages, a quadrature on a grid
 #           of single-particle states).  In a moving fluid at low s_a the solve can be far off: split, s_a = 16, v = 0.8 gave
 #           T_rel = 208, v = 0.66 (campaign hastings_split, nersc/LOG.md).
@@ -116,7 +116,7 @@ const STOPAFTER = setting("SR_STOP_AFTER", 0)
 function run_meta(params, st, n, wall, complete, eos)
     (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, dt = st.dt, nsteps = st.nsteps,
      nsteps_done = n, complete = complete,
-     etas = ETAS, S0 = S0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = cs2(eos), phys_dim = params.phys_dim, T_scale = eos.T_scale, seed = st.seed,
+     etas = ETAS, srel0 = SREL0, V = st.V, w = st.w, T = st.T, Trel = st.Trel, cs2 = cs2(eos), phys_dim = params.phys_dim, T_scale = eos.T_scale, seed = st.seed,
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
@@ -142,8 +142,8 @@ function runinfo(base, params, eos, st, n, complete)
         run = (driver = "equilibrium.jl", tag = TAG, seed = st.seed, args = ARGS),
         params, eos, opts = NOVISC ? nothing : stoch_opts(params),
         driver = (L = LBOX, h_over_a = HA, t_end = TEND, nreal = NREAL, rec_every = RECN, khmax = KHMAX,
-                  S0 = S0, grid = GRID, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * S0 * params.vol,
-                  dv = 1 / sqrt(S0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
+                  srel0 = SREL0, grid = GRID, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * SREL0 * params.vol,
+                  dv = 1 / sqrt(SREL0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
                   nsteps = st.nsteps),
         start = haskey(st, :start) ? st.start : (type = string(START),),
         outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), res,
@@ -160,12 +160,14 @@ function one_realization(seed)
         restore_guards!(st.guards)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
-        # rest-frame state at S0: its enthalpy w0 sets the momentum density of the boosted state
-        _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
+        # rest-frame state at s_rel,0: its enthalpy w0 sets the momentum density of the boosted state
+        _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                 L=LBOX, lattice=:hex, seed=1000seed + 4)
-        w0 = ps0[1].e + ps0[1].p;  Trel0 = ps0[1].T * ps0[1].γ
+        # T_rel0: the temperature of the target fluid at s_rel,0, from the equation of state (not from a particle of the set-up, whose
+        # T = ∂H/∂s depends on the Hamiltonian: with SPH_RENORM=legendre the particle variable is the label, not the target entropy)
+        w0 = ps0[1].e + ps0[1].p;  Trel0 = trel_of_srel(eos, SREL0)
         Mx0 = w0 * GAMMA^2 * BOOST
-        params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * S0, (x, y) -> SVector(Mx0, 0.0);
+        params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
         if POSITIONS === :poisson
             params.ideal === :grid && error("SR_POSITIONS=poisson is not possible with SPH_IDEAL=grid")
@@ -173,15 +175,15 @@ function one_realization(seed)
             for q in ps;  q.x = SVector(rand(prng) * params.L[1], rand(prng) * params.L[2]);  end
             rebuild_cell_list!(cl, ps);  thermalize!(ps, params, cl, eos)
         end
-        if JITTER > 0 || POSITIONS === :poisson  # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ S0), iterated;
+        if JITTER > 0 || POSITIONS === :poisson  # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ s_rel,0), iterated;
             for _ in 1:30                        # m_a = V_a M0 (the momentum density of the boosted state)
-                for q in ps;  q.s *= GAMMA * S0 / q.S_smooth;  end
+                for q in ps;  q.s *= GAMMA * SREL0 / q.S_smooth;  end
                 thermalize!(ps, params, cl, eos)
             end
             for q in ps;  q.m = (q.s / q.S_smooth) * SVector(Mx0, 0.0);  end
             thermalize!(ps, params, cl, eos)
             @printf("seed %d: %s, jitter %.2f a: smoothed S/(γS0) − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, POSITIONS, JITTER,
-                    sqrt(sum(abs2, [q.S_smooth / (GAMMA * S0) - 1 for q in ps]) / length(ps)),
+                    sqrt(sum(abs2, [q.S_smooth / (GAMMA * SREL0) - 1 for q in ps]) / length(ps)),
                     (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
@@ -222,8 +224,8 @@ function one_realization(seed)
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
               gstencil = gstencil, gchecks = gchecks, gstats = GridStats(),
               grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[],
-              start = merge((lattice = "hex", positions = string(POSITIONS), jitter = JITTER, S0_rest = S0, boost = BOOST, gamma = GAMMA,
-                             S_lab = GAMMA * S0, M0 = [Mx0, 0.0], s_a = GAMMA * S0 * params.vol,
+              start = merge((lattice = "hex", positions = string(POSITIONS), jitter = JITTER, srel0 = SREL0, boost = BOOST, gamma = GAMMA,
+                             S_lab = GAMMA * SREL0, M0 = [Mx0, 0.0], s_a = GAMMA * SREL0 * params.vol,
                              T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
                              rng_seeds = "lattice $(1000seed + 4), start $(1000seed + 3), physics $(1000seed + 1), sweeps $(1000seed + 2)"),
                             start))

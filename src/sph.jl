@@ -96,8 +96,12 @@ const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
 # energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.  SPH_RENORM=1 (the entropy shift,
 # stochastic.jl) is read as before; without SPH_RENORM=legendre the setting is read exactly as before (as a Bool).
 const LEGENDRE = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "legendre";  end
-# SPH_RENORM=split (docs/step5_plan.tex): Step 5, the label part of the counterterm in the measure, the rest in H (renorm_split.jl).
-const SPLIT = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "split";  end
+# SPH_RENORM=split (docs/step5_plan.tex, docs/renormalization_review.tex): Step 5, the label part of the counterterm in the measure, the
+# rest in H (renorm_split.jl).  The DEFAULT since 2026-11-23 (merge of branch split): with SPH_RENORM unset the run is renormalized.
+# SPH_RENORM=0 is the tree level (the default before), SPH_RENORM=legendre the alternative scheme, SPH_RENORM=1 the old entropy shift.
+# Split supports d = 2, the energy Hamiltonian with the number volume, the Liouville measure, not the grid step (check_split): any other
+# scheme stops with a message to set SPH_RENORM=0.
+const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(strip(r)) == "split";  end
 # the Hamiltonian has a domain (legendre, split): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
 const HAS_DOMAIN = LEGENDRE || SPLIT
 const V2MAX = 1 - 1 / GAMMA_MAX^2
@@ -264,6 +268,17 @@ zeta_eff_by_s(eos::AbstractEOS, d::Integer) =
 
 # Relativistic entropy density: s_rel = (e+p)/T_rel  (thermodynamic identity)
 srel(eos::ConstantCs2EOS, e::Float64) = (e + pressure(eos, e)) / Trel(eos, e)
+# The rest-frame temperature of the target fluid at the rest-frame entropy density s_rel (docs/inputs.tex, T_rel,0 of a run): the
+# equation of state alone, the same for every Hamiltonian (tree level, split, Legendre).  s_rel(e) is monotonic: bisection in e.
+function trel_of_srel(eos::AbstractEOS, s::Float64)
+    lo, hi = 0.0, 1.0
+    while srel(eos, hi) < s;  hi *= 2;  end
+    for _ in 1:200
+        mid = (lo + hi) / 2;  srel(eos, mid) < s ? (lo = mid) : (hi = mid)
+        hi - lo <= 1e-15 * hi && break
+    end
+    return Trel(eos, (lo + hi) / 2)
+end
 
 # ─────────────────────────────────────────────────────────────────────────────
 

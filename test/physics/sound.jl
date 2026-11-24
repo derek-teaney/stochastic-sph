@@ -3,6 +3,7 @@
 # falls faster than (kh)², and damps numerically at a rate that falls faster still.
 # Tolerances are set from the results of 2026-11-12 (c/c_s − 1 = −1.0e-3, Γ/ω = 1.6e-5 at
 # kh = 0.35; error ratios 5.3 and 13 between successive kh), with a margin.
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level: deterministic waves at s_a ≪ 1, below the label boundary of split
 include(joinpath(@__DIR__, "..", "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "lib", "waves.jl"))
 rs = wave_report("sound", [wave_run(:sound; kh, etas = 0.0) for kh in (1.4, 0.7, 0.35)])

@@ -746,6 +746,18 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
   not the code.  Equal time differs (cs13 1.5, hastings 0.85 at s_a = 16): hastings started at the right energy with a bath 14% cooler
   (T0 = 24.3 vs 28.1); (28.1/24.3)^4 = 1.79 vs measured 1.76; s_a = 54: 1.17 vs 1.18.  The tree's O(1/s) T–energy mismatch.
 
+- **Default switch and merge (2026-11-23).**  SPH_RENORM=split is the default (SPH_RENORM=0 tree, legendre the alternative);
+  unsupported schemes stop with a message.  Survey with split forced (61892182): 12 unit + 3 physics tests check tree-level machinery
+  (d = 3, entropy volume, Einstein measure, target maps, waves at s_a ~ 1e-3 below the label boundary) — they now set SPH_RENORM=0
+  themselves.  T_rel,0 of the nominal bath now from the EOS (trel_of_srel), not a set-up particle (Legendre's was T_rel ≈ 203; tree and
+  split 140.437 vs exact 140.381).  SR_S0 retired → SR_SREL0 (hard stop; driver variable SREL0, record key srel0; srel0_of(m) reads
+  either).  Full suite at the new defaults (61894594): unit, physics, load pass; regression (SPH_RENORM=0 SR_BATH=totals vs main 8e147db):
+  step.jl and stability identical, equilibrium drivers only hast_lq_* (as before), unit output only HMC wall time (testcheckpoint) and
+  the settings count / renorm files (testrunrecord).
+- **Legendre dynamics smoke** (debug 61893274, then 61894564 with the EOS bath): runs, bath exact (T0 = 84.23 at v = 0.8), cost ≈ split.
+  But at s_a = 16 at rest ΔH/H = +2.0e-2 in 5 time units, acceptances 0.83/0.45, 270k guard rejections (split: 3e-4, 0.97/0.58, 43k).
+  Campaign hastings_legendre held until this is understood.
+
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
 Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`

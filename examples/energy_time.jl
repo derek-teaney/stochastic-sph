@@ -14,7 +14,7 @@ for (ci, sets) in enumerate(COLS), (si, set) in enumerate(sets)
     fs = [joinpath(d, f) for f in readdir(d) if endswith(f, ".h5")]
     rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> get(r.meta, :complete, true) && length(r.H) > 10, rs)
     isempty(rs) && continue
-    m = rs[1].meta;  sa = m.S0 * m.a^2 * sqrt(3) / 2;  col = "C$(si - 1)"
+    m = rs[1].meta;  sa = srel0_of(m) * m.a^2 * sqrt(3) / 2;  col = "C$(si - 1)"
     n = minimum(length(r.H) for r in rs);  t = rs[1].rec.t[1:n]
     for (row, key) in ((1, :H), (2, :KE))
         ax = axs[row, ci];  ys = [getfield(r, key)[1:n] for r in rs]

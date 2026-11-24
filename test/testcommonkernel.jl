@@ -5,6 +5,7 @@
 #   3. Σ_a F_a = 0 (momentum) for the new form.
 # Deterministic, written for the z-independent fluid d = 3 (cs² = 1/3, ζ_eff = η/3); phys_dim = 3 given explicitly (dimension.tex).
 using StaticArrays, LinearAlgebra, Printf, Random
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
