@@ -52,15 +52,18 @@ A run is specified by three groups of inputs.
 Everything else (the integrators, the measure, the renormalization, the start) is a numerical setting with a default (\Sect{sec:numerics}).
 The inputs meet in one number, the entropy per particle,
 \st
-s_a=\frac{S}{n}=\frac{\gamma\,s_{\rm rel,0}}{n},
+s_a=\frac{S_0}{n},\qquad S_0=\gamma\,s_{\rm rel,0},
 \label{eq:sa}
 \stp
-with $S=\gamma s_{\rm rel,0}$ the entropy density of the state in the lab (the density frame), $s_{\rm rel,0}$ its rest-frame value and $n$
+with $S_0$ the entropy density of the state in the lab (the density frame; the uniform value of the field $S$ the particles smooth),
+$s_{\rm rel,0}$ its rest-frame value and $n$
 the number density of particles; $s_a$ is what the particles carry.  Equivalently, in units of the smoothing length,
 \st
-S\,h^2=\gamma\,s_{\rm rel,0}\,h^2=s_a\,nh^2 .
+S_0h^2=\gamma\,s_{\rm rel,0}\,h^2=s_a\,nh^2 .
 \label{eq:Sh2}
 \stp
+\emph{Caution:} the retired setting \texttt{SR\_S0} of the old campaign files, like the present \texttt{SR\_SREL0}, is the rest-frame
+$s_{\rm rel,0}$, not $S_0$; the two differ by $\gamma$ ($5/3$ at $v=0.8$).
 
 \paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $s_{\rm rel,0}$
 (\texttt{SR\_SREL0}, formerly \texttt{SR\_S0}, retired 2026-11-23), and derive the temperature from it through the equation of state,
@@ -80,7 +83,7 @@ the temperature directly is in \Sect{sec:proposal}.
 p=c_s^2\,e,\qquad T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad s_{\rm rel}=\frac{e+p}{T_{\rm rel}} ,
 \label{eq:eos}
 \stp
-with $e$, $p$, $s_{\rm rel}$ the rest-frame energy density, pressure and entropy density ($S=\gamma s_{\rm rel}$ is the entropy density in the lab, the density frame; $s_{\rm rel,0}$ is the value of a run, \texttt{SR\_SREL0}).  Eliminating $e$,
+with $e$, $p$, $s_{\rm rel}$ the rest-frame energy density, pressure and entropy density ($\gamma s_{\rm rel}$ is the entropy density in the lab, the density frame; $s_{\rm rel,0}$ is the value of a run, \texttt{SR\_SREL0}).  Eliminating $e$,
 \st
 s_{\rm rel}=(1+c_s^2)\,T_{\rm scale}^{-(1+c_s^2)/c_s^2}\;T_{\rm rel}^{1/c_s^2} .
 \label{eq:sofT}
@@ -113,7 +116,7 @@ which at $d=2$, $\zeta=0$ is the floor $0.01\,\eta$.
 \paragraph{The state.}  The fluid is uniform, with rest-frame entropy density $s_{\rm rel,0}$ and velocity $\bm v=v\hat{\bm x}$, $v=$
 \texttt{SR\_BOOST} (default $0$).  In the lab (the density frame) its entropy and momentum densities are
 \st
-S=\gamma s_{\rm rel,0},\qquad \bm M=w_0\gamma^2\bm v,\qquad w_0=e+p\big|_{s_{\rm rel,0}},
+S_0=\gamma s_{\rm rel,0},\qquad \bm M=w_0\gamma^2\bm v,\qquad w_0=e+p\big|_{s_{\rm rel,0}},
 \label{eq:lab}
 \stp
 with $\bm M$ the density-frame momentum density.
@@ -149,7 +152,7 @@ $\pi(2h)^2n$ ($58$ at $h/a=2$).
 \paragraph{The particle variables} (\texttt{setup\_ic}, \texttt{src/setup.jl}).  Each particle receives the densities of \Eq{eq:lab}
 times its lattice volume,
 \st
-s_a=\gamma s_{\rm rel,0}\,V=\frac{\gamma s_{\rm rel,0}}{n},\qquad \bm m_a=\bm M\,V .
+s_a=S_0V=\frac{S_0}{n},\qquad \bm m_a=\bm M\,V .
 \label{eq:particles}
 \stp
 The rest-frame value $s_{\rm rel,0}V$ is the $s_a$ quoted for a run.  With \texttt{SPH\_RENORM=split} the particle variable $s_a$ is the label
@@ -178,7 +181,7 @@ T_{\rm rel,0}=\Big[\frac{s_{\rm rel,0}\,T_{\rm scale}^{(1+c_s^2)/c_s^2}}{1+c_s^2
 \quad\Big(=\sqrt{2s_{\rm rel,0}/3}\ \text{ at }c_s^2=\tfrac12,\ T_{\rm scale}=1\Big),
 \label{eq:TofS}
 \stp
-and the particles carry $s_a=\gamma s_{\rm rel,0}/n$ at the start, which then fluctuates.
+and the particles carry $s_a=S_0/n$ at the start, which then fluctuates.
 
 %=============================================================================
 \section{Dimensionless parameters and derived numbers}
@@ -222,14 +225,14 @@ $\propto1/(s\,\nu_0)$ to the viscosity; $\eta/s=1$ (or $c_s^2=1/3$) brings it ba
 \label{sec:refinement}
 
 At fixed physics (fixed $T_{\rm rel,0}$, $\bm v$, $\eta/s$, $L$) and fixed coarse-graining scale $h$, a refinement increases the number
-density $n$ at fixed $Sh^2$:
+density $n$ at fixed $S_0h^2$:
 \st
-Sh^2=\gamma\,s_{\rm rel,0}h^2=s_a\,nh^2=\text{fixed},\qquad
+S_0h^2=\gamma\,s_{\rm rel,0}h^2=s_a\,nh^2=\text{fixed},\qquad
 \frac ha=\Big(\frac{\sqrt3}{2}\,nh^2\Big)^{1/2}\propto\sqrt n,\qquad
-s_a=\frac{\gamma\,s_{\rm rel,0}}{n}\propto\frac1n .
+s_a=\frac{S_0}{n}\propto\frac1n .
 \label{eq:refine}
 \stp
-(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $Sh^2$, $nh^2$ of \Eq{eq:saratio}.)
+(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $S_0h^2$, $nh^2$ of \Eq{eq:saratio}.)
 The particles become lighter: each fluctuates with a relative size $1/\sqrt{s_a}$.  At tree level the canonical ensemble of the particle
 Hamiltonian has the target thermodynamics plus corrections of order $T$ per particle, i.e.\ of relative size
 \st
@@ -299,7 +302,7 @@ tag & & argument 6 & \texttt{L<L>\_ha<h/a>} \\
 largest recorded $kh$ & & \texttt{SR\_KHMAX} & $1.5$ \\
 seeds & & \texttt{SR\_SEED0}, \texttt{SR\_SEEDSTRIDE}, \texttt{SR\_SEEDOFFSET} & $0$, $1$, $0$ \\
 \midrule
-\multicolumn{4}{l}{derived: $a$, $N$, $n$, $s_a=\gamma s_{\rm rel,0}/n$, $T_{\rm rel,0}$ (\Eq{eq:TofS}), $\nu_0$, $\Delta t$} \\
+\multicolumn{4}{l}{derived: $a$, $N$, $n$, $S_0=\gamma s_{\rm rel,0}$, $s_a=S_0/n$, $T_{\rm rel,0}$ (\Eq{eq:TofS}), $\nu_0$, $\Delta t$} \\
 \bottomrule
 \end{tabular}
 \end{center}
