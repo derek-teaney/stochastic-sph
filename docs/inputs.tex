@@ -52,10 +52,15 @@ A run is specified by three groups of inputs.
 Everything else (the integrators, the measure, the renormalization, the start) is a numerical setting with a default (\Sect{sec:numerics}).
 The inputs meet in one number, the entropy per particle,
 \st
-s_a=\frac{S}{n},
+s_a=\frac{S}{n}=\frac{\gamma\,s_{\rm rel,0}}{n},
 \label{eq:sa}
 \stp
-with $S$ the entropy density of the state; $s_a$ is what the particles carry.
+with $S=\gamma s_{\rm rel,0}$ the entropy density of the state in the lab (the density frame), $s_{\rm rel,0}$ its rest-frame value and $n$
+the number density of particles; $s_a$ is what the particles carry.  Equivalently, in units of the smoothing length,
+\st
+S\,h^2=\gamma\,s_{\rm rel,0}\,h^2=s_a\,nh^2 .
+\label{eq:Sh2}
+\stp
 
 \paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $s_{\rm rel,0}$
 (\texttt{SR\_SREL0}, formerly \texttt{SR\_S0}, retired 2026-11-23), and derive the temperature from it through the equation of state,
@@ -185,9 +190,9 @@ $t\to\lambda t$, $T_{\rm rel}\to T_{\rm rel}/\lambda$ the run is unchanged.  A r
 T_{\rm rel,0}\,h\ \ (\text{equivalently } s_{\rm rel,0}h^2),\qquad nh^2\ \ (\text{equivalently } h/a),\qquad \frac Lh,\qquad v,\qquad \frac\eta s,\quad \frac\zeta s,\quad c_s^2 ,
 \label{eq:dimless}
 \stp
-and the entropy per particle is the ratio of the first two,
+and the entropy per particle is the ratio of the first two (with the $\gamma$ of the flow, \Eq{eq:Sh2}),
 \st
-s_a=\frac{s_{\rm rel,0}h^2}{nh^2}\qquad(\text{at rest}).
+s_a=\frac{\gamma\,s_{\rm rel,0}h^2}{nh^2} .
 \label{eq:saratio}
 \stp
 The bare viscosity in units of $h$ is $\nu_0/h=(\eta/s)/(T_{\rm rel,0}h)$.
@@ -217,18 +222,18 @@ $\propto1/(s\,\nu_0)$ to the viscosity; $\eta/s=1$ (or $c_s^2=1/3$) brings it ba
 \label{sec:refinement}
 
 At fixed physics (fixed $T_{\rm rel,0}$, $\bm v$, $\eta/s$, $L$) and fixed coarse-graining scale $h$, a refinement increases the number
-density $n$ at fixed $s_{\rm rel,0}h^2$:
+density $n$ at fixed $Sh^2$:
 \st
-s_{\rm rel,0}h^2=s_a\,nh^2=\text{fixed},\qquad
+Sh^2=\gamma\,s_{\rm rel,0}h^2=s_a\,nh^2=\text{fixed},\qquad
 \frac ha=\Big(\frac{\sqrt3}{2}\,nh^2\Big)^{1/2}\propto\sqrt n,\qquad
-s_a=\frac{s_{\rm rel,0}}{n}\propto\frac1n .
+s_a=\frac{\gamma\,s_{\rm rel,0}}{n}\propto\frac1n .
 \label{eq:refine}
 \stp
-(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $s_{\rm rel,0}h^2$, $nh^2$ of \Eq{eq:saratio}.)
+(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $Sh^2$, $nh^2$ of \Eq{eq:saratio}.)
 The particles become lighter: each fluctuates with a relative size $1/\sqrt{s_a}$.  At tree level the canonical ensemble of the particle
 Hamiltonian has the target thermodynamics plus corrections of order $T$ per particle, i.e.\ of relative size
 \st
-\frac{1}{s_a}=\frac{nh^2}{s_{\rm rel,0}h^2}\ \propto\ n ,
+\frac{1}{s_a}=\frac{nh^2}{\gamma\,s_{\rm rel,0}h^2}\ \propto\ n ,
 \label{eq:oneloop}
 \stp
 which grow linearly with the refinement (at $s_a=16$ the tree-level equal-time spectra are $20$--$40\%$ above the susceptibilities of
