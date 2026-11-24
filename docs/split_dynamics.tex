@@ -53,7 +53,7 @@ settings (\texttt{cs2\_val}, \texttt{SPH\_RENORM}, the commit) in its \texttt{.t
 in $d=2$, $c_s^2=1/2$ (the default equation of state of \texttt{examples/equilibrium.jl} and \texttt{examples/hmc\_positions.jl}),
 $\eta/s=0.2$, periodic box $L=0.6$ ($N=672$), $h=0.05$, $h/a=2$, energy Hamiltonian with the number volume, generalized leapfrog,
 Liouville measure, HMC start, viscous step \texttt{moment} with the Hastings correction, $\gamma_{\max}=100$ (all current defaults).
-Entropy per particle $s_a=16$ ($S_0=2.956\times10^4$) and $54$ ($9.977\times10^4$); fluid at rest and moving with $v_0=0.8$ along $x$.
+Entropy per particle $s_a=16$ (rest-frame entropy density $s_{\rm rel,0}=2.956\times10^4$, \texttt{SR\_S0}) and $54$ ($9.977\times10^4$); fluid at rest and moving with $v_0=0.8$ along $x$.
 \begin{center}
 \begin{tabular}{llll}
 \toprule
@@ -75,7 +75,7 @@ the HMC updates and the equilibrium draw that follows them use
 \beta^0=\frac{\gamma}{T_{\rm rel,0}},\qquad \bm\beta=\frac{\gamma\bm v_0}{T_{\rm rel,0}},
 \label{eq:bath}
 \stp
-with $T_{\rm rel,0}$ the temperature of the rest-frame state at $S_0$ ($140.4$ at $s_a=16$, $258.0$ at $s_a=54$) and $\bm v_0=v_0\hat{\bm x}$.
+with $T_{\rm rel,0}$ the temperature of the rest-frame state at $s_{\rm rel,0}$ ($140.4$ at $s_a=16$, $258.0$ at $s_a=54$) and $\bm v_0=v_0\hat{\bm x}$.
 The fluid of every run is then at exactly this $(T_{\rm rel},v_0)$, for either Hamiltonian.  \textbf{All results below are from
 \texttt{hastings\_bath}.}
 
@@ -126,10 +126,10 @@ Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).
 \paragraph{The damping is 3--6 times hydrodynamics, for both Hamiltonians and both $s_a$} (\Fig{fig:fit}, Figs.~\ref{fig:corr16},
 \ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.7$--$5.9$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
 The sound modes are over-damped as well.  This is \emph{not} what the earlier campaigns found: in campaign \texttt{hastings}
-($c_s^2=1/3$, the same $S_0$, the same step) the shear damping was $1.0$--$1.2$ times hydrodynamics (\texttt{inverse\_moment.tex},
+($c_s^2=1/3$, the same $s_{\rm rel,0}$, the same step) the shear damping was $1.0$--$1.2$ times hydrodynamics (\texttt{inverse\_moment.tex},
 Stage 2), and the present analysis applied to those runs gives the same ($1.17$--$1.23$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
 \texttt{BOOST\_GROUP=OLD16}, \texttt{OLD54}).  So the analysis is not the cause, and neither is the renormalization (tree and split are
-alike).  What differs: at the same $S_0$ the temperature is $T_{\rm rel}=140$ instead of $28$ ($s_a=16$), so
+alike).  What differs: at the same $s_{\rm rel,0}$ the temperature is $T_{\rm rel}=140$ instead of $28$ ($s_a=16$), so
 \st
 \nu=\frac{\eta}{e+p}=\frac{\eta/s}{T_{\rm rel}}
 \stp
@@ -161,13 +161,13 @@ viscosity,
 with $\nu_0=(\eta/s)/T_{\rm rel}$ the bare value.  Fixing $A$ from $\eta/s=0.2$ ($\Gamma/\nu_0k^2=4.0$, $A=3\nu_0^2$) predicts
 $1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $1.09$--$1.16$) and $1.09$ at $s_a=54$ (measured $1.11$--$1.20$).  For the
 conformal fluid in $d=2$, $s\propto T^2$ and $\nu_0\propto1/T$, so the relative correction $A/\nu_0^2\propto1/(\eta/s)^2$ does not
-depend on $s_a$: $s_a=54$ is nearly as far from hydrodynamics as $s_a=16$.  At $c_s^2=1/3$ and the same $S_0$, $\nu_0$ was five times
+depend on $s_a$: $s_a=54$ is nearly as far from hydrodynamics as $s_a=16$.  At $c_s^2=1/3$ and the same $s_{\rm rel,0}$, $\nu_0$ was five times
 larger and the correction about 25 times smaller.  Campaign \texttt{cs13} (below) checks that the old agreement is reproduced by the present code.
 
 \paragraph{Campaign \texttt{cs13}: the old runs, with the present code} (\texttt{nersc/campaign\_cs13.txt}, commit \texttt{09c10bf}, job
 61890225; \Fig{fig:cs13}).  The tree-level runs of \texttt{hastings} repeated at $c_s^2=1/3$ ($e=T^4$; \texttt{SR\_CS2}), $\eta/s=0.2$ and
 $\zeta/s=(\eta/s)/3$ (\texttt{SR\_ZETAS}), so that the bulk channel of the viscous step is $\zeta_{\rm eff}=\eta/3$ as before the dimension
-fix; the same $S_0$, hence the old $T_{\rm rel}=28.1$ ($s_a=16$) and $42.2$ ($s_a=54$), and $\nu_0$ five times that of
+fix; the same $s_{\rm rel,0}$, hence the old $T_{\rm rel}=28.1$ ($s_a=16$) and $42.2$ ($s_a=54$), and $\nu_0$ five times that of
 \texttt{hastings\_bath}.  The shear damping is back at hydrodynamics:
 \begin{center}
 \begin{tabular}{lcc}

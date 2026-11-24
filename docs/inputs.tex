@@ -57,10 +57,10 @@ s_a=\frac{S}{n},
 \stp
 with $S$ the entropy density of the state; $s_a$ is what the particles carry.
 
-\paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $S_0$
+\paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $s_{\rm rel,0}$
 (\texttt{SR\_S0}), and derive the temperature from it through the equation of state,
 \st
-T_{\rm rel,0}=T_{\rm rel}\big|_{S=S_0}\qquad\text{(uniform fluid at rest)} .
+T_{\rm rel,0}=T_{\rm rel}\big|_{s_{\rm rel}=s_{\rm rel,0}}\qquad\text{(uniform fluid at rest)} .
 \label{eq:Trel0}
 \stp
 The run is then at a definite $(T_{\rm rel,0},\bm v)$ (\Sect{sec:start}), but $T_{\rm rel,0}$ is derived, not given.  A proposal to take
@@ -72,20 +72,20 @@ the temperature directly is in \Sect{sec:proposal}.
 
 \paragraph{The equation of state} (\texttt{ConstantCs2EOS}, \texttt{src/sph.jl}) has a constant speed of sound:
 \st
-p=c_s^2\,e,\qquad T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad S=\frac{e+p}{T_{\rm rel}} ,
+p=c_s^2\,e,\qquad T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad s_{\rm rel}=\frac{e+p}{T_{\rm rel}} ,
 \label{eq:eos}
 \stp
-with $e$, $p$, $S$ the rest-frame energy density, pressure and entropy density.  Eliminating $e$,
+with $e$, $p$, $s_{\rm rel}$ the rest-frame energy density, pressure and entropy density ($S=\gamma s_{\rm rel}$ is the entropy density in the lab, the density frame; $s_{\rm rel,0}$ is the value of a run, \texttt{SR\_S0}).  Eliminating $e$,
 \st
-S=(1+c_s^2)\,T_{\rm scale}^{-(1+c_s^2)/c_s^2}\;T_{\rm rel}^{1/c_s^2} .
+s_{\rm rel}=(1+c_s^2)\,T_{\rm scale}^{-(1+c_s^2)/c_s^2}\;T_{\rm rel}^{1/c_s^2} .
 \label{eq:sofT}
 \stp
 The drivers use the conformal fluid in $d=2$, $c_s^2=1/d=1/2$ and $T_{\rm scale}=1$ (\texttt{conformal\_eos(2)}), for which
 \st
-e=T_{\rm rel}^3,\qquad p=\tfrac12T_{\rm rel}^3,\qquad S=\tfrac32T_{\rm rel}^2 .
+e=T_{\rm rel}^3,\qquad p=\tfrac12T_{\rm rel}^3,\qquad s_{\rm rel}=\tfrac32T_{\rm rel}^2 .
 \label{eq:conformal}
 \stp
-\texttt{SR\_CS2} selects another constant $c_s^2$ (e.g.\ $1/3$, $e=T_{\rm rel}^4$, $S=\tfrac43T_{\rm rel}^3$), still with $T_{\rm scale}=1$.
+\texttt{SR\_CS2} selects another constant $c_s^2$ (e.g.\ $1/3$, $e=T_{\rm rel}^4$, $s_{\rm rel}=\tfrac43T_{\rm rel}^3$), still with $T_{\rm scale}=1$.
 
 \paragraph{The temperatures.}  The particles move with the bare temperature $T=\partial H/\partial s$ and the rest-frame temperature is
 \st
@@ -105,10 +105,10 @@ The viscous step uses the effective bulk viscosity
 \stp
 which at $d=2$, $\zeta=0$ is the floor $0.01\,\eta$.
 
-\paragraph{The state.}  The fluid is uniform, with rest-frame entropy density $S_0$ and velocity $\bm v=v\hat{\bm x}$, $v=$
+\paragraph{The state.}  The fluid is uniform, with rest-frame entropy density $s_{\rm rel,0}$ and velocity $\bm v=v\hat{\bm x}$, $v=$
 \texttt{SR\_BOOST} (default $0$).  In the lab (the density frame) its entropy and momentum densities are
 \st
-S=\gamma S_0,\qquad \bm M=w_0\gamma^2\bm v,\qquad w_0=e+p\big|_{S_0},
+S=\gamma s_{\rm rel,0},\qquad \bm M=w_0\gamma^2\bm v,\qquad w_0=e+p\big|_{s_{\rm rel,0}},
 \label{eq:lab}
 \stp
 with $\bm M$ the density-frame momentum density.
@@ -144,10 +144,10 @@ $\pi(2h)^2n$ ($58$ at $h/a=2$).
 \paragraph{The particle variables} (\texttt{setup\_ic}, \texttt{src/setup.jl}).  Each particle receives the densities of \Eq{eq:lab}
 times its lattice volume,
 \st
-s_a=\gamma S_0\,V=\frac{\gamma S_0}{n},\qquad \bm m_a=\bm M\,V .
+s_a=\gamma s_{\rm rel,0}\,V=\frac{\gamma s_{\rm rel,0}}{n},\qquad \bm m_a=\bm M\,V .
 \label{eq:particles}
 \stp
-The rest-frame value $S_0V$ is the $s_a$ quoted for a run.  With \texttt{SPH\_RENORM=split} the particle variable $s_a$ is the label
+The rest-frame value $s_{\rm rel,0}V$ is the $s_a$ quoted for a run.  With \texttt{SPH\_RENORM=split} the particle variable $s_a$ is the label
 $u$, the entropy of the target state of the particle (\texttt{docs/step5\_plan.tex}); it is set up by \Eq{eq:particles} in the same way.
 
 %=============================================================================
@@ -162,18 +162,18 @@ of the requested state (\texttt{SR\_BATH=nominal}, the default since commit \tex
 \beta^0=\frac1T=\frac{\gamma}{T_{\rm rel,0}},\qquad \bm\beta=\frac{\bm v}{T}=\frac{\gamma\bm v}{T_{\rm rel,0}} ,
 \label{eq:bath}
 \stp
-with $T_{\rm rel,0}$ the temperature of the uniform rest-frame state at $S_0$, \Eq{eq:Trel0}.  The draw then shifts the energies and momenta
+with $T_{\rm rel,0}$ the temperature of the uniform rest-frame state at $s_{\rm rel,0}$, \Eq{eq:Trel0}.  The draw then shifts the energies and momenta
 so that the totals are exactly those of the state it starts from.  The fluid of the run is at this $(T_{\rm rel,0},\bm v)$ for any
 Hamiltonian, tree level or renormalized.  (\texttt{SR\_BATH=totals}, before 2026-11-23, solved for $\beta^\mu$ from the set-up totals,
 which at low $s_a$ in a moving fluid could be far from the requested state; \texttt{docs/split\_dynamics.tex}.)
 
-In short: the input is $S_0$; the state is $(T_{\rm rel,0},\bm v)$ with
+In short: the input is $s_{\rm rel,0}$; the state is $(T_{\rm rel,0},\bm v)$ with
 \st
-T_{\rm rel,0}=\Big[\frac{S_0\,T_{\rm scale}^{(1+c_s^2)/c_s^2}}{1+c_s^2}\Big]^{c_s^2}
-\quad\Big(=\sqrt{2S_0/3}\ \text{ at }c_s^2=\tfrac12,\ T_{\rm scale}=1\Big),
+T_{\rm rel,0}=\Big[\frac{s_{\rm rel,0}\,T_{\rm scale}^{(1+c_s^2)/c_s^2}}{1+c_s^2}\Big]^{c_s^2}
+\quad\Big(=\sqrt{2s_{\rm rel,0}/3}\ \text{ at }c_s^2=\tfrac12,\ T_{\rm scale}=1\Big),
 \label{eq:TofS}
 \stp
-and the particles carry $s_a=\gamma S_0/n$ at the start, which then fluctuates.
+and the particles carry $s_a=\gamma s_{\rm rel,0}/n$ at the start, which then fluctuates.
 
 %=============================================================================
 \section{Dimensionless parameters and derived numbers}
@@ -182,12 +182,12 @@ and the particles carry $s_a=\gamma S_0/n$ at the start, which then fluctuates.
 \paragraph{Scale invariance.}  The equation of state \Eq{eq:eos} has no scale besides $T_{\rm scale}$, so under $\bm x\to\lambda\bm x$,
 $t\to\lambda t$, $T_{\rm rel}\to T_{\rm rel}/\lambda$ the run is unchanged.  A run is therefore fixed by the dimensionless numbers
 \st
-T_{\rm rel,0}\,h\ \ (\text{equivalently } S_0h^2),\qquad nh^2\ \ (\text{equivalently } h/a),\qquad \frac Lh,\qquad v,\qquad \frac\eta s,\quad \frac\zeta s,\quad c_s^2 ,
+T_{\rm rel,0}\,h\ \ (\text{equivalently } s_{\rm rel,0}h^2),\qquad nh^2\ \ (\text{equivalently } h/a),\qquad \frac Lh,\qquad v,\qquad \frac\eta s,\quad \frac\zeta s,\quad c_s^2 ,
 \label{eq:dimless}
 \stp
 and the entropy per particle is the ratio of the first two,
 \st
-s_a=\frac{S_0h^2}{nh^2}\qquad(\text{at rest}).
+s_a=\frac{s_{\rm rel,0}h^2}{nh^2}\qquad(\text{at rest}).
 \label{eq:saratio}
 \stp
 The bare viscosity in units of $h$ is $\nu_0/h=(\eta/s)/(T_{\rm rel,0}h)$.
@@ -197,7 +197,7 @@ $kh=2\pi h/L=0.52$.
 \begin{center}
 \begin{tabular}{cccccccc}
 \toprule
-$S_0$ & $S_0h^2$ & $s_a$ & $c_s^2$ & $c_s$ & $T_{\rm rel,0}$ & $\nu_0=(\eta/s)/T_{\rm rel,0}$ & $\nu_0/h$ \\ \midrule
+$s_{\rm rel,0}$ & $s_{\rm rel,0}h^2$ & $s_a$ & $c_s^2$ & $c_s$ & $T_{\rm rel,0}$ & $\nu_0=(\eta/s)/T_{\rm rel,0}$ & $\nu_0/h$ \\ \midrule
 $2.956\times10^4$ & $73.9$ & $16$ & $1/2$ & $0.707$ & $140.4$ & $1.42\times10^{-3}$ & $0.028$ \\
                   &        &      & $1/3$ & $0.577$ & $28.1$  & $7.12\times10^{-3}$ & $0.142$ \\
 $9.977\times10^4$ & $249$  & $54$ & $1/2$ & $0.707$ & $257.9$ & $7.75\times10^{-4}$ & $0.016$ \\
@@ -205,9 +205,9 @@ $9.977\times10^4$ & $249$  & $54$ & $1/2$ & $0.707$ & $257.9$ & $7.75\times10^{-
 \bottomrule
 \end{tabular}
 \end{center}
-$\eta/s=0.2$.  The default $S_0=10^6$ gives $s_a=541$ in the same box.
+$\eta/s=0.2$.  The default $s_{\rm rel,0}=10^6$ gives $s_a=541$ in the same box.
 
-\paragraph{Consequence for the damping.}  At the same $S_0$ the bare $\nu_0/h$ at $c_s^2=1/2$, $\eta/s=0.2$ is five times smaller than
+\paragraph{Consequence for the damping.}  At the same $s_{\rm rel,0}$ the bare $\nu_0/h$ at $c_s^2=1/2$, $\eta/s=0.2$ is five times smaller than
 at $c_s^2=1/3$, and the measured shear damping at $kh=0.52$ is then $3$--$4$ times hydrodynamics, a fluctuation correction
 $\propto1/(s\,\nu_0)$ to the viscosity; $\eta/s=1$ (or $c_s^2=1/3$) brings it back to $1.1$ times hydrodynamics
 (\texttt{docs/split\_dynamics.tex}, campaigns \texttt{damping\_scan}, \texttt{cs13}).
@@ -217,18 +217,18 @@ $\propto1/(s\,\nu_0)$ to the viscosity; $\eta/s=1$ (or $c_s^2=1/3$) brings it ba
 \label{sec:refinement}
 
 At fixed physics (fixed $T_{\rm rel,0}$, $\bm v$, $\eta/s$, $L$) and fixed coarse-graining scale $h$, a refinement increases the number
-density $n$ at fixed $S_0h^2$:
+density $n$ at fixed $s_{\rm rel,0}h^2$:
 \st
-S_0h^2=s_a\,nh^2=\text{fixed},\qquad
+s_{\rm rel,0}h^2=s_a\,nh^2=\text{fixed},\qquad
 \frac ha=\Big(\frac{\sqrt3}{2}\,nh^2\Big)^{1/2}\propto\sqrt n,\qquad
-s_a=\frac{S_0}{n}\propto\frac1n .
+s_a=\frac{s_{\rm rel,0}}{n}\propto\frac1n .
 \label{eq:refine}
 \stp
-(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $S_0h^2$, $nh^2$ of \Eq{eq:saratio}.)
+(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $s_{\rm rel,0}h^2$, $nh^2$ of \Eq{eq:saratio}.)
 The particles become lighter: each fluctuates with a relative size $1/\sqrt{s_a}$.  At tree level the canonical ensemble of the particle
 Hamiltonian has the target thermodynamics plus corrections of order $T$ per particle, i.e.\ of relative size
 \st
-\frac{1}{s_a}=\frac{nh^2}{S_0h^2}\ \propto\ n ,
+\frac{1}{s_a}=\frac{nh^2}{s_{\rm rel,0}h^2}\ \propto\ n ,
 \label{eq:oneloop}
 \stp
 which grow linearly with the refinement (at $s_a=16$ the tree-level equal-time spectra are $20$--$40\%$ above the susceptibilities of
@@ -281,7 +281,7 @@ input & symbol & setting & default \\ \midrule
 box side & $L$ & argument 1 & --- \\
 resolution & $h/a$ & argument 2 & --- \\
 smoothing length & $h$ & \texttt{SR\_H} & $0.05$ \\
-rest-frame entropy density & $S_0$ & \texttt{SR\_S0} & $10^6$ \\
+rest-frame entropy density & $s_{\rm rel,0}$ & \texttt{SR\_S0} & $10^6$ \\
 velocity (along $x$) & $v$ & \texttt{SR\_BOOST} & $0$ \\
 speed of sound & $c_s^2$ & \texttt{SR\_CS2} & $0$, i.e.\ $1/d=1/2$ \\
 temperature scale & $T_{\rm scale}$ & (fixed) & $1$ \\
@@ -294,7 +294,7 @@ tag & & argument 6 & \texttt{L<L>\_ha<h/a>} \\
 largest recorded $kh$ & & \texttt{SR\_KHMAX} & $1.5$ \\
 seeds & & \texttt{SR\_SEED0}, \texttt{SR\_SEEDSTRIDE}, \texttt{SR\_SEEDOFFSET} & $0$, $1$, $0$ \\
 \midrule
-\multicolumn{4}{l}{derived: $a$, $N$, $n$, $s_a=\gamma S_0/n$, $T_{\rm rel,0}$ (\Eq{eq:TofS}), $\nu_0$, $\Delta t$} \\
+\multicolumn{4}{l}{derived: $a$, $N$, $n$, $s_a=\gamma s_{\rm rel,0}/n$, $T_{\rm rel,0}$ (\Eq{eq:TofS}), $\nu_0$, $\Delta t$} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -305,7 +305,7 @@ seeds & & \texttt{SR\_SEED0}, \texttt{SR\_SEEDSTRIDE}, \texttt{SR\_SEEDOFFSET} &
 
 \paragraph{A proposal: the temperature as input.}
 \label{sec:proposal}
-A setting \texttt{SR\_T} $=T_{\rm rel,0}$ could replace \texttt{SR\_S0}: the driver would set $S_0$ from \Eq{eq:sofT} and proceed
+A setting \texttt{SR\_T} $=T_{\rm rel,0}$ could replace \texttt{SR\_S0}: the driver would set $s_{\rm rel,0}$ from \Eq{eq:sofT} and proceed
 unchanged.  The run is already at $(T_{\rm rel,0},\bm v)$ through \Eq{eq:bath}; only the way it is named would change, and the inputs
 would then read as the physics does: $T$, $v$, the equation of state, $\eta/s$; then $L$, $N$ (or $h/a$) and $h$.  Not implemented.
 
@@ -318,7 +318,7 @@ would then read as the physics does: $T$, $v$, the equation of state, $\eta/s$; 
   $\eta/s=0.2$ and $c_s^2=1/2$ are fixed in the code (no \texttt{SR\_H}, \texttt{SR\_ETAS}, \texttt{SR\_CS2}), and its defaults differ:
   \texttt{SR\_HMC\_DTFAC} $0.5$, \texttt{SR\_HMC\_TAUJIT} $0$, \texttt{SR\_SEED0} $1$, $\tau=L/c_s$ (computed from $c_s$).
 \item The box is not exactly square (\Sect{sec:discretization}); $n$ and the box modes use $L_x$, $L_y$ as snapped.
-\item The quoted $s_a$ is the set-up value $\gamma S_0V$; with \texttt{SR\_POSITIONS=hmc} the volumes $V_a=1/n_a$ and the $s_a$
+\item The quoted $s_a$ is the set-up value $\gamma s_{\rm rel,0}V$; with \texttt{SR\_POSITIONS=hmc} the volumes $V_a=1/n_a$ and the $s_a$
   fluctuate from the start, and their mean need not equal it.
 \end{itemize}
 
