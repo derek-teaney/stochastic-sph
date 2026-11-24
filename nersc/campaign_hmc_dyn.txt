@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hmc_dyn` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the dynamics with the generalized-leapfrog
 # ideal step (SPH_IDEAL=generalized) and equilibrium positions from hybrid Monte Carlo (SR_POSITIONS=hmc: 40 updates, τ = L/c_s),
 # L = 1.2, h/a = 2, η/s = 0.2, default one-kernel viscous step.  A first look; statistics to be increased after it.

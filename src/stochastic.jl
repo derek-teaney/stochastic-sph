@@ -204,43 +204,50 @@ end
 # Particle entropy S_a(e, m) at volume V; −Inf for a state no fluid can have (the
 # inversion fails, or γ > γ_max, i.e. |v|² > 1 − 1/γ_max²; sph.jl, SPH_GAMMA_MAX).  Such states have zero weight under e^𝕊: a move that
 # reaches one is rejected (docs/plan.tex, "Guarding against superluminal proposals").
-function particle_entropy(e, m, V, eos)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf      # |M| < ε is necessary (p ≤ e)
-    r = try
-        eos_from_energy(ε, M, eos)
-    catch
-        return -Inf
-    end
-    S, v, _ = r
-    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
-end
-
-# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots
-# have positive arguments), so the try block, about 17% of a call, is not needed.
-# Same arithmetic as the general method: bit-identical results.
-function particle_entropy(e, m, V, eos::ConstantCs2EOS)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
-    S, v, _ = eos_from_energy(ε, M, eos)
-    return (isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf
-end
+# (the inverse map, pointwise.jl)
+particle_entropy(e, m, V, eos; guess = nothing) = particle_inverse(e, m, V, eos; guess)[1]
 
 # The entropy that weights a state in the votes.  measure = :einstein: S_a itself (flat in e_a, m_a).  measure = :liouville
 # (equilibrium_positions.tex, Appendix A): the measure flat in s_a, which at fixed e_a and V_a induces e^{S_a}/T_a in m_a, so the
 # votes use S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (the third return of eos_from_energy).  −Inf as particle_entropy.
-function particle_entropy_lnT(e, m, V, eos)
-    ε = e / V;  M = m / V
-    (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return -Inf
-    r = try
-        eos_from_energy(ε, M, eos)
-    catch
-        return -Inf
-    end
-    S, v, T = r
-    return (isfinite(S) && dot(v, v) <= V2MAX && T > 0) ? V * S - log(T) : -Inf
+function particle_entropy_lnT(e, m, V, eos; guess = nothing)
+    s, _, T = particle_inverse(e, m, V, eos; guess)
+    return (isfinite(s) && T > 0) ? s - log(T) : -Inf
 end
-vote_entropy(e, m, V, eos, liouville::Bool) = liouville ? particle_entropy_lnT(e, m, V, eos) : particle_entropy(e, m, V, eos)
+# SPH_RENORM (default off; docs/partition_v2.tex, "A Hamiltonian that does it"): the renormalized Hamiltonian, whose single-particle
+# free energy is the target one, F_1/T = −pV/T + ln V + const (bulk modulus of the labels B = 0).  The energy of a particle is that of
+# the target fluid at the entropy u_a, and the code's variable is s_a = u_a − Δs(u_a), Δs = (α/2) ln u, α = 1 + d + 2d c_s² (the
+# logarithm of the particle's own phase-space volume; conformal fluid with d c_s² = 1, so Δs does not depend on V).  For any other c_s²
+# it is the label part of the counterterm alone, α/2 = 5/2 − 𝒩 (𝒩 = 1 − 2c_s², d = 2; docs/step5_plan.tex): the rest, 𝒩 ln(γV) and the
+# sound term, is not removed (SPH_RENORM=split puts it into H).  Before branch split it refused c_s² ≠ 1/d.  pa.s keeps the
+# target entropy u_a, so the energy, the forces, the smoothing and the noise are unchanged; only the weight changes: with the
+# Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
+# T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
+# HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
+const RENORM = (LEGENDRE || SPLIT) ? (setting("SPH_RENORM", :split); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
+@noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
+    u, _, T = particle_inverse(e, m, V, eos)
+    (isfinite(u) && T > 0) || return -Inf
+    d = 2;  c2 = cs2(eos, e / V)
+    α = 1 + d + 2d * c2
+    u > α / 2 || return -Inf                                   # the shift is monotonic only for u > α/2
+    s = u - (α / 2) * log(u)
+    return liouville ? s - log(T / (1 - α / (2u))) : s
+end
+# the method is chosen at load time, so that with SPH_RENORM off the code is exactly that of before (bit-identical regression)
+if RENORM
+    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = renorm_vote_entropy(e, m, V, eos, liouville)
+elseif SPLIT
+    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville; guess)
+else
+    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) =
+        liouville ? particle_entropy_lnT(e, m, V, eos; guess) : particle_entropy(e, m, V, eos; guess)
+end
+# SPH_RENORM=legendre: the state (T, v⃗) of each particle at the start of a stochastic step, the starting point of the inverse solves of
+# its votes and coefficients (renorm.jl; a guess changes the Newton iterations, not the result).  vg(a) is nothing otherwise, and the
+# target's inverse ignores it.
+const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
+@inline vg(a) = (LEGENDRE || SPLIT) ? @inbounds(VOTE_GUESS[a]) : nothing
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
@@ -266,7 +273,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     n  = length(st.nb)
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
-    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville)
+    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville; guess = vg(a))
     if !isfinite(Sa)
         Threads.atomic_add!(GUARD_REJECTED, 1);  return false
     end
@@ -274,7 +281,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     ΔStot = ΔSa
     for k in 1:n
         b = st.nb[k]
-        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville)
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville; guess = vg(b))
         if !isfinite(Snew[k])
             Threads.atomic_add!(GUARD_REJECTED, 1);  return false
         end
@@ -290,8 +297,8 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     else
         σ = zeros(n)
         for k in 1:n
-            σ[k] = 0.5 * (vote_entropy(e[a], m[a] - δ[k], V[a], eos, liouville) - Sc[a]) -
-                   0.5 * (vote_entropy(e[a], ma′ + δ[k], V[a], eos, liouville) - Sa)
+            σ[k] = 0.5 * (vote_entropy(e[a], m[a] - δ[k], V[a], eos, liouville; guess = vg(a)) - Sc[a]) -
+                   0.5 * (vote_entropy(e[a], ma′ + δ[k], V[a], eos, liouville; guess = vg(a)) - Sa)
         end
         # an unphysical intermediate state: use the even split for this move (the same
         # points are evaluated for the reverse move, so detailed balance is kept)
@@ -343,7 +350,7 @@ end
 function resid_deterministic!(m, Sc, e, V, stars, dt, eos)
     N = length(m)
     β = map(1:N) do a
-        S, v, T = eos_from_energy(e[a] / V[a], m[a] / V[a], eos);  v / T
+        _, v, T = particle_inverse(e[a], m[a], V[a], eos);  v / T
     end
     Δm = zeros(SVector{2,Float64}, N)
     for a in 1:N
@@ -393,12 +400,12 @@ struct StarCoef
 end
 
 # nothing for a state no fluid can have
-function star_coef(e, m, V, eos, d)
-    s = particle_entropy(e, m, V, eos);  isfinite(s) || return nothing
-    S_in = s / V;  M = m / V;  Mm = norm(M)
-    ε = eos_newton(S_in, Mm, e / V, eos)
-    w = ε + pressure(eos, ε);  G, _ = eos_wgamma(w, Mm);  γ = G / w;  v = M * (w / G^2)
-    Ta = (w / S_in) * γ;  sr = srel(eos, ε)
+function star_coef(e, m, V, eos, d; guess = nothing)
+    s, vi, Ti = particle_inverse(e, m, V, eos; guess);  isfinite(s) || return nothing
+    S_in = s / V;  M = m / V
+    st = particle_forward(s, S_in, M, e / V, eos; M_mag = norm(M), guess = (Ti, vi))   # the state at (s, m, V)
+    ε = st.e;  γ = st.γ;  v = st.v
+    Ta = st.T * γ;  sr = srel(eos, ε)
     ℓ, ℓi, P, Pℓ = comoving_structures(v, cs2(eos), 2)
     κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η
     ℓh = sqrt_comoving(v)
@@ -413,19 +420,19 @@ stress_J(c::StarCoef, V, dt) = (amp = sqrt(2dt * c.T / V);
 resid_c(c::StarCoef, st::Star, k, V, params) = 2c.κs * c.T * V * st.w[k] * resid_factor(params, c.ℓ, st.r[k])
 
 # The stress move: δ[k] = ξ A_ab with ξ = Σ_k z_k J_k; returns ln q(m′→m)/q(m→m′) (inverse_moment.tex, eq. qstress2).
-function propose_stress_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, rng)
+function propose_stress_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, rng; guess = nothing)
     z = SVector(randn(rng), randn(rng), randn(rng))
     J = stress_J(c, V, dt);  xv = J * z
     ξ = SMatrix{2,2,Float64}(xv[1], xv[2], xv[2], xv[3])
     for k in eachindex(st.nb);  δ[k] = ξ * st.A[k];  end
-    c′ = star_coef(e, ma - sum(@view δ[1:length(st.nb)]), V, eos, d);  c′ === nothing && return -Inf
+    c′ = star_coef(e, ma - sum(@view δ[1:length(st.nb)]), V, eos, d; guess);  c′ === nothing && return -Inf
     J′ = stress_J(c′, V, dt);  z′ = J′ \ (-xv)
     return -0.5 * dot(z′, z′) + 0.5 * dot(z, z) + log(abs(det(J))) - log(abs(det(J′)))
 end
 
 # The residual move, conditioned on zero virial with the coefficients of the present state; returns the log ratio
 # (inverse_moment.tex, eq. qresid).
-function propose_resid_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, params, rng)
+function propose_resid_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d, params, rng; guess = nothing)
     n = length(st.nb)
     Y = zero(SMatrix{2,2,Float64});  R = zero(SMatrix{2,2,Float64})
     for k in 1:n
@@ -437,7 +444,7 @@ function propose_resid_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d
     for k in 1:n
         δ[k] -= resid_c(c, st, k, V, params) * (Y * (Ri * st.r[k]))
     end
-    c′ = star_coef(e, ma - sum(@view δ[1:n]), V, eos, d);  c′ === nothing && return -Inf
+    c′ = star_coef(e, ma - sum(@view δ[1:n]), V, eos, d; guess);  c′ === nothing && return -Inf
     R′ = zero(SMatrix{2,2,Float64});  lq = 0.0;  quad = 0.0
     for k in 1:n
         ck = resid_c(c, st, k, V, params);  ck′ = resid_c(c′, st, k, V, params)
@@ -453,12 +460,12 @@ function ask_star_hastings!(m, Sc, e, V, a, st::Star, δ, lq, eos, rng, Snew, li
     n  = length(st.nb)
     isfinite(lq) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
     ma′ = m[a] - sum(@view δ[1:n])
-    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville)
+    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville; guess = vg(a))
     isfinite(Sa) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
     ΔStot = Sa - Sc[a]
     for k in 1:n
         b = st.nb[k]
-        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville)
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville; guess = vg(b))
         isfinite(Snew[k]) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
         ΔStot += Snew[k] - Sc[b]
     end
@@ -485,9 +492,9 @@ function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos,
             for a in order[ci]
                 st = stars[a];  n = length(st.nb);  n == 0 && continue
                 resize!(δ, n);  resize!(Snew, n)
-                c = star_coef(e[a], m[a], V[a], eos, d);  c === nothing && continue
-                lq = kind === :stress ? propose_stress_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, rngs[a]) :
-                                        propose_resid_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, params, rngs[a])
+                c = star_coef(e[a], m[a], V[a], eos, d; guess = vg(a));  c === nothing && continue
+                lq = kind === :stress ? propose_stress_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, rngs[a]; guess = vg(a)) :
+                                        propose_resid_hastings!(δ, st, c, e[a], m[a], V[a], dt, eos, d, params, rngs[a]; guess = vg(a))
                 if isfinite(lq)
                     Threads.atomic_add!(lsum, lq);  Threads.atomic_add!(lsq, lq^2);  Threads.atomic_add!(lnum, 1)
                 end
@@ -627,9 +634,17 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
     liouville = params.measure === :liouville
     liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
+    RENORM && !liouville && error("SPH_RENORM needs the Liouville measure (SPH_MEASURE=liouville)")
+    if LEGENDRE                                      # the starting points of the votes' inverse solves (renorm.jl)
+        resize!(VOTE_GUESS, N)
+        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v_over_S * pa.S_smooth);  end
+    elseif SPLIT                                     # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
+        resize!(VOTE_GUESS, N)
+        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
+    end
     Sc = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N
-        Sc[a] = vote_entropy(e[a], m[a], V[a], eos, liouville)
+        Sc[a] = vote_entropy(e[a], m[a], V[a], eos, liouville; guess = vg(a))
     end
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
@@ -661,7 +676,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     end
     gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
-        pa.m = m[a];  pa.s = liouville ? particle_entropy(e[a], m[a], V[a], eos) : Sc[a]
+        pa.m = m[a];  pa.s = liouville ? particle_entropy(e[a], m[a], V[a], eos; guess = vg(a)) : Sc[a]
     end
     # acceptances, and the fractions of proposals rejected by the guard (a state no fluid can
     # have; for the conformal EOS exactly |v| ≥ 1), for the stress and the residual sweep

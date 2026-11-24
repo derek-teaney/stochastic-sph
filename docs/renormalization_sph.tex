@@ -1,0 +1,708 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+% algorithms: a titled, tinted box
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+% the central equations: a tinted panel with an accent rule on the left
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\newcommand{\unv}{\textsuperscript{$\dagger$}}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+
+\title{Renormalizing the particle model: the labels and the bare equation of state}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The particle model conserves the number of particles, which the fluid it represents does not.  Its thermodynamics, computed in \texttt{partition.tex}, is the
+input fluid plus an ideal gas of labels and the fluctuations of each particle, of relative order one over the entropy per particle.  This note asks what the
+bare (input) equation of state should be.  A static field probes the pressure at fixed $\mu/T$ of the labels; the mechanics uses the pressure as a function of
+the energy density, which for the conformal fluid is the input one at every density, so only the temperature scale is renormalized.  No Hamiltonian makes the
+pressure at fixed temperature independent of the density of particles.  Number-changing moves, per-particle counterterms and the old entropy volume are
+discussed as options.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{What the partition function gives}
+\label{sec:recap}
+
+From \texttt{partition.tex}, with the notation there ($\bar n$ the density of particles, $\bar V=1/\bar n$, $\sigma=p\bar V/T$, $Z_1$ the partition function of one
+particle at fixed volume, $\Pi$ and $\mathcal K$ its pressure and stiffness, $\mathcal K_0=(d+1)/2$).  Only derivatives of $\ln Z_1$ are physical: a constant
+factor $\lambda$ per particle in the measure relabels the chemical potential, $\mu/T\to\mu/T-\ln\lambda$, and changes nothing at fixed $N$.
+
+\paragraph{One particle.}  At tree level a particle is a piece of the input fluid, with $f$ its free-energy density as a function of $T$ and the density of particles $n$,
+\st
+F_1\big|_{\rm tree}=V\,f\Big(T,\frac1V\Big),
+\label{Ftree}
+\stp
+and for the input without a charge $f=-p(T)$.
+
+\paragraph{Pressure and energy.}  With every particle at the mean volume,
+\st
+p_{\rm model}=\bar nT+p_1(T,\bar V),\qquad E=\bar n\,\avg{e_a}_{\bar V},
+\label{pE}
+\stp
+and at one loop, for the input without a charge, with the fluctuation energy of a particle
+\st
+\Delta e=d\,T+\frac{T}{c_s^2}\Big[\mathcal K_0-\frac T2\frac{dc_s^2}{dT}\Big]\qquad(=5\,T\ \text{for }d=2,\ c_s^2=\tfrac12),
+\label{Deltae}
+\stp
+\st
+p_{\rm model}=p(T)+(1+\mathcal K_0)\,\bar nT,\qquad E=e(T)+\bar n\,\Delta e .
+\label{pEloop}
+\stp
+
+\paragraph{The labels as a charge.}  The chemical potential of the labels and its one-loop form are
+\st
+-\frac\mu T=\frac{\partial\ln\mathcal Z_N}{\partial N}\Big|_{T,L}=\ln\bar V+\ln Z_1(T,\bar V)-\Pi,
+\label{mu}
+\stp
+\st
+-\frac\mu T=(1+\mathcal K_0)\ln\bar V+\tfrac12\ln\det\big(2\pi\chi(T)\big)-\mathcal K_0,\qquad \chi={\rm diag}\big(C_V,\ T(e+p)\,\delta_{ij}\big),
+\label{muloop}
+\stp
+which for the conformal fluid is a function of the entropy per particle only,
+\st
+-\frac\mu T=(1+\mathcal K_0)\ln\big(s(T)\bar V\big)+\text{const} .
+\label{muconf}
+\stp
+The model obeys the Euler and Gibbs--Duhem relations of a fluid with one charge,
+\st
+E+p_{\rm model}=Ts_{\rm model}+\mu\bar n,\qquad dp_{\rm model}=s_{\rm model}\,dT+\bar n\,d\mu ,
+\label{GD}
+\stp
+and the compressibility sum rule gives the long-wavelength fluctuations of the number of particles,
+\st
+S(0)=T\frac{\partial\bar n}{\partial p_{\rm model}}\Big|_T=\frac{1}{1+\mathcal K} .
+\label{S0}
+\stp
+
+\paragraph{Hydro-kinetic theory.}  In the hydro-kinetic theory of \cite{amt} the modes below the cutoff renormalize a bare equation of state,
+\st
+e=e_0+d\,Tn_\Lambda,\qquad p=p_0+\Big[1+\frac T2\frac{dc_s^2}{dT}\Big]Tn_\Lambda ,
+\label{amt35}
+\stp
+and the model has the same three terms with one particle per mode (\App{app:hydrokin}).  As a function of the measured energy density the measured pressure is
+\st
+p_{\rm model}=p(E)+\Big[1-d\,c_s^2+\frac T2\frac{dc_s^2}{dT}\Big]\bar nT ,
+\label{PofE}
+\stp
+whose bracket vanishes for the conformal fluid.
+
+%=============================================================================
+
+The point: the model's thermodynamics differs from the input at order $1/\sigma$, so the input is a bare equation of state, to be tuned so that the model
+reproduces the target.  The model has one more conserved number than the target, the labels, so its equation of state has two variables, and the condition
+must say \emph{which} function of the model is the target.  A static field (\Sect{sec:gravity}) and the dynamics (\Sect{sec:offcurve}) answer it: what the
+mechanics uses is the pressure as a function of the energy density, which for the conformal fluid is the input one on every curve; the temperature scale is seen
+only where the temperature enters explicitly.
+
+\section{What a static field probes}
+\label{sec:gravity}
+
+Couple the model to a static potential $\Phi(\bm x)$, slowly varying on the scale $h$:
+\st
+H\to\sum_ae_a\,\big[1+\Phi(\bm x_a)\big] .
+\stp
+In equilibrium the temperature redshifts (Tolman), and so does the chemical potential of the labels, which are conserved (Klein):
+\st
+T(\bm x)\,e^{\Phi(\bm x)}=\text{const},\qquad \frac{\mu(\bm x)}{T(\bm x)}=\text{const} .
+\stp
+Along this profile the Gibbs--Duhem relation \Eq{GD}, with the Euler relation, gives
+\st
+dp_{\rm model}=s_{\rm model}\,dT+\bar n\,d\mu=\frac{E+p_{\rm model}}T\,dT ,
+\stp
+which with $dT/T=-d\Phi$ is the hydrostatic equation $\nabla p=-(E+p)\nabla\Phi$ of a fluid \emph{without} a charge.  So the field sees the model as a
+neutral fluid with the equation of state
+\begin{keyeq}
+\st
+P(T)\equiv p_{\rm model}(T,\bar n)\Big|_{\mu/T\ \text{fixed}} .
+\label{Pren}
+\stp
+\end{keyeq}
+The bulk modulus of the labels at fixed $T$, $\partial p_{\rm model}/\partial\bar n$, is not probed.
+
+\paragraph{Sound} moves along a different curve in general: the ideal step conserves each $s_a$, so a sound wave holds the entropy per particle fixed.
+As in any fluid with a charge, fixed $\mu/T$ and fixed entropy per particle are different curves.  For the conformal fluid they are one, since by
+\Eq{muconf} fixed $\mu/T$ is fixed $s(T)\bar V$.
+
+\section{Which entropy per particle}
+\label{sec:whichs}
+
+Three entropies per particle appear, and they differ by order one:
+\begin{itemize}
+\item the mean $\avg{s_a}$ of the particles' own entropy, which the ideal step conserves particle by particle;
+\item the bath value $s(T)\bar V=3\sigma$, which the one-loop formulas contain;
+\item the start value $S_0\bar V$ of the lattice, by which the runs are labelled.
+\end{itemize}
+For the conformal fluid the start, which puts all the energy into the rest energy, is hotter by the fluctuation energy, and
+\st
+S_0\bar V\simeq s(T)\bar V+5
+\stp
+at one loop; the runs labelled $16$, $54$, $541$ have $s(T)\bar V=11.7$, $49.2$, $536$.  The differences depend on $s(T)\bar V$ alone, so fixing one of the three fixes
+the others.  In formulas, $1/s_a$ means $1/(s(T)\bar V)$.
+
+\section{The conformal fluid}
+\label{sec:conformal}
+
+Along fixed $\mu/T$ the density of particles follows the entropy, $\bar n\propto s(T)$, and by \Eq{pEloop}
+\begin{keyeq}
+\st
+P(T)=p(T)\Big[1+\frac{1+\mathcal K_0}\sigma\Big],\qquad E(T)=e(T)+5\,\bar nT=2P(T) .
+\label{Pconf}
+\stp
+\end{keyeq}
+The model is again conformal, as \Eq{PofE} says.  The labels and the fluctuations renormalize only the normalization of $P$, by $2.5/\sigma$: for a
+conformal fluid, the Stefan--Boltzmann constant.  The mechanics does not see it: rescaling the temperature leaves $P(E)=E/2$ unchanged, and in a static field
+the energy density follows $E\propto e^{-(d+1)\Phi}$ whatever the normalization.  It is seen where the temperature enters explicitly: a thermometer (the
+Tolman profile $T(\bm x)$), and the transport coefficients of the viscous step.
+
+\section{Off the reference curve}
+\label{sec:offcurve}
+
+The point: a run does not stay on one curve of fixed $\mu/T$, and no bare equation of state makes $P(T)$ the same on all of them; but the mechanics uses
+$P(E)$, which for the conformal fluid is the same on all of them.
+
+\paragraph{Leaving the curve.}  The ideal step conserves each $s_a$, so for the conformal fluid an element that expands or compresses ideally stays on its
+curve.  It leaves the curve through the entropy produced by the viscous step, or starts off it if the initial entropy per particle is not uniform.  For a
+non-conformal fluid ideal flow crosses the curves as well, since fixed $s_a$ and fixed $\mu/T$ differ.
+
+\paragraph{An exact constraint.}  By Gibbs--Duhem and the compressibility sum rule \Eq{S0}, for any bare Hamiltonian,
+\begin{keyeq}
+\st
+\frac{\partial p_{\rm model}}{\partial\ln\bar n}\Big|_T=\bar nT\,(1+\mathcal K)=\frac{\bar nT}{S(0)} .
+\label{constraint}
+\stp
+\end{keyeq}
+$P(T)$ is the same on every curve only if $S(0)=\infty$, the neutral choice of \Sect{sec:notallowed}.  Between two curves at the same temperature, for the conformal fluid
+($\bar nT/p=1/\sigma$),
+\st
+\frac{\Delta P}{P}\Big|_T\simeq-\frac{1+\mathcal K}\sigma\,\Delta\ln s_a ,
+\stp
+second order in small quantities: $1.6\%$ at $\sigma=16$ for a $10\%$ spread of the entropy per particle.  Lowering $\mathcal K$ with the second dial
+(\Sect{sec:dial}) reduces it, at the price of a larger $S(0)$.
+
+\paragraph{What the dynamics uses.}  Ideal hydrodynamics of the model needs the pressure as a function of its conserved densities, the energy and the
+labels.  From \Eq{PofE},
+\begin{keyeq}
+\st
+p_{\rm model}(E,\bar n)=p(E)+\Big[1-d\,c_s^2+\frac T2\frac{dc_s^2}{dT}\Big]\bar nT .
+\label{PEn}
+\stp
+\end{keyeq}
+For the conformal fluid the bracket vanishes, and $p_{\rm model}=E/2$ at every density: at one loop the labels decouple from the ideal dynamics, and the curves
+differ only in the temperature scale, which the mechanics does not see.  The temperature scale enters through the transport coefficients: if $\eta$ is set
+through $\eta/s$ with the bare $s(T)$, the model's $\eta/s$ is off by order $(1+\mathcal K_0)/\sigma$ and varies between curves by order
+$(1+\mathcal K)\Delta\ln s_a/\sigma$.  The noise needs nothing: the stochastic step is in detailed balance with the model's own ensemble.
+
+\paragraph{Where the labels do couple.}  Two terms make $p_{\rm model}$ depend on $\bar n$ at fixed $E$:
+\begin{itemize}
+\item the bracket of \Eq{PEn}, the non-conformality of the input times $1/\sigma$;
+\item the one-loop term of the positions (\texttt{partition.tex}, ``The positions back in the thermodynamics''), which at fixed $h$ is not conformal.  At $\sigma=16.4$ and $h/a=2$ it gives $\delta p=-0.68\,\bar nT$
+  against $\tfrac12\delta E=-0.23\,\bar nT$: a trace anomaly $P-E/2\simeq-0.45\,\bar nT$, about $0.45/\sigma\approx3\%$ of $P$, falling as $1/(\bar nh^2)$.  This is the
+  leading coupling of the labels to the mechanics of a conformal model, and the plot of $P/T^3$ along fixed $\mu/T$ (\Sect{sec:measureP}) measures it.
+\end{itemize}
+
+\section{The renormalization condition}
+\label{sec:dial}
+
+On a reference curve of fixed $\mu/T$, chosen with the resolution, the condition is on the pressure that a static field sees:
+\begin{keyeq}
+\st
+P(T)=p_{\rm model}(T,\bar n)\Big|_{\mu/T\ \text{fixed}}=p_{\rm target}(T) .
+\label{rencond}
+\stp
+\end{keyeq}
+Off the curve the error is \Eq{constraint}.  What it fixes depends on the target.
+\begin{itemize}
+\item \emph{Conformal}: the mechanics is right at one loop on every curve, \Eq{PEn}, with nothing to tune.  \Eq{rencond} is one constant, the temperature scale:
+  either the bare pressure is the target divided by $1+(1+\mathcal K_0)/\sigma$, or, equivalently for the dynamics, the transport coefficients are set relative to
+  the model's own thermodynamics \Eq{Pconf}.  The constant does not touch the dependence on the volume at fixed $T$, so $\mathcal K$, $S(0)$ and the positions are
+  unchanged.
+\item \emph{Non-conformal}: \Eq{rencond} is a function of $T$, met by the fixed point below; off the curve the bracket of \Eq{PEn} remains, at order
+  $1/\sigma$ times the non-conformality.
+\end{itemize}
+
+\paragraph{The general case.}  First choose the resolution: a value of $\mu/T$, equivalently the density $n_0$ at a reference temperature $T_0$.  By
+\Eq{muloop}, along the curve the density follows the susceptibilities of the bare equation of state,
+\st
+n_\mu(T)=n_0\left[\frac{\det\chi(T)}{\det\chi(T_0)}\right]^{1/(d+3)}
+\stp
+(for the conformal fluid $\det\chi\propto T^{10}$, and $n_\mu\propto T^2\propto s$).  Along it $P=p_{\rm bare}+(1+\mathcal K_0)\,T\,n_\mu$, and \Eq{rencond}
+becomes a fixed point,
+\begin{keyeq}
+\st
+p_{\rm bare}(T)=p_{\rm target}(T)-(1+\mathcal K_0)\,T\,n_\mu(T)\big[p_{\rm bare}\big],
+\label{pbare}
+\stp
+\end{keyeq}
+with $n_\mu$ computed from the $\chi$ of $p_{\rm bare}$.  The correction is of relative order $1/\sigma$, so one step, with $\chi$ from $p_{\rm target}$,
+is right to order $1/\sigma^2$.  The bare function depends on the resolution through $\mu/T$, as $p_0(T;\Lambda)$ in \Eq{amt35} depends on the cutoff.
+
+\begin{algobox}{Dialing the bare equation of state}
+\begin{algorithmic}[1]
+\State Choose the resolution: the density $n_0$ of particles at a reference temperature $T_0$.
+\State Start from the target: $p_{\rm bare}\gets p_{\rm target}$.
+\Repeat
+  \State From $p_{\rm bare}$ compute the susceptibilities $\chi(T)$ and the density $n_\mu(T)$ along fixed $\mu/T$.
+  \State Set $p_{\rm bare}$ to the target less the label and fluctuation pressure along the curve, \Eq{pbare}.
+\Until{$p_{\rm bare}$ no longer changes (one or two passes)}
+\State At small $\sigma$, use the exact $\ln Z_1$ ((\texttt{partition.tex}, ``Small entropy per particle'')) in \Eq{mu} and \Eq{pE} instead of one loop.
+\State Run; measure the mechanical pressure along fixed $\mu/T$ (\Sect{sec:measureP}); correct $p_{\rm bare}$ by the residual $P-p_{\rm target}$, which
+  holds the term of the positions (\texttt{partition.tex}, ``The positions back in the thermodynamics''); repeat.
+\State Check that $p_{\rm bare}$ is an equation of state: positive entropy and heat capacity, $0<c_s^2<1$.
+\end{algorithmic}
+\end{algobox}
+
+\paragraph{A second dial.}  Tuning $p_{\rm bare}(T)$ keeps the input without a charge, so the stiffness of the particles keeps its one-loop value and
+$S(0)=1/(1+\mathcal K_0)$.  An input with a charge, a free-energy density $f(T,n)$, gives a second dial.  By \Eq{Ftree} its curvature in $n$ adds to the
+stiffness at tree level,
+\st
+\mathcal K=\frac nT\frac{\partial^2f}{\partial n^2}+\mathcal K_0,\qquad S(0)=\frac1{1+\mathcal K},
+\stp
+so the uniformity of the particles at long wavelength could be chosen, with $P(T)$ along fixed $\mu/T$ still matched by the first dial.  A term in $f$ linear
+in $n$ changes only $\mu$, a normalization.  The neutral labels of \Sect{sec:notallowed} are the limit $1+\mathcal K=0$, where the stiffness is left to the gradient term.  Such a term also
+changes the forces, through $p_a$.
+
+\section{Holding $\mu/T$ fixed: number-changing moves}
+\label{sec:numberchange}
+
+The point: a real fluid is neutral because its number-changing processes are fast, so its chemical potential relaxes instead of being conserved.  The model
+could do the same, and then every element would stay on one curve and the reference-curve tuning of \Sect{sec:dial} would hold everywhere.  This is an idea
+under consideration, not a plan.
+
+\paragraph{Two versions.}
+\begin{enumerate}
+\item \emph{Weights moved between neighbours.}  Each particle carries a weight $q_a$, the number of labels it represents, exchanged between neighbours with
+  detailed balance, like the entropy in the stochastic step.  This makes $\mu/T$ uniform in space, but the total is conserved, so the common value drifts as
+  entropy is produced; and the terms per point, $\bar nT$ and $\mathcal K_0\bar nT$, remain as long as the number of points is fixed.
+\item \emph{Particles split and merged} with the grand-canonical weight
+  \st
+  e^{(\mu/T)\,N}
+  \stp
+  at a fixed $\mu/T$: the insertion and deletion moves of \Sect{sec:measureP}, now in the dynamics.  Where entropy is produced the entropy per particle rises,
+  particles split, and the element returns to the curve.  This is the analogue of number-changing processes, and holds $\mu/T$ at a set value.
+\end{enumerate}
+
+\paragraph{What it would buy.}  One curve everywhere, so the dial of \Sect{sec:dial} holds in any flow, conformal or not.  The extra slow mode of the model, the
+diffusion of the entropy per particle (\texttt{partition.tex}, Discussion), becomes a relaxing mode.  The labels stay stiff: at fixed $\mu/T$ the number fluctuations are
+$\avg{\delta N^2}/N=1/(1+\mathcal K)$.
+
+\paragraph{The Goldstone picture with number-changing moves.}  At a fixed $\mu/T$ the natural object is the grand potential density as a function of the
+density of points,
+\st
+\omega(\bar n)=f(T,\bar n)-\mu\,\bar n,\qquad \omega''(\bar n)=\frac{\partial\mu_{\rm model}}{\partial\bar n}\Big|_T=\frac{T\,\mathcal B}{\bar n},
+\stp
+with $\mu_{\rm model}$ the chemical potential of the model at the density $\bar n$ and $\mu$ the imposed one.  For neutral labels, $\mathcal B=0$, $\omega$ is
+flat: every resolution is a minimum, the vacuum manifold, and a run picks one.  $\mathcal B>0$ curves $\omega$ and selects $\bar n_{\rm eq}(T,\mu/T)$, as the
+quark masses tilt the vacuum of QCD.  The relation \Eq{gmor} is then literally ``mass squared times stiffness equals the curvature of the potential at its minimum'',
+$m^2f_\rho^2=\omega''$.
+
+The moves change the dynamics, not the statics.  With $N$ conserved the density of points is a conserved order parameter (model B): it relaxes only by moving
+points, at a rate proportional to $k^2$.  With number-changing moves it is not conserved (model A) and relaxes in place, at the rate
+\st
+\Gamma(k)=\Gamma_0\Big(\mathcal B+\frac{\sigma\mu_2k^2}2\Big),\qquad \Gamma(0)=\Gamma_0\,\mathcal B,
+\stp
+with $\Gamma_0$ the rate of the moves.  The gap in the relaxation is the mass.  So the moves restore the curve only through $\mathcal B$: for neutral labels
+there is nothing to relax towards.  Fast number-changing and nearly neutral labels pull against each other, and $\Gamma_0\mathcal B$ is the rate that
+matters.
+
+\paragraph{What it would cost.}
+\begin{itemize}
+\item \emph{The moves must be fast.}  A relaxing internal variable gives a bulk viscosity (Mandelstam--Leontovich), proportional to the relaxation time and to the
+  difference between the sound speeds at fixed $s_a$ (frozen) and at fixed $\mu/T$ (equilibrium).  For the conformal fluid the two curves coincide and this vanishes at
+  one loop; otherwise it is of order $1/\sigma$, and the moves must relax faster than the hydrodynamic rates of interest.
+\item \emph{The moves themselves}: a split or merge must conserve energy and momentum (presumably by adjusting entropies, as the stochastic step does), carry a
+  Hastings correction, and handle the change of its neighbours' volumes; it changes the resolution locally, which the fixed-$h$ model does not do now.
+\item \emph{The analysis} must follow a fluctuating number of particles.
+\end{itemize}
+
+\section{Neutral labels: zero stiffness}
+\label{sec:notallowed}
+
+The point: the particles are grid points, and where they are put should not matter.  The neutral choice, a pressure that does not depend on the density of
+particles at fixed temperature, says exactly that: at long wavelength moving the points costs nothing.  The points are still held apart on the scale of the
+kernel, so the resolution stays controlled, up to a slow wandering.
+
+\paragraph{The condition.}  $p_{\rm model}=p_{\rm target}(T)$ at every density is, by Gibbs--Duhem at fixed $T$ ($dp=\bar n\,d\mu$), the condition $\mu=0$ at
+every density.  By \Eq{mu} it fixes the free energy of a particle,
+\st
+F_1+p_1V=T\ln V\qquad\Longrightarrow\qquad F_1=-pV+T\,(\ln V+1),\qquad \Pi=\sigma-1,\qquad \mathcal K=-1 .
+\stp
+At one loop this is the counterterm
+\st
+\delta F_1=T\,(1+\mathcal K_0)\ln V ,
+\stp
+whose pressure, $-(1+\mathcal K_0)\,T$ per particle, cancels the kinetic stress and the fluctuation share.  It can be put in the Hamiltonian as a shift of the
+entropy variable, $e_a(s_a,\bm m_a,V_a)\to e_a\big(s_a+(1+\mathcal K_0)\ln V_a,\bm m_a,V_a\big)$, which shifts $\ln Z_1$ by $-(1+\mathcal K_0)\ln V$ exactly; it
+changes the forces.  The labels are then neutral: $\mu/T$ is the same on every curve, $P(T)$ is the same on every curve, the bare equation of state is the physical
+one up to the one-loop term of the positions, and entropy production no longer moves a run off its curve (\Sect{sec:offcurve}).
+
+\paragraph{The positions.}  With $\mathcal K=-1$ the kernel of the structure factor, $S=1/(1+A)$ with $A=2\Pi\widetilde W(1-\widetilde W)+\mathcal K\widetilde W^2$, factorizes,
+\st
+1+A(k)=\big(1-\widetilde W\big)\big[1+(1+2\Pi)\,\widetilde W\big],
+\stp
+positive at every $k$ since $0\le\widetilde W<1$: every mode is stable.  At $kh\ll1$, with $\widetilde W\simeq1-\mu_2k^2/4$,
+\begin{keyeq}
+\st
+S(k)\simeq\frac{2}{\sigma\,\mu_2k^2} .
+\stp
+\end{keyeq}
+The points are held at long wavelength not by counting but by the fluid's pressure acting through the kernel, a gradient stiffness.  This is the middle regime
+that the model already has between $h$ and the label-correlation length $\xi$ (\texttt{partition.tex}); the counterterm sends $\xi$ to infinity.  The run at
+$\sigma=179$, with $\xi=4.5h$ in a box of $9h$, is already mostly in this regime.  The points behave like an adaptive mesh with a smoothness penalty, free to
+follow the flow at long wavelength.
+
+\paragraph{The price: the resolution wanders, slowly.}  With $S\propto1/k^2$ the relative fluctuation of the number of points in a region of size $R$, in a box of
+size $L$, is
+\st
+\frac{\avg{\delta N_R^2}}{N_R^2}\simeq\frac{\ln(L/R)}{\pi\,\sigma\,\bar n\mu_2} ,
+\stp
+independent of $R$ apart from the logarithm: about $10\%$ at $\sigma=16$ and $h/a=2$, and $3\%$ at $\sigma=179$.  The volume variance grows in the same way,
+as the logarithm of the box in $d=2$; in $d=3$ both are finite.  So the number of neighbours varies at the level of $(\sigma\bar nh^2)^{-1/2}$, with a logarithm.
+
+\paragraph{A regulator.}  The stiffness need not be removed completely.  Counter only most of the label term, leaving a small residual stiffness
+\st
+\mathcal B\equiv1+\mathcal K\ll1,\qquad \delta F_1=T\,(1+\mathcal K_0-\mathcal B)\ln V .
+\stp
+The label pressure is then the regulator alone,
+\st
+p_{\rm model}=p(T)+\mathcal B\,\bar nT ,
+\stp
+and the structure factor is of the Ornstein--Zernike form, with a length set by the regulator,
+\begin{keyeq}
+\st
+1+A=\big(1-\widetilde W\big)\big[1+(1+2\Pi)\,\widetilde W\big]+\mathcal B\widetilde W^2,\qquad
+S(k)\simeq\frac{1/\mathcal B}{1+\xi^2k^2},\qquad \xi^2=\frac{\sigma\mu_2}{2\mathcal B} .
+\label{regulator}
+\stp
+\end{keyeq}
+Both costs scale with $\mathcal B$: the logarithm in the wandering of the resolution is cut off at $\xi$ instead of the box, $\ln(L/R)\to\ln(\xi/R)$,
+and the mismatch between curves is
+\st
+\frac{\Delta P}{P}\Big|_T\simeq-\frac{\mathcal B}\sigma\,\Delta\ln s_a .
+\stp
+So $\mathcal B$ is a regulator: choose $\xi$, say a fraction of the box, and $\mathcal B$ follows.  The present model has
+$\mathcal B=1+\mathcal K_0=5/2$; the neutral labels are $\mathcal B\to0$.
+
+\paragraph{The symmetry and its Goldstone mode.}  $S\propto1/k^2$ is the correlator of a massless field, as for the phase of a condensate.  Here the
+massless field is the density of grid points itself, and the symmetry is the freedom to choose the resolution.
+
+\emph{The symmetry.}  At fixed temperature and fixed fluid fields, change the density of grid points by a constant,
+\st
+\rho(\bm x)\to\rho(\bm x)+c .
+\stp
+A uniform change of the density of points changes the weight $\Phi[\rho]$ (\texttt{partition.tex}) by the free energy of the labels, whose density-dependent
+part at fixed $T$ is set by the bulk modulus of the labels: from \Eq{pE} and \Eq{GD},
+\st
+\frac{\partial(\mu/T)}{\partial\bar n}\Big|_T=\frac{1+\mathcal K}{\bar n}=\frac{\mathcal B}{\bar n} .
+\stp
+For neutral labels, $\mathcal B=0$, the chemical potential does not depend on the density, the free energy is linear in the number of points, and the
+shift changes $\Phi$ only by $(\mu/T)\,\delta N$, a constant at fixed $N$: every resolution is equally weighted.  This is the compressional half of the
+relabelling symmetry of a fluid, the freedom to move the grid points without changing the fluid.  The other half, the moves at fixed local density of points
+(transverse displacements, $\nabla\!\cdot\bm u=0$), is a symmetry of the model at any $\mathcal K$: in the Gaussian theory they cost nothing.  With neutral
+labels the whole group of smooth relabellings, compressional included, is a symmetry at long wavelength.
+
+\emph{The Goldstone mode.}  The resolution is then a modulus: the run picks a value, $N/L^2$, but nothing in the weight prefers it locally, so different
+regions may sit at different resolutions.  Its slow variations are the Goldstone mode.  They are not free, because the fluid's pressure sees a difference
+of resolution through the kernel, the term $\widetilde W(1-\widetilde W)\simeq\mu_2k^2/4$ of $A(k)$, which is a gradient.  At long wavelength
+\begin{keyeq}
+\st
+\Phi[\rho]\simeq\text{const}-\frac1{2\bar n}\int d^2x\,\Big[\mathcal B\,\delta\rho^2+\frac{\sigma\mu_2}2\,(\nabla\delta\rho)^2\Big],
+\qquad S(k)=\frac{1}{\mathcal B+\sigma\mu_2k^2/2} ,
+\label{goldstone}
+\stp
+\end{keyeq}
+the action of a scalar with the stiffness $\sigma\mu_2/2$ and the mass squared $\mathcal B$.  The shift symmetry forbids the mass term; the gradient term
+is allowed, and is what remains.
+
+\emph{What the gradient costs, and what it is not.}  The gradient term is the fluid's pressure acting on the volume that the kernel fails to assign:
+across a gradient of resolution the volumes of the particles do not tile the box, and to second order
+\st
+\sum_aV_a-L^2=-\frac1{\bar n^2L^2}\sum_{\bm k}\widetilde W\big(1-\widetilde W\big)\,|\delta\rho_{\bm k}|^2,\qquad \widetilde W\big(1-\widetilde W\big)\simeq\frac{\mu_2k^2}4 ,
+\stp
+weighted by $p/T$.  It is a stiffness of the density, not an elastic rigidity.  In terms of the displacement of the points, $\delta\rho=-\bar n\,\nabla\!\cdot\bm u$,
+\st
+\frac{\sigma\mu_2}{4\bar n}\,(\nabla\delta\rho)^2=\frac{\sigma\mu_2\bar n}4\,\big(\nabla\nabla\!\cdot\bm u\big)^2\;\propto\;k^4\,|u_{L,\bm k}|^2 ,
+\stp
+a bending-type term, two powers of $k$ softer than the $k^2|\bm u_{\bm k}|^2$ of an elastic solid; transverse displacements cost nothing.  So in the Gaussian
+theory the points have neither a shear nor a longitudinal elastic modulus.  Any rigidity of the arrangement (the open question of a transverse sound speed that
+falls as $h/a$ grows) comes from beyond the Gaussian theory, from the core of $g(r)$ near $k_*$ where the points order locally, and should fade as the number
+of neighbours grows.
+
+\emph{The regulator is the mass.}  $\mathcal B$ breaks the symmetry explicitly, as a small field does in the XY model, and $\xi$ of \Eq{regulator} is the
+inverse mass.  The present model breaks it strongly, $\mathcal B=1+\mathcal K_0=5/2$: the counting of points (the $1$) and the stiffness of each particle
+(the $\mathcal K_0$) pin the resolution to its mean.
+
+\emph{A Gell-Mann--Oakes--Renner relation.}  In QCD the pion mass, the pion decay constant and the explicit breaking of chiral symmetry are tied by
+\st
+m_\pi^2f_\pi^2=(m_u+m_d)\,|\avg{\bar qq}| :
+\stp
+the mass squared of the Goldstone boson times its stiffness equals the curvature of the vacuum energy along the symmetry direction, which is linear in the
+explicit breaking.  The same three quantities appear here.  Write \Eq{goldstone} in units of $T$, so that it is a free energy:
+\begin{itemize}
+\item \emph{the stiffness} (the analogue of $f_\pi^2$) is the coefficient of the gradient term,
+  \st
+  f_\rho^2\equiv\frac{T\,\sigma\mu_2}{2\bar n}=\frac{p\,\mu_2}{2\bar n^2} ,
+  \stp
+  set by the fluid's pressure and the size of the kernel, and independent of the breaking;
+\item \emph{the curvature along the symmetry direction} (the analogue of $(m_u+m_d)|\avg{\bar qq}|$) is the cost of a uniform change of the density of points, the
+  inverse compressibility of the labels,
+  \st
+  \frac{\partial\mu}{\partial\bar n}\Big|_T=\frac{T\,\mathcal B}{\bar n}=\frac{T}{\bar n\,S(0)} ,
+  \stp
+  linear in the explicit breaking $\mathcal B$;
+\item \emph{the mass} is $m=1/\xi$.
+\end{itemize}
+Then \Eq{regulator} reads
+\begin{keyeq}
+\st
+m^2f_\rho^2=\frac{\partial\mu}{\partial\bar n}\Big|_T=\frac{T\,\mathcal B}{\bar n} .
+\label{gmor}
+\stp
+\end{keyeq}
+As for the pion, the mass squared is linear in the breaking, $m^2\propto\mathcal B$, not its square root, and the stiffness does not depend on it at
+leading order.  The relation that guarantees it is the analogue of the Ward identity behind the Gell-Mann--Oakes--Renner relation: the compressibility sum
+rule \Eq{S0}, which ties the $k\to0$ limit of the correlator to the thermodynamic curvature exactly.  The present model, $\mathcal B=5/2$, is the
+analogue of heavy quarks: the ``Goldstone'' mass $1/\xi$ is of the order of the inverse kernel size at small $\sigma$ ($\xi=0.66h$ at $\sigma=3.9$), and the
+mode is not light.  The regulator is the analogue of light quarks.
+
+\emph{As in two dimensions.}  Without the mass the fluctuations grow as the logarithm of the box (the wandering of the resolution above), as for a condensate in
+$d=2$ (Mermin--Wagner): only quasi-long-range order of the density of points.  The displacements of the points are softer still: with
+$\delta\rho_{\bm k}=-i\bar n\,\bm k\cdot\bm u_{\bm k}$, $\avg{|u_{L,\bm k}|^2}\propto1/k^4$, as for a membrane rather than a phonon.
+
+\emph{Where the analogy stops.}  In a superfluid the massless field is the phase and the density is gapped, and the symmetry is a physical one, with a conserved
+current and second sound.  Here the massless field is the density of grid points, and the symmetry is a redundancy of the description, the choice of the grid.
+Nothing physical is attached to the Goldstone mode: the fluid fields see it only through the kernel, at the order of the gradient term.
+
+\paragraph{Open.}  The terms beyond the Gaussian at small $\mathcal B$, which matter at long wavelength once the quadratic stiffness is small, are not
+checked.  The exact (all orders in $1/s_a$) version needs $\ln Z_1$ from quadrature, since the shift $(1+\mathcal K_0)\ln V$ removes the stiffness at one loop only.
+Shear rigidity, a transverse sound speed of the arrangement, is a separate question: $S(0)$ is the bulk response of the labels, and in the Gaussian theory
+transverse displacements of the points cost nothing at any $\mathcal K$.
+
+\paragraph{The value of $\mu/T$.}  A fixed value of $\mu/T$, zero included, only labels a curve, by the normalization of the measure.  What the neutral choice
+fixes is not the value but its independence of the density.
+
+\section{Measuring the pressure at fixed $\mu/T$}
+\label{sec:measureP}
+
+Two routes.  With a common Lagrange multiplier, the grand-canonical weight $e^{(\mu/T)N}$ holds $\mu/T$ fixed directly; this needs moves that insert and delete
+particles.  Without new moves, canonical runs on a grid of temperatures and densities give $\mu/T$ up to one constant through
+\st
+\frac{\partial(\mu/T)}{\partial\bar n}\Big|_T=\frac1{\bar nT}\frac{\partial p_{\rm model}}{\partial\bar n}\Big|_T,\qquad
+\frac{\partial(\mu/T)}{\partial T}\Big|_{\bar n}=-\frac1{T^2}\frac{\partial E}{\partial\bar n}\Big|_T ,
+\label{maxwell}
+\stp
+the first from Gibbs--Duhem, the second a Maxwell relation of $\ln\mathcal Z_N$.  The missing constant is the relabelling of the curves, and is harmless.
+
+\begin{algobox}{The pressure at fixed $\mu/T$}
+\begin{algorithmic}[1]
+\If{grand canonical}
+  \State Add to the hybrid Monte Carlo moves that insert and delete a particle with the weight $e^{\mu/T}$ per particle, the new particle's entropy and
+  momentum drawn from the single-particle distribution at its trial volume; the change of weight is local, through the volumes of its neighbours.
+  \State For each $T$: run, and record the mean density and the mechanical pressure ($\tau^{\rm kin}$ plus the virial).
+\Else
+  \State For each $T$ and $\bar n$ on a grid: run canonically; record the mechanical pressure and the energy density.
+  \State Integrate \Eq{maxwell} for $\mu/T$ on the grid, up to one constant.
+  \State Interpolate the pressure along the contours of $\mu/T$.
+\EndIf
+\State Plot $P/T^3$ against $T$ on each curve: constant for an exactly conformal model.
+\end{algorithmic}
+\end{algobox}
+
+%=============================================================================
+%=============================================================================
+\appendix
+
+\section{Per-particle counterterms and the entropy volume}
+\label{app:entropyvolume}
+
+The point: the cutoff terms of the model are of order $T$ per particle, so the natural counterterms are per particle, terms in $H$ of the form $-\mu N$,
+rather than changes of the energy density per unit volume.  This appendix records what such terms can and cannot do, and the old entropy volume, which applies
+the same idea to the volumes.  Notes for later; nothing here goes beyond one loop.
+
+\subsection{The bare energy and the number of particles}
+
+In the bare Hamiltonian of the n-scheme the energy density does not depend on the density of particles at fixed entropy and momentum (\texttt{volume\_n.tex}),
+\st
+\mu_n=\Big(\frac{\partial h}{\partial n}\Big)_{S,\bm M}=0 .
+\stp
+This is a property of the bare Hamiltonian only.  The model's own thermodynamics has $\mu\neq0$ at order $T$ per particle, \Eq{muloop}, and its pressure
+depends on the density at fixed $T$, \Eq{constraint}.  The counterterms that remove cutoff terms of order $T$ per particle are therefore naturally per particle,
+\st
+H\to H+\sum_a\delta\varepsilon_a .
+\stp
+
+\paragraph{A constant per particle,} $\delta\varepsilon_a=-\mu_c$, is the term $H-\mu_cN$.  At fixed $N$ it changes nothing but the normalization: it shifts the
+chemical potential of the labels by $-\mu_c$, which relabels the curves (\Sect{sec:recap}).  It matters as soon as $N$ changes.  With number-changing moves
+(\Sect{sec:numberchange}) the moves see $H-\mu N$, and $\mu_c$ is the dial that sets the resolution, the curve on which the run sits.
+
+\paragraph{A term that depends on the particle's state,} $\delta\varepsilon_a=\delta\varepsilon(s_a,V_a)$ of order $T$, changes $\ln Z_1$ by $-\avg{\delta\varepsilon}_V/T$
+at leading order, and so $\Pi$, $\mathcal K$ and $\Delta e$ by numbers of order one per particle, like $\mathcal K_0$.  Two things it cannot do:
+\begin{itemize}
+\item \emph{evade the constraint} \Eq{constraint}, which holds for any Hamiltonian: $P(T)$ differs between curves unless $S(0)=\infty$;
+\item \emph{cancel the temperature scale on every curve} while keeping the model conformal.  At one loop the label and fluctuation terms of $E$ and of $p_{\rm model}$,
+  \st
+  \delta E=5\,\bar nT,\qquad \delta p_{\rm model}=\tfrac52\,\bar nT ,
+  \stp
+  cancel in $P-E/2$ only together; removing the energy alone breaks $P=E/2$.
+\end{itemize}
+What it can do is set the stiffness $\mathcal K$: the second dial of \Sect{sec:dial}, whose terms in $f(T,n)$ beyond the linear one are a free energy per
+particle that depends on the density.
+
+\subsection{The entropy volume}
+
+Before 2026-11-10 the volume was the particle's share of the smoothed entropy density (\texttt{SPH\_VOLUME=entropy}, \texttt{volume\_n.tex}),
+\st
+V_a=\frac{s_a}{S_a},\qquad S_a=\sum_bs_b\,W_{ab} .
+\stp
+It weights each particle's share by its own entropy, a physical variable that the viscous step does not conserve.  (For any weights $q_a$ in place of $s_a$ only the overall scale
+is a gauge: rescaling all of them by one factor leaves every volume unchanged.  Their ratios are physical.)
+
+\paragraph{What it gets right.}  In the n-scheme the entropy per particle is a passive charge with almost no restoring force, and a particle with more entropy
+must push its neighbours away to reach the common pressure: the spread of $s_a$ becomes disorder of the positions (\texttt{volume\_n.tex}).  With the entropy
+volume the weights make the same adjustment at once, $V_a\propto s_a$, and the positions can stay ordered.  The spread that the viscous step produces is absorbed
+by the volumes, not by the arrangement.
+
+\paragraph{What it does not fix.}  The points are still conserved, and each carries the kinetic stress $d\,T$ and a fluctuation share of order $T$.  A particle
+whose weight, and so whose volume, goes to zero does not drop out: equipartition, $\avg{\bm m_a\cdot\bm v_a}=d\,T$, holds for any energy function, and as
+$V_a\to0$ at fixed momentum the momentum density diverges, the particle becomes ultrarelativistic, $e_a\simeq|\bm m_a|$, and
+\st
+\avg{|\bm m_a|}=d\,T :
+\stp
+a massless quantum with energy and kinetic stress of order $T$.  The gas of labels is, in this sense, a gas of such quanta, one per point.  Such particles
+are rare, since the weight of a particle carries $V_a^{\mathcal K_0}$; removing them is a number-changing move.  Elements with
+different entropy per point still sit on different curves of fixed $\mu/T$, with the mismatch of \Sect{sec:offcurve}.
+
+\paragraph{Why it was dropped.}  The stochastic step changes the weights at fixed volume, but the volumes depend on the weights, so the work of their instant
+redistribution,
+\st
+-\Delta p\,\Delta V ,
+\stp
+was lost at every step.
+
+\paragraph{Open questions.}
+\begin{enumerate}
+\item \emph{Its partition function.}  At fixed positions the particles are not independent, since each volume depends on its neighbours' entropies, so $\mathcal Z_N$
+  does not factorize into $\prod_aZ_1(V_a)$ and the theory of this note does not carry over.  A one-loop calculation would give what replaces $\mathcal K_0$, the
+  stiffness of the points and $S(0)$, and the label pressure.
+\item \emph{Its back map.}  Whether an energy-conserving version, with the volumes moved inside each move and the back map solved at the new volumes, fits the
+  inverse-moment step and its Hastings correction.
+\end{enumerate}
+
+\section{The hydro-kinetic comparison in detail}
+\label{app:hydrokin}
+
+Eq.~(35) of \cite{amt} is, with $n_\Lambda=\Lambda^3/6\pi^2$ the number of modes per volume,
+\st
+e(T_0)=e_0(T_0;\Lambda)+3\,Tn_\Lambda,\qquad p(T_0)=p_0(T_0;\Lambda)+\Big[1+\frac T2\frac{dc_s^2}{dT}\Big]Tn_\Lambda .
+\label{amt35}
+\stp
+One mode corresponds to one particle, $n_\Lambda\leftrightarrow\bar n$, and the three terms are the same.
+
+\begin{table}[h]
+\caption{The terms of \Eq{amt35} in the particle model.}
+\begin{ruledtabular}
+\begin{tabular}{ll}
+hydro-kinetic theory & SPH model \\
+\colrule
+$\avg{G^2}/(e+p)=d\,Tn_\Lambda$ & kinetic energy of $\bm m_a$, $d\,T\bar n$ \\
+$\avg{G^iG^i}/d(e+p)=Tn_\Lambda$ & kinetic stress $\avg{m^iv^j}$, the $1$ in $1+\mathcal K_0$ \\
+$\tfrac12p''(e)\avg{\delta e^2}=\tfrac T2\tfrac{dc_s^2}{dT}\,Tn_\Lambda$ & $\avg{p_a}-p_{\rm in}(\bar e_{\rm rest})$\unv \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\paragraph{The quantities.}  Four energies and three temperatures appear, and the notations of \cite{amt} and of \texttt{partition.tex} clash
+(there $T_0$ is the bath temperature of the runs).  Here:
+\begin{itemize}
+\item $T$ is the \emph{bath temperature}: the parameter of the canonical ensemble.  It is the thermodynamic temperature of the model, the one in
+  $\avg{\delta E^2}=T^2\partial E/\partial T$.
+\item $e_{\rm in}(T)$, $p_{\rm in}(T)$ are the \emph{input} equation of state, the functions in the code, defined through $T_a=\partial e_a/\partial s_a$.  They are
+  the $e$ and $p$ of the rest of this note.
+\item $e_{{\rm rest},a}$ is the rest-frame energy density of a particle, a function of $(s_a,\bm m_a,V_a)$ through the input equation of state.
+  To second order in the momentum the energy density on the slice is $e_{{\rm rest},a}+\bm M_a^2/(e+p)$.
+\item $\bar e_{\rm rest}(T)\equiv\avg{e_{{\rm rest},a}}$ is its mean in the ensemble at $T$.  It is the $e_0$ of \cite{amt}: the mean energy density with the kinetic
+  energy of the fluctuations removed.
+\item $e_{\rm tot}(T)=\bar e_{\rm rest}+d\,T\bar n$ is the measured energy density.
+\end{itemize}
+The mean is not the input function at the bath temperature.  From $e_{\rm tot}=e_{\rm in}(T)+\bar n\Delta e$ and \Eq{Deltae},
+\begin{keyeq}
+\st
+\bar e_{\rm rest}(T)=e_{\rm in}(T)+\bar n\,\frac{T}{c_s^2}\Big[\mathcal K_0-\frac T2\frac{dc_s^2}{dT}\Big] .
+\label{erest}
+\stp
+\end{keyeq}
+This is the difference between the mean and the most probable value of a skewed distribution.  For the energy alone, with a flat measure in
+$e$, it is the textbook $\kappa_3/2\kappa_2=T+T^2C_V'/2C_V$; the $\mathcal K_0$ here collects one half from the entropy and $d/2$ from the momenta, whose
+Gaussian width depends on the rest energy.
+
+\paragraph{Two labels.}  A temperature can be assigned to an energy density through the input function.  Two such labels are in use:
+\st
+e_{\rm in}(T_e)\equiv\bar e_{\rm rest},\qquad e_{\rm in}(T_{\rm start})\equiv e_{\rm tot},\qquad\qquad T<T_e<T_{\rm start},
+\stp
+\st
+T_e-T=\frac T{s_a}\Big[\mathcal K_0-\frac T2\frac{dc_s^2}{dT}\Big]\unv,\qquad
+T_{\rm start}-T=\frac{c_s^2\,\Delta e}{s_a}=\frac T{s_a}\Big[d\,c_s^2+\mathcal K_0-\frac T2\frac{dc_s^2}{dT}\Big] .
+\label{Tshift}
+\stp
+$T_e$ and $T_{\rm start}$ are labels of energies, not temperatures.  $T_{\rm start}$ is the $T(S_0)$ of the lattice start in \texttt{partition.tex}, where all of the
+energy is rest energy; the bath temperature of the runs is below it by the second of \Eq{Tshift}.
+
+\paragraph{The comparison.}  In \cite{amt} the bare function is \emph{defined} by the mean, $e_0(T;\Lambda)\equiv\bar e_{\rm rest}(T)$, so that there the label $T_e$ and the
+temperature coincide and are both called $T_0$.  In the particle model the bare function is the input, and they differ.  The content is the
+same.  Written with the mean rest energy, \Eq{amt35} holds as it stands,
+\st
+e_{\rm tot}=\bar e_{\rm rest}+d\,T\bar n,\qquad p_{\rm mech}=p_{\rm in}(\bar e_{\rm rest})+\Big[1+\frac T2\frac{dc_s^2}{dT}\Big]T\bar n ,
+\stp
+and contains no $\mathcal K_0$: the relation between the measured pressure and the measured energy does not depend on the measure.  Written with
+the input functions at the bath temperature, using \Eq{erest} and $dp_{\rm in}=c_s^2\,de_{\rm in}$,
+\st
+e_{\rm tot}=e_{\rm in}(T)+\bar n\,\Delta e,\qquad p_{\rm mech}=p_{\rm in}(T)+(1+\mathcal K_0)\,\bar nT ,
+\stp
+with \Eq{Deltae}, which reproduces $5\,T$.  $\mathcal K_0$ enters only the assignment of a temperature to an energy; the derivative of $c_s^2$ sits in the
+pressure at fixed mean energy and in the energy at fixed bath temperature.  The label terms have no counterpart in \cite{amt}.
+
+\paragraph{The name of $\mathcal K_0$.}  $\mathcal K_0=(d+1)/2$ is half the number of fluctuating variables integrated per particle.  It is not a compressibility of the
+fluid.  It is tied to that of the labels, $\bar nT\kappa_T^{\rm label}=S(0)=1/(1+\mathcal K_0)$.
+
+\begin{thebibliography}{9}
+\bibitem{amt} Y.~Akamatsu, A.~Mazeliauskas and D.~Teaney, \emph{Bulk viscosity from hydrodynamic fluctuations with relativistic hydro-kinetic theory},
+  Phys.\ Rev.\ C \textbf{97}, 024902 (2018), arXiv:1708.05657.
+\end{thebibliography}
+
+\end{document}

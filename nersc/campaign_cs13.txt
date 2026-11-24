@@ -1,0 +1,13 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
+# Campaign `cs13` (2026-11-23, branch split; docs/split_dynamics.tex): the tree-level runs of campaign `hastings` (c_s^2 = 1/3, before the
+# dimension fix 8d50d04, where the shear damping was 1.0-1.2 x hydrodynamics) repeated with the present code: SR_CS2=1/3 (e = T^4,
+# T_rel = 28.1 at s_a = 16) and zeta/s = (eta/s)/3, so that zeta_eff = eta/3 as before; everything else the present defaults (HMC start
+# at the requested state, SR_BATH=nominal).  Same S0, seeds and settings as the hs<sa>_tr_v<v> lines of campaign_hastings_bath.txt.
+# 64 tasks of 4 cores on 2 nodes, from a worktree pinned at the campaign's commit:
+#   sbatch -A m3722 -q regular -C cpu -N 2 -t 01:00:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_cs13.txt cs13
+# Analysis: BOOST_GROUP=CS16, CS54 examples/boost_analysis.jl $SCRATCH/sph/cs13
+c13_16_v0     16  SPH_RENORM=0  SR_CS2=0.3333333333333333 SR_ZETAS=0.06666666666666667 SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 c13_16_v0
+c13_16_v0.8   16  SPH_RENORM=0  SR_CS2=0.3333333333333333 SR_ZETAS=0.06666666666666667 SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 c13_16_v0.8
+c13_54_v0     16  SPH_RENORM=0  SR_CS2=0.3333333333333333 SR_ZETAS=0.06666666666666667 SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 c13_54_v0
+c13_54_v0.8   16  SPH_RENORM=0  SR_CS2=0.3333333333333333 SR_ZETAS=0.06666666666666667 SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 c13_54_v0.8

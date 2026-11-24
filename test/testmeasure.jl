@@ -5,6 +5,7 @@
 #      (⟨ln T_a⟩ lower), by an amount of relative order 1/s_a;
 #   4. a stochastic step with :liouville runs and leaves the true entropies S_a(e_a, m_a) in the particles.
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)
 ok = true

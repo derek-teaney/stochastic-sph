@@ -119,14 +119,15 @@ which start from the entropy per particle $s_a=16$, $54$, $541$ on the lattice (
 \paragraph{The pressure and the stiffness of a particle.}  The point: the positions see a particle only through how its weight depends on its volume.
 Integrating its entropy and momentum at a fixed volume gives the weight of one particle (\App{app:single}),
 \st
-\varphi(V)\equiv\ln Z_a(V)=\ln\int ds_a\,d^2\bm m_a\;e^{\Phi_a},
+\ln Z_1(V)=\ln\int ds_a\,d^2\bm m_a\;e^{\Phi_a},
 \label{phidef}
 \stp
-its Massieu function $\Phi_a$ with the fluctuations integrated out ($-F_a/T$, with $F_a$ the free energy of a particle at fixed volume).  The Gaussian
-theory needs $\varphi$ only to second order about the mean volume, i.e.\ two numbers:
+one function, the same for every particle, evaluated at the particle's fluctuating volume $V_a=1/n_a$: the positions are weighted by
+$\prod_aZ_1(V_a)$.  It is the Massieu function $\Phi_a$ with the fluctuations integrated out ($-F_1/T$, with $F_1$ the free energy of a particle at fixed volume).  The Gaussian
+theory needs $\ln Z_1$ only to second order about the mean volume, i.e.\ two numbers:
 \begin{keyeq}
 \st
-\Pi\equiv V\,\varphi'(V),\qquad \mathcal K\equiv-V^2\varphi''(V)\qquad\text{at }V=\frac1{\bar n} .
+\Pi\equiv V\frac{\partial\ln Z_1}{\partial V},\qquad \mathcal K\equiv-V^2\frac{\partial^2\ln Z_1}{\partial V^2}\qquad\text{at }V=\frac1{\bar n} .
 \label{PiKdef}
 \stp
 \end{keyeq}
@@ -143,14 +144,14 @@ of volume.
 which plays the role of $\hbar$ (a loop here is an order of this single-particle integral, not of the modes of the positions):
 \begin{keyeq}
 \st
-\varphi(V)=\underbrace{\frac{pV}{T}}_{\text{tree}}+\underbrace{\tfrac12\ln\det\big(2\pi V\chi_{AB}\big)}_{\text{one loop}}+O\Big(\frac1{s_a}\Big),
+\ln Z_1(V)=\underbrace{\frac{pV}{T}}_{\text{tree}}+\underbrace{\tfrac12\ln\det\big(2\pi V\chi_{AB}\big)}_{\text{one loop}}+O\Big(\frac1{s_a}\Big),
 \qquad \chi_{AB}={\rm diag}\big(C_V,\,T(e+p)\,\delta_{ij}\big).
 \label{philoop}
 \stp
 \end{keyeq}
 The tree term is the maximum of $\Phi_a$, $\sigma V/\bar V$ with $\bar V=1/\bar n$; the one-loop term is the Einstein fluctuation entropy of the $d+1$
 conserved densities $A=(s,M_i)$ of the particle, whose susceptibilities $\chi_{AB}$ set its fluctuations at fixed volume,
-$\avg{\delta A\,\delta B}=V\chi_{AB}$ (\Eq{intrinsic}).  At tree level $\varphi$ is linear in $V$, so its slope and its value coincide, $\Pi=\varphi=\sigma$:
+$\avg{\delta A\,\delta B}=V\chi_{AB}$ (\Eq{intrinsic}).  At tree level $\ln Z_1$ is linear in $V$, so its slope and its value coincide, $\Pi=\ln Z_1=\sigma$:
 the Euler relation $\ln Z=pV/T$ of an extensive system, and $\mathcal K=0$.  The one-loop term is not extensive: at fixed $T$, $\chi_{AB}$ does not
 depend on $V$, and
 \st
@@ -159,7 +160,7 @@ depend on $V$, and
 \stp
 whence \Eq{PiK}: $\Pi=\sigma+\mathcal K_0$, $\mathcal K=\mathcal K_0$.  The constant $\tfrac12\ln\det(2\pi\chi_{AB})$ drops out of everything the positions
 see.  The pressure of a particle is that of the fluid plus $\mathcal K_0$ from its own fluctuations (\App{app:alpha}).  At small $s_a$ both numbers
-come from the exact quadrature of \Eq{phidef} (\App{app:misses}).  The partition function of the whole system is $N\varphi(\bar V)$ plus the ideal gas of labels and a one-loop correction
+come from the exact quadrature of \Eq{phidef} (\App{app:misses}).  The partition function of the whole system is $N\ln Z_1(\bar V)$ plus the ideal gas of labels and a one-loop correction
 from the positions, \Eq{lnZN}.  In \Eq{Sk} the stiffness alone sets the long wavelengths, $S(0)=1/(1+\mathcal K)$,
 and the pressure the depth of the minimum near $\widetilde W=1/2$, about $2/\Pi$.
 
@@ -352,7 +353,7 @@ $T(S_0)$ that a continuum fluid with the initial entropy density $S_0$ would hav
   \label{T0def}
   \stp
   \end{keyeq}
-  $\avg{e_a}_T$ is computed exactly from the single-particle partition function $Z_a(V)$, by quadrature (\texttt{beta\_from\_averages} in \texttt{src/measure.jl}).
+  $\avg{e_a}_T$ is computed exactly from the single-particle partition function $Z_1(V)$, by quadrature (\texttt{beta\_from\_averages} in \texttt{src/measure.jl}).
   The volume enters $\avg{e_a}$; on the lattice every particle has $V_a=V$.
 \item \emph{Create the ensemble}: hybrid Monte Carlo samples the canonical ensemble (positions, entropies, momenta) at the temperature $T_0$.  The positions
   move and the $V_a$ fluctuate, but $T_0$ stays fixed.  $T_0$ is recorded in each run (\texttt{T0}).
@@ -364,7 +365,7 @@ particle also holds the energy of its own thermal fluctuations, of its entropy a
 \avg{e_a}_T=e_0+\Delta e,\qquad e_0=V\,e(T) .
 \label{eparticle}
 \stp
-By $\avg{e_a}=T^2\partial_T\ln Z_a$ and the Gaussian $Z_a$ of \App{app:expand}, \Eq{Zgauss}, whose widths are $C_VV$ (entropy) and $T(e+p)V$ (each momentum component),
+By $\avg{e_a}=T^2\partial_T\ln Z_1$ and the Gaussian $Z_1$ of \App{app:expand}, \Eq{Zgauss}, whose widths are $C_VV$ (entropy) and $T(e+p)V$ (each momentum component),
 \st
 \Delta e=T^2\frac{d}{dT}\ln\big[C_V\,(T(e+p))^d\big]^{1/2}
 =\frac T2\Big[\frac{d\ln C_V}{d\ln T}+d\,\frac{d\ln\big(T(e+p)\big)}{d\ln T}\Big] .
@@ -393,7 +394,7 @@ $s(T_0)=S_0\,(T_0/T(S_0))^2$, is $0.730$, $0.912$, $0.992$ of $S_0$; the mean en
 
 \paragraph{The theory in the figures.}  In the figures the solid lines are \Eq{Sk} with the saddle-point values \Eq{PiK} at $\sigma(T_0)$,
 $\Pi=\sigma+3/2$, $\mathcal K=3/2$, and the dashed lines (same colour) the improved theory: $\Pi$ and $\mathcal K$ of \Eq{PiKdef} from the exact
-$\ln Z_a(V)$, the weight of a particle at fixed volume integrated by quadrature instead of by its saddle point (\App{app:misses}, \texttt{statics.tex}).
+$\ln Z_1(V)$, the weight of a particle at fixed volume integrated by quadrature instead of by its saddle point (\App{app:misses}, \texttt{statics.tex}).
 The table gives both.  Sums over the modes of the box (the box lowers the variance by up to $33\%$ at $\sigma=179$, through the logarithm of
 \Eq{Vlog}).  Analysis: \texttt{examples/volume\_fluctuations.py}, with \texttt{examples/statics\_theory.py}.
 
@@ -473,7 +474,7 @@ The rest of the fluid is a bath at the temperature $T$ (the bare temperature, $T
 weight of particle $a$, with the Liouville measure (flat in $s_a$; \texttt{equilibrium\_positions.tex}, Appendix A), is the integral of $e^{\Phi_a}$, with $\Phi_a$ the
 Massieu function of \Eq{Phia},
 \st
-Z_a(V_a)=\int ds_a\,d^d\bm m_a\;e^{\Phi_a},\qquad \Phi_a=s_a-\frac{e_a(s_a,\bm m_a,V_a)}{T} .
+Z_1(V_a)=\int ds_a\,d^d\bm m_a\;e^{\Phi_a},\qquad \Phi_a=s_a-\frac{e_a(s_a,\bm m_a,V_a)}{T} .
 \label{Za}
 \stp
 The energy is extensive, $e_a=V_a\,\varepsilon(S,\bm M)$, with $\varepsilon$ the energy density as a function of the entropy density
@@ -495,7 +496,7 @@ with $p=p(T)$ the pressure of the bath.  The second derivatives at the maximum a
 with $C_V=T\,ds/dT$ the heat capacity per unit volume and $e+p$ the inertia of the fluid ($\varepsilon=e+\bm M^2/2(e+p)+\dots$ at small $\bm M$).
 The Gaussian integral about the maximum, over the $d+1$ variables $(S,\bm M)$, each of width $\propto V_a^{-1/2}$, gives
 \st
-Z_a(V_a)\simeq V_a^{\,d+1}\,e^{V_ap/T}\Big(\frac{2\pi}{V_a}\Big)^{\!(d+1)/2}\big[C_V\,(T(e+p))^d\big]^{1/2}
+Z_1(V_a)\simeq V_a^{\,d+1}\,e^{V_ap/T}\Big(\frac{2\pi}{V_a}\Big)^{\!(d+1)/2}\big[C_V\,(T(e+p))^d\big]^{1/2}
 =e^{\frac pTV_a}\big[\det\big(2\pi V_a\chi_{AB}\big)\big]^{1/2}\;\propto\;V_a^{\mathcal K_0}\,e^{\frac pTV_a} .
 \label{Zgauss}
 \stp
@@ -508,9 +509,9 @@ The product over particles of \Eq{Zgauss} is \Eq{Px}.  In \Eq{Px}, $p$ and $T$ a
 fluctuating pressure and temperature of a particle.
 
 \paragraph{The size of the neglected terms.}  The exponent is $V_a f$, and $V_af_{\max}\sim s_a$, so the relative fluctuations of $S$ and $\bm M$
-are of order $s_a^{-1/2}$.  The next terms of the expansion about the maximum (cubic and quartic derivatives of $f$) change $\ln Z_a$ by
+are of order $s_a^{-1/2}$.  The next terms of the expansion about the maximum (cubic and quartic derivatives of $f$) change $\ln Z_1$ by
 \st
-\ln Z_a=\frac pTV_a+\frac{d+1}2\ln V_a+\text{const}+\frac{c}{s\,V_a}+O\Big(\frac1{s_a^2}\Big),
+\ln Z_1=\frac pTV_a+\frac{d+1}2\ln V_a+\text{const}+\frac{c}{s\,V_a}+O\Big(\frac1{s_a^2}\Big),
 \label{Zcorr}
 \stp
 with $c$ a number of order one fixed by the equation of state, not computed here.  The correction depends on the volume, and so on the positions.
@@ -583,8 +584,8 @@ Regrouped by powers of $\widetilde W$,
 \st
 A(k)=2(\sigma+\mathcal K_0)\,\widetilde W(1-\widetilde W)+\mathcal K_0\,\widetilde W^2=2\Pi\,\widetilde W(1-\widetilde W)+\mathcal K\,\widetilde W^2 ,
 \stp
-with the saddle-point values \Eq{PiK} of the derivatives \Eq{PiKdef} of $\ln Z_a=\mathcal K_0\ln V+\sigma V\bar n$.  For any $\ln Z_a$ the expansion of
-$\sum_a\ln Z_a(V_a)$ to second order in $\delta n_a$ has the same two coefficients, so \Eq{Sk} holds with the exact $\Pi$ and $\mathcal K$.
+with the saddle-point values \Eq{PiK} of the derivatives \Eq{PiKdef} of $\ln Z_1=\mathcal K_0\ln V+\sigma V\bar n$.  For any $\ln Z_1$ the expansion of
+$\sum_a\ln Z_1(V_a)$ to second order in $\delta n_a$ has the same two coefficients, so \Eq{Sk} holds with the exact $\Pi$ and $\mathcal K$.
 
 \subsection{The entropy of the points and the structure factor}
 \label{app:Sk}
@@ -605,10 +606,10 @@ which is \Eq{Sk}.  At $k\to0$, $\widetilde W\to1$: the $\Pi$ term vanishes and t
 \paragraph{The partition function.}  The point: the same Gaussian integral gives the partition function of the whole system, as the result for
 independent particles at the mean volume plus a correction from the positions.  The partition function is
 \st
-\mathcal Z_N=\int\frac{\prod_ad^2x_a}{N!}\,\prod_aZ_a(V_a)=\int\frac{\prod_ad^2x_a}{N!}\,\exp\Big[\sum_a\varphi(V_a)\Big],
+\mathcal Z_N=\int\frac{\prod_ad^2x_a}{N!}\,\prod_aZ_1(V_a)=\int\frac{\prod_ad^2x_a}{N!}\,\exp\Big[\sum_a\ln Z_1(V_a)\Big],
 \stp
-with $\varphi=\ln Z_a$ of \Eq{phidef}.  At the uniform density every particle has the volume $\bar V=1/\bar n$, and the positions alone give the ideal gas
-of labels, $L^{2N}/N!$.  The density modes correct this: to second order $\sum_a\varphi(V_a)=N\varphi(\bar V)-\sum_{\bm k}A(k)|\delta\rho_{\bm k}|^2/(2\bar nL^2)$,
+with $Z_1$ of \Eq{phidef}.  At the uniform density every particle has the volume $\bar V=1/\bar n$, and the positions alone give the ideal gas
+of labels, $L^{2N}/N!$.  The density modes correct this: to second order $\sum_a\ln Z_1(V_a)=N\ln Z_1(\bar V)-\sum_{\bm k}A(k)|\delta\rho_{\bm k}|^2/(2\bar nL^2)$,
 and each complex mode ($\bm k$ and $-\bm k$ are one variable) multiplies the flat measure by
 \st
 \frac{\int d^2z\;e^{-(1+A)|z|^2/2N}}{\int d^2z\;e^{-|z|^2/2N}}=\frac1{1+A(k)}=S(k) .
@@ -616,18 +617,50 @@ and each complex mode ($\bm k$ and $-\bm k$ are one variable) multiplies the fla
 The mode $\bm k=0$ is fixed by $N$.  So, with $\sum_{\bm k}\to L^2\int d^2k/(2\pi)^2$,
 \begin{keyeq}
 \st
-\frac{\ln\mathcal Z_N}{N}=\underbrace{\ln\bar V+1}_{\text{labels}}+\underbrace{\varphi(\bar V)}_{\text{one particle}}
+\frac{\ln\mathcal Z_N}{N}=\underbrace{\ln\bar V+1}_{\text{labels}}+\underbrace{\ln Z_1(\bar V)}_{\text{one particle}}
 +\underbrace{\frac1{2\bar n}\int\frac{d^2k}{(2\pi)^2}\,\ln S(k)}_{\text{positions, one loop}} .
 \label{lnZN}
 \stp
 \end{keyeq}
-There are two expansions, nested.  $\varphi$ is expanded in $1/s_a$, \Eq{philoop}: $\sigma$ at tree level, $\tfrac12\ln\det(2\pi V\chi_{AB})$ at one loop.
+There are two expansions, nested.  $\ln Z_1$ is expanded in $1/s_a$, \Eq{philoop}: $\sigma$ at tree level, $\tfrac12\ln\det(2\pi V\chi_{AB})$ at one loop.
 The positions are expanded in $1/(\bar nh^2)$: the last term is their one-loop correction, the determinant of the Gaussian density modes, whose
 propagator is $S(k)$.  $\Pi$ and $\mathcal K$ enter the thermodynamics only through it.  The integral converges, since $S\to1$ at large $k$, and it is
 negative, since $S<1$: correlating the positions lowers the entropy below that of independent particles at the mean volume.  The integrand matters out to
 $k_*$ (\App{app:discussion}, ``The scale $k_*$''), so the correction per particle is of order $(k_*h)^2/(\bar nh^2)$ times a logarithm of $\sigma$: the same
 parameter as the condition on the core of $g(r)$.  A pressure taken from \Eq{lnZN} contains the label term $\bar nT$ from $\ln\bar V$, the kinetic stress of the
-particles; the chemical potential and the pressure of the labels are discussed in \App{app:labels}.
+particles; the labels and the renormalization condition are discussed in \App{app:labels}.
+
+\paragraph{The pair correlation as a response.}  The point: $g(r)$ is the derivative of $\ln\mathcal Z_N$ with respect to a source coupled to pairs, and this
+gives a route beyond the Gaussian.  Add a pair potential $J(r)$ to the weight,
+\st
+\mathcal Z_N[J]=\int\frac{\prod_ad^2x_a}{N!}\,\prod_aZ_1(V_a)\,\exp\Big[-\tfrac12\sum_{a\neq b}J(\bm r_{ab})\Big],\qquad
+\frac{\delta\ln\mathcal Z_N}{\delta J(\bm r)}\Big|_{J=0}=-\frac12\,N\bar n\,g(r) ,
+\label{gsource}
+\stp
+which is exact: the derivative counts the pairs at separation $\bm r$.  In Fourier components the source adds to the kernel of \Eq{Ak},
+\st
+-\frac12\sum_{a\neq b}J(\bm r_{ab})=-\frac1{2L^2}\sum_{\bm k}\widetilde J(k)\big(|\rho_{\bm k}|^2-N\big),\qquad A(k)\to A(k)+\bar n\,\widetilde J(k) ,
+\stp
+so that, besides the terms from $\bm k=0$ and from $a=b$, which give $-\tfrac12N\bar n+\tfrac12N\delta(\bm r)$, the one-loop term of \Eq{lnZN} contributes
+\st
+\frac12\sum_{\bm k}\ln\frac1{1+A(k)+\bar n\widetilde J(k)}\quad\longrightarrow\quad -\frac N2\int\frac{d^2k}{(2\pi)^2}\,e^{i\bm k\cdot\bm r}\,S(k) .
+\stp
+The three together are $-\tfrac12N\bar n\,g(r)$ with $S(k)=1+\bar n\int d^2r\,e^{-i\bm k\cdot\bm r}[g(r)-1]$: the Gaussian $g(r)$, read off as a response.
+
+\paragraph{Not with respect to $W$.}  The kernel enters only through the volumes, inside $Z_1(V_a)$, and with $\partial\ln Z_1/\partial n=-V\,\Pi(V)$
+\st
+\frac{\delta\ln\mathcal Z_N}{\delta W(\bm r)}=-\Big\langle\sum_{a,b}V_a\Pi(V_a)\,\delta(\bm r-\bm r_{ab})\Big\rangle ,
+\stp
+the pair density weighted by $V_a\Pi(V_a)$, the self term $b=a$ included.  It is not $g(r)$: a neighbour at $\bm r$ adds $W(r)$ to $n_a$ and so changes the weight by
+a relative amount of order $W(r)/\bar n\sim1/(\bar nh^2)$, the order of $g-1$ itself.  It is the response of the free energy to the kernel (to $h$, for example).
+
+\paragraph{The effective action of the propagator.}  With $S(k)$ as the variable,
+\st
+\Gamma[S]=\frac12\sum_{\bm k}\Big[\ln S(k)-\big(1+A(k)\big)S(k)+1\Big],\qquad \frac{\delta\Gamma}{\delta S(k)}=0\quad\Longrightarrow\quad S=\frac1{1+A} ,
+\stp
+and at the stationary point $\Gamma$ is the one-loop term of \Eq{lnZN}.  This is the form in which to go beyond the Gaussian: the cubic and quartic terms of
+the expansion in $\delta n/\bar n$ (\App{app:valid}) add diagrams to $\Gamma[S]$, and its stationarity then corrects $S(k)$, and the core of $g(r)$ where the
+Gaussian theory first fails.
 
 \subsection{The moments of the volumes}
 \label{app:moments}
@@ -954,15 +987,15 @@ with the density of particles as the cutoff, $\Lambda^d\sim\bar n$.  These are t
 the fluctuations of the conserved densities, which are absorbed into the renormalized equation of state; only the renormalized one is measured.
 
 \paragraph{In the model.}  The cutoff is explicit and the input equation of state is the bare one, so the absorbed terms appear as differences of order $1/s_a$
-between the input and the model's own thermodynamics, which follows from $\ln Z_a$.  For example the energy density of the model at the temperature $T$ is
+between the input and the model's own thermodynamics, which follows from $\ln Z_1$.  For example the energy density of the model at the temperature $T$ is
 \st
 e_{\rm ren}(T)=\bar n\avg{e_a}_T=e(T)+\bar n\,\Delta e(T),
 \stp
 which is why the bath temperature of the runs is below $T(S_0)$ (\Sect{sec:test}), and the momentum susceptibility is $r_mT(e+p)$, $r_m=1.57$ at $s(T)V=11.7$ (\App{app:misses};
 there from the full single-particle distribution, not from $\mathcal K_0$ alone, but of the same order).  A comparison with continuum hydrodynamics is consistent
 either at $s_a\gg1$, where these terms vanish, or against the model's renormalized thermodynamics, as in \App{app:misses}.  In the continuum limit at fixed
-$s\,h^2$ (\App{app:continuum}) $s_a$ falls and the cutoff terms grow, as $T\Lambda^d$ does; holding the renormalized equation of state fixed would need a
-counterterm in the bare one.
+$s\,h^2$ (\App{app:continuum}) $s_a$ falls and the cutoff terms grow, as $T\Lambda^d$ does; holding the renormalized equation of state fixed needs a
+counterterm in the bare one, fixed at constant entropy per particle (\App{app:labels}).
 
 \subsection{The continuum limit}
 \label{app:continuum}
@@ -1007,81 +1040,195 @@ s_a\,\bar nh^2:\qquad (h/a=2,\ s_a=541)\to2500,\qquad (h/a=4,\ s_a=135)\to2500,
 \stp
 the second not run.  The nearest pair in hand is $(h/a=4,\ s_a=16)$ at $296$ and $(h/a=2,\ s_a=54)$ at $249$.
 
-\subsection{The chemical potential and the pressure of the labels: a first look}
+\subsection{The labels and the renormalization condition}
 \label{app:labels}
 
-The point: the number of particles is a cutoff, not a charge of the fluid, so the model's thermodynamics should not depend on how the fluid is cut into
-particles.  \Eq{lnZN} makes this a condition on the chemical potential of the labels, and it shows that the pressure of the labels and their stiffness are
-the same thing, which limits any counterterm.  This section is a first look, written before the bare equation of state is changed.
+The point: the model conserves the number of particles, but the fluid being modelled has no such charge.  So the model is a fluid with two
+conserved densities, the entropy and the labels, and a renormalization condition must say which of its thermodynamic functions is to equal the
+input equation of state.  A long-wavelength gravitational field decides it: it probes the pressure at fixed entropy per particle, not at fixed
+temperature.  Only derivatives of $\ln Z_1$ enter; its normalization, and with it the value of the chemical potential of the labels, enters no average
+at fixed $N$.
 
-\paragraph{The chemical potential.}  With $\bar V=L^2/N$, at fixed $L$ and $T$, \Eq{lnZN} gives (dropping the one-loop term of the positions)
+\paragraph{The thermodynamics of a particle.}  The free energy of a particle at fixed volume is one function for all particles,
 \st
--\frac\mu T=\frac{\partial\ln\mathcal Z_N}{\partial N}\Big|_{L,T}=\ln\bar V+\varphi(\bar V)-\Pi(\bar V)+\dots
+F_1(T,V)=-T\ln Z_1(V),
 \stp
-At tree level $\varphi=\Pi=\sigma$ and the fluid drops out: $N\sigma=pL^2/T$ does not depend on $N$, the Euler relation of the fluid.  The dependence on $N$
-starts at one loop, \Eq{philoop}, in the cutoff terms:
+defined up to a constant (the normalization of the measure); in the ensemble its argument is the fluctuating volume $V_a$ of each particle.  Its pressure and bulk modulus are
 \st
--\frac\mu T=\ln\Big[\bar V\,\det\big(2\pi\bar V\chi_{AB}\big)^{1/2}\Big]-\mathcal K_0+\dots,
+p_1=-\frac{\partial F_1}{\partial V}\Big|_T,\qquad B_1=-V\frac{\partial p_1}{\partial V}\Big|_T,
 \stp
-the logarithm of the phase-space volume of a particle (its position, and the widths of its entropy and momentum) less $\mathcal K_0$.  Since
-$\ln\mathcal Z_N=\beta pL^2-\beta\mu N$, with $\beta p\bar V=1+\Pi$,
+with $p_1=\avg{p_a}_V$ the average at fixed volume of the mechanical pressure $p_a=-\partial e_a/\partial V$ of a particle, so that the two numbers of
+\Eq{PiKdef} are
 \st
-\mu=0\qquad\Longleftrightarrow\qquad \frac{\ln\mathcal Z_N}N=\beta p\bar V\qquad\Longleftrightarrow\qquad e+p=Ts
+\Pi=\frac{p_1V}{T},\qquad \mathcal K=\frac{VB_1}{T} .
 \stp
-for the model's own thermodynamics: the labels carry no chemical potential, as the input fluid has no conserved number.  This is the natural
-renormalization condition.
+At tree level $F_1=-pV$, so $p_1=p(T)$ and $B_1=0$.  At one loop, \Eq{philoop},
+\st
+F_1=-p\,V-T\mathcal K_0\ln V+\text{const},\qquad p_1=p+\frac{T\mathcal K_0}{V},\qquad B_1=\frac{T\mathcal K_0}{V} .
+\stp
 
-\paragraph{It is not a choice of $N$.}  For the scale-invariant equation of state $T$ drops out and $\mu$ depends on the entropy per particle only; for
-$c_s^2=1/2$, $d=2$ ($C_V=2s$, $T(e+p)=T^2s$), at one loop,
+\paragraph{The pressure of the model.}  From \Eq{lnZN}, without the one-loop term of the positions, the pressure of the model at the temperature $T$
+and the density of particles $n$ is that of an ideal gas of labels plus that of the particles,
 \st
--\frac\mu T=(1+\mathcal K_0)\ln s_a+c,\qquad c\approx1.2\quad(\text{measure }ds\,d^2\bm m\,d^2\bm x,\ T_{\rm scale}=1).
+p_{\rm model}(T,n)=nT+p_1=p(T)+nT\,(1+\mathcal K_0) .
+\label{pmodel}
 \stp
-$\mu=0$ would need $s_a\approx0.6$, about one particle per quantum, far outside $s_a\gg1$ (and where one loop fails); at $s_a=54$ the bare
-$\mu\approx-11\,T$.  The constant $c$ depends on the normalization of the measure, a factor per particle that never enters the dynamics or any average at
-fixed $N$.  So $\mu=0$ is imposed as a counterterm: that normalization, chosen as a function of the resolution $s_a$.  Because it depends on $T$, the
-renormalized $\mathcal Z_N$ no longer gives $\avg H=T^2\partial_T\ln\mathcal Z_N$: it redefines the thermodynamic potential, not the ensemble.
+The term $nT$ is the kinetic stress of the particles' thermal motion: with $\bm v_a=\partial e_a/\partial\bm m_a$, equipartition holds for any shape of the
+energy,
+\st
+\avg{\bm m_a\cdot\bm v_a}=d\,T,\qquad \frac1{dL^2}\Big\langle\sum_a\bm m_a\cdot\bm v_a\Big\rangle=nT ,
+\stp
+and it is measurable, as $\tau^{\rm kin}$ (\texttt{statics.tex}).  At fixed temperature the labels resist compression, and the compressibility sum rule
+\st
+S(0)=T\,\frac{\partial n}{\partial p_{\rm model}}\Big|_T=\frac1{1+\mathcal K_0}
+\stp
+is the $S(0)$ of \Eq{Sk}: a check of the whole picture.
 
-\paragraph{The pressure of the labels is a real stress.}  From \Eq{lnZN}, $\beta p\bar V=1+\Pi$, i.e.
+\paragraph{Equilibrium in a gravitational field.}  Couple the model to a static potential $\Phi(\bm x)$, slowly varying on the scale $h$, by
+$H\to\sum_ae_a\,[1+\Phi(\bm x_a)]$.  In equilibrium the temperature and the chemical potential $\mu$ of the labels, which are conserved, both redshift
+(Tolman, Klein):
 \st
-p_{\rm model}(T,\bar n)=p(T)+\bar nT\,(1+\mathcal K_0)+\dots
+T(\bm x)\,e^{\Phi(\bm x)}=\text{const},\qquad \frac{\mu(\bm x)}{T(\bm x)}=\text{const} .
 \stp
-The $1$ is the derivative of the label entropy $N\ln\bar V$, and it is the kinetic stress of the particles' thermal motion: with $\bm v_a=\partial e_a/\partial\bm m_a$,
-equipartition holds for any shape of the energy,
+Along this profile the Gibbs--Duhem relation of the model, with its own entropy density $s_{\rm model}$ and Euler relation
+$e_{\rm model}+p_{\rm model}=Ts_{\rm model}+\mu n$, gives
 \st
-\avg{\bm m_a\cdot\bm v_a}=d\,T,\qquad \frac1{dL^2}\Big\langle\sum_a\bm m_a\cdot\bm v_a\Big\rangle=\bar nT ,
+dp_{\rm model}=s_{\rm model}\,dT+n\,d\mu=\frac{e_{\rm model}+p_{\rm model}}{T}\,dT ,
 \stp
-and the momentum flux of the model contains $\sum_a\bm m_a\bm v_a$.  It is measurable, as $\tau^{\rm kin}$ (\texttt{statics.tex}).  Relative to $p$ the label
-pressure and the one-loop term together are $(1+\mathcal K_0)/\sigma$: $64\%$ at $\sigma=3.9$, $1.4\%$ at $\sigma=179$.  For the fluid being modelled it is a cutoff term, of order
-$T\bar n\sim T\Lambda^d$, like the one-loop term.
+which with $dT/T=-d\Phi$ is the hydrostatic equation $\nabla p=-(e+p)\nabla\Phi$ of a fluid without a charge.  So the field sees the model as a
+neutral fluid whose equation of state is
+\begin{keyeq}
+\st
+P(T)=p_{\rm model}(T,n)\Big|_{\mu/T\ \text{fixed}} .
+\label{Pren}
+\stp
+\end{keyeq}
+The derivative $\partial p_{\rm model}/\partial n$ at fixed $T$, the label stiffness, is not probed.
 
-\paragraph{The pressure of the labels is their stiffness.}  At fixed $T$, $\partial p_{\rm model}/\partial\bar n=T(1+\mathcal K_0)$, and the compressibility sum rule
-of the labels gives
+\paragraph{Fixed $\mu/T$ is fixed entropy per particle.}  At one loop, from \Eq{lnZN},
 \st
-S(0)=T\,\frac{\partial\bar n}{\partial p}\Big|_T=\frac1{1+\mathcal K_0},
+-\frac\mu T=\frac{\partial\ln\mathcal Z_N}{\partial N}\Big|_{L,T}=\ln\bar V+\ln Z_1(\bar V)-\Pi .
 \stp
-the $S(0)$ of \Eq{Sk}: a check of the whole picture.  Its converse is the constraint.  A model whose renormalized pressure is $p(T)$ at every resolution,
-independent of $\bar n$ like a fluid without a conserved number, has $\partial p/\partial\bar n=0$ and $S(0)=\infty$: its labels have no restoring force at long
-wavelength.
+For the scale-invariant equation of state ($d=2$, $c_s^2=1/2$: $C_V=2s$, $T(e+p)=T^2s$) the temperature drops out and
+\st
+-\frac\mu T=(1+\mathcal K_0)\ln\frac{s(T)}{n}+\text{const},
+\stp
+with $s(T)/n$ the entropy of the bath per particle.  So in the field the labels follow the entropy, $n\propto s(T)$.
 
-\paragraph{Changing $\sigma$.}  The bare input will eventually be a free energy per particle that depends on the resolution,
+\paragraph{Which entropy per particle.}  Three differ by order one: the mean $\avg{s_a}$ of the particles' own entropy, which the ideal step conserves particle by
+particle; the bath value $s(T)/n$, which the one-loop formulas contain; and the start value $S_0/n$ of the lattice, by which the runs are labelled.  For the
+conformal fluid ($s\propto T^2$, $T_{\rm start}-T=c_s^2\Delta e\,n/s$)
 \st
-\sigma=\frac{pV}T\ \longrightarrow\ \sigma_{\rm bare}(T,n)=-\frac{F_{\rm bare}(T,n)}T ,
+\frac{s(T)}{n}=3\sigma,\qquad \frac{S_0}n=\frac{s(T)}n+5 ,
 \stp
-from an $n$-dependent particle energy $e_a(s_a,\bm m_a,V_a)$.  It is no longer linear in $V$, so it enters $\Pi$ and $\mathcal K$, $S(k)$ and the dynamics.  For
-example, $\sigma_{\rm bare}=pV/T-(1+\mathcal K_0)\ln V$ removes the label pressure exactly, but gives $\varphi=\sigma V/\bar V-\ln V$, $\mathcal K=-1$ and
+so the runs labelled $16$, $54$, $541$ have $s(T)/n=11.7$, $49$, $537$.  The differences depend on $s(T)/n$ alone, so fixing any one of the three fixes the
+others: the curve of fixed entropy per particle is the same, and it is also the curve of sound.  The static response and the speed of sound see the same $P(T)$.
+Below, ``fixed $s_a$'' means this curve, and $1/s_a$ in a formula means $n/s(T)$.  Along it, with $Ts=3p$ and the fluctuation energy $\Delta e=5T$ of \Eq{Deltae} per particle,
+\begin{keyeq}
 \st
-S(k)=\frac1{1+2\Pi\,\widetilde W(1-\widetilde W)-\widetilde W^2}\ \xrightarrow{k\to0}\ \infty :
+P(T)=p(T)\Big[1+\frac{3(1+\mathcal K_0)\,n}{s(T)}\Big]=p(T)\Big[1+\frac{1+\mathcal K_0}{\sigma}\Big],\qquad E(T)=e(T)+5nT=2P(T) .
+\label{Pconf}
 \stp
-the labels would clump at long wavelength.  So the conditions cannot be ``the pressure is $p(T)$ at every $n$''.  Candidates:
-\begin{itemize}
-\item $\mu_{\rm ren}=0$ ($e+p=Ts$ for the model), from the part of the free energy linear in $N$; it costs nothing in stability;
-\item $p_{\rm ren}(T,n)=p(T)+nT\kappa_{\rm label}$ with a residual label stiffness $\kappa_{\rm label}>0$ chosen deliberately (today $1+\mathcal K_0=5/2$), the
-  price of a small $\kappa_{\rm label}$ being long-wavelength fluctuations of the particle density, $S(0)=1/\kappa_{\rm label}$;
-\item $p_{\rm ren}=p(T)$ at the working resolution only.
-\end{itemize}
-At $s_a\gg1$ none of this is pressing: the label pressure is a $1/\sigma$ correction and $S(0)=2/5$.  It becomes pressing at the small $s_a$ of the continuum limit
-at fixed $s\,h^2$ (\App{app:continuum}).  Not yet worked out: the one-loop term of the positions in $\mu$ and $p$, of order $1/(\bar nh^2)$; and the energy
-and entropy of the model under the counterterm.
+\end{keyeq}
+The model is again conformal; the labels change only the normalization of its pressure, by $2.5/\sigma$: $64\%$, $15\%$ and $1.4\%$ at
+$\sigma=3.89$, $16.4$, $179$ (the runs labelled $s_a=16$, $54$, $541$).
+
+\paragraph{The connection to hydro-kinetic theory.}  In hydro-kinetic theory (Akamatsu, Mazeliauskas and Teaney, arXiv:1708.05657, eq.~(35) there,
+written for $d$ dimensions) the fluctuations of the $n_\Lambda$ modes per unit volume below the cutoff renormalize the bare equation of state $e_0$, $p_0$:
+\st
+e(T)=e_0(T;\Lambda)+d\,Tn_\Lambda,\qquad p(T)=p_0(T;\Lambda)+\Big[1+\frac T2\frac{dc_s^2}{dT}\Big]Tn_\Lambda .
+\label{amt35}
+\stp
+The three terms are the kinetic energy of the momentum fluctuations, $\avg{\bm M^2}/(e+p)$; their kinetic stress; and the curvature of the equation of state
+acting on the energy fluctuations, $\tfrac12p''(e)\avg{\delta e^2}$.  One particle is one mode, $n_\Lambda\leftrightarrow n$, and the same three terms appear in the
+model (\texttt{renormalization.tex}).  The bare function is the mean rest energy density of a particle, $\bar e_{\rm rest}=\avg{e_{{\rm rest},a}}$, the energy
+with the kinetic energy of the fluctuations removed:
+\st
+E=\bar e_{\rm rest}+d\,nT,\qquad P=p(\bar e_{\rm rest})+\Big[1+\frac T2\frac{dc_s^2}{dT}\Big]nT ,
+\label{amtmodel}
+\stp
+with $p(e)$ the input equation of state.  The kinetic stress $nT$ is the label pressure of \Eq{pmodel}, the $1$ in $1+\mathcal K_0$.  \Eq{amtmodel} contains no
+$\mathcal K_0$.  It enters only through the mean rest energy at the bath temperature, which is the input $e(T)$ shifted by the skewness of the particle's
+distribution (\texttt{renormalization.tex}),
+\st
+\bar e_{\rm rest}(T)=e(T)+n\,\frac T{c_s^2}\Big[\mathcal K_0-\frac T2\frac{dc_s^2}{dT}\Big] ,
+\stp
+and this turns \Eq{amtmodel} into \Eq{pmodel} and $E=e(T)+n\Delta e$ (for $d=2$, $c_s^2=1/2$: $\bar e_{\rm rest}=e+3nT$, $E=e+5nT$, $P=p+\tfrac52nT$).
+Eliminating $\bar e_{\rm rest}$ instead, with $p(\bar e_{\rm rest})=p(E)-c_s^2\,d\,nT$,
+\begin{keyeq}
+\st
+P=p(E)+\Big[1-d\,c_s^2+\frac T2\frac{dc_s^2}{dT}\Big]nT .
+\label{PofE}
+\stp
+\end{keyeq}
+For the conformal fluid, $d\,c_s^2=1$, the bracket vanishes: the relation between the measured pressure and the measured energy is the input one, and the speed
+of sound at fixed $s_a$ is not renormalized.  What is renormalized is the temperature scale, $E(T)$ and $P(T)$, by the factor of \Eq{Pconf}: for the conformal
+fluid a change of the Stefan--Boltzmann constant.  The static field sees it through the Tolman profile $T(\bm x)$, and the viscous step through the temperature in its
+coefficients.
+
+\paragraph{The renormalization condition.}  The condition is on the pressure that a static field sees, $P(T)$ of \Eq{Pren}:
+\begin{keyeq}
+\st
+P(T)=p_{\rm model}(T,n)\Big|_{\mu/T\ \text{fixed}}=p_{\rm target}(T) .
+\label{rencond}
+\stp
+\end{keyeq}
+In general fixed $\mu/T$ (a static field) and fixed entropy per particle (sound) are different curves, as in any fluid with a conserved charge, and the
+speed of sound then follows from the full $p_{\rm model}(T,n)$, through the bracket of \Eq{PofE}.  For the conformal fluid every intensive ratio depends on
+$\mu/T$ alone, the two curves are one, and \Eq{rencond} is the temperature scale only, one constant: the bare pressure is the target divided by $1+(1+\mathcal K_0)/\sigma$, a number of the run fixed by its
+entropy per particle.  It does not change the dependence on the volume at fixed $T$, so $\mathcal K$, $S(0)=1/(1+\mathcal K_0)$ and the positions are
+unchanged at this order.  At small $s_a$ the factor comes from the exact single particle (\App{app:misses}) instead of from one loop.
+
+\paragraph{Dialing the bare equation of state.}  In general \Eq{rencond} is a condition on a function of $T$, met by tuning the bare (input) equation
+of state $p_{\rm bare}(T)$.  First choose the resolution: a value of $\mu/T$, equivalently the density $n_0$ at a reference temperature $T_0$.  At one loop,
+from \Eq{lnZN} and \Eq{philoop},
+\st
+-\frac\mu T=(1+\mathcal K_0)\ln\bar V+\tfrac12\ln\det\big(2\pi\chi(T)\big)-\mathcal K_0,\qquad \chi={\rm diag}\big(C_V,\ T(e+p)\,\delta_{ij}\big),
+\stp
+so along the curve the density follows the susceptibilities of the bare equation of state,
+\st
+n_\mu(T)=n_0\left[\frac{\det\chi(T)}{\det\chi(T_0)}\right]^{1/(d+3)}
+\stp
+($n\propto s(T)$ for the conformal fluid, where $\det\chi\propto T^{10}$).  Along it $P(T)=p_{\rm bare}(T)+(1+\mathcal K_0)\,T\,n_\mu(T)$, and \Eq{rencond} becomes a fixed point,
+\begin{keyeq}
+\st
+p_{\rm bare}(T)=p_{\rm target}(T)-(1+\mathcal K_0)\,T\,n_\mu(T)\big[p_{\rm bare}\big],
+\label{pbare}
+\stp
+\end{keyeq}
+with $n_\mu$ computed from the $\chi$ of $p_{\rm bare}$.  The correction is of relative order $1/\sigma$: one step, with $\chi$ from $p_{\rm target}$, is right to order
+$1/\sigma^2$, and the iteration converges geometrically.  The bare function depends on the resolution through $\mu/T$, as the $p_0(T;\Lambda)$ of
+\Eq{amt35} depends on the cutoff.  It must remain an equation of state (positive entropy and heat capacity, $0<c_s^2<1$), which matters only at small
+$\sigma$.  Beyond one loop:
+\begin{enumerate}
+\item at small $\sigma$, $n_\mu(T)$ and the label pressure come from the exact single particle (\App{app:misses}) instead of from \Eq{philoop};
+\item the one-loop term of the positions, of order $1/(\bar nh^2)$, comes from measurement: run, measure the mechanical pressure (the stress, $\tau^{\rm kin}$ plus
+  the virial) along fixed $\mu/T$, correct $p_{\rm bare}$ by the residual $P-p_{\rm target}$, and repeat.
+\end{enumerate}
+The curve of fixed $\mu/T$ is found either with a common Lagrange multiplier, the grand-canonical weight $e^{(\mu/T)N}$ (insertion and deletion moves in the hybrid
+Monte Carlo, the new particle's $s_a$, $\bm m_a$ drawn from the single-particle distribution at its trial volume), or from canonical runs on a grid of $(T,n)$, with
+$\mu/T$ reconstructed up to a constant from
+\st
+\frac{\partial(\mu/T)}{\partial n}\Big|_T=\frac1{nT}\frac{\partial p_{\rm model}}{\partial n}\Big|_T,\qquad
+\frac{\partial(\mu/T)}{\partial T}\Big|_n=-\frac1{T^2}\frac{\partial E}{\partial n}\Big|_T ,
+\stp
+with $E$ the energy density.  The normalization of the measure only relabels the curves, $\mu/T\to\mu/T+\text{const}$, so the pressure along each is absolute.
+At fixed $h$ the conformal model has $P/T^3$ constant along a curve except for the term of the positions, which this plot measures.
+
+\paragraph{Why not a pressure independent of the density.}  The stronger condition, $p_{\rm model}=p(T)$ at every $n$, is by Gibbs--Duhem ($dp=n\,d\mu$ at
+fixed $T$) the condition $\mu=0$ at every density.  It fixes $F_1$:
+\st
+F_1+p_1V=T\ln V\quad\Longrightarrow\quad F_1=-p\,V+T(\ln V+1),\qquad \mathcal K=-1,
+\stp
+and then $A(0)=-1$ in \Eq{Sk}, $S(0)=\infty$: compressing the labels at fixed temperature costs nothing, and their density wanders at long wavelength, so the
+number of neighbours, and with it the resolution, is no longer controlled.  Neither gravity nor sound asks for it: the one moves along fixed $\mu/T$, the other along fixed entropy per particle, neither at fixed $T$.
+The value of $\mu$ at one density is a normalization and enters nothing.
+
+\paragraph{What remains.}  The entropy per particle is an extra slow variable of the model: at fixed $T$ it fluctuates with the label density, and it diffuses
+through the stochastic step.  Neither the static field nor sound excites it at leading order, and it reaches the stress only through the label pressure, at
+order $1/s_a$; it may show as a small diffusive peak in the longitudinal correlator.  Not yet included: the one-loop term of the positions, of order
+$1/(\bar nh^2)$, which depends on $\bar nh^2$ and so varies along the curve of fixed $s_a$ at fixed $h$, breaking the conformal form of \Eq{Pconf} at that
+order (the kernel is a scale).  A direct test is hybrid Monte Carlo in a static potential $\Phi_0\cos kx$ with $kh\ll1$, measuring $T(x)$, $s(x)$ and $n(x)$.
 
 \subsection{The bath temperature and the exact single particle}
 \label{app:misses}
@@ -1111,7 +1258,7 @@ $\sigma(T_0)$ & start $s_a$ & $s(T_0)V$ & $\Pi$ & $\Pi-\sigma$ & $\mathcal K$ & 
 \bottomrule
 \end{tabular}
 \end{center}
-with $\Pi$ and $\mathcal K$ the derivatives \Eq{PiKdef} of the exact $\ln Z_a$, by finite differences in $V$ at fixed $T_0$, which tend to their saddle-point
+with $\Pi$ and $\mathcal K$ the derivatives \Eq{PiKdef} of the exact $\ln Z_1$, by finite differences in $V$ at fixed $T_0$, which tend to their saddle-point
 values \Eq{PiK}, $\sigma+3/2$ and $3/2$, at large $s_a$: $\Pi-\sigma$, the particle's own share of its pressure, rises to $\mathcal K_0$ with $\mathcal K$.  $r_s$, $r_m$ are
 the entropy and momentum variances at fixed volume over $C_VV$ and $T(e+p)V$.  The momentum variance is $57\%$ above the Gaussian at $s(T_0)V=11.7$: the
 relativistic tail.  The light cone cuts the momentum off, and the particle has fewer effective phase-space dimensions: $\mathcal K=1.225$ at $\sigma=3.9$.

@@ -589,6 +589,295 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### `eos_legendre` — 2026-11-22, the renormalized Hamiltonian as a Legendre transform — TO DO (note for the NERSC session)
+
+**Plan: docs/legendre_plan.tex (read it first; it is self-contained).**  Implement `SPH_RENORM=legendre`: the particle Hamiltonian is
+the Legendre transform of F_want = F_t + T δlnZ_1, for ConstantCs2EOS (any c_s^2), d = 2, the n-scheme.  Only the two particle-level maps
+change (forward (s, m, V) -> state; inverse (e, m, V) -> entropy), each a 2x2 Newton solve with an analytic Jacobian and warm starts.
+The owner wants, when back: the option implemented, tested (bit-identical with the switch off), timed, and demonstrated by repeating
+the `eos_renorm` measurements at rest (c_s^2 = 1/2 and 1/4) and the same at v = 0.8 with the momentum and R = M/(v(E + T^yy)) - 1, and the full susceptibility matrix (dE/dT, dM/dT, dE/dv, dM/dv
+from the canonical covariances of the total E and P; HMC unchanged, eos_measure.jl records the total momentum; plan Sect. 4).
+Order of work (plan sections): A routing refactor (bit-identical), B src/renorm.jl, C the switch, D tests, E speed, F smoke runs,
+then the campaign `eos_legendre` (~430 tasks, ~3 node-hours shared; recompute from the smoke runs and record here before submitting).
+Branch: **`legendre`** (created by the owner's laptop session from `statics`, with the plan; `git fetch && git checkout legendre`).
+Reference numbers: examples/renorm_quadrature_legendre.py.  Report in docs/legendre_plan.tex, "Results", and here.
+**Owner's authorization (2026-11-22): work on this for the next two days; commit and push to `legendre` as results come in**
+(code, tests, campaign files, figures, csv, notes; never .h5/.jls).  Budget for the campaign as in the plan (~3 node-hours; ask
+before going over 20).
+
+**Progress (NERSC session, 2026-11-22/23):**
+- A (fe1ca71): the particle-level maps go through `particle_forward` / `particle_inverse` (src/pointwise.jl; target: `target_forward`,
+  `target_inverse`, the arithmetic of solve_eos!/eos_from_energy).  Field-level uses left as they are: grid.jl (grid_forward/inverse),
+  the starting guess of beta_from_averages, state_from_beta, particle_moments.  Regression against db139ef (debug 61821418 and the
+  interactive node): bit-identical except the known hast_lq_* datasets.
+- B–D (6b7a207, 186124b): src/renorm.jl — Newton in (ln T_rel, rapidity), analytic Jacobian, warm starts from pa.e (the target's rest
+  energy density at T_rel) and pa.γ, cold starts by a fixed point on the shifted entropy/energy (contracts on the physical branch);
+  counters legendre_counts() (solves, iterations, failures = no convergence, no state, cold).  Switch `SPH_RENORM=legendre`
+  (sph.jl LEGENDRE, read through settings.jl setting_peek so that the record of SPH_RENORM is unchanged without it); check_legendre.
+  test/testlegendre.jl: reference values to 3e-11 (the table's digits), Legendre identities to 1e-9, forward∘inverse to 1e-14 (incl.
+  labels s < 0), counterterm off = the target to its own 1e-12, warm = cold, HMC energy error ∝ δt² (ratio 16.1), all pass.
+- Lessons: (1) the label s = target entropy − (Δ + k) is often ≤ 0 at s_a ≲ 50 (Δ + k ≈ 25 at c_s² = 1/2, ≈ 45 at 1/4; the canonical
+  spread of s is ±20 at c_s² = 1/4): s ≤ 0 and H ≤ 0 are legitimate states (the physical branch is det ∂(s,|m|)/∂(T,v) > 0, |m| ≥ 0);
+  (2) HMC rejects a trajectory that reaches a state with no H (hmc.jl, LEGENDRE only); (3) a non-converged inverse with e < |m| is
+  counted as "no state" (any Legendre state has H − |m| > −kT; these are 7σ momentum tails of the heat-bath proposals); (4) in motion
+  the bath is the rest start's T_rel moving at SR_V (examples/eos_measure.jl), else σ moves with v; (5) beta_from_averages (measure.jl)
+  halves a Newton step that leaves the light cone (never triggered before; needed in motion with the Legendre H).
+- Failures (no convergence) in HMC: ≤ 3e-7 of the solves (c_s² = 1/4, s_a = 16, v = 0.8 the worst), all inverse, at extreme proposals.
+- E, speed (debug 61824228, 8 threads, N = 9752, s_a = 54, c_s² = 1/2): ideal step (generalized leapfrog) 49 ms tree, 39 ms Legendre
+  (forward solves 0–1 iterations warm: no cost); stochastic step 36 → 143 ms (1.25 M inverse solves per step, cold, 2.5 iterations,
+  ~0.9 µs each against ~0.23 µs for the target): the votes need warm starts (to do); HMC update at N = 360: 0.32 → 0.37 s.
+- F, smoke (interactive node 61821858, L = 0.45, h/a = 2, s_a = 54, 200 updates, 2 seeds): c_s² = 1/2 Legendre E/e−1 = −0.010,
+  P/p−1 = −0.032 (σ = 22.7) against SPH_RENORM=1 −0.015, −0.039 (σ = 18.0): within the single-particle residual, both dominated
+  by the positions; acceptance 0.985–0.995 for all; tree 0.134, 0.106.  Dynamics (stability.jl, S0 = 1e5, t = 20): ΔH/H = +4.8e-5
+  Legendre, +4.2e-5 SPH_RENORM=1.
+- Campaign file `nersc/campaign_eos_legendre.txt` (432 tasks, aa85f5c); smoke test of two tasks (60 updates): debug job 61824455 —
+  eosL_leg_c025_s16_ha2_v08 seed 0 stuck (a cold inverse at v ≈ 0.997 stalled under step halving; one NaN particle then kept the
+  heat bath from moving it): fixed in 3c6fd46 (full Newton steps unless the residual grows fourfold; 50 cold iterations; the heat bath
+  leaves a state with no weight).  Again, debug job 61824956: both COMPLETED, acceptance 0.98 and 1.0, no failures; 0.75 s per update
+  at h/a = 2 (N = 360), 3.5 s at h/a = 3 (N = 864), Legendre, 2 threads.
+- Unit tests with the switch on (186124b): 14 pass; 9 fail by design — testeos, testeos2d, testeos_consistency, testchangerep (they
+  compare the particle maps with the target's closed forms), testeqstart (the target's most probable state), testhastings (Einstein
+  measure, refused), testdims (a different refusal message), teststochastic_guard (calls eos_from_energy directly on particle states;
+  a Legendre particle may have e < |m|), testparticle_sweep (the legacy two-level dissipation); every script loads.  With the switch
+  off: all unit, physics and load tests pass; regression against db139ef bit-identical except hast_lq_*.
+- **Campaign submitted**: job **61825274** (432 tasks, shared, -c 2, -t 2 h), run checkout `~/stochastic-sph-legR` (worktree at
+  3c6fd46), output `$SCRATCH/sph/eos_legendre/`.  Estimate 216 × 5 min + 216 × 19 min on 2 threads ≈ 1.4 node-hours.
+- Clean switch-off regression of b474aef against db139ef (job 61825713, shared -c 64, 38 min): step.jl and stability drivers
+  IDENTICAL; equilibrium drivers differ only in hast_lq_* (known, thread order); unit-test output differs only in testcheckpoint
+  (wall-clock seconds) and testrunrecord (src/renorm.jl in the file list).  The suite reports FAIL for these reasons only.
+- **Solver failures in the campaign** (2026-11-23): eosL_leg_c025_s16_ha2_v0 had E = NaN on ~1% of the configurations (all 8 seeds;
+  acceptance 0.91), ~10 failed forward solves per seed; a few also at c_s² = 1/2, s_a = 16, at rest.  Reproduced (debug 61829998): the
+  failing particles (labels s = −3.7 to −4.4, |m| = 7–13, γ = 12–41) have a physical state, but Newton from the warm and the cold start
+  converged to the unphysical branch, and a warm start that converged to the wrong branch was not retried; an HMC update that then
+  rejects restores the particle with no state.  Fixed in **b351f3a**: retry cold on a wrong-branch convergence (forward and inverse),
+  and as the last resort bracket the physical branch (legendre_bracket_forward; ~0.6 ms, rarely called); testlegendre 5b with the three
+  states; all pass (debug 61830861).  Only renorm.jl changed (switch-off numerics untouched).
+- **Rerun**: pending/running c_s² = 1/4 Legendre tasks of 61825274 cancelled (array 289–384); old output of the 14 affected lines in
+  `$SCRATCH/sph/eos_legendre/old_3c6fd46/`; `nersc/campaign_eos_legendre_rerun.txt` (14 lines, 112 tasks) submitted from worktree
+  `~/stochastic-sph-legS` (b351f3a): job **61831354**, shared, -t 2 h (~0.7 node-hours).
+- **Rerun 61831354 done (112/112)**, but c_s² = 1/4, s_a = 16 still had E = NaN, now mostly in motion (3–8% of the configurations at
+  v = 0.8; acceptance 0.78–0.90).  Reproduced with b351f3a (debug 61836018, 61836717, the heat bath instrumented): the heat bath accepted
+  proposals at e < 0 (e = −53, |m| = 31) for which the inverse, from the guess, converged to a point with det > 0 and |m| ≥ 0 but **v < 0**
+  (the velocity against the momentum, |m|/v < 0): a label (s = −5.5 to −8.7) whose (s, m, V) has no state with γ ≤ 100.  Fixed in
+  **34b8161**: the physical branch also requires v ≥ 0 (`legendre_physical`); test 5c.  Check (debug 61837367): testlegendre all pass;
+  that line, 4 seeds × 300 updates: no NaN, acceptance 0.98–1.0 (was 0.90).  Such accepted proposals could also bias the other Legendre
+  runs silently (a wrong weight where some other state exists), so **every Legendre line is rerun**: `nersc/campaign_eos_legendre_rerun2.txt`
+  (24 lines, 192 tasks), worktree `~/stochastic-sph-legV` (34b8161), job **61838799**, shared, -t 2 h (~1.2 node-hours).  Earlier Legendre
+  output moved to `$SCRATCH/sph/eos_legendre/old_legendre_v1/` (and `old_3c6fd46/`); the tree and SPH_RENORM=1 runs stand.
+  2026-11-23 05:10: the shared queue ran only 2 tasks at a time (16 done in 3 h, ~29 h to go), so tasks 21–192 were held and packed
+  on 3 regular nodes, `node.sh` THREADS=2 (job 61851444); the held array tasks were cancelled when it started.  It failed in 43 s: the
+  campaign file is not in the run worktree (committed after 34b8161; give node.sh the main checkout's copy, as the array had it).
+  Resubmitted as job **61852069** (-t 1:15, ≤ 3.75 node-hours), tasks 21–192; tasks 1–20 finished on shared.
+- **eos_legendre done (2026-11-23 05:40).**  61852069: 172 tasks in 18 min on 3 nodes (0.92 node-hours).  Campaign total ≈ 2.1 node-hours
+  (61825274 0.88, 61831354 0.24, 61838799 0.04, 61851444 0.04 (failed at start), 61852069 0.92).  All 24 Legendre lines have 8 seeds; 425 Newton
+  failures in 4.6e10 solves (415 at c_s² = 1/4, s_a = 16); 4 kept configurations with E = NaN (c_s² = 1/4, s_a = 16, h/a = 3), which make the
+  per-seed summary NaN: those two lines average 6 and 7 seeds.  Lesson: node.sh needs the campaign file of the main checkout when the run worktree
+  predates it; the shared QOS can sit at 2 running tasks (packing 3 regular nodes took 18 min including the queue wait of 10).
+  Results in docs/legendre_plan.tex, "The campaign" (figures docs/figs/legendre_*.png, table docs/figs/legendre_table.csv).  In short: the Legendre
+  H removes the O(1/s) of the tree level; its single particle keeps a large O(1/s²) (E/e−1 = +0.03 at s = 28, c_s² = 1/2); at s_a = 541 the
+  positions' part is the same for Legendre and SPH_RENORM=1 (E/e−1 −0.004 at h/a = 2, ∝ 1/(n̄h²)) and includes R ≈ +0.0008 in motion; at small s
+  it grows and is not additive (R at s_a = 16 is the Legendre single particle's, +0.0032, and SPH_RENORM=1's is +0.0004 instead of one loop −0.006);
+  c_s² = 1/4, s_a = 16, v = 0.8: E/e−1 ≈ +0.01–0.03 against the quadrature's +0.14, not understood; χ: errors 0.02–0.05, a positions' part ≈ −0.04
+  (h/a = 2), −0.01 (h/a = 3) at s_a = 541.  Open for the owner: H two-valued at s < −5.65 (c_s² = 1/2).
+- **Found while at it — the Legendre H is two-valued at very negative labels** (c_s² = 1/2): for s < −5.65 (independent of V) the curve
+  s = const in (T_rel, rapidity) has two segments with det ∂(s,|m|)/∂(T,v) > 0 separated by a fold (det < 0, rapidity ≈ 1.2–1.8), and their
+  |m| ranges overlap: two physical states (a hot slow one and a cold fast one, γ ~ 15–65) with the same (s, |m|, V).  At c_s² = 1/4 it is
+  single-valued down to s = −10.  The warm-started Newton follows the sheet it is on; the bracket picks the slow one.  Deep in the tail
+  (|m| ≈ 85 at V = 5.6e-4 at the onset), so negligible for the campaign's averages, but H(s, m, V) is not a function there: for the owner.
+
+### `hastings_split` — 2026-11-23, branch `split` (docs/split_dynamics.tex)
+The dynamics (moment + Hastings, the defaults) at the tree level (SPH_RENORM=0, "tr") and with SPH_RENORM=split ("sp"), each against HMC
+of its own Hamiltonian; nersc/campaign_hastings_split.txt, s_a = 16, 54, v0 = 0, 0.8, 16 seeds, t = 100 / 300 HMC updates, conformal
+c_s^2 = 1/2.  **The old `hastings` runs had c_s^2 = 1/3** (cs2_val = 0.333 in every .toml of $SCRATCH/sph/hastings: 927e035, e282211,
+77cf74f, before the dimfix 8d50d04 made d = d_s), so they are not a reference; the tree lines are rerun here at c_s^2 = 1/2 (owner:
+"the old jobs did not have any renormalization ... we should know what was run").  256 tasks × 4 cores, 8 regular nodes, one wave;
+estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), at most 8 (-t 1:00).  **Submitted** job 61879905 (8 regular nodes) from the pinned worktree ~/stochastic-sph-splitH (8e44845); output $SCRATCH/sph/hastings_split.
+- Smoke (debug 61879181, s_a = 16, t = 3, HMC start of 50 updates; 20 split HMC updates): all four ran, no failures.  v0 = 0: stress /
+  residual acceptance 0.93 / 0.51, ΔH/H = +3.6e-3 (short run, short HMC start); v0 = 0.8: 0.985 / 0.76, ΔH/H = −1.6e-4.  HMC: acceptance
+  1.0, |ΔH/H| 5e-6 (v0 = 0), 4e-7 (0.8).
+
+- **Done** (61879905, 8 nodes, 14 min ≈ 1.9 node-hours): 256/256 complete, cs2_val = 0.5 everywhere, SPH_RENORM recorded false / split.
+  Split costs ≈ 1.6× the tree per run (rest 304 / 185 s, v0 = 0.8 488 / 289 s at s_a = 16).  **Dynamics against its own HMC: ≈ 1 for both
+  Hamiltonians** (M_L, M_T, E at kh 0.52–1.56, within 2–5%): the Hastings correction works with the split Hamiltonian.
+- **But the tree/split comparison is not at the same bath in motion.**  The HMC start (equilibrium_init!, beta_from_averages) fixes β^μ so
+  that the single-particle canonical averages equal the set-up totals.  The set-up states are identical (E_tot 3.69e6 / 3.68e6 at s_a = 16,
+  v0 = 0.8), but the bath is: tree T = 81.1, v = 0.794 (nominal 84.2, 0.8); split T = 158, v = 0.658.  Cause: particle_moments' quadrature
+  (41³ points, ±9σ boxes along the axes) is under-resolved at s_a = 16 in motion: with nq = 81 the averages move (tree ⟨e⟩/ē − 1 +0.18 →
+  +0.27, split +0.06 → −0.005), and d⟨e⟩/dθ⁰ differs from Cov(e, e) by up to 1.7 (split); the Newton iteration of beta_from_averages then
+  oscillates and diverges for split (T 84 → 79 → 99 → 71 → 515 → …), and lands slightly off for the tree.  At rest split's bath is right
+  (T = 139.5, nominal 140.4); the tree's is 120.5 (its O(1/s) error at fixed energy).  Pre-existing (not split code); every equilibrium.jl /
+  hmc_positions.jl run with low s_a and v0 ≠ 0 has a bath from this solver.  The second draw (SR_START=eq after the HMC start) uses it too.
+  So: split dynamics/HMC valid; split/tree at v0 = 0.8 not a comparison at the same (T, v); boost_analysis χ uses the nominal T, v.
+- boost_analysis.jl now reads c_s² from the runs (was hard-wired to 1/3 and refused c_s² = 1/2; sound damping (1 − c_s²)νk²).
+- **Final regressions at 9c01b6c** (61871467 switch off, all; 61871469 legendre): only the known differences — stability drivers IDENTICAL,
+  equilibrium drivers only hast_lq_*, unit output only paths / wall clock, and testrunrecord now passes (one more setting, the
+  renorm_split.jl line).  Split leaves the switch-off and SPH_RENORM=legendre paths bit-identical to 53d29e4.
+
+- **The start was not at the requested state** (owner: "we are thermalizing via HMC where temperature and velocity are precisely
+  defined").  HMC was given the β^μ solved from the set-up totals (`beta_from_averages`, a Newton solve on a 41³ grid of single-particle
+  states), not the requested one.  From the run records ([start] T0, v0, E_total, M_total): split s_a = 16, v0 = 0.8 ran at T_rel = 208,
+  v = 0.66 (70% more momentum than set up); split s_a = 54 at 293, 0.78; tree at 137–139, 0.784 (s_a = 16).  At rest all within ~1%
+  of the totals.  The analysis compared with hydro at the set-up T_rel and the hard-wired v = 0.8: the split "×2.4 equal time" and
+  "advection 0.66" were the wrong state, not split.  With the state from the conserved totals (boost_analysis, 3262b00): split v0 = 0.8
+  equal time / χ = 1.0–1.15, Ω/k = 0.659 against hydro 0.658, Γ/hydro 3.6–4.2 (tree 3.6–4.8).
+- **Fix (3262b00)**: `SR_BATH=nominal`, new default of equilibrium.jl and hmc_positions.jl: the HMC start and the draw at β⁰ = γ/T_rel0,
+  β = γv/T_rel0 x̂ (T_rel0 of the rest state at S0).  `SR_BATH=totals` = before.  src default (bath = nothing) unchanged.  Smoke (debug
+  61885718, s_a = 16): bath exactly 140.4, 0.800; the totals through the target EOS: split 139.4 / 142.6 (v0 0.8 / 0), tree 151.9 /
+  155.5 — the tree's O(1/s) excess energy at a given T, removed by split.  boost_analysis uses the recorded bath when it is nominal.
+- **Rerun** `hastings_bath` (nersc/campaign_hastings_bath.txt, same 256 tasks): job **61886625** (8 regular nodes, ≈ 2 node-hours) from
+  ~/stochastic-sph-splitB (3262b00); tests (unit, load, regress against 86fbc35) debug 61886627.
+
+- **hastings_bath done** (61886625, 8 nodes, 29 min ≈ 3.9 node-hours, 256/256).  Bath exactly as requested.  Dynamics / own HMC = 1
+  within 2–5% for tree and split.  Equal time / χ(EOS at the bath): split 0.92–1.07, tree 1.2–1.4 (s_a = 16).  Tests (debug 61886627):
+  unit, physics, load pass; equilibrium drivers differ (start changed, intended).  With SR_BATH=totals (debug 61888823) the drivers
+  reproduce 86fbc35 except hast_lq_* (as before): the change is the start only.  (Both debug jobs hit the 30 min limit after these checks.)
+- **The damping**: shear Γ/hydro 3–6 for tree and split at η/s = 0.2, c_s^2 = 1/2 (owner: "tree level was working pretty good").  The
+  present analysis on the old c_s^2 = 1/3 hastings runs gives 0.94–1.23: not the analysis.  T_rel at the same S0 went 28 → 140
+  (s = (4/3)T^3 → (3/2)T^2), so ν0 = (η/s)/T_rel is 5× smaller.  Campaign **damping_scan** (61889391, 2 nodes; tree at rest):
+  η/s = 1.0 gives 1.09–1.20 × hydro; no viscous step gives 7.3–7.9 (s_a = 16), 5.8–6.2 (54) × the η/s = 0.2 rate, with H conserved to
+  2e-6.  The decay is mode coupling to the fluctuations, not the viscous step: Γ = ν0 k^2 + (A/ν0) k^2, A fixed at η/s = 0.2 predicts 1.12
+  at η/s = 1.0 (measured 1.09–1.16).  In d = 2 conformal A/ν0^2 ∝ 1/(η/s)^2, independent of s_a.  H(t) flat in all sets
+  (examples/energy_time.jl).
+- **cs13** (nersc/campaign_cs13.txt, 09c10bf: SR_CS2=1/3, SR_ZETAS=(η/s)/3, i.e. ζ_eff = η/3 as before 8d50d04): the hastings tree runs with
+  the present code, job **61890225** (2 nodes) from ~/stochastic-sph-splitC13.
+
+- **cs13 done** (61890225, 64/64): tree at c_s^2 = 1/3, ζ_eff = η/3 with the present code: shear Γ/hydro 0.93–0.98 (s_a = 16 rest),
+  0.98–1.10 (54 rest), 1.01–1.26 (54, v = 0.8), as hastings (1.17–1.23, 0.94–1.10, 0.96–1.20).  The c_s^2 = 1/2 excess is the small ν0,
+  not the code.  Equal time differs (cs13 1.5, hastings 0.85 at s_a = 16): hastings started at the right energy with a bath 14% cooler
+  (T0 = 24.3 vs 28.1); (28.1/24.3)^4 = 1.79 vs measured 1.76; s_a = 54: 1.17 vs 1.18.  The tree's O(1/s) T–energy mismatch.
+
+- **Default switch and merge (2026-11-23).**  SPH_RENORM=split is the default (SPH_RENORM=0 tree, legendre the alternative);
+  unsupported schemes stop with a message.  Survey with split forced (61892182): 12 unit + 3 physics tests check tree-level machinery
+  (d = 3, entropy volume, Einstein measure, target maps, waves at s_a ~ 1e-3 below the label boundary) — they now set SPH_RENORM=0
+  themselves.  T_rel,0 of the nominal bath now from the EOS (trel_of_srel), not a set-up particle (Legendre's was T_rel ≈ 203; tree and
+  split 140.437 vs exact 140.381).  SR_S0 retired → SR_SREL0 (hard stop; driver variable SREL0, record key srel0; srel0_of(m) reads
+  either).  Full suite at the new defaults (61894594): unit, physics, load pass; regression (SPH_RENORM=0 SR_BATH=totals vs main 8e147db):
+  step.jl and stability identical, equilibrium drivers only hast_lq_* (as before), unit output only HMC wall time (testcheckpoint) and
+  the settings count / renorm files (testrunrecord).
+- **Legendre dynamics smoke** (debug 61893274, then 61894564 with the EOS bath): runs, bath exact (T0 = 84.23 at v = 0.8), cost ≈ split.
+  But at s_a = 16 at rest ΔH/H = +2.0e-2 in 5 time units, acceptances 0.83/0.45, 270k guard rejections (split: 3e-4, 0.97/0.58, 43k).
+  Campaign hastings_legendre held until this is understood.
+
+### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
+
+Worktree `~/stochastic-sph-split`; output `$SCRATCH/sph/eos_split/`.  This section is appended to only (the later merge with `legendre`
+is a concatenation).
+- **A. ∂Δs_dyn/∂u** (examples/renorm_quadrature_split.py, new switch: model `step5-du0`, `SR_MODELS`; login node, ~1 min per c_s²): with
+  and without the term T ∂Δs_dyn/∂u in E_dyn, s_a = 16, 54, 100, 200, 541, v = 0, 0.8.  Both residuals fall as 1/s²; the term changes the
+  coefficient by up to ~2 either way (without it smaller at c_s² = 1/2 everywhere and at c_s² = 1/4 for s_a ≥ 100; with it 8× smaller at
+  c_s² = 1/4, s_a = 54, v = 0.8, near a sign change of its residual).  Decision (agreed with the owner): drop it, E_dyn = T Δs_dyn —
+  first derivatives of the target state only.
+- **B–C.** `src/renorm_split.jl` (split_forward, split_inverse = Newton in u from the target's inversion, split_vote_entropy, check_split,
+  V̄ = SPH_RENORM_VBAR, default L²/N); `SPH_RENORM=split` chosen at load time in sph.jl (`SPLIT`, `HAS_DOMAIN = LEGENDRE || SPLIT` for the
+  rejections in hmc.jl), pointwise.jl, stochastic.jl.  Counters reported as legendre_* by eos_measure.jl, V̄ as split_vbar.
+- **SPH_RENORM=1 at any c_s²** (owner, 2026-11-23): its conformal-only check removed (stochastic.jl, renorm_vote_entropy); its α/2 =
+  (1 + d + 2d c_s²)/2 is split's b = 5/2 − 𝒩, so it is the label part alone.  Campaign `nersc/campaign_eos_ren1.txt` (144 tasks:
+  c_s² = 1/4 at rest and v = 0.8, c_s² = 1/2 at rest), beside `nersc/campaign_eos_split.txt` (192 tasks).
+- Note: an `srun` without `-n 1` on a debug node runs 32 copies (job 61861667, testsplit, wasted a few node-minutes).
+- **D. testsplit** (debug 61861873 → fixes → 61862296): all 33 checks pass.  Two fixes on the way (878ddaa): the inverse asked for 1e-14,
+  but H(u) through the target's forward solve (eos_newton, tol 1e-12) is resolved only to ~1e-13, so Newton stalled (now 1e-12 relative,
+  or a step below 1e-13 u); and heat-bath proposals in the tail drove Newton below the label boundary b without converging (now: if an
+  iterate falls below b and e ≤ H(b), no state; else bisect toward b).  HMC: |ΔH/H| ∝ δt² (ratio 16.1), 5/5 accepted at both c_s²;
+  10080 inverse solves, 2.9 iterations per solve, 0 failures; ~7% of the heat-bath proposals have e < |m| (no fluid state; the tree
+  level rejects them the same way).
+- Regressions submitted against 53d29e4 from the pinned worktree `~/stochastic-sph-splitR` (4482c91): switch off, MODE=all (job
+  61862061), and SPH_RENORM=legendre, MODE=regress (job 61862064); shared -c 64.  Smoke runs: debug 61862298
+  (`$SCRATCH/sph/eos_split/smoke/smoke.sh`).
+- **E. Smoke** (debug 61862298, 61863427; L = 0.45, h/a = 2, s_a = 54, 200 updates): c_s² = 1/4 split crashed at first in
+  equilibrium_init (V̄ unset: check_split ran only in the HMC update; now called when SimParams is built, 08962be).  2 inverse solves
+  in 2.6e5 did not converge (proposals with e < |m| whose raised-energy start fell below b; fixed, 0 since; probe on debug 61863010).
+  Results: c_s² = 1/2 at rest E/e−1 = −0.015, P/p−1 = −0.039 (σ = 18.0; = SPH_RENORM=1 of legendre_plan.tex); c_s² = 1/4 at rest split
+  −0.021, −0.047 against SPH_RENORM=1 −0.020, −0.004 (σ = 10.8): the difference −0.043 is the label-only pressure error 𝒩/σ = 0.046 that
+  E_dyn removes.  In motion and at s_a = 16 no failures, acceptance 0.985–1.0.  HMC, 100 updates on 2 threads, same node: tree 77 s,
+  Legendre 78 s, split 76 s.  Dynamics (stability.jl, S0 = 1e5, t = 20): ΔH/H = +4.8e-5 (split), +4.2e-5 (SPH_RENORM=1); the stochastic
+  step with split costs 3.4× SPH_RENORM=1's (175 s against 51 s; the votes' Newton solves; Legendre 2.6× the tree).
+- Regressions resubmitted at 08962be (the SimParams change touches sph.jl): 61863441 (switch off, all), 61863444 (legendre, regress).
+- **F. Campaigns** from the pinned worktree `~/stochastic-sph-splitC` (08962be), packed with node.sh, THREADS = 2: eos_split (192 tasks)
+  on 3 regular nodes and eos_ren1 (144) on 2, one wave each, ~20 min (h/a = 3 tasks ~15 min on dedicated nodes): estimate ≈ 1.7
+  node-hours, at most 5 (-t 1:00).
+- **Campaigns done (2026-11-23 08:53)**: eos_split job 61863928 (3 nodes, 19.8 min) and eos_ren1 job 61863936 (2 nodes, 20.3 min): 1.7
+  node-hours.  All 42 lines with 8 seeds; no NaN; 0 failed inverse solves in 4.2e8 (split); acceptance 0.97–1.0 everywhere (c_s² = 1/4,
+  s_a = 16 included).  Figures docs/figs/split_*.png, tables split_table.csv, split_compare_table.csv (examples/eos_compare.py); reading in
+  docs/step5_plan.tex, "Results".  In short: split = Legendre where comparable (P at s_a = 541, c_s² = 1/4: −0.0168 / −0.0166; R at
+  c_s² = 1/2: +0.0033 / +0.0032 at s_a = 16); SPH_RENORM=1 (label only) differs by its one-loop error (P: +𝒩/σ as predicted, 0.0046 and
+  0.044 at s_a = 541, 54); positions' correction dominates at s_a ≥ 54.  Split: no solver trouble, stochastic step 3.4× label-only.
+- **Faster inverse** (owner: make it faster and robust): a warm start from the particle's label, as Legendre's votes, did not help
+  (iterations 2.9 → 3.8, and 4.5 in the heat bath): the target's closed-form inversion is already as good a start, and the cost was the
+  forward solve (eos_newton) inside every Newton step in u.  Now Newton in the target's energy e_t, e_t + E_dyn(T, v, V) = e, each step
+  the closed-form inversion at (e_t, m, V): 2.9 steps to rounding (a stop relative to e alone was early near the light cone, e/(Tu) ~ γ²;
+  the step now runs until it stops shrinking), inverse to 8e-13; Newton in u stays as the fallback.  testsplit passes (debug 61868745,
+  then the rounding fix).  Stochastic step, stability.jl t = 20, 4 threads, three runs on one node (debug 61868745, 61869262): split
+  86 / 84 s, SPH_RENORM=1 71 / 51 s, Legendre 104 / 100 s (first inverse: 175 s): split 1.2–1.6× label-only, less than Legendre.
+  The campaign results stand (same answers to 1e-12).
+- **Regressions at 08962be against 53d29e4** (61863441 switch off, all; 61863444 SPH_RENORM=legendre, regress; both report FAIL, for
+  these reasons only): switch off — step.jl and stability drivers IDENTICAL, equilibrium drivers differ only in hast_lq_* (known,
+  thread order), unit output differs in testcheckpoint (wall clock), testlegendre (a path in a warning) and testrunrecord: SPH_RENORM_VBAR
+  was read only with split on, but the record must list every setting of the library — fixed in 9c01b6c (read at load).  Legendre —
+  stability drivers IDENTICAL, equilibrium drivers only hast_lq_*, step.jl refused in both (Einstein measure), unit-test output differs
+  only in file paths of the refusal messages.  Final checks at 9c01b6c (after the faster inverse touched stochastic.jl/hmc.jl/pointwise.jl):
+  jobs 61871467 (switch off, all), 61871469 (legendre, regress), worktree ~/stochastic-sph-splitR2.
+
+### `eos_renorm` — 2026-11-21, `nersc/campaign_eos_renorm.txt`, branch `statics`, docs/gravity.tex — TO DO (note for the NERSC session)
+
+The equation of state of the model with the tree-level and the renormalized Hamiltonian (`SPH_RENORM=1`, docs/partition_v2.tex
+"A Hamiltonian that does it"), in canonical HMC ensembles (`examples/eos_measure.jl`): the energy density and the mechanical
+pressure (kinetic + virial, `energy_pressure` in src/measure.jl) against the target e(T0), p(T0), the derivatives dE/dT, dP/dT and
+c_s^2 at fixed density from the canonical fluctuations, and S(k).  480 tasks, 2 threads, estimate ~2 node-hours (longest task
+~1-2 h; laptop 0.5 s per HMC update at N = 360).  Expected (docs/gravity.tex, "What to expect"): tree level E/e-1, P/p-1 = 2.5/sigma
+plus the correction of the positions (+0.14, +0.11 at sigma = 16.4, h/a = 2); renormalized: only the correction of the positions
+(-0.016, -0.040 there); c_s^2 = 1/2 at one loop for both.  Laptop smoke runs agree (commit message of a6992de).
+
+**What to do (the owner asked the NERSC session to do all of it):**
+1. `git pull` on `statics` (needs a6992de or later); precompile `julia --project=nersc`.
+2. Smoke test in `-q debug`: one task of `eos_ren_s16_ha4` and one of `eos_tree_s541_ha3_L0.9` (check the .txt and .h5 appear).
+3. Submit from `$SCRATCH/sph`:
+   `sbatch --array=1-480 -A m3722 --export=ALL,SR_REPO=$HOME/stochastic-sph $HOME/stochastic-sph/nersc/array.sh $HOME/stochastic-sph/nersc/campaign_eos_renorm.txt eos_renorm`
+   and record the job ID here.
+4. When done: `module load python; python3 examples/eos_measure.py $SCRATCH/sph/eos_renorm docs/figs` (writes docs/figs/eos_EP.png,
+   eos_trace.png, eos_derivs.png, eos_Sk.png, eos_table.csv).
+5. Add a section "Results" to docs/gravity.tex (before "The equilibrium partition function as a generating functional"), with the
+   four figures and a short table from eos_table.csv: E/e-1, P/p-1, the trace, dE/dT, dP/dT and c_s^2 for both Hamiltonians against
+   the predictions of "What to expect"; say plainly where they agree and where not (the h/a dependence separates the positions'
+   correction, which should scale as 1/(n h^2); the renormalized S(k) in the L = 0.9 boxes should rise at small k).
+6. Commit the figures, the csv, gravity.tex and this log entry on `statics` (no .h5 or .jls), and push.
+
+**Done so far (NERSC session, 2026-11-21):**
+- Pulled `statics` at 1914653; `julia --project=nersc` precompiled (julia/1.12.1, depot /global/common/software/m3722).
+- Smoke test, debug job **61747894** (`$SCRATCH/sph/eos_smoke`, the two runs cut to 24 updates, since a full L = 0.9, h/a = 3 task does
+  not fit in 30 min): both COMPLETED, .txt and .h5 written, acceptance 0.96.  eos_ren_s16_ha4 (N = 1512, σ = 5.16 — h/a = 4 at
+  s_a = 16 is not σ = 3.9): 11 s per update, E/e−1 = +0.039, P/p−1 = +0.030, c_s² = 0.49; eos_tree_s541_ha3_L0.9: 17 s per update,
+  E/e−1 = +0.012, P/p−1 = +0.009, c_s² = 0.50 (24 updates, 8 kept after the burn: indicative only).  Output files are `<tag>_seed0..15`
+  (SR_SEED0 = seed − 1).
+- Campaign submitted from `$SCRATCH/sph`: job **61748587** (480 tasks, shared QOS, -c 2, -t 8 h).  Output `$SCRATCH/sph/eos_renorm/`.
+- 13:20: pending tasks of 61748587 cancelled (tasks 25–122 left running) to pack the rest on 2 regular nodes (job 61751219, `node.sh`
+  with the new `TASKS` list); it sat in the queue (Resources, no start estimate) and was cancelled unstarted.  Back to shared arrays,
+  run checkout `~/stochastic-sph-eos` (worktree, detached at e3f4307, same code): the S(k) boxes L = 0.9 first, tasks 289–352, job
+  **61751343**; the rest, tasks 123–288 and 353–480, job **61751345**.  Lesson: for 2-thread tasks of ≤ 2 h the shared QOS starts ~70
+  at once within minutes; dedicated nodes only add queue wait.  Task times on 2 threads: h/a = 2 ~10 min, h/a = 3 ~38 min,
+  h/a = 4 ~75 min, L = 0.9 h/a = 3 ~2 h (estimate).
+- **Done 17:59**: all 480 tasks COMPLETED (61748587, 61751343, 61751345; the L = 0.9 h/a = 3 boxes took 4.4 h, h/a = 2 1 h).  Total
+  ≈ 8 node-hours (shared, 2 cores).  docs/gravity.tex "Results" extended: full table (σ ≈ 17, 180 × h/a = 2, 3, 4, both Hamiltonians),
+  finite differences, S(k) at h/a = 2, 3.  Outcome: renormalized E/e−1, P/p−1 = the correction of the positions alone, as predicted to
+  ≤ 10%, ∝ 1/(n h²); tree = 2.5/σ + the same; the trace and the departure of c_s² from 1/2 are the positions' (same for both
+  Hamiltonians, collapse with n h²; trace 9–19% above one loop at σ ≈ 17); renormalized S(k) rises at small k on Ornstein–Zernike
+  with B = δB (no free parameter).  Open: renormalized at σ = 5.16, E/e−1 and P/p−1 → +0.048 at n h² → ∞ (a single-particle remainder
+  beyond one loop; check by quadrature).
+- Extension `eos_renorm_big` (`nersc/campaign_eos_renorm_big.txt`): S(k) in the box L = 1.8 = 36h (kh_min = 0.175), h/a = 2, ren and tree
+  at s_a = 541, ren at s_a = 54, 16 seeds × 400 updates, SR_KHMAX = 1.6: job **61762047** (48 tasks, shared, -t 16 h, est. ~9 h per task,
+  ~7 node-hours of the owner's extra 24).  Output into `$SCRATCH/sph/eos_renorm/*_L1.8`.  Question: does the renormalized S(k) at σ = 180
+  turn over towards S(0) = 1/δB ≈ 1 (predicted 0.40 at kh_min, tree 0.20)?
+- **eos_renorm_big done 2026-11-22 02:16**: 48/48 COMPLETED, 6.0–8.2 h per task.  Renormalized s_a = 54 on Ornstein–Zernike to kh = 0.175
+  (B fitted 0.42 ± 0.03 vs δB = 0.38); tree s_a = 541 on the curve (3.8 ± 0.3 vs 3.45); renormalized s_a = 541 rises above tree but less than
+  predicted, 0.30 ± 0.03 vs 0.40 at kh = 0.175, B = 1.65 ± 0.23 vs δB = 0.95 (one loop): δB from the positions is larger than one loop at
+  σ = 180, h/a = 2; S(0) ≈ 0.6.  gravity.tex Results updated.
+- (laptop session, 2026-11-21) docs/gravity.tex now has the section "Results" with the four figures and a table for the first run
+  (tree, s_a = 16, h/a = 2): agreement to 0.2% with the exact single particle plus the positions.  When more runs finish, rerun
+  eos_measure.py and **extend that section** (table rows, the bullet list), do not start a new one.
+
+Known: the regression's equilibrium-driver comparison differs only in hast_lq_* (thread-order sums; also between two runs of the
+same commit) — not a failure of SPH_RENORM.
+
+
 ### `grid` — the grid step (gridstep.tex), 2026-11-12, branch `gridcode`
 
 **Option (2026-11-13):** the grid step is `SimParams.ideal = :grid`, set by `SPH_IDEAL=grid` (default

@@ -1,0 +1,437 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\newcommand{\klab}{\mathcal B}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+
+\begin{document}
+\sloppy
+
+\title{The split renormalization (Step 5) for any constant speed of sound:\\ development plan}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+A plan for implementing the renormalized particle Hamiltonian of Step 5 (\nolinkurl{partition.tex}, Appendix ``The label $s_{\rm eff}$''): the part of the
+one-loop counterterm that depends on the label alone stays in the measure, as in \texttt{SPH\_RENORM=1}, and the rest, the non-conformal and the sound terms, goes
+into the Hamiltonian.  It reproduces the target to $O(T/s_a)$ per particle for any constant $c_s^2$, and in the single-particle quadrature its residuals are $5$--$60$
+times smaller than those of the Legendre Hamiltonian (\nolinkurl{legendre_plan.tex}).  Written on 2026-11-23, before any change to \texttt{src/}.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The goal}
+\label{sec:goal}
+
+At one loop the canonical ensemble of the tree-level Hamiltonian has the target thermodynamics plus terms of order $T$ per particle: the label gas and each
+particle's fluctuations, $\delta\ln Z_1$ per particle.  A renormalized model removes them.  Two such models exist:
+\begin{itemize}
+\item \texttt{SPH\_RENORM=1} removes the part that depends on the label alone, by the measure.  It is exact for the conformal fluid at rest, but it leaves the
+  sound term in motion (the violation $R$ of the density-frame relation) and, for $c_s^2\neq1/2$, a pressure error $\mathcal N/\sigma$.
+\item \texttt{SPH\_RENORM=legendre} puts the whole counterterm into the Hamiltonian by a Legendre transform.  It removes everything at one loop, but its
+  residual is ten times larger, every map needs a two-dimensional Newton solve, and $H$ is two-valued at very negative labels.
+\end{itemize}
+Step 5 keeps the measure of \texttt{SPH\_RENORM=1} for the label part and adds the rest to the Hamiltonian as an energy.  The aim of this plan: implement it as
+\texttt{SPH\_RENORM=split}, test it, time it, and repeat the measurements of the campaign \texttt{eos\_legendre} with it.
+
+%=============================================================================
+\section{For the NERSC session: working beside the running campaign}
+\label{sec:nersc}
+
+The campaign \texttt{eos\_legendre} finished on 2026-11-23 (53d29e4, the branch point of \texttt{split}; \nolinkurl{nersc/LOG.md}).  Its worktrees
+(\texttt{\textasciitilde/stochastic-sph-legV} and others, each at a fixed commit) and its output stay as they are, for reruns and the comparison.  The rules:
+\begin{enumerate}
+\item \emph{Branch.}  \texttt{split} is made from \texttt{legendre} (this note is its first commit).  Work and push only on \texttt{split}; do not commit to
+  \texttt{legendre}.  When \texttt{legendre} gets a fix to the shared code (\nolinkurl{src/renorm.jl}, \nolinkurl{src/pointwise.jl}, \nolinkurl{src/stochastic.jl}),
+  merge \texttt{legendre} into \texttt{split}, never the reverse.
+\item \emph{Checkout.}  A new worktree, \texttt{git worktree add \textasciitilde/stochastic-sph-split split}; precompile there with \texttt{julia --project=nersc}.
+  Do not change the branch or the files of any existing worktree or of \texttt{\textasciitilde/stochastic-sph}.
+\item \emph{Files.}  New files only, or files the \texttt{legendre} session does not edit: \nolinkurl{src/renorm_split.jl}, \nolinkurl{test/testsplit.jl},
+  \nolinkurl{nersc/campaign_eos_split.txt}, \nolinkurl{examples/eos_split.py} (a copy of \nolinkurl{examples/eos_legendre.py}), figures \nolinkurl{docs/figs/split_*},
+  and the section ``Results'' of this note.  Never edit \nolinkurl{legendre_plan.tex} or \nolinkurl{docs/figs/legendre_*}.  In \nolinkurl{nersc/LOG.md}, add a
+  separate section ``\texttt{eos\_split}'' and append only to it, so that the later merge is a concatenation.
+\item \emph{Output.}  \texttt{\$SCRATCH/sph/eos\_split/}, its own campaign directory.
+\item \emph{Fairness of the comparison.}  The \texttt{legendre} code path must not change: with \texttt{SPH\_RENORM=legendre}, and with the switch off, the regression
+  on \texttt{split} is bit-identical to \texttt{legendre} at the branch point.
+\item \emph{Queue and budget.}  Implementation and tests in \texttt{-q debug} at any time.  Submit the campaign (about $1.1$ node-hours, \Sect{sec:work}F) when no
+  \texttt{eos\_legendre} job is left in the queue (\texttt{squeue --me}); record the estimate in the log first.
+\item \emph{The side-by-side.}  When both are done: \nolinkurl{examples/eos_compare.py}, reading \nolinkurl{docs/figs/legendre_table.csv} and
+  \nolinkurl{docs/figs/split_table.csv}, the same panels with the tree level, \texttt{SPH\_RENORM=1}, Legendre and split.
+\end{enumerate}
+
+%=============================================================================
+\section{The model}
+\label{sec:model}
+
+\paragraph{The split of the counterterm.}  The label $u$ of a particle is the argument of the target energy (\texttt{pa.s}, as in \texttt{SPH\_RENORM=1}).  With
+the code's \texttt{ConstantCs2EOS}, $p=A\,T_{\rm rel}^{\,n}$, $n=1+1/c_s^2$, and with $(T,v)$ the target state of $(u,\bm m,V)$, the counterterm of
+\nolinkurl{legendre_plan.tex} is
+\st
+\delta\ln Z_1=\Delta s^{\rm lab}(u)+\Delta s^{\rm dyn}(T,v,V),\qquad \mathcal N=1-2c_s^2 ,
+\stp
+\st
+\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln u+{\rm const},\qquad
+\Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big) .
+\label{split}
+\stp
+The first is a function of the label alone, so a factor of it in the measure is conserved by the ideal step (the labels are its Casimirs).  The second depends on
+$\bm m$ and $V$, so it goes into $H$.  $\bar V$ is a constant reference volume; its logarithm moves a constant between the two (\Sect{sec:later}).
+
+\paragraph{Measure and Hamiltonian.}  The model is
+\begin{keyeq}
+\st
+\begin{gathered}
+d\mu=\prod_a e^{\,u_a-\Delta s^{\rm lab}(u_a)}J^{\rm lab}(u_a)\,du_a\,d\bm x_a\,d\bm m_a,\qquad J^{\rm lab}=1-\frac{\tfrac52-\mathcal N}{u},\\
+H_a=e_{\rm t}(u_a,\bm m_a,V_a)+E^{\rm dyn}_a,\\
+E^{\rm dyn}_a=T_a\Big(\Delta s^{\rm dyn}_a+\frac{\partial\Delta s^{\rm dyn}_a}{\partial u}\Big|_{\bm m,V}\Big) .
+\end{gathered}
+\label{model}
+\stp
+\end{keyeq}
+The derivative in $E^{\rm dyn}$ is $-\ln J^{\rm dyn}$ to lowest order: moving the weight $e^{-\Delta s^{\rm dyn}}$ into $H$ also moves the Jacobian of its change of
+variables.  The measure vanishes below the label boundary
+\st
+u_b=\tfrac52-\mathcal N\qquad(2.5\ \text{at}\ c_s^2=\tfrac12,\ 2\ \text{at}\ c_s^2=\tfrac14) .
+\stp
+At $c_s^2=1/2$ the measure is that of \texttt{SPH\_RENORM=1} ($\alpha/2=5/2$) and $E^{\rm dyn}$ is the sound term alone.
+
+\paragraph{The target state.}  In $(T,v)$ the target is explicit:
+\st
+u=nAV\gamma^nT^{n-1},\qquad |\bm m|=nAV\gamma^{n+2}T^nv,\qquad e_{\rm t}=AV(\gamma T)^n\big(n\gamma^2-1\big),\qquad P_{\rm t}=A(\gamma T)^n ,
+\stp
+and the Jacobian entries, with $u_T\equiv\partial u/\partial T$ and so on, and $\det=u_Tm_v-u_v^2$ (the Maxwell relation $m_T=u_v$):
+\st
+\begin{gathered}
+u_T=n(n-1)AV\gamma^nT^{n-2},\qquad u_v=m_T=n^2AV\gamma^{n+2}T^{n-1}v,\\
+m_v=nAV\gamma^{n+2}T^n\big(1+(n+2)\gamma^2v^2\big) .
+\end{gathered}
+\stp
+A function $g(T,v,V)$ is differentiated at fixed particle variables by
+\st
+\frac{\partial g}{\partial u}\Big|_{\bm m,V}=\frac{g_Tm_v-g_vu_v}{\det},\qquad
+\frac{\partial g}{\partial|\bm m|}\Big|_{u,V}=\frac{g_vu_T-g_Tu_v}{\det},\qquad
+\frac{\partial g}{\partial V}\Big|_{u,\bm m}=g_V-\frac{\partial g}{\partial u}\,\frac uV-\frac{\partial g}{\partial|\bm m|}\,\frac{|\bm m|}V ,
+\label{chain}
+\stp
+the last since $u$ and $|\bm m|$ are proportional to $V$ at fixed $(T,v)$.
+
+\paragraph{What the forward map fills.}  The fields of the $n$-scheme (as in \nolinkurl{legendre_plan.tex}, ``What the code needs from a solve''):
+\st
+\begin{gathered}
+\texttt{pa.T}\leftarrow\frac{\partial H}{\partial u}=T+\frac{\partial E^{\rm dyn}}{\partial u},\qquad
+\dot{\bm x}=\frac{\partial H}{\partial\bm m}=\bm v+\frac{\partial E^{\rm dyn}}{\partial|\bm m|}\,\hat{\bm m},\\
+\texttt{pa.p}\leftarrow P_{\rm t}-\frac{\partial E^{\rm dyn}}{\partial V},\qquad H=e_{\rm t}+E^{\rm dyn} .
+\end{gathered}
+\label{fields}
+\stp
+$E^{\rm dyn}$ already contains one derivative of $\Delta s^{\rm dyn}$, so these need second derivatives of $\Delta s^{\rm dyn}$ and of the target state: closed form in
+$(T,v)$, written once by hand (there is no automatic differentiation in the project) and checked by finite differences.
+
+%=============================================================================
+\section{The single-particle check}
+\label{sec:check}
+
+\nolinkurl{examples/renorm_quadrature_split.py}, the exact quadrature of $Z_1(T,\bm v,V)$ with the label gas (\nolinkurl{partition.tex}, ``Step 5 for any $c_s^2$'',
+for the full table).  Relative deviation of the energy from the target per particle:
+\begin{center}
+\small
+\begin{tabular}{ccc cc}
+\toprule
+$c_s^2$ & $s_a$ & $v$ & Step 5 & Legendre \\
+\midrule
+$1/2$ & $16$ & $0$ & $+4.1\times10^{-2}$ & $+8.5\times10^{-2}$ \\
+$1/2$ & $54$ & $0.8$ & $+1.3\times10^{-3}$ & $+7.4\times10^{-3}$ \\
+$1/2$ & $541$ & $0.8$ & $+9.7\times10^{-6}$ & $+6.7\times10^{-5}$ \\
+$1/4$ & $16$ & $0.8$ & $+1.1\times10^{-1}$ & $+2.1\times10^{-1}$ \\
+$1/4$ & $54$ & $0.8$ & $+7.6\times10^{-5}$ & $+1.6\times10^{-2}$ \\
+$1/4$ & $541$ & $0.8$ & $-8.6\times10^{-6}$ & $+1.4\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The momentum and the pressure behave the same way, and $R$ is of the same size for the two.  Without $E^{\rm dyn}$ the pressure at $c_s^2=1/4$ is off by the predicted
+$\mathcal N/\sigma$.  The velocity $|\partial H/\partial\bm m|$ stays below $1$ on the whole grid (largest $0.997$).  At $s_a=16$, $3$--$5\%$ of the weight lies within
+$3$ of the label boundary.
+
+%=============================================================================
+\section{The work, in order}
+\label{sec:work}
+
+Branch \texttt{split} (\Sect{sec:nersc}).  It builds on the restructuring done on \texttt{legendre}: every particle-level map goes through
+\texttt{particle\_forward} and \texttt{particle\_inverse} (\nolinkurl{src/pointwise.jl}), the votes through \texttt{vote\_entropy}
+(\nolinkurl{src/stochastic.jl}), with the method chosen at load time by \texttt{SPH\_RENORM}.  Step 5 is a third method behind the same functions.
+
+\subsection{A. The decision before the code}
+
+The term $\partial\Delta s^{\rm dyn}/\partial u$ in $E^{\rm dyn}$ is of relative order $1/u$ and costs one more order of derivatives in \Eq{fields}.  Run the quadrature
+with and without it (a switch in the script), at $c_s^2=1/2$, $1/4$ and $s_a=16$, $54$, $541$.  Keep it only if it changes the residual at $s_a\ge54$.
+
+\subsection{B. The maps: \texorpdfstring{\nolinkurl{src/renorm_split.jl}}{src/renorm\_split.jl}}
+
+\begin{algobox}{Forward map: $(u,\bm m,V)\to$ the particle's state}
+\begin{algorithmic}[1]
+\State Solve the target as now (\texttt{target\_forward}, closed form for \texttt{ConstantCs2EOS}): $T$, $\bm v$, $\gamma$, $e_{\rm t}$, $P_{\rm t}$.
+\State From $(T,v)$ evaluate $\Delta s^{\rm dyn}$, its derivatives, and the Jacobian entries.
+\State Form $E^{\rm dyn}$ and its derivatives in $u$, $|\bm m|$, $V$ by \Eq{chain}.
+\State Fill the fields of \Eq{fields}.
+\State If $\partial H/\partial u\le0$ or $|\partial H/\partial\bm m|\ge1$, return a state with no Hamiltonian (as \texttt{SPH\_RENORM=legendre} does; counted).
+\end{algorithmic}
+\end{algobox}
+
+\begin{algobox}{Inverse map for the votes: $(e,\bm m,V)\to$ the label $u$ and the weight}
+\begin{algorithmic}[1]
+\State Start from the target inverse at the shifted energy: $u_0=U_{\rm t}\big(e-E^{\rm dyn}_a,\bm m,V\big)$, with $E^{\rm dyn}_a$ of the particle's current state.
+\State Newton in $u$ alone: $u\leftarrow u-\big(H(u,\bm m,V)-e\big)\big/(\partial H/\partial u)$, each $H$ by the forward map; stop at a relative residual of
+  $10^{-14}$.  Each step gains a factor of order $E^{\rm dyn}/(Tu)$, so two or three steps.
+\State If $u\le u_b$, or the forward map has no state: the weight is $-\infty$.
+\State Otherwise the weight with the Liouville measure:
+  \st
+  u-\Delta s^{\rm lab}(u)+\ln J^{\rm lab}(u)-\ln\frac{\partial H}{\partial u} .
+  \stp
+\end{algorithmic}
+\end{algobox}
+
+\subsection{C. The switch}
+
+\texttt{SPH\_RENORM=split}, read as a Symbol as \texttt{legendre} is (\nolinkurl{src/sph.jl}), choosing at load time \texttt{particle\_forward},
+\texttt{particle\_inverse} and \texttt{vote\_entropy}, so that without it the code is exactly that of before.  \texttt{SPH\_RENORM\_VBAR} sets $\bar V$; the
+default is the mean volume of the initial state, recorded in the run record.  Requirements as for \texttt{legendre} (\texttt{check\_legendre}): the energy
+Hamiltonian, the $n$-scheme, $d=2$, the Liouville measure, not the grid step.  Hybrid Monte Carlo rejects a trajectory that leaves the domain of $H$, as now.
+
+\subsection{D. Tests: \texorpdfstring{\nolinkurl{test/testsplit.jl}}{test/testsplit.jl}}
+
+\begin{enumerate}
+\item The split \Eq{split} adds up to the counterterm of \nolinkurl{legendre_plan.tex} to $10^{-14}$.
+\item The identities of \Eq{fields} by central differences of $H$ to $10^{-9}$; the inverse of the forward map is the identity to $10^{-13}$.
+\item Reference values ($H$, $\partial H/\partial u$, $\dot{\bm x}$, $P$) for a few states at both $c_s^2$, from the quadrature script.
+\item With $\mathcal N=0$ and the sound term off, the votes equal those of \texttt{SPH\_RENORM=1} to $10^{-12}$.
+\item Hybrid Monte Carlo: an energy error $\propto\delta t^2$, and acceptance.
+\item \texttt{test/run.sh all} with the switch off: every test passes and the regression is bit-identical (the known \texttt{hast\_lq\_*} exception).
+\end{enumerate}
+
+\subsection{E. Speed and smoke runs}
+
+Time per update of \nolinkurl{examples/eos_measure.jl} at $h/a=2$ ($N=360$) for the tree level, \texttt{legendre} and \texttt{split}; the forward map should cost little
+more than the tree level's.  Smoke runs at rest, $L=0.45$, $h/a=2$, $s_a=54$, two seeds, both $c_s^2$, against the numbers in \nolinkurl{legendre_plan.tex}, ``Smoke
+runs''; and one dynamical run (\nolinkurl{examples/stability.jl}, $t=20$) for the drift of $H$.
+
+\subsection{F. The campaign \texttt{eos\_split}}
+
+The lines of \texttt{eos\_legendre} with \texttt{SPH\_RENORM=split}: $c_s^2\in\{1/2,1/4\}$, $s_a\in\{16,54,541\}$, $h/a\in\{2,3\}$, $v\in\{0,0.8\}$, 8 seeds of 300
+updates, $192$ tasks; the tree-level and \texttt{SPH\_RENORM=1} lines are reused.  Cost, from the tree level's times in \nolinkurl{figs/legendre_table.csv} (2 threads:
+about $0.12$ h at $h/a=2$, $0.45$ h at $h/a=3$) and a factor $1.3$:
+\st
+96\times(0.12+0.45)\,{\rm h}\times1.3\times\frac{2}{128}\approx1.1\ \text{node-hours},
+\stp
+shared QOS, after the rerun of \texttt{eos\_legendre} is done.  The analysis is that of \nolinkurl{examples/eos_legendre.py}, with a third Hamiltonian.
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{A. The term \texorpdfstring{$\partial\Delta s^{\rm dyn}/\partial u$}{dDs/du}}
+
+\nolinkurl{examples/renorm_quadrature_split.py} has the model \texttt{step5-du0}, $E^{\rm dyn}=T\Delta s^{\rm dyn}$ without the derivative (chosen with
+\texttt{SR\_MODELS}).  Relative deviation of the energy from the target per particle, with the term / without it:
+\begin{center}
+\small
+\begin{tabular}{cc ccc}
+\toprule
+$c_s^2$ & $v$ & $s_a=54$ & $100$ & $200$ \\
+\midrule
+$1/2$ & $0$   & $3.1\times10^{-4}$ / $2.4\times10^{-4}$ & $5.5\times10^{-5}$ / $4.6\times10^{-5}$ & $9.8\times10^{-6}$ / $8.6\times10^{-6}$ \\
+$1/2$ & $0.8$ & $1.3\times10^{-3}$ / $9.3\times10^{-4}$ & $2.9\times10^{-4}$ / $1.9\times10^{-4}$ & $7.1\times10^{-5}$ / $4.5\times10^{-5}$ \\
+$1/4$ & $0$   & $4.7\times10^{-4}$ / $5.4\times10^{-4}$ & $1.0\times10^{-4}$ / $1.1\times10^{-4}$ & $2.4\times10^{-5}$ / $2.5\times10^{-5}$ \\
+$1/4$ & $0.8$ & $7.6\times10^{-5}$ / $6.4\times10^{-4}$ & $-2.4\times10^{-4}$ / $-8.5\times10^{-5}$ & $-6.5\times10^{-5}$ / $-2.8\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Both fall as $1/s_a^2$; the term changes the coefficient by up to a factor of about two, either way.  Without it the residual is smaller at $c_s^2=1/2$
+everywhere and at $c_s^2=1/4$ for $s_a\ge100$; with it, eight times smaller at $c_s^2=1/4$, $s_a=54$, $v=0.8$, where its residual changes sign between
+$s_a=54$ and $100$.  The momentum and the pressure behave alike, and at $s_a=541$ both are below $2\times10^{-5}$.  \emph{Decision} (approved by the owner): the
+term, $-\ln J^{\rm dyn}$ beyond the leading order, is of relative order $1/u$ like the residual itself, so dropping it is consistent at
+leading order, and it gives no improvement; it is dropped,
+\st
+E^{\rm dyn}_a=T_a\,\Delta s^{\rm dyn}_a ,
+\stp
+so the forward map needs only first derivatives of the target state.  The reference curves of the campaign (\nolinkurl{docs/figs/split_quadrature.csv})
+are those of this model.
+
+\subsection{B--D. The code and the tests}
+
+\nolinkurl{src/renorm_split.jl}: \texttt{split\_forward} (the target's forward solve, then $E^{\rm dyn}$ and its derivatives by \Eq{chain}, the fields
+\Eq{fields}; no state if $\partial H/\partial u\le0$ or $|\dot{\bm x}|\ge1$), \texttt{split\_inverse} (Newton in the target's energy $e_{\rm t}$ for $e_{\rm t}+E^{\rm dyn}=e$, each step the
+target's closed-form inversion at $(e_{\rm t},\bm m,V)$ and $E^{\rm dyn}$ at its state, $de/de_{\rm t}=1+(\partial E^{\rm dyn}/\partial u)/T$, to rounding in 2.9 steps;
+where the target has no state at an iterate, Newton in $u$ through the forward map, with no state when $e\le H(u_b,\bm m,V)$), and \texttt{split\_vote\_entropy}.  \texttt{SPH\_RENORM=split} chooses them at load time (\nolinkurl{src/sph.jl}, \nolinkurl{src/pointwise.jl},
+\nolinkurl{src/stochastic.jl}); hybrid Monte Carlo rejects a trajectory that leaves the domain of $H$, as with Legendre (\nolinkurl{src/hmc.jl}).  $\bar V=L^2/N$
+(\texttt{SPH\_RENORM\_VBAR}), set when the parameters are built.  \texttt{SPH\_RENORM=1} now runs at any $c_s^2$: its $\alpha/2=(1+d+2dc_s^2)/2$ is the $b=\tfrac52-\mathcal N$
+of \Eq{model}, so it is the label part alone, and the campaign runs it at $c_s^2=1/4$ beside split.
+
+\nolinkurl{test/testsplit.jl}, all 33 checks pass: the split adds up to the counterterm (to $4\times10^{-16}$); $H$ against the quadrature's model (to
+$7\times10^{-13}$); $\partial H/\partial u$, $\dot{\bm x}$, $P$ against central differences of $H$ (to $6\times10^{-10}$); the inverse of the forward map (to
+$2\times10^{-12}$); at $c_s^2=1/2$ without the sound term, the votes of \texttt{SPH\_RENORM=1} (to $3\times10^{-15}$); hybrid Monte Carlo at both $c_s^2$,
+$|\Delta H/H|\propto\delta t^2$ (ratio 16.1), 5 of 5 updates accepted, no failed solve in $10^4$ (2.9 Newton iterations per solve).
+
+\subsection{E. Speed and smoke runs}
+
+On one node, $h/a=2$, $s_a=54$, 100 updates of hybrid Monte Carlo on 2 threads: tree level 77\,s, Legendre 78\,s, split 76\,s.  The stochastic step
+(\nolinkurl{examples/stability.jl}, $S_0=10^5$, $t=20$, 4 threads, the three on one node, debug job 61869262): split 84\,s, \texttt{SPH\_RENORM=1} 51\,s, Legendre
+100\,s; in a second run 86, 71 and 104\,s.  Split costs 1.2--1.6 times the label part alone and less than Legendre.  (The first inverse, Newton in $u$ with a
+forward solve, \texttt{eos\_newton}, at every step, took 175\,s; the warm start of the votes from the particle's label, as Legendre's, did not help: the
+target's closed-form inversion is already as good a start.)  $H$ drifts by $\Delta H/H=+3.6\times10^{-5}$ (split), $+4.2\times10^{-5}$ (\texttt{SPH\_RENORM=1}),
+$+1.9\times10^{-5}$ (Legendre).  At rest, $s_a=54$: at $c_s^2=1/2$, $E/e-1=-0.015$, $P/p-1=-0.039$, the numbers of
+\texttt{SPH\_RENORM=1}; at $c_s^2=1/4$, split $-0.021$, $-0.047$ against \texttt{SPH\_RENORM=1} $-0.020$, $-0.004$ ($\sigma=10.8$): the difference in the
+pressure, $-0.043$, is the error $\mathcal N/\sigma=0.046$ of the label part alone, which $E^{\rm dyn}$ removes.
+
+\subsection{F. The campaign}
+\label{sec:campaign_results}
+
+Done: split (192 tasks, job 61863928, 3 nodes, 20 minutes) and \texttt{SPH\_RENORM=1} at $c_s^2=1/4$ and at rest at $c_s^2=1/2$ (144 tasks, job
+61863936, 2 nodes, 20 minutes), packed on regular nodes with \nolinkurl{nersc/node.sh}; 1.7 node-hours.  The tree level and \texttt{SPH\_RENORM=1} at
+$c_s^2=1/2$, $v=0.8$ are the runs of \texttt{eos\_legendre}.  Every one of the 42 lines has its 8 seeds; no configuration with a NaN, no failed solve in
+$4.2\times10^8$ inverse solves of split, and the acceptance is $0.97$--$1.0$ everywhere, at $c_s^2=1/4$, $s_a=16$ too (where the Legendre Hamiltonian lost
+seeds and its acceptance fell to $0.78$).  Tables: \nolinkurl{docs/figs/split_table.csv}, and the four Hamiltonians side by side in
+\nolinkurl{docs/figs/split_compare_table.csv} (\nolinkurl{examples/eos_compare.py}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_EP.png}
+\caption{At rest: $E/e-1$, $P/p-1$ and $\chi_{MM}/(Tw)-1$ against $1/s$ ($s$ the measured entropy per particle), $c_s^2=1/2$ (top) and $1/4$ (bottom),
+$h/a=2$ (filled) and $3$ (open).  Blue: tree level; green: \texttt{SPH\_RENORM=1}, the label part alone; orange: split.  Dashed: one loop for the tree level
+and \texttt{SPH\_RENORM=1} (at $c_s^2=1/4$ its pressure error $\mathcal N/\sigma$), the exact single particle for split; without the positions.}
+\label{fig:split_EP}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_moving.png}
+\caption{At $v=0.8$: the lab-frame $E/e-1$, $T^{yy}/p-1$, $M/(w\gamma^2v)-1$ and $R=M/(v(E+T^{yy}))-1$ against $1/s$.  Colours as in \Fig{fig:split_EP};
+dashed in the last column: the one-loop $R$ of the tree level and \texttt{SPH\_RENORM=1}, and the exact single particle of split.}
+\label{fig:split_moving}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_chi.png}
+\caption{The susceptibility matrix from the canonical covariances relative to the target, at $v=0.8$ and (last column) $\partial E/\partial T$ at rest.  Colours
+as in \Fig{fig:split_EP}.}
+\label{fig:split_chi}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_compare_rest.png}
+\caption{The three renormalized models side by side at rest (\nolinkurl{examples/eos_compare.py}): green \texttt{SPH\_RENORM=1} (the label part alone), red
+Legendre, orange split; $h/a=2$ filled, $3$ open.  The tree level, off this scale at small $s$, is in \Fig{fig:split_EP}.}
+\label{fig:compare_rest}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_compare_moving.png}
+\caption{The same at $v=0.8$; the last column, $R$, also for the tree level (blue).}
+\label{fig:compare_moving}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/split_compare_chi.png}
+\caption{The susceptibility matrix at $v=0.8$ relative to the target, $(\partial E/\partial T)_v$, $(\partial M/\partial v)_T$, $(\partial E/\partial v)_T$,
+$(\partial M/\partial T)_v$, for \texttt{SPH\_RENORM=1}, Legendre and split; colours as in \Fig{fig:compare_rest}.  The errors are $0.02$--$0.05$; the three mostly agree within
+them, the largest difference being at $c_s^2=1/4$, $s_a=54$, $h/a=2$, where $(\partial M/\partial v)_T$ is $+0.08(2)$ (Legendre, the outlier of
+\nolinkurl{legendre_plan.tex}), $+0.01$ (split) and $-0.06$ (\texttt{SPH\_RENORM=1}).}
+\label{fig:compare_chi}
+\end{figure}
+
+\subsection{Reading}
+
+\paragraph{All three renormalized models remove the tree level's $O(1/s)$.}  At rest, $s_a=16$, the tree level's $E/e-1$ and $P/p-1$ are $0.52$--$1.14$; the
+three models' $E/e-1$ are $0.01$--$0.09$.  At $s_a=541$ their $E/e-1$ agree to $2\times10^{-4}$ (and $P/p-1$ too, except for the offset $\mathcal N/\sigma$ of the
+label part alone at $c_s^2=1/4$, below), and what remains, $E/e-1\approx-0.004$, $P/p-1\approx-0.013$ ($h/a=2$), falling as $1/(\bar nh^2)$, is the
+correction of the positions.
+
+\paragraph{Split and Legendre agree; the label part alone differs from them by what it leaves out.}  Split and the Legendre Hamiltonian both remove the
+whole one-loop counterterm, and where their entropies per particle are comparable they agree: at $s_a=541$, $c_s^2=1/4$, $h/a=2$, $P/p-1=-0.0168$ and
+$-0.0166$; in motion at $c_s^2=1/2$, $R=+0.0033$ and $+0.0032$ at $s_a=16$, $+0.0022$ and $+0.0022$ at $s_a=54$.  \texttt{SPH\_RENORM=1} leaves out
+$\Delta s^{\rm dyn}$, a term of the same order as the one it removes, and differs from them by its one-loop value.  At $c_s^2=1/4$ its pressure is above
+split's by $+0.0046$ at $s_a=541$ and $+0.044$ at $s_a=54$ ($h/a=2$), against $\mathcal N/\sigma=0.0046$ and $0.046$; at $s_a=16$ it is $P/p-1=+0.19$ against
+split's $+0.06$.  In motion at $c_s^2=1/2$ its $R$ differs from split's by the sound term ($+0.0004$ against $+0.0033$ at $s_a=16$).  $E$, $M$ and the
+susceptibilities are much the same for the three, mostly within the errors of the latter ($0.02$--$0.05$; \Fig{fig:compare_chi}).
+
+\paragraph{Controlled and uncontrolled.}  Split is consistent at one loop for any constant $c_s^2$, at rest and in motion: its single-particle remainder is
+$O(1/s^2)$ (\Sect{sec:check}), and the term left out (A) is of that order.  The label part alone is exact at one loop only for the conformal fluid at rest; for
+$c_s^2\neq1/2$, or in motion, its error is of first order.  In the many-particle data the two are close at $s_a\ge54$, and in places the label part alone is
+nearer the target ($P/p-1=-0.003$ against $-0.047$ at $c_s^2=1/4$, $s_a=54$, $h/a=2$; $R=+0.0004$ against $+0.0033$ at $c_s^2=1/2$, $s_a=16$): its first-order
+error happens to have the opposite sign to the correction of the positions.  That is a cancellation, not a property of the model, and nothing guarantees it
+elsewhere; split's agreement with Legendre is.
+
+\paragraph{Against Legendre.}  Split gives the same answers as the Legendre Hamiltonian at a fraction of the trouble: closed-form maps of the target plus a
+one-dimensional Newton solve in $u$ for the inverse (2.9 iterations), no failed solve and no lost seed in the campaign (Legendre: 425 failures, four NaN
+configurations, acceptance down to $0.78$ at $c_s^2=1/4$, $s_a=16$), hybrid Monte Carlo at the tree level's cost.  Its stochastic step costs 1.2--1.6 times that of
+\texttt{SPH\_RENORM=1}, less than Legendre's.
+
+\paragraph{What remains.}  At $s_a\ge54$ the error of every renormalized model is the correction of the positions, $\propto1/(\bar nh^2)$, which no
+single-particle counterterm removes.
+
+\paragraph{In short.}  The split renormalization works as well as the Legendre Hamiltonian and is more robust, and unlike the label part alone it is
+consistent at one loop for any constant $c_s^2$.  With the inverse in the target's energy its stochastic step costs 1.2--1.6 times that of
+\texttt{SPH\_RENORM=1} and less than Legendre's (\Sect{sec:results}, E).  The campaign ran with the first inverse, which gives the same answers to
+$10^{-12}$.
+
+%=============================================================================
+\section{Later}
+\label{sec:later}
+
+\paragraph{The reference volume, and changing it between steps.}  Changing $\bar V$ moves a function of the label alone between the two parts,
+\st
+\delta\Delta s^{\rm dyn}=-\delta\Delta s^{\rm lab}\equiv\delta(u) ,
+\stp
+and with the relabeling $u_a\to u_a-\delta(u_a)$ at the change the Hamiltonian and the weight are continuous up to $O(T\delta^2/u)$.  So $\bar V$ may follow the
+volume between steps in an expanding fluid and keep $\Delta s^{\rm dyn}$ small; the error of many small changes vanishes as they are refined.  To be checked with the
+single particle (draw at one $\bar V$, relabel, compare with the ensemble at the other) before it is used.
+
+\paragraph{A variable speed of sound.}  With $x=u/(\gamma V)$ the rest-frame entropy density,
+\st
+\delta\ln Z_1=\tfrac32\ln(2\pi u)+f(x)+\ln(\gamma V)+\tfrac12\ln\big(1-c_s^2v^2\big)+1,\qquad f(x)=2\ln T_{\rm rel}(x)-\tfrac12\ln c_s^2\big(T_{\rm rel}(x)\big),
+\stp
+and the split takes $f(u/\bar V)$ into $\Delta s^{\rm lab}$.  The equation of state must then supply $c_s^2$ and $dc_s^2/dT$, and the label boundary is found by a
+solve.  First in the quadrature script, with a crossover equation of state.
+
+\paragraph{Open.}  Whether the $3$--$5\%$ of the weight near the label boundary at $s_a=16$ makes the votes or the heat bath slow; and the correction of the
+positions, $\propto1/(\bar nh^2)$, which no single-particle counterterm removes.
+
+\end{document}

@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # λ = ∞ (deterministic residual, kind `det`) companion to campaign_first.txt (2026-11-08).
 # Question: does λ = ∞, which kept the lattice modes cold in fullruns.tex, stay stable
 # at the fluctuation levels where λ = 1 melts?  Compare with s3e5 and s1e5 in `first`.

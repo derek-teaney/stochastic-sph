@@ -1,0 +1,15 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
+# Campaign `damping_scan` (2026-11-23, branch split; docs/split_dynamics.tex, "The shear damping"): in hastings_bath (c_s^2 = 1/2,
+# eta/s = 0.2) the shear and sound modes decay 3-6 times faster than hydrodynamics at rest, against 1.1-1.2 in the old hastings
+# campaign at c_s^2 = 1/3.  At the same S0, T_rel = 140 (s_a = 16) instead of 28, so nu = (eta/s)/T_rel is 5 times smaller.
+# Tree level, at rest, as the hs<sa>_tr_v0 lines of campaign_hastings_bath.txt (same seeds), with
+#   nv: no viscous step (SR_NOVISC=1): the damping left without viscosity
+#   e1: eta/s = 1.0: at s_a = 16 the nu of the old c_s^2 = 1/3 runs (7.1e-3)
+# 64 tasks of 4 cores on 2 nodes, from the worktree pinned at 3262b00:
+#   sbatch -A m3722 -q regular -C cpu -N 2 -t 00:45:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh <this file> damping_scan
+# Analysis: BOOST_GROUP=DS examples/boost_analysis.jl $SCRATCH/sph/damping_scan
+ds16_nv   16  SPH_RENORM=0  SR_NOVISC=1 SR_S0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 ds16_nv
+ds16_e1   16  SPH_RENORM=0  SR_ETAS=1.0 SR_S0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 ds16_e1
+ds54_nv   16  SPH_RENORM=0  SR_NOVISC=1 SR_S0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 ds54_nv
+ds54_e1   16  SPH_RENORM=0  SR_ETAS=1.0 SR_S0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 ds54_e1

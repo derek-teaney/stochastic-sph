@@ -85,6 +85,10 @@ if [ "$MODE" = load ] || [ "$MODE" = all ]; then
 fi
 
 if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
+    # The regression is of the tree level and the start of before (since 2026-11-23 the defaults are SPH_RENORM=split and
+    # SR_BATH=nominal): both sides run with SPH_RENORM=0 SR_BATH=totals, so that the default path of <ref> must be reproduced
+    # bit-identically.  The renormalized runs are tested by testsplit.jl, testlegendre.jl and the unit run above.
+    export SPH_RENORM=0 SR_BATH=totals
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"
     refstep=$W/test/regress/step.jl;  [ -f "$refstep" ] || refstep=$W/test/testregress_step.jl
@@ -120,14 +124,14 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         record "stability driver, $H" regress $ok $(( $(date +%s) - t0 ))
     done
     t0=$(date +%s)
-    [ -f "$OUT/unit/unit.txt" ] || run_unit "$R" "$OUT/unit"
+    run_unit "$R" "$OUT/unit_tree"                 # here, at the tree level (the unit run above is at the defaults)
     run_unit "$W" "$OUT/unit_ref"
     ok=pass;  ls "$OUT"/unit_ref/*.log > /dev/null 2>&1 || ok=fail
     for f in "$OUT"/unit_ref/*.log; do
         [ -f "$f" ] || continue
         n=$(basename "$f" | sed -E -f test/regress/logmask.sed)
-        if [ -f "$OUT/unit/$n" ]; then
-            diff <(mask "$f") <(mask "$OUT/unit/$n") > "$OUT/unit_diff_${n%.log}.txt" || { ok=fail; echo "    output differs: ${n%.log} (unit_diff_${n%.log}.txt)"; }
+        if [ -f "$OUT/unit_tree/$n" ]; then
+            diff <(mask "$f") <(mask "$OUT/unit_tree/$n") > "$OUT/unit_diff_${n%.log}.txt" || { ok=fail; echo "    output differs: ${n%.log} (unit_diff_${n%.log}.txt)"; }
         else echo "    only in $REF: ${n%.log}"; fi
     done
     record "unit-test output" regress $ok $(( $(date +%s) - t0 ))

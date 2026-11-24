@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Energy representation, follow-up 1 (2026-11-10), small box: submit with -c 2, one seed per task.
 # (1) The linear loss of H with SPH_HAMILTONIAN=energy against the time step: L = 0.6, h/a = 2,
 #     eq start, t = 100, Δt × 1, 1/2, 1/4 (SR_DTFAC); and with the positions frozen (SR_NOHAM=1).

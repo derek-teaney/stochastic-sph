@@ -6,6 +6,7 @@
 #   3  in normal runs the guard never fires and the results are unchanged
 # Run:  julia --project test/teststochastic_guard.jl
 using StaticArrays, LinearAlgebra, Printf, Random
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 println("Test 1: particle_entropy on unphysical states")

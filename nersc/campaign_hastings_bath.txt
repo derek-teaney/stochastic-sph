@@ -1,0 +1,37 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
+# Campaign `hastings_bath` (2026-11-23; the rerun of `hastings_split` with the HMC start at the requested state, SR_BATH=nominal,
+# the new default: in hastings_split the start solved for its β^μ from the set-up totals and the split v0 = 0.8 fluid ran at
+# T_rel = 208, v = 0.66 instead of 140, 0.8; nersc/LOG.md).  As hastings_split (2026-11-23, branch split; docs/split_dynamics.tex): the dynamics of campaign `hastings` (inverse_moment.tex,
+# stage 2: the viscous step `moment` with the Hastings correction, the current default) at the tree level (no renormalization, "tr")
+# and with the split Hamiltonian (SPH_RENORM=split, Step 5, "sp"), each against hybrid Monte Carlo chains of its own Hamiltonian and
+# measure.  The old `hastings` runs are NOT a reference: they had c_s^2 = 1/3 (phys_dim 3, before the dimfix 8d50d04); here every line
+# is the current default conformal EOS in d = 2, c_s^2 = 1/2 (recorded as cs2_val in each run's .toml).  Lengths, seeds and settings as
+# the "h" and "hq" lines of campaign_hastings.txt; tr and sp lines of a set share their seeds.  L = 0.6 (N = 672), h/a = 2, η/s = 0.2,
+# s_a = 16, 54, v0 = 0, 0.8; 16 seeds each.
+#
+# 256 tasks of 4 cores, packed on 8 nodes (one wave), from a worktree pinned at the campaign's commit:
+#   sbatch -A m3722 -q regular -C cpu -N 8 -t 01:00:00 --export=ALL,SR_REPO=$R,THREADS=4 $R/nersc/node.sh $R/nersc/campaign_hastings_bath.txt hastings_bath
+# Analysis: HA_SPLIT=1 examples/hastings_analysis.jl $SCRATCH/sph/hastings_bath (dynamics / HMC for each model, split HMC / tree HMC);
+# BOOST_GROUP=SP16, SP54 examples/boost_analysis.jl (shear and sound fits, tree and split overlaid).
+#
+# 1. The full step, tree level, t = 100 (tasks 1-64).
+hs16_tr_v0      16  SPH_RENORM=0     SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_tr_v0
+hs16_tr_v0.8    16  SPH_RENORM=0     SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_tr_v0.8
+hs54_tr_v0      16  SPH_RENORM=0     SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_tr_v0
+hs54_tr_v0.8    16  SPH_RENORM=0     SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_tr_v0.8
+# 2. The full step, split, t = 100 (tasks 65-128).
+hs16_sp_v0      16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0
+hs16_sp_v0.8    16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0.8
+hs54_sp_v0      16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0
+hs54_sp_v0.8    16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0.8
+# 3. HMC chains of the tree-level Hamiltonian, 300 updates (tasks 129-192).
+hq16_tr_v0      16  SPH_RENORM=0     SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_tr_v0
+hq16_tr_v0.8    16  SPH_RENORM=0     SR_S0=2.956e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_tr_v0.8
+hq54_tr_v0      16  SPH_RENORM=0     SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_tr_v0
+hq54_tr_v0.8    16  SPH_RENORM=0     SR_S0=9.977e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_tr_v0.8
+# 4. HMC chains of the split Hamiltonian (tasks 193-256).
+hq16_sp_v0      16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0
+hq16_sp_v0.8    16  SPH_RENORM=split SR_S0=2.956e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0.8
+hq54_sp_v0      16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0
+hq54_sp_v0.8    16  SPH_RENORM=split SR_S0=9.977e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0.8

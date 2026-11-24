@@ -50,7 +50,7 @@ for set in ("hq12_s54", "hq12_s135", "hq12_s541", "hq24_s541")
     per = []
     for f in readdir(d; join = true)
         endswith(f, ".h5") || continue
-        r = read_equilibrium(f);  rec = r.rec;  m = r.meta;  pre_dimfix(get(m, :cs2, 1 / 3));  V = m.s_a / (m.S0 * (m.boost == 0 ? 1 : 1 / sqrt(1 - m.boost^2)))
+        r = read_equilibrium(f);  rec = r.rec;  m = r.meta;  pre_dimfix(get(m, :cs2, 1 / 3));  V = m.s_a / (srel0_of(m) * (m.boost == 0 ? 1 : 1 / sqrt(1 - m.boost^2)))
         n = length(rec.t);  it = 101:n;  χ = chi(m.T0, m.boost)
         kh = [norm(k) * m.h for k in rec.ks]
         push!(per, (kh = kh, L = [mean(abs2(rec.ML[s][i]) for s in it) / (m.N * V) / χ[2, 2] for i in eachindex(rec.ks)],

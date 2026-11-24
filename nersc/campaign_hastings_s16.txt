@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign hastings_s16 (2026-11-15, NERSC): rerun of all s_a = 16 lines of campaign_hastings.txt with SPH_GAMMA_MAX = 100 (dfa4834): the 20 crashed
 # tasks (hs16_nh_*), and the rest to check bit-identity with the first run (did any reach γ > 100?).  Lines copied unchanged.
 hs16_nh_v0      16  SPH_DISSIPATION=moment                SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_nh_v0

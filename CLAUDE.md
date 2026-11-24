@@ -25,6 +25,18 @@ the `.tex`).  Owner: D. Teaney.
   To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
   `SPH_DISSIPATION=particle` (before 2026-11-14).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
+- **The renormalization, the start and the inputs** (since 2026-11-23, branch `split`):
+  - `SPH_RENORM=split` is the default (Step 5: the label part of the one-loop counterterm in the measure, the rest in H;
+    `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=legendre` is the alternative scheme,
+    `SPH_RENORM=0` the tree level (the default before).  Split supports d = 2, the energy Hamiltonian with the number volume, the
+    Liouville measure, not the grid step; any other scheme stops with a message to set `SPH_RENORM=0`.  Tests of tree-level machinery
+    set `SPH_RENORM=0` themselves; the regression against `main` runs with `SPH_RENORM=0 SR_BATH=totals`.
+  - The start (`examples/equilibrium.jl`, `examples/hmc_positions.jl`): HMC and the equilibrium draw at the requested state,
+    β⁰ = γ/T_rel,0, β = γv/T_rel,0, T_rel,0 from the EOS at s_rel,0 (`SR_BATH=nominal`; `SR_BATH=totals` = before).
+  - The inputs (`docs/inputs.tex`): the rest-frame entropy density s_rel,0 is `SR_SREL0`; the lab one is S_0 = γ s_rel,0 and
+    s_a = S_0/n.  `SR_S0` is retired (a hard stop, `src/settings.jl`); old campaign files keep it as the record.
+    `SR_CS2`, `SR_ZETAS` (equilibrium.jl): c_s² and ζ/s (`SR_CS2=1/3 SR_ZETAS=(η/s)/3` = the stochastic step before the dimension fix).
+  - To reproduce runs before 2026-11-23: `SPH_RENORM=0 SR_BATH=totals` (and `SR_SREL0` for `SR_S0`).
 - **The ideal step, the measure and the equilibrium start** (since 2026-11-15, branch `new-defaults`): the defaults
   are the generalized leapfrog (`SPH_IDEAL=generalized`, `src/hmc.jl`), the Liouville measure (`SPH_MEASURE=liouville`,
   S_a − ln T_a in the votes; docs/equilibrium_positions.tex, Appendix A), both in 2D with the energy Hamiltonian, and in

@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hastings` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 2"): the dynamics with the viscous step `moment`,
 # without and with the Hastings correction (SPH_HASTINGS=1), against hybrid Monte Carlo of the same model and measure (the owner: compare to
 # HMC, not to the susceptibility).  Current defaults (generalized leapfrog, Liouville measure, HMC start), L = 0.6 (N = 672), h/a = 2,

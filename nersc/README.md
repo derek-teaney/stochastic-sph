@@ -81,6 +81,16 @@ sbatch --array=1-$N%64 -A <account> --export=ALL,SR_REPO=$R \
   `docs/plan.tex`, "Where the time goes".  At `h/a = 2`, `N = 672`: about 8 minutes per
   realization to `t = 100`; 2 cores are as fast as 8 (`nersc/LOG.md`).  Raise `#SBATCH -t` for bigger boxes.
 
+## Retired settings
+
+A retired setting stops any run that sets it (`src/settings.jl`, `RETIRED_SETTINGS`), so that an old script or campaign
+file cannot be run by mistake with the setting silently ignored.  The campaign files that used one are kept unchanged as the
+record of what was run at their commit, with a note at the top; to rerun a line with the present code, use the new name.
+
+| retired | since | new name | meaning |
+|---|---|---|---|
+| `SR_S0` | 2026-11-23 | `SR_SREL0` | s_rel,0, the rest-frame entropy density of the run (`docs/inputs.tex`) |
+
 ## Analysis
 
 Plots need PyPlot, which the run environment leaves out.  Either copy the `.jls` files

@@ -11,7 +11,7 @@
 #   boost_perp.png     k ⊥ v: Re C_yy (sound across the flow) and Re C_xx (shear + sound)
 #   boost_fit.png      fitted advection speed Ω/k and damping Γ of the shear modes against v
 # Run (login node):  julia --project examples/boost_analysis.jl [dir]
-using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization
+using PyPlot, StaticArrays, LinearAlgebra, Printf, Random, HDF5, Serialization, TOML
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const DIR = length(ARGS) > 0 ? ARGS[1] : joinpath(ENV["SCRATCH"], "sph", "boost")
 const FIGD = joinpath(@__DIR__, "..", "docs", "figs")
@@ -73,6 +73,22 @@ const SETS = GROUP == "L24" ?
              GROUP == "HS4" ?                     # campaign hastings_low: moment without/with SPH_HASTINGS, s_a = 4, $SCRATCH/sph/hastings
     [("no Hastings v=0", ["hs4_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs4_h_v0"], 0.0, "C1"),
      ("no Hastings v=0.8", ["hs4_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs4_h_v0.8"], 0.8, "C4")] :
+             GROUP == "SP16" ?                    # campaign hastings_split (split_dynamics.tex): moment + Hastings, tree against SPH_RENORM=split, s_a = 16, $SCRATCH/sph/hastings_split
+    [("tree v=0", ["hs16_tr_v0"], 0.0, "C0"), ("split v=0", ["hs16_sp_v0"], 0.0, "C1"),
+     ("tree v=0.8", ["hs16_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs16_sp_v0.8"], 0.8, "C4")] :
+             GROUP == "SP54" ?                    # the same at s_a = 54
+    [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
+     ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+             GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
+    (sa = GROUP[3:4];
+     [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
+      ("no viscous step", ["ds$(sa)_nv"], 0.0, "C3")]) :
+             GROUP in ("CS16", "CS54") ?          # campaign cs13 (c_s² = 1/3, ζ/s = (η/s)/3, present code) against the hastings runs at c_s² = 1/3; DIR = $SCRATCH/sph/cs13
+    (sa = GROUP[3:4];
+     [("now v=0", ["c13_$(sa)_v0"], 0.0, "C0"), ("hastings v=0", ["../hastings/hs$(sa)_h_v0"], 0.0, "C1"),
+      ("now v=0.8", ["c13_$(sa)_v0.8"], 0.8, "C3"), ("hastings v=0.8", ["../hastings/hs$(sa)_h_v0.8"], 0.8, "C4")]) :
+             GROUP in ("OLD16", "OLD54") ?        # the c_s² = 1/3 runs of campaign hastings (moment + Hastings at rest) through the present analysis; DIR = $SCRATCH/sph/hastings
+    [("c²=1/3 η/s=0.2", ["hs$(GROUP[4:5])_h_v0"], 0.0, "C0")] :
              GROUP == "HS16" ?                    # campaign hastings (inverse_moment.tex, stage 2): moment without/with SPH_HASTINGS, s_a = 16, $SCRATCH/sph/hastings
     [("no Hastings v=0", ["hs16_nh_v0"], 0.0, "C0"), ("Hastings v=0", ["hs16_h_v0"], 0.0, "C1"),
      ("no Hastings v=0.8", ["hs16_nh_v0.8"], 0.8, "C3"), ("Hastings v=0.8", ["hs16_h_v0.8"], 0.8, "C4")] :
@@ -104,14 +120,16 @@ const T0BURN = parse(Float64, get(ENV, "BOOST_BURN", "5.0"))   # burn-in (BOOST_
 const DTS = 0.05;  const TAUMAX = 100.0
 # with a burn-in other than 5 the figures get the suffix _burn<t>
 const SUFFIX = (GROUP == "L12" ? "" : "_" * GROUP) * (T0BURN == 5.0 ? "" : "_burn$(round(Int, T0BURN))")
-const CS2 = 1 / 3                                    # the runs of campaign boost, before dimfix
-pre_dimfix(cs) = abs(cs - 1 / 3) < 1e-12 || error("this script is written for the runs before dimfix (cs² = 1/3, e = T⁴; docs/dimension.tex); the run has cs² = $cs")
+# The speed of sound of the runs (the constant-c_s² EOS with T_scale = 1: e = T^((1+c_s²)/c_s²)), read from the first run of the group:
+# 1/3 for the runs before dimfix (8d50d04, e = T⁴), 1/2 after (conformal in d = 2, e = T³).  The runs of one group must agree.
+const CS2R = Ref(NaN)
+set_cs2(cs) = isnan(CS2R[]) ? (CS2R[] = cs) : (abs(cs - CS2R[]) < 1e-12 || error("runs with different cs² in one group: $(CS2R[]), $cs"))
 mean_(v) = sum(v) / length(v)
 
 # ── thermodynamics of the boosted conformal fluid (e = T⁴ in code units) ─────────────────
 function Uof(θ)                     # θ = (−β⁰, β^x, β^y) → (ε, M_x, M_y)
     β0 = -θ[1];  b = SVector(θ[2], θ[3]);  T = 1 / sqrt(β0^2 - dot(b, b));  v = b / β0
-    γ2 = 1 / (1 - dot(v, v));  e = T^4;  p = CS2 * e;  w = e + p
+    γ2 = 1 / (1 - dot(v, v));  e = T^((1 + CS2R[]) / CS2R[]);  p = CS2R[] * e;  w = e + p
     SVector(w * γ2 - p, w * γ2 * v[1], w * γ2 * v[2])
 end
 function chi(Trel, v)               # susceptibilities per unit volume
@@ -124,10 +142,10 @@ function chi(Trel, v)               # susceptibilities per unit volume
 end
 # ideal fluxes F_j(U), U = (ε, M_x, M_y): F_j = (M_j, M_x v_j + p δ_jx, M_y v_j + p δ_jy)
 function vel(U)                     # conformal: M = (ε + p) v, p = c_s²(ε − M·v); solve |v|
-    ε = U[1];  M = SVector(U[2], U[3]);  m = norm(M);  m == 0 && return (zero(M), CS2 * ε)
-    f(x) = (ε + CS2 * (ε - m * x)) * x - m;  lo, hi = 0.0, 1.0
+    ε = U[1];  M = SVector(U[2], U[3]);  m = norm(M);  m == 0 && return (zero(M), CS2R[] * ε)
+    f(x) = (ε + CS2R[] * (ε - m * x)) * x - m;  lo, hi = 0.0, 1.0
     for _ in 1:200;  mid = (lo + hi) / 2;  f(mid) > 0 ? (hi = mid) : (lo = mid);  end
-    x = (lo + hi) / 2;  (M / m * x, CS2 * (ε - m * x))
+    x = (lo + hi) / 2;  (M / m * x, CS2R[] * (ε - m * x))
 end
 flux(U, j) = (v = vel(U);  p = v[2];  vv = v[1];
               SVector(U[1 + j], U[2] * vv[j] + (j == 1 ? p : 0.0), U[3] * vv[j] + (j == 2 ? p : 0.0)))
@@ -152,7 +170,7 @@ function predict(Trel, v, ν, k, τs)
         if abs(Ω) < 1e-3 * norm(k)                        # shear
             Γ′ = ν * k2′;  dΩ = 0.0
         else                                              # sound
-            Γ′ = 0.5 * (4 / 3) * ν * k2′;  dΩ = CS2 * kx′ / Ω
+            Γ′ = (1 - CS2R[]) * ν * k2′;  dΩ = CS2R[] * kx′ / Ω   # conformal, ζ = 0: (d−1)/d ν k², d = 1/c_s²
         end
         push!(ωs, ω - im * Γ′ / (γ * (1 + v * dΩ)))
     end
@@ -166,6 +184,25 @@ function shear_left(Trel, v, k)
     real.(Rinv[i, :])
 end
 
+# ── the state of the fluid, measured ─────────────────────────────────────────────────────
+# The hydrodynamic prediction is made at the state the run actually has.  Runs with SR_BATH=nominal (since 2026-11-23): the
+# β^μ of the HMC start and the draw, recorded in [start] (T0, v0), which is the requested state.  Earlier runs: the conserved
+# totals (E, M) of the start (the run record <base>.toml, [start] E_total, M_total; the dynamics conserves them),
+# divided by the box volume N·vol and inverted through the equation of state of the run (c_s² from the run) for
+# (T_rel, v).  The requested state (S0, SR_BOOST) is not used: the equilibrium start draws at the β^μ it finds and
+# that need not be the requested one (hastings_split, LOG.md).  Runs without the totals (before the run records):
+# the set-up values (meta Trel, the boost of the run), flagged "set-up".
+function measured_state(f)
+    tf = replace(f, r"\.h5$" => ".toml");  isfile(tf) || return nothing
+    t = TOML.parsefile(tf);  st = get(t, "start", Dict());  haskey(st, "E_total") && haskey(st, "M_total") || return nothing
+    if get(st, "bath", "") == "nominal"          # HMC start and draw at the requested β^μ (SR_BATH=nominal): the state is that bath
+        vb = st["v0"];  return (Trel = st["T0"] / sqrt(1 - vb[1]^2 - vb[2]^2), v = vb[1], vy = vb[2], how = "bath")
+    end
+    Vbox = t["sim"]["N"] * t["sim"]["vol"]
+    U = SVector(st["E_total"] / Vbox, st["M_total"][1] / Vbox, st["M_total"][2] / Vbox)
+    v, p = vel(U);  er = p / CS2R[]
+    (Trel = er^(CS2R[] / (1 + CS2R[])), v = v[1], vy = v[2], how = "totals")
+end
 # ── measured correlators ─────────────────────────────────────────────────────────────────
 function files(d)
     isdir(d) || return String[]
@@ -206,9 +243,10 @@ end
 res = Dict{String,Any}()
 for (run, dirs, v, col) in SETS
     fs = vcat([files(joinpath(DIR, d)) for d in dirs]...);  isempty(fs) && continue
-    rs = [read_equilibrium(f) for f in fs];  rs = filter(r -> r.rec.energies && length(r.rec.t) > 1000 && get(r.meta, :complete, true), rs)   # complete runs only (not checkpoints of runs in progress)
+    rs = [read_equilibrium(f) for f in fs];  keep = [r.rec.energies && length(r.rec.t) > 1000 && get(r.meta, :complete, true) for r in rs]
+    rs = rs[keep];  fs = fs[keep]                    # complete runs only (not checkpoints of runs in progress)
     isempty(rs) && continue
-    m = rs[1].meta;  pre_dimfix(get(m, :cs2, 1 / 3));  ks = rs[1].rec.ks;  NV = m.N * m.V
+    m = rs[1].meta;  set_cs2(get(m, :cs2, 1 / 3));  ks = rs[1].rec.ks;  NV = m.N * m.V
     ipar = sort([i for i in eachindex(ks) if abs(ks[i][2]) < 1e-9 && ks[i][1] > 0], by = i -> ks[i][1])
     iperp = sort([i for i in eachindex(ks) if abs(ks[i][1]) < 1e-9 && ks[i][2] > 0], by = i -> ks[i][2])
     C = Dict{Tuple{Symbol,Int},Any}()
@@ -217,17 +255,31 @@ for (run, dirs, v, col) in SETS
         Cs = [p[1][:, :, 1:nl] for p in per]
         C[(dir, j)] = (C = mean_(Cs), Cs = Cs, τ = per[1][2][1:nl], k = ks[i])
     end
-    Trel = m.Trel;  ν = m.etas / Trel
+    vreq = get(m, :boost, v);  abs(vreq - v) < 1e-9 || error("$run: SETS says v = $v, the runs were made with SR_BOOST = $vreq")
+    sts = [measured_state(f) for f in fs]
+    if all(!isnothing, sts) && length(sts) == length(rs)
+        Trel = mean_([q.Trel for q in sts]);  vm = mean_([q.v for q in sts]);  how = join(unique(q.how for q in sts), "+")
+        dT = sqrt(mean_([(q.Trel - Trel)^2 for q in sts]));  dv = sqrt(mean_([(q.v - vm)^2 for q in sts]))
+        maximum(abs(q.vy) for q in sts) > 0.05 && @warn "$run: transverse velocity up to $(maximum(abs(q.vy) for q in sts))"
+    else
+        Trel = m.Trel;  vm = v;  how = "set-up";  dT = dv = NaN
+    end
+    ν = m.etas / Trel
     nk = minimum(length(r.KE) for r in rs)
-    res[run] = (; v, col, C, lab = run, Trel, ν, h = m.h, n = length(rs), t = rs[1].rec.t[end],
+    sa = srel0_of(m) * m.a^2 * sqrt(3) / 2                 # entropy per particle, rest frame: S0 · vol, vol = a²√3/2 (hexagonal lattice)
+    res[run] = (; v = vm, vreq, col, C, lab = run * @sprintf(", s_a=%.0f", sa), sa, Trel, ν, how, Trel_setup = m.Trel, h = m.h, n = length(rs), t = rs[1].rec.t[end],
                 KE = mean_([mean_(r.KE[nk÷2:nk]) for r in rs]), dH = mean_([r.H[nk] for r in rs]))
-    @printf("%-15s v=%.1f  %2d runs  t=%.0f  T_rel=%.3f  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n", run, v, length(rs),
-            res[run].t, Trel, res[run].KE, res[run].dH)
+    @printf("%-15s SR_BOOST=%.1f  %2d runs  t=%.0f  state (%s): T_rel=%.1f±%.1f v=%.3f±%.3f  (set-up T_rel=%.1f)  KE(fluct)/(2VwT)=%.3f  ΔH/H=%+.2e\n",
+            run, vreq, length(rs), res[run].t, how, Trel, dT, vm, dv, m.Trel, res[run].KE, res[run].dH)
 end
 runs = [s[1] for s in SETS if haskey(res, s[1])]
 fitruns = filter(r -> !occursin("Δt", r), runs)      # the Δt/2 set: in the tables only
 isempty(runs) && (println("no complete runs yet");  exit())
 names = ("E", "M_x", "M_y")
+# every figure carries the entropy per particle (rest frame), the temperature and the directory of the runs
+const STAMP = "s_a = " * join(unique([@sprintf("%.0f", res[r].sa) for r in runs]), ", ") * " (rest frame),  T_rel = " *
+              join(unique([@sprintf("%.1f", res[r].Trel) for r in runs]), ", ") * ",  runs: " * DIR
+savefig_s(path; kw...) = (gcf().text(0.995, 0.003, STAMP, ha = "right", va = "bottom", fontsize = 8, color = "0.3");  savefig(path; kw...))
 
 # ── equal time ───────────────────────────────────────────────────────────────────────────
 fig, axg = subplots(length(runs), 3, figsize = (15, 2.9 * length(runs)), squeeze = false)
@@ -255,7 +307,7 @@ for (row, run) in enumerate(runs)
                 join([@sprintf("%s %.3f±%.3f", names[a], eq(:perp, a)...) for a in 1:3], "  "))
     end
 end
-tight_layout();  savefig(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
+tight_layout();  savefig_s(joinpath(FIGD, "boost_static" * SUFFIX * ".png"), dpi = 100);  close()
 
 # ── dynamics: one figure per (direction, component) family ───────────────────────────────
 function panel!(ax, r, dir, a, b; part = real, j = 1, tmax = 60.0)
@@ -280,18 +332,18 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
         row == length(fitruns) && ax.set_xlabel("τ")
         row == 1 && col == 1 && ax.legend(fontsize = 8, loc = "lower left")
     end
-    tight_layout();  savefig(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
+    tight_layout();  savefig_s(joinpath(FIGD, fname * SUFFIX * ".png"), dpi = 100);  close()
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
-    cols = [(v, dir) for v in sort(unique(res[r].v for r in runs)) for dir in (:par, :perp)]
+    cols = [(v, dir) for v in sort(unique(res[r].vreq for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
     meths = unique(method.(runs));  mcol = Dict(m => "C$(i-1)" for (i, m) in enumerate(meths))
     fig, axg = subplots(3, length(cols), figsize = (4.2 * length(cols), 9.5), squeeze = false)
     for (ci, (v, dir)) in enumerate(cols), a in 1:3
-        ax = axg[a, ci];  rv = [r for r in runs if res[r].v == v]
+        ax = axg[a, ci];  rv = [r for r in runs if res[r].vreq == v]
         for (m, run) in enumerate(rv)
             r = res[run];  χ = chi(r.Trel, r.v);  js = sort([j for (d, j) in keys(r.C) if d === dir])
             kh = [norm(r.C[(dir, j)].k) * r.h for j in js] .+ 0.012 * (m - (length(rv) + 1) / 2)
@@ -300,12 +352,12 @@ if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB",
                         label = method(run))
         end
         ax.axhline(1, color = "k", lw = 0.5);  ax.set_ylim(0.5, 1.5)
-        ax.set_title(@sprintf("v = %.1f, k %s v:  C_%s%s(k,0)/χ", v, dir === :par ? "∥" : "⊥", names[a], names[a]), fontsize = 10)
+        ax.set_title(@sprintf("SR_BOOST = %.1f, k %s v:  C_%s%s(k,0)/χ(measured state)", v, dir === :par ? "∥" : "⊥", names[a], names[a]), fontsize = 10)
         a == 3 && ax.set_xlabel("kh")
     end
     h, l = axg[1, 1].get_legend_handles_labels()
     fig.legend(h, l, loc = "upper center", ncol = length(meths), fontsize = 10, frameon = false)
-    tight_layout(rect = (0, 0, 1, 0.96));  savefig(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
+    tight_layout(rect = (0, 0, 1, 0.96));  savefig_s(joinpath(FIGD, "boost_equaltime" * SUFFIX * ".png"), dpi = 100);  close()
     # dynamics: the correlators of boost.tex, one figure each, the methods as panels
     types = [("shear",    :par,  3, 3, real, "Re C_yy, k ∥ v (advected shear)", 80.0, (0.0, 0.8)),
              ("soundpar", :par,  2, 2, real, "Re C_xx, k ∥ v (sound along the flow)", 15.0, (0.0, 0.8)),
@@ -313,7 +365,7 @@ if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB",
              ("soundperp",:perp, 3, 3, real, "Re C_yy, k ⊥ v (sound across the flow)", 15.0, (0.8,)),
              ("shearperp",:perp, 2, 2, real, "Re C_xx, k ⊥ v (shear + sound)", 80.0, (0.8,))]
     for (tag, dir, a, b, part, title, tmax, vs) in types, v in vs
-        rv = [r for r in runs if res[r].v == v];  isempty(rv) && continue
+        rv = [r for r in runs if res[r].vreq == v];  isempty(rv) && continue
         nc = min(2, length(rv));  nr = cld(length(rv), nc)
         fig, axg = subplots(nr, nc, figsize = (7.2 * nc, 3.1 * nr), squeeze = false)
         for (m, run) in enumerate(rv)
@@ -323,7 +375,7 @@ if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB",
             ax.axhline(0, color = "k", lw = 0.5);  ax.set_ylim(-1.1, 1.1);  ax.set_xlabel("τ")
             m == 1 && ax.legend(fontsize = 8, loc = "lower left")
         end
-        tight_layout();  savefig(joinpath(FIGD, "boost_" * tag * "_v" * string(v) * SUFFIX * ".png"), dpi = 100);  close()
+        tight_layout();  savefig_s(joinpath(FIGD, "boost_" * tag * "_v" * string(v) * SUFFIX * ".png"), dpi = 100);  close()
     end
 end
 
@@ -366,5 +418,5 @@ end
 axs[1].plot([0, 0.85], [0, 0.85], "k:", label = "Ω/k = v")
 axs[1].set_xlabel("v");  axs[1].set_ylabel("advection speed Ω/k of the shear mode");  axs[1].legend(fontsize = 8)
 axs[2].axhline(1, color = "k", lw = 0.5);  axs[2].set_xlabel("v");  axs[2].set_ylabel("Γ / hydrodynamics (smallest k)");  axs[2].legend(fontsize = 8)
-tight_layout();  savefig(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
+tight_layout();  savefig_s(joinpath(FIGD, "boost_fit" * SUFFIX * ".png"), dpi = 100);  close()
 println("figures written to $FIGD")

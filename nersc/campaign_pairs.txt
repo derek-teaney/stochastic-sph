@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `pairs` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex, stage 1): the pair correlation
 # g(r,t), ψ6(t) and S(k,t) of the particle positions from the hexagonal lattice, full dynamics (ideal + stochastic,
 # default one-kernel viscous step), at rest, L = 1.2, h/a = 2, η/s = 0.2, t = 200, across the solid-liquid boundary:

@@ -14,6 +14,7 @@
 # Run:  julia --project test/testeqstart.jl
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 const ROOT = joinpath(@__DIR__, "..")
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(ROOT, "src", "load.jl"))
 check(ok, msg) = (println(ok ? "  ✓ " : "  ✗ FAIL: ", msg); ok || error(msg))
 const eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)

@@ -7,7 +7,7 @@ using FFTW, BinningAnalysis, HDF5, Serialization
 # Single-particle covariance of δm at fixed e_a: [−∂²S_a/∂m∂m]⁻¹ (numerical Hessian).
 function momentum_covariance(e, m0, V, eos)
     f(x, y) = particle_entropy(e, m0 + SVector(x, y), V, eos)
-    T = eos_from_energy(e / V, m0 / V, eos)[3]
+    T = particle_inverse(e, m0, V, eos)[3]
     h = 0.05 * sqrt(e * T)                  # a twentieth of the thermal momentum, ≈ √(V w T)
     Hxx = (f(h, 0) - 2f(0, 0) + f(-h, 0)) / h^2
     Hyy = (f(0, h) - 2f(0, 0) + f(0, -h)) / h^2
@@ -153,7 +153,13 @@ function beta_from_averages(V::Vector{Float64}, E::Float64, M::SVector{2,Float64
         ms = mom.(V);  X = sum(p.mean for p in ms);  Ct = sum(p.cov for p in ms)
         r = target - X
         abs(r[1]) <= 1e-12 * abs(E) && norm(r[2:3]) <= 1e-12 * abs(E) && break
-        θ = θ + Ct \ r
+        δθ = Ct \ r
+        # a step that leaves the light cone (|β/β⁰| ≥ 1, or β⁰ ≤ 0) is halved (in motion, from the target's guess with
+        # SPH_RENORM=legendre); a step inside it, as in every run before, is taken whole
+        while !(θ[1] + δθ[1] < 0 && (θ[2] + δθ[2])^2 + (θ[3] + δθ[3])^2 < (θ[1] + δθ[1])^2)
+            δθ = δθ / 2
+        end
+        θ = θ + δθ
     end
     return -θ[1], SVector(θ[2], θ[3]), mom
 end
@@ -197,15 +203,21 @@ end
 # state), keeping the positions and the volumes V_a = s_a/S_a.  Sets m_a and
 # s_a = S_a(e_a, m_a), then re-smooths.  exact_totals as in draw_configuration: true
 # starts an SPH run at exactly (E, M), with no thermalization step needed.
+# bath = (β⁰, β): draw at these multipliers instead of solving for them (beta_from_averages); the drivers pass the
+# requested state (SR_BATH=nominal).  The default (nothing) is the solve, as before.
 function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                            eos::AbstractEOS; rng::AbstractRNG = Random.default_rng(),
-                           E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false)
+                           E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false, bath = nothing)
     thermalize!(particles, params, cl, eos)
     V = [pa.s / pa.S_smooth for pa in particles]
     Etot = E === nothing ? sum(particle_energy(pa, eos) for pa in particles) : Float64(E)
     Mtot = M === nothing ? sum(pa.m for pa in particles) : SVector{2,Float64}(M)
     liouville = params.measure === :liouville                     # draw with S_a − ln T_a (sph.jl, measure)
-    β0, β, mom = beta_from_averages(V, Etot, Mtot, eos; liouville)
+    if bath === nothing
+        β0, β, mom = beta_from_averages(V, Etot, Mtot, eos; liouville)
+    else
+        β0 = Float64(bath[1]);  β = SVector{2,Float64}(bath[2]);  mom = moments_table(V, β0, β, eos; liouville)
+    end
     X, acc = draw_configuration(V, β0, β, mom, eos, rng; nmh, exact_totals, E = Etot, M = Mtot, liouville)
     e = [x[1] for x in X]
     for (a, pa) in enumerate(particles)
@@ -224,15 +236,18 @@ end
 #             them exactly, so no thermalization step is needed (docs/eqstart.tex)
 #   :thermal  thermal_init!: momenta only, at fixed particle energies (campaign `first`)
 function initial_state!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                        eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng())
+                        eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng(), bath = nothing)
+    # bath = (β⁰, β): the draw of :eq at these multipliers (equilibrium_init!); nothing: at those of the totals, as before
     # returns a description of the start, for the run record (src/runinfo.jl)
     if start === :cold
         thermalize!(particles, params, cl, eos)
         return (type = "cold", what = "the state as set up (uniform, at rest), no fluctuations; the run thermalizes")
     elseif start === :eq
-        r = equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true)
+        r = equilibrium_init!(particles, params, cl, eos; rng, exact_totals = true, bath)
         acc = r.acc isa AbstractArray ? sum(r.acc) / length(r.acc) : r.acc
-        return (type = "eq", what = "equilibrium draw of (e_a, m_a) at the global beta^mu of the totals, totals shifted to them exactly",
+        return (type = "eq", what = bath === nothing ?
+                    "equilibrium draw of (e_a, m_a) at the global beta^mu of the totals, totals shifted to them exactly" :
+                    "equilibrium draw of (e_a, m_a) at the given beta^mu (the requested state), totals shifted to those of the state exactly",
                 T0 = r.T, v0 = collect(r.v), E_total = r.E, M_total = collect(r.M), exact_totals = true, nmh = 30,
                 mh_acceptance = acc)
     elseif start === :thermal
@@ -610,6 +625,9 @@ load_checkpoint(path::AbstractString) = open(deserialize, path)
 
 # Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE),
 # with meta a NamedTuple of the attributes and rec a Recorder.
+# s_rel,0, the rest-frame entropy density of a run, from its record (key srel0 since 2026-11-23; S0 before)
+srel0_of(m) = haskey(m, :srel0) ? m.srel0 : m.S0
+
 function read_equilibrium(path::AbstractString)
     endswith(path, ".jls") && return deserialize(path)
     h5open(path, "r") do f
@@ -630,4 +648,42 @@ function read_equilibrium(path::AbstractString)
                                       g2_0 = rd("part_g2_0"), g4_0 = rd("part_g4_0"), g6_0 = rd("part_g6_0")) : nothing
         return (meta = meta, rec = rec, H = read(f["H"]), KE = read(f["KE"]), part = part)
     end
+end
+
+# ── Energy density and pressure of the model (docs/gravity.tex, "The energy density and the stress") ──────────
+# The responses of ln Z to the lapse and to the spatial metric: the energy density E = Σ_a e_a / L^d, and the stress
+#   S^{ij} = (1/L^d) Σ_a (v_a^i m_a^j + P_a V_a² Q_a^{ij}),   Q_a^{ij} = Σ_b r_ab^i D_ab^j,  D_ab = −W'(r_ab) r̂_ab,
+# whose trace over d is the mechanical pressure, the kinetic (label) part plus the virial part.  Needs hamiltonian = :energy,
+# volume = :number; smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the shear-stress
+# components of the sum, (Sxy, (Sxx − Syy)/2), for the record.
+function energy_pressure(particles::Vector{Particle}, params::SimParams, cl::CellList2D, eos::AbstractEOS)
+    params.hamiltonian === :energy && params.volume === :number ||
+        error("energy_pressure: needs hamiltonian = :energy, volume = :number")
+    smooth_to_particles!(particles, params, cl);  update_thermodynamics!(particles, eos)
+    nl = neighbor_list!(cl, particles, params.h)
+    n = length(particles)
+    ea = zeros(n);  kin = zeros(SMatrix{2,2,Float64}, n);  vir = zeros(SMatrix{2,2,Float64}, n)
+    Threads.@threads for a in 1:n
+        pa = particles[a]
+        ea[a] = particle_energy(pa, eos)
+        v = pa.v_over_S * pa.S_smooth
+        kin[a] = v * pa.m'
+        PV2 = pa.p * (pa.s / pa.S_smooth)^2
+        Q = zero(SMatrix{2,2,Float64})
+        for b in neighbors(nl, a)
+            b == a && continue
+            r_vec = minimum_image(particles[b].x - pa.x, params.L)          # r_ab = x_b − x_a
+            r_mag = sqrt(r_vec[1]^2 + r_vec[2]^2)
+            r_mag >= 2params.h && continue
+            D = -kernel_gradW(r_vec, r_mag, params.h, params.kernel)        # −W'(r) r̂
+            Q += r_vec * D'
+        end
+        vir[a] = PV2 * Q
+    end
+    A = prod(params.L)
+    K = sum(kin) / A;  Vr = sum(vir) / A
+    Pkin = (K[1, 1] + K[2, 2]) / 2;  Pvir = (Vr[1, 1] + Vr[2, 2]) / 2
+    St = K + Vr
+    return (E = sum(ea) / A, P = Pkin + Pvir, Pkin = Pkin, Pvir = Pvir,
+            Sxy = (St[1, 2] + St[2, 1]) / 2, Sxxyy = (St[1, 1] - St[2, 2]) / 2)
 end

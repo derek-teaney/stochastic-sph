@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `moment_b` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 1: results from NERSC"): the full step at L = 1.2
 # (N = 2688; kh = 0.26, 0.52, 0.79 available), v0 = 0 and 0.8, common against moment, 32 runs per set, otherwise as campaign `moment`
 # (h/a = 2, s_a = 135, t = 100; defaults: GLF, Liouville, HMC start).  Packed on 4 regular nodes, THREADS=4 (≈ 30–40 min per run).

@@ -3,6 +3,7 @@
 # Tolerances from the conformal fluid in d = 2, cs² = 1/2 (dimension.tex; 2026-11-18): ω/ω_hyd − 1 = −3.1e-3,
 # Γ/Γ_hyd − 1 = +2.0e-2 at kh = 0.35; the damping error falls by 3.0 and 3.6 between successive kh, with a margin.
 # (At cs² = 1/3, d = 3, before dimfix: −1.5e-3 and +7.7e-3; the faster sound wave has the larger error at the same kh.)
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level: deterministic waves at s_a ≪ 1, below the label boundary of split
 include(joinpath(@__DIR__, "..", "..", "src", "load.jl"))
 include(joinpath(@__DIR__, "lib", "waves.jl"))
 rs = wave_report("sound_viscous", [wave_run(:sound; kh, etas = 0.02) for kh in (1.4, 0.7, 0.35)])

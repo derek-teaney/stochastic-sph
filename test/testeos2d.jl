@@ -1,3 +1,4 @@
+haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
