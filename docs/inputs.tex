@@ -1,0 +1,325 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\sloppy
+
+\title{The inputs of a run}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+A short review of what a run of \texttt{examples/equilibrium.jl} (and of \texttt{examples/hmc\_positions.jl}) is given,
+and how the inputs become the variables of the particles.  The physics is a thermal state $(T,\bm v)$ of a fluid with a given equation of
+state and viscosity in a periodic box; the numerics are the particle number $N$ and the smoothing length $h$.  These combine into the
+entropy per particle $s_a$, the parameter that controls the fluctuations of a particle and the size of the renormalization.  The note is
+written for the defaults after the merge of branch \texttt{split} (\texttt{SPH\_RENORM=split}).
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{The inputs in one view}
+\label{sec:overview}
+
+A run is specified by three groups of inputs.
+\begin{enumerate}
+\item \emph{The physics}: the equation of state (speed of sound $c_s^2$, temperature scale $T_{\rm scale}$), the transport coefficients
+  ($\eta/s$, $\zeta/s$), and the thermal state, a rest-frame temperature $T_{\rm rel}$ and a velocity $\bm v$.
+\item \emph{The box}: a periodic square of side $L$, volume $L^2$.
+\item \emph{The discretization}: the smoothing length $h$ and the particle spacing $a$, given as $h/a$; together with $L$ they fix the
+  particle number $N$ and the number density $n=N/L^2$.
+\end{enumerate}
+Everything else (the integrators, the measure, the renormalization, the start) is a numerical setting with a default (\Sect{sec:numerics}).
+The inputs meet in one number, the entropy per particle,
+\st
+s_a=\frac{S}{n},
+\label{eq:sa}
+\stp
+with $S$ the entropy density of the state; $s_a$ is what the particles carry.
+
+\paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $S_0$
+(\texttt{SR\_S0}), and derive the temperature from it through the equation of state,
+\st
+T_{\rm rel,0}=T_{\rm rel}\big|_{S=S_0}\qquad\text{(uniform fluid at rest)} .
+\label{eq:Trel0}
+\stp
+The run is then at a definite $(T_{\rm rel,0},\bm v)$ (\Sect{sec:start}), but $T_{\rm rel,0}$ is derived, not given.  A proposal to take
+the temperature directly is in \Sect{sec:proposal}.
+
+%=============================================================================
+\section{The physics}
+\label{sec:physics}
+
+\paragraph{The equation of state} (\texttt{ConstantCs2EOS}, \texttt{src/sph.jl}) has a constant speed of sound:
+\st
+p=c_s^2\,e,\qquad T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad S=\frac{e+p}{T_{\rm rel}} ,
+\label{eq:eos}
+\stp
+with $e$, $p$, $S$ the rest-frame energy density, pressure and entropy density.  Eliminating $e$,
+\st
+S=(1+c_s^2)\,T_{\rm scale}^{-(1+c_s^2)/c_s^2}\;T_{\rm rel}^{1/c_s^2} .
+\label{eq:sofT}
+\stp
+The drivers use the conformal fluid in $d=2$, $c_s^2=1/d=1/2$ and $T_{\rm scale}=1$ (\texttt{conformal\_eos(2)}), for which
+\st
+e=T_{\rm rel}^3,\qquad p=\tfrac12T_{\rm rel}^3,\qquad S=\tfrac32T_{\rm rel}^2 .
+\label{eq:conformal}
+\stp
+\texttt{SR\_CS2} selects another constant $c_s^2$ (e.g.\ $1/3$, $e=T_{\rm rel}^4$, $S=\tfrac43T_{\rm rel}^3$), still with $T_{\rm scale}=1$.
+
+\paragraph{The temperatures.}  The particles move with the bare temperature $T=\partial H/\partial s$ and the rest-frame temperature is
+\st
+T_{\rm rel}=\gamma\,T ,\qquad \gamma=(1-v^2)^{-1/2};
+\stp
+$T_{\rm rel}$ enters only with the viscosities.
+
+\paragraph{The transport coefficients} are given as $\eta/s$ (\texttt{SR\_ETAS}, default $0.2$) and $\zeta/s$ (\texttt{SR\_ZETAS},
+default $0$).  The kinematic shear viscosity of the state is
+\st
+\nu_0=\frac{\eta}{e+p}=\frac{\eta/s}{T_{\rm rel}} .
+\label{eq:nu0}
+\stp
+The viscous step uses the effective bulk viscosity
+\st
+\zeta_{\rm eff}=\max\Big(\zeta+2\eta\Big(\frac12-\frac1d\Big),\;\epsilon\,\eta\Big),\qquad \epsilon=0.01\ (\texttt{SPH\_ZETA\_FLOOR}),
+\stp
+which at $d=2$, $\zeta=0$ is the floor $0.01\,\eta$.
+
+\paragraph{The state.}  The fluid is uniform, with rest-frame entropy density $S_0$ and velocity $\bm v=v\hat{\bm x}$, $v=$
+\texttt{SR\_BOOST} (default $0$).  In the lab (the density frame) its entropy and momentum densities are
+\st
+S=\gamma S_0,\qquad \bm M=w_0\gamma^2\bm v,\qquad w_0=e+p\big|_{S_0},
+\label{eq:lab}
+\stp
+with $\bm M$ the density-frame momentum density.
+
+%=============================================================================
+\section{The box and the discretization}
+\label{sec:discretization}
+
+\paragraph{The numbers given.}  The command line of \texttt{equilibrium.jl} is
+\begin{center}
+\texttt{julia -t auto --project examples/equilibrium.jl L h/a t\_end nreal [rec\_every] [tag]}
+\end{center}
+The smoothing length is not on the command line: it is \texttt{SR\_H} (default $h=0.05$).  The kernel is the Wendland C2 kernel
+(\texttt{SPH\_KERNEL=wc2}) with support $2h$.
+
+\paragraph{The lattice} (\texttt{SimParams}, \texttt{src/sph.jl}).  The spacing is
+\st
+a=\frac{h}{h/a},
+\stp
+and the particles are placed on a hexagonal lattice: $N_x$ columns of spacing $a$ and $N_y$ rows of spacing $a\sqrt3/2$,
+\st
+N_x=\mathrm{round}\Big(\frac La\Big),\qquad N_y=2\,\mathrm{round}\Big(\frac{L}{a\sqrt3}\Big),\qquad N=N_xN_y ,
+\stp
+($N_y$ even for the periodic offset rows).  The box is snapped to the lattice, $L_x=N_xa$, $L_y=N_ya\sqrt3/2$, so it is square only
+approximately ($L=0.6$, $h/a=2$: $L_x=0.6$, $L_y=0.606$).  The volume per particle and the number density are
+\st
+V=\frac{\sqrt3}{2}\,a^2=\frac1n,\qquad n=\frac{N}{L_xL_y}=\frac{2}{\sqrt3}\,\frac{(h/a)^2}{h^2} .
+\label{eq:n}
+\stp
+So $L$, $h$ and $h/a$ are the three independent numbers; $N$ and $n$ follow.  The number of particles within the kernel's support is
+$\pi(2h)^2n$ ($58$ at $h/a=2$).
+
+\paragraph{The particle variables} (\texttt{setup\_ic}, \texttt{src/setup.jl}).  Each particle receives the densities of \Eq{eq:lab}
+times its lattice volume,
+\st
+s_a=\gamma S_0\,V=\frac{\gamma S_0}{n},\qquad \bm m_a=\bm M\,V .
+\label{eq:particles}
+\stp
+The rest-frame value $S_0V$ is the $s_a$ quoted for a run.  With \texttt{SPH\_RENORM=split} the particle variable $s_a$ is the label
+$u$, the entropy of the target state of the particle (\texttt{docs/step5\_plan.tex}); it is set up by \Eq{eq:particles} in the same way.
+
+%=============================================================================
+\section{\texorpdfstring{The start: the state is $(T_{\rm rel,0},\bm v)$}{The start}}
+\label{sec:start}
+
+The set-up of \Eq{eq:particles} is a lattice with no fluctuations.  The start replaces it by a sample of the equilibrium
+(\texttt{docs/scheme.tex}, Sect.~``The start''): hybrid Monte Carlo of the positions, energies and momenta (\texttt{SR\_POSITIONS=hmc}),
+then an equilibrium draw of the energies and momenta at the sampled positions (\texttt{SR\_START=eq}).  Both are at the multipliers
+of the requested state (\texttt{SR\_BATH=nominal}, the default since commit \texttt{3262b00}, 2026-11-23),
+\st
+\beta^0=\frac1T=\frac{\gamma}{T_{\rm rel,0}},\qquad \bm\beta=\frac{\bm v}{T}=\frac{\gamma\bm v}{T_{\rm rel,0}} ,
+\label{eq:bath}
+\stp
+with $T_{\rm rel,0}$ the temperature of the uniform rest-frame state at $S_0$, \Eq{eq:Trel0}.  The draw then shifts the energies and momenta
+so that the totals are exactly those of the state it starts from.  The fluid of the run is at this $(T_{\rm rel,0},\bm v)$ for any
+Hamiltonian, tree level or renormalized.  (\texttt{SR\_BATH=totals}, before 2026-11-23, solved for $\beta^\mu$ from the set-up totals,
+which at low $s_a$ in a moving fluid could be far from the requested state; \texttt{docs/split\_dynamics.tex}.)
+
+In short: the input is $S_0$; the state is $(T_{\rm rel,0},\bm v)$ with
+\st
+T_{\rm rel,0}=\Big[\frac{S_0\,T_{\rm scale}^{(1+c_s^2)/c_s^2}}{1+c_s^2}\Big]^{c_s^2}
+\quad\Big(=\sqrt{2S_0/3}\ \text{ at }c_s^2=\tfrac12,\ T_{\rm scale}=1\Big),
+\label{eq:TofS}
+\stp
+and the particles carry $s_a=\gamma S_0/n$ at the start, which then fluctuates.
+
+%=============================================================================
+\section{Dimensionless parameters and derived numbers}
+\label{sec:derived}
+
+\paragraph{Scale invariance.}  The equation of state \Eq{eq:eos} has no scale besides $T_{\rm scale}$, so under $\bm x\to\lambda\bm x$,
+$t\to\lambda t$, $T_{\rm rel}\to T_{\rm rel}/\lambda$ the run is unchanged.  A run is therefore fixed by the dimensionless numbers
+\st
+T_{\rm rel,0}\,h\ \ (\text{equivalently } S_0h^2),\qquad nh^2\ \ (\text{equivalently } h/a),\qquad \frac Lh,\qquad v,\qquad \frac\eta s,\quad \frac\zeta s,\quad c_s^2 ,
+\label{eq:dimless}
+\stp
+and the entropy per particle is the ratio of the first two,
+\st
+s_a=\frac{S_0h^2}{nh^2}\qquad(\text{at rest}).
+\label{eq:saratio}
+\stp
+The bare viscosity in units of $h$ is $\nu_0/h=(\eta/s)/(T_{\rm rel,0}h)$.
+
+\paragraph{The standard runs.}  $L=0.6$, $h=0.05$, $h/a=2$: $a=0.025$, $N=672$, $n=1848$, $nh^2=4.62$, the smallest box mode
+$kh=2\pi h/L=0.52$.
+\begin{center}
+\begin{tabular}{cccccccc}
+\toprule
+$S_0$ & $S_0h^2$ & $s_a$ & $c_s^2$ & $c_s$ & $T_{\rm rel,0}$ & $\nu_0=(\eta/s)/T_{\rm rel,0}$ & $\nu_0/h$ \\ \midrule
+$2.956\times10^4$ & $73.9$ & $16$ & $1/2$ & $0.707$ & $140.4$ & $1.42\times10^{-3}$ & $0.028$ \\
+                  &        &      & $1/3$ & $0.577$ & $28.1$  & $7.12\times10^{-3}$ & $0.142$ \\
+$9.977\times10^4$ & $249$  & $54$ & $1/2$ & $0.707$ & $257.9$ & $7.75\times10^{-4}$ & $0.016$ \\
+                  &        &      & $1/3$ & $0.577$ & $42.1$  & $4.75\times10^{-3}$ & $0.095$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+$\eta/s=0.2$.  The default $S_0=10^6$ gives $s_a=541$ in the same box.
+
+\paragraph{Consequence for the damping.}  At the same $S_0$ the bare $\nu_0/h$ at $c_s^2=1/2$, $\eta/s=0.2$ is five times smaller than
+at $c_s^2=1/3$, and the measured shear damping at $kh=0.52$ is then $3$--$4$ times hydrodynamics, a fluctuation correction
+$\propto1/(s\,\nu_0)$ to the viscosity; $\eta/s=1$ (or $c_s^2=1/3$) brings it back to $1.1$ times hydrodynamics
+(\texttt{docs/split\_dynamics.tex}, campaigns \texttt{damping\_scan}, \texttt{cs13}).
+
+%=============================================================================
+\section{Refinement and the renormalization}
+\label{sec:refinement}
+
+At fixed physics (fixed $T_{\rm rel,0}$, $\bm v$, $\eta/s$, $L$) and fixed coarse-graining scale $h$, a refinement increases the number
+density $n$ at fixed $S_0h^2$:
+\st
+S_0h^2=s_a\,nh^2=\text{fixed},\qquad
+\frac ha=\Big(\frac{\sqrt3}{2}\,nh^2\Big)^{1/2}\propto\sqrt n,\qquad
+s_a=\frac{S_0}{n}\propto\frac1n .
+\label{eq:refine}
+\stp
+(The same holds for a change of the scale $h$ at fixed $n$: what matters is the pair $S_0h^2$, $nh^2$ of \Eq{eq:saratio}.)
+The particles become lighter: each fluctuates with a relative size $1/\sqrt{s_a}$.  At tree level the canonical ensemble of the particle
+Hamiltonian has the target thermodynamics plus corrections of order $T$ per particle, i.e.\ of relative size
+\st
+\frac{1}{s_a}=\frac{nh^2}{S_0h^2}\ \propto\ n ,
+\label{eq:oneloop}
+\stp
+which grow linearly with the refinement (at $s_a=16$ the tree-level equal-time spectra are $20$--$40\%$ above the susceptibilities of
+the equation of state).  A continuum limit at fixed physics therefore needs counterterms that remove these terms particle by particle:
+this is the renormalization, \texttt{SPH\_RENORM=split} (\texttt{docs/step5\_plan.tex}), with which the spectra agree with the target to a
+few per cent at $s_a=16$.
+
+%=============================================================================
+\section{The numerical settings}
+\label{sec:numerics}
+
+All are environment variables, read through \texttt{setting} (\texttt{src/settings.jl}) and written to each run's record (\texttt{.toml}).
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+setting & default & alternatives \\ \midrule
+\texttt{SPH\_HAMILTONIAN}, \texttt{SPH\_VOLUME} & \texttt{energy}, \texttt{number} & \texttt{smoothed}, \texttt{entropy} \\
+\texttt{SPH\_IDEAL} & \texttt{generalized} & \texttt{particle}, \texttt{grid} \\
+\texttt{SPH\_DISSIPATION} & \texttt{moment} & \texttt{common}, \texttt{particle} \\
+\texttt{SPH\_HASTINGS} & on where it applies & \texttt{0} \\
+\texttt{SPH\_MEASURE} & \texttt{liouville} & \texttt{einstein} \\
+\texttt{SPH\_GAMMA\_MAX} & $100$ & \\
+\texttt{SPH\_ZETA\_FLOOR} & $0.01$ & $0$ (no floor) \\
+\texttt{SPH\_RENORM} & \texttt{split}$^\ast$ & \texttt{legendre}, \texttt{1} (label only), \texttt{0} (tree level) \\
+\texttt{SPH\_RENORM\_VBAR} & $L_xL_y/N$ & (enters only for $c_s^2\neq1/2$) \\
+\texttt{SPH\_KERNEL} & \texttt{wc2} & \texttt{wc4}, \texttt{wc6} \\
+\texttt{SR\_POSITIONS} & \texttt{hmc} & \texttt{lattice}, \texttt{poisson} \\
+\texttt{SR\_HMC\_N}, \texttt{\_TAU}, \texttt{\_TAUJIT}, \texttt{\_DTFAC} & $200$, $L/c_s$, $0.5$, $0.35$ & \\
+\texttt{SR\_START} & \texttt{eq} & \texttt{cold}, \texttt{thermal} \\
+\texttt{SR\_BATH} & \texttt{nominal} & \texttt{totals} \\
+\texttt{SR\_DTFAC} & $1$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+$^\ast$Default from the merge of branch \texttt{split}; on the branch today the default is the tree level.  The time step is
+\st
+\Delta t=\tfrac12\,\texttt{SR\_DTFAC}\,\min\Big(\frac{0.2\,h}{c_s},\ \frac{0.2\,h^2\,T_{\rm rel,min}}{\eta/s+\zeta/s},\ \frac{2}{\Gamma_{\rm bound}}\Big),
+\stp
+the acoustic and diffusive limits and the bound $\Gamma_{\rm bound}$ on the damping rate of the viscous step (\texttt{compute\_dt},
+\texttt{src/ideal.jl}; the diffusive term written for $d=2$).  Hybrid Monte Carlo uses $\delta t=\texttt{SR\_HMC\_DTFAC}\times0.2h/c_s$.
+
+%=============================================================================
+\section{All inputs}
+\label{sec:table}
+
+\begin{center}\small
+\begin{tabular}{llll}
+\toprule
+input & symbol & setting & default \\ \midrule
+box side & $L$ & argument 1 & --- \\
+resolution & $h/a$ & argument 2 & --- \\
+smoothing length & $h$ & \texttt{SR\_H} & $0.05$ \\
+rest-frame entropy density & $S_0$ & \texttt{SR\_S0} & $10^6$ \\
+velocity (along $x$) & $v$ & \texttt{SR\_BOOST} & $0$ \\
+speed of sound & $c_s^2$ & \texttt{SR\_CS2} & $0$, i.e.\ $1/d=1/2$ \\
+temperature scale & $T_{\rm scale}$ & (fixed) & $1$ \\
+shear viscosity & $\eta/s$ & \texttt{SR\_ETAS} & $0.2$ \\
+bulk viscosity & $\zeta/s$ & \texttt{SR\_ZETAS} & $0$ \\
+run length & $t_{\rm end}$ & argument 3 & --- \\
+realizations & & argument 4 & --- \\
+record every (steps) & & argument 5 & $2$ \\
+tag & & argument 6 & \texttt{L<L>\_ha<h/a>} \\
+largest recorded $kh$ & & \texttt{SR\_KHMAX} & $1.5$ \\
+seeds & & \texttt{SR\_SEED0}, \texttt{SR\_SEEDSTRIDE}, \texttt{SR\_SEEDOFFSET} & $0$, $1$, $0$ \\
+\midrule
+\multicolumn{4}{l}{derived: $a$, $N$, $n$, $s_a=\gamma S_0/n$, $T_{\rm rel,0}$ (\Eq{eq:TofS}), $\nu_0$, $\Delta t$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%=============================================================================
+\section{Remarks from the code}
+\label{sec:remarks}
+
+\paragraph{A proposal: the temperature as input.}
+\label{sec:proposal}
+A setting \texttt{SR\_T} $=T_{\rm rel,0}$ could replace \texttt{SR\_S0}: the driver would set $S_0$ from \Eq{eq:sofT} and proceed
+unchanged.  The run is already at $(T_{\rm rel,0},\bm v)$ through \Eq{eq:bath}; only the way it is named would change, and the inputs
+would then read as the physics does: $T$, $v$, the equation of state, $\eta/s$; then $L$, $N$ (or $h/a$) and $h$.  Not implemented.
+
+\paragraph{Points found in reading the code.}
+\begin{itemize}
+\item In \texttt{equilibrium.jl} the default HMC trajectory length is \texttt{LBOX*sqrt(3)}, which is $L/c_s$ only at $c_s^2=1/3$; at
+  $c_s^2=1/2$ it is $\sqrt{3/2}\,L/c_s$.  The comments (and \texttt{split\_dynamics.tex}) say $L/c_s$.  With the random lengths
+  (\texttt{SR\_HMC\_TAUJIT=0.5}) this is harmless, but the statement or the code should be made to agree.
+\item \texttt{hmc\_positions.jl} (arguments \texttt{L h/a nupdates nsteps [tag]}) is narrower than \texttt{equilibrium.jl}: $h=0.05$,
+  $\eta/s=0.2$ and $c_s^2=1/2$ are fixed in the code (no \texttt{SR\_H}, \texttt{SR\_ETAS}, \texttt{SR\_CS2}), and its defaults differ:
+  \texttt{SR\_HMC\_DTFAC} $0.5$, \texttt{SR\_HMC\_TAUJIT} $0$, \texttt{SR\_SEED0} $1$, $\tau=L/c_s$ (computed from $c_s$).
+\item The box is not exactly square (\Sect{sec:discretization}); $n$ and the box modes use $L_x$, $L_y$ as snapped.
+\item The quoted $s_a$ is the set-up value $\gamma S_0V$; with \texttt{SR\_POSITIONS=hmc} the volumes $V_a=1/n_a$ and the $s_a$
+  fluctuate from the start, and their mean need not equal it.
+\end{itemize}
+
+\end{document}
