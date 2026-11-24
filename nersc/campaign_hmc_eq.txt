@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hmc_eq` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex, Fig. Skk): the equilibrium structure factor
 # of the positions from many independent hybrid Monte Carlo chains (examples/hmc_positions.jl), at rest, h/a = 2.  Trajectories
 # about the time sound takes to cross the box (τ ≈ L/c_s), δt chosen for acceptance ≳ 0.6; one chain per task (SR_SEED0).

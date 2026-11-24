@@ -58,7 +58,7 @@ s_a=\frac{S}{n},
 with $S$ the entropy density of the state; $s_a$ is what the particles carry.
 
 \paragraph{What the drivers take today.}  The drivers do not take the temperature: they take the \emph{rest-frame entropy density} $s_{\rm rel,0}$
-(\texttt{SR\_S0}), and derive the temperature from it through the equation of state,
+(\texttt{SR\_SREL0}, formerly \texttt{SR\_S0}, retired 2026-11-23), and derive the temperature from it through the equation of state,
 \st
 T_{\rm rel,0}=T_{\rm rel}\big|_{s_{\rm rel}=s_{\rm rel,0}}\qquad\text{(uniform fluid at rest)} .
 \label{eq:Trel0}
@@ -75,7 +75,7 @@ the temperature directly is in \Sect{sec:proposal}.
 p=c_s^2\,e,\qquad T_{\rm rel}=T_{\rm scale}\,e^{c_s^2/(1+c_s^2)},\qquad s_{\rm rel}=\frac{e+p}{T_{\rm rel}} ,
 \label{eq:eos}
 \stp
-with $e$, $p$, $s_{\rm rel}$ the rest-frame energy density, pressure and entropy density ($S=\gamma s_{\rm rel}$ is the entropy density in the lab, the density frame; $s_{\rm rel,0}$ is the value of a run, \texttt{SR\_S0}).  Eliminating $e$,
+with $e$, $p$, $s_{\rm rel}$ the rest-frame energy density, pressure and entropy density ($S=\gamma s_{\rm rel}$ is the entropy density in the lab, the density frame; $s_{\rm rel,0}$ is the value of a run, \texttt{SR\_SREL0}).  Eliminating $e$,
 \st
 s_{\rm rel}=(1+c_s^2)\,T_{\rm scale}^{-(1+c_s^2)/c_s^2}\;T_{\rm rel}^{1/c_s^2} .
 \label{eq:sofT}
@@ -281,7 +281,7 @@ input & symbol & setting & default \\ \midrule
 box side & $L$ & argument 1 & --- \\
 resolution & $h/a$ & argument 2 & --- \\
 smoothing length & $h$ & \texttt{SR\_H} & $0.05$ \\
-rest-frame entropy density & $s_{\rm rel,0}$ & \texttt{SR\_S0} & $10^6$ \\
+rest-frame entropy density & $s_{\rm rel,0}$ & \texttt{SR\_SREL0} & $10^6$ \\
 velocity (along $x$) & $v$ & \texttt{SR\_BOOST} & $0$ \\
 speed of sound & $c_s^2$ & \texttt{SR\_CS2} & $0$, i.e.\ $1/d=1/2$ \\
 temperature scale & $T_{\rm scale}$ & (fixed) & $1$ \\
@@ -305,7 +305,7 @@ seeds & & \texttt{SR\_SEED0}, \texttt{SR\_SEEDSTRIDE}, \texttt{SR\_SEEDOFFSET} &
 
 \paragraph{A proposal: the temperature as input.}
 \label{sec:proposal}
-A setting \texttt{SR\_T} $=T_{\rm rel,0}$ could replace \texttt{SR\_S0}: the driver would set $s_{\rm rel,0}$ from \Eq{eq:sofT} and proceed
+A setting \texttt{SR\_T} $=T_{\rm rel,0}$ could replace \texttt{SR\_SREL0}: the driver would set $s_{\rm rel,0}$ from \Eq{eq:sofT} and proceed
 unchanged.  The run is already at $(T_{\rm rel,0},\bm v)$ through \Eq{eq:bath}; only the way it is named would change, and the inputs
 would then read as the physics does: $T$, $v$, the equation of state, $\eta/s$; then $L$, $N$ (or $h/a$) and $h$.  Not implemented.
 

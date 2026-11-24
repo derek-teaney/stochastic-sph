@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `pairs_low` (2026-11-14, branch equilibrium, docs/equilibrium_positions.tex): the pair correlation g(r,t), ψ6(t)
 # and S(k,t) of the positions from the hexagonal lattice toward lower entropy per particle, s_a ≥ 30, by the two routes:
 #   fixed kernel, h/a = 2, lower S0:            s_a = 135, 60, 34      (tasks 1-48, 16 runs each, t = 100)

@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hastings_low` (2026-11-16, NERSC; owner: "let's go wild"): the runs of campaign hastings (moment without/with SPH_HASTINGS,
 # the stochastic step alone, HMC chains of the same model and measure) at s_a = 12, 8, 4, with the γ cap (SPH_GAMMA_MAX = 100).  The s_a = 16
 # lines of campaign_hastings.txt with S0 and the seed offsets changed; everything else as there.  384 tasks of 4 cores, packed on 12 nodes.

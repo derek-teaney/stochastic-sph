@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `frozen` (2026-11-10): does the particle arrangement freeze, and how fast do
 # particles separate?  docs/frozen.tex.  L = 1.2, h/a = 2, C2, eq start, t = 200, one
 # realization per task, recorded: C_T, C_L, displacement modes, pair separation D2(r).

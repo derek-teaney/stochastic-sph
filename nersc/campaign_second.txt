@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Second campaign (2026-11-09): the validated fast code (main, speedup merged) with the new
 # defaults: hot start (SR_START=eq, equilibrium_init! with exact totals), single vote,
 # λ = 1, gradient-corrected map; checkpoints every 20 min (a timed-out task is resubmitted

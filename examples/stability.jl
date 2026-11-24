@@ -8,7 +8,7 @@
 # Measured: the momentum spectrum ⟨|m_k|²⟩/(N V w T) versus k h at several times, the
 # smoothed energy H and the particle energies Σe over time, and the lattice disorder.
 #
-# Environment: SR_ETAS (η/s, default 0.2), SR_S0 (entropy density, default 1e6),
+# Environment: SR_ETAS (η/s, default 0.2), SR_SREL0 (s_rel,0, the rest-frame entropy density, default 1e6),
 #   SR_HFIX=1 (after each stochastic step, rescale all s_a by one factor to restore H),
 #   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
 #   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
@@ -30,7 +30,7 @@ setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=g
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s
-const S0    = setting("SR_S0", 1e6)                  # entropy density (sets s_a)
+const S0    = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
 const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
 const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
 const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL

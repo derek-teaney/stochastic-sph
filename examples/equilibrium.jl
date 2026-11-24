@@ -10,7 +10,7 @@
 #   → data/equilibrium_<tag>_r<seed>.h5  (one HDF5 file per realization; see
 #     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
 # Restart: a run that stops early resumes from equilibrium_<tag>_r<seed>.chk (SR_CHECKPOINT_MIN).
-# Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_S0, SR_KHMAX,
+# Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_SREL0 (s_rel,0, the rest-frame entropy density), SR_KHMAX,
 #   SR_START (cold | eq | thermal; default eq; campaign `first` used thermal).
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
@@ -18,7 +18,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
 # SR_H: the kernel scale h (default 0.05).  The spacing is a = h/HA, so h/a can be raised at fixed a (and fixed N in the box L)
-# by raising SR_H with HA (docs/hbya.tex); with SR_S0 fixed the entropy per particle s_a = S0·a²·√3/2 is then fixed too.
+# by raising SR_H with HA (docs/hbya.tex); with SR_SREL0 fixed the entropy per particle s_a = S0·a²·√3/2 is then fixed too.
 const HKER  = setting("SR_H", 0.05)
 const TEND  = parse(Float64, ARGS[3])
 const NREAL = parse(Int, ARGS[4])
@@ -30,7 +30,7 @@ const ETAS  = setting("SR_ETAS", 0.2)
 # the dimension enters the tree-level step only through ζ_eff = max(ζ + 2η(1/2 − 1/d), 0.01 η).  SR_ZETAS: ζ/s (default 0).
 const CS2V  = setting("SR_CS2", 0.0)
 const ZETAS = setting("SR_ZETAS", 0.0)
-const S0    = setting("SR_S0", 1e6)
+const S0    = setting("SR_SREL0", 1e6)        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
 const KHMAX = setting("SR_KHMAX", 1.5)
 const START = setting("SR_START", :eq)
 const OUT   = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data")));  mkpath(OUT)

@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hastings_dt` (2026-11-16, NERSC): campaign_hastings_low at s_a = 4 (all 128 tasks) and the s_a = 8 HMC chains (32), with the HMC
 # time step halved, SR_HMC_DTFAC = 0.175 (was 0.35), in the HMC start of the dynamics and in the chains: at s_a <= 8 the EOS inversion failed
 # inside the HMC trajectory (the implicit half step) in ~40% of the s_a = 4 tasks.  A smaller step changes efficiency, not the target.

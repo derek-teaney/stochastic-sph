@@ -4,7 +4,7 @@
 # Writes equilibrium_<tag>_r<seed>.h5 in the format of examples/equilibrium.jl, with t = the update number times the
 # trajectory length, so that examples/pair_analysis.jl reads it.
 #   julia -t 4 --project examples/hmc_positions.jl L h/a nupdates nsteps [tag]
-# Environment: SR_S0 (entropy density, default 1e6), SR_SEED0 (seed, default 1), SR_HMC_DTFAC (δt / acoustic step,
+# Environment: SR_SREL0 (s_rel,0, the rest-frame entropy density, default 1e6), SR_SEED0 (seed, default 1), SR_HMC_DTFAC (δt / acoustic step,
 # default 0.5), SR_OUTDIR (default data/hmc), SR_KHMAX (wave vectors of N_k, default 1.5), SR_BOOST (fluid velocity along x,
 # default 0: the rest-frame entropy density is S0, the lab one γS0 and M = w0 γ² v, as in examples/equilibrium.jl).
 using StaticArrays, LinearAlgebra, Printf, Random
@@ -13,7 +13,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const LBOX = parse(Float64, ARGS[1]);  const HA = parse(Float64, ARGS[2])
 const NUPD = parse(Int, ARGS[3]);  const NSTEPS_ARG = parse(Int, ARGS[4])
 const TAG  = length(ARGS) > 4 ? ARGS[5] : "hmc_L$(LBOX)_ha$(HA)"
-const S0     = setting("SR_S0", 1e6)
+const S0     = setting("SR_SREL0", 1e6)          # s_rel,0, the rest-frame entropy density (was SR_S0)
 const SEED   = setting("SR_SEED0", 1)
 const DTFAC  = setting("SR_HMC_DTFAC", 0.5)
 const OUTDIR = setting("SR_OUTDIR", joinpath(@__DIR__, "..", "data", "hmc"))

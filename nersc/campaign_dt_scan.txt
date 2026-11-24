@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `dt_scan` (2026-11-16, NERSC): the time step that keeps the residual acceptance of the stochastic step (with the Hastings correction)
 # at or above 1/2, and the light-cone rejections, against s_a = 16, 12, 8, 4 at v0 = 0 and 0.8.  Short runs (t = 5, L = 0.6) from the lattice
 # (SR_POSITIONS=lattice: no HMC, which can fail at low s_a); acceptances read from the windows after the lattice has melted (t > 1).

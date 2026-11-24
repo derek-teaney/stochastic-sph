@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `moment` (2026-11-15, branch inverse-moment, docs/inverse_moment.tex, "Stage 1"): the viscous step with inverse-moment
 # faces and the conditioned residual (SPH_DISSIPATION=moment) against the common scheme (SPH_DISSIPATION=common), with the current
 # defaults (generalized leapfrog, Liouville measure, HMC start: 200 updates, TAUJIT 0.5, δt factor 0.35).  L = 0.6 (N = 672), h/a = 2,

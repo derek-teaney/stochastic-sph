@@ -27,6 +27,15 @@ function setting(name::AbstractString, default)
     return value
 end
 
+# Retired settings: a hard stop at load time, so that a script or campaign file that still sets one fails at once instead of being
+# silently ignored.  The campaign files that used them are kept as the record of what was run (nersc/README.md, "Retired settings").
+const RETIRED_SETTINGS = Dict(
+    "SR_S0" => "renamed SR_SREL0 on 2026-11-23: the rest-frame entropy density s_rel,0 of the run (docs/inputs.tex)",
+)
+for (name, why) in RETIRED_SETTINGS
+    haskey(ENV, name) && error("setting $name is retired: $why.  Unset it (to rerun an old campaign line, replace $name= by the new name).")
+end
+
 # The raw string of a setting, or nothing, not recorded: only to choose how a setting is then read with `setting`
 # (sph.jl: SPH_RENORM=legendre is read as a Symbol, any other value as a Bool, as before).
 setting_peek(name::AbstractString) = get(ENV, name, nothing)

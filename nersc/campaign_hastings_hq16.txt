@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign hastings_hq16 (2026-11-15, NERSC): the HMC reference chains at s_a = 16 of campaign_hastings.txt, rerun with SPH_GAMMA_MAX = 100
 # (the pre-cap start included states beyond γ = 100, so the pre-cap chains are not the reference of the capped dynamics).  Lines unchanged.
 hq16_v0      16  SR_S0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_v0

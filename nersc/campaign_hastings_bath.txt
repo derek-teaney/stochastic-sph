@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hastings_bath` (2026-11-23; the rerun of `hastings_split` with the HMC start at the requested state, SR_BATH=nominal,
 # the new default: in hastings_split the start solved for its β^μ from the set-up totals and the split v0 = 0.8 fluid ran at
 # T_rel = 208, v = 0.66 instead of 140, 0.8; nersc/LOG.md).  As hastings_split (2026-11-23, branch split; docs/split_dynamics.tex): the dynamics of campaign `hastings` (inverse_moment.tex,

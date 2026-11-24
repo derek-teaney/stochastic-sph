@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `hbya` (2026-11-15, branch equilibrium, docs/hbya.tex): h/a = 4, kernels C2/C4/C6 (SPH_KERNEL), at fixed spacing a = 0.025
 # (SR_H = 0.1) and fixed entropy per particle s_a = 135 (SR_S0 = 2.5e5), L = 1.2 (N = 2688): GLF ideal step, Liouville measure, equilibrium HMC
 # start (200 updates, random τ in [L/2c_s, L/c_s], δt factor 0.35), η/s = 0.2.  t_end = 760 (the same number of shear damping times at kh = 0.52

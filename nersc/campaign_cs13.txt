@@ -1,3 +1,5 @@
+# NOTE (2026-11-23): SR_S0 is retired (renamed SR_SREL0; src/settings.jl stops a run that sets it).  This file is the record of what was
+# run at its commit; to rerun a line with the present code, replace SR_S0= by SR_SREL0= (nersc/README.md, "Retired settings").
 # Campaign `cs13` (2026-11-23, branch split; docs/split_dynamics.tex): the tree-level runs of campaign `hastings` (c_s^2 = 1/3, before the
 # dimension fix 8d50d04, where the shear damping was 1.0-1.2 x hydrodynamics) repeated with the present code: SR_CS2=1/3 (e = T^4,
 # T_rel = 28.1 at s_a = 16) and zeta/s = (eta/s)/3, so that zeta_eff = eta/3 as before; everything else the present defaults (HMC start
