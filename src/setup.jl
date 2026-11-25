@@ -147,6 +147,7 @@ function setup_ic(h, ha_ratio, eos, S_func, M_func;
     set_ic!(particles, params; S_func, M_func)
     cl = CellList2D(params.L, params.h, params.N)
     rebuild_cell_list!(cl, particles)
+    SSCHEME && sscheme_labels!(particles, params, cl, eos)     # pa.s = S_func V is the target entropy: the label at that state
     thermalize!(particles, params, cl, eos)
     return params, particles, cl, eos
 end

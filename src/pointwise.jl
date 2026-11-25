@@ -116,6 +116,9 @@ if LEGENDRE
     particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
                      tol = 1e-12, maxiter = 50, verbose = false) = legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess)
     particle_inverse(e, m, V, eos; guess = nothing) = legendre_inverse(e, m, V, eos; guess)
+elseif SSCHEME      # the S-scheme has no forward map in (s, S, M): solve_eos! and particle_energy call sscheme_from_label (sscheme.jl)
+    particle_forward(s, S_in, M_vec, e0, eos; kw...) = error("SPH_RENORM=sscheme: particle_forward is not used (sscheme_from_label)")
+    particle_inverse(e, m, V, eos; guess = nothing) = sscheme_inverse(e, m, V, eos)
 elseif SPLIT
     particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
                      tol = 1e-12, maxiter = 50, verbose = false) = split_forward(s, S_in, M_vec, e0, eos; M_mag, tol, maxiter, verbose)
@@ -129,6 +132,7 @@ end
 # Particle energy e_a = s_a ℰ(S_a, m_a/V_a) at the current state, through the forward map.
 # (Same arithmetic as solve_eos! on a copy with M_smooth = m_a S_a/s_a, without the copy.)
 function particle_energy(pa::Particle, eos::AbstractEOS)
+    SSCHEME && return sscheme_from_label(pa.s, pa.m, pa.V, SSchemeConsts(eos), pa.St).H
     return pa.s * particle_forward(pa.s, pa.S_smooth, pa.m * (pa.S_smooth / pa.s), pa.e, eos; γ0 = pa.γ).HS
 end
 
@@ -188,7 +192,7 @@ end
 #   C = 1/(T γ²) [1 − (1 − c_s²) v vᵀ / (1 − c_s² v²)],   T = (e+p)/S
 # (transverse 1/(Tγ²), longitudinal 1/(Tγ⁴(1 − c_s² v²)), and 1/T at rest).
 function inverse_susceptibility(pa::Particle, eos::AbstractEOS)
-    v  = pa.v_over_S * pa.S_smooth
+    v  = pa.v
     c2 = cs2(eos, pa.e)
     return (SMatrix{2,2,Float64}(I) - (1 - c2) * (v * v') / (1 - c2 * dot(v, v))) / (pa.T * pa.γ^2)
 end

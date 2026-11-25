@@ -145,3 +145,70 @@ end
 
 # The particle's velocity vector: v_a along m (zero at m = 0).
 @inline sscheme_velocity(st, m::SVector{2,Float64}) = (mm = norm(m);  mm > 0 ? (st.va / mm) * m : zero(m))
+
+# ── The S-scheme in the code (sscheme_plan.tex, item C) ───────────────────────────────────────────────────────────────────────────────
+# The particle fields: pa.s the label; pa.St the target entropy (the warm start of the next solve, and the entropy wherever the code needs a
+# physical one, entropy_of); pa.V = 1/n_a (stored by the density pass); pa.H, pa.v (= v_a, along m), pa.T = T_a, pa.p = P_a the particle's
+# own; pa.e and pa.γ the target's rest-frame energy density and Lorentz factor (the transport coefficients: target_trel, srel(eos, pa.e));
+# pa.S_smooth = S_t/V, pa.M_smooth = m/V the target's densities.  H_over_S, F_over_S are not used (the energy Hamiltonian, the number volume).
+
+# The state of the particle at its label, momentum and volume; NaN fields outside the domain (hybrid Monte Carlo rejects the trajectory).
+function sscheme_solve!(pa::Particle, eos::AbstractEOS)
+    c = SSchemeConsts(eos)
+    st = sscheme_from_label(pa.s, pa.m, pa.V, c, pa.St)
+    if !st.ok
+        pa.e = NaN;  pa.p = NaN;  pa.T = NaN;  pa.γ = NaN;  pa.H = NaN;  pa.v = SVector(NaN, NaN)
+        pa.v_over_S = SVector(NaN, NaN);  pa.H_over_S = NaN;  pa.F_over_S = NaN
+        return nothing
+    end
+    pa.e = st.erest;  pa.p = st.Pa;  pa.T = st.Ta;  pa.γ = st.γ;  pa.H = st.H;  pa.St = st.St
+    pa.v = sscheme_velocity(st, pa.m)
+    pa.S_smooth = st.St / pa.V;  pa.M_smooth = pa.m / pa.V
+    pa.v_over_S = pa.v / pa.S_smooth;  pa.H_over_S = NaN;  pa.F_over_S = NaN
+    return nothing
+end
+
+# The set-up gives each particle its target entropy in pa.s (S_func V, setup.jl): at the smoothed volume, replace it by the label of the state
+# with that target entropy and the particle's momentum.
+function sscheme_labels!(particles, params, cl, eos)
+    c = SSchemeConsts(eos)
+    smooth_to_particles!(particles, params, cl)
+    for pa in particles
+        St = pa.s;  r = sscheme_target_entropy(St, norm(pa.m), pa.V, c)
+        st = sscheme_state(r[1], r[2], pa.V, c)
+        st.ok || error("SPH_RENORM=sscheme: the set-up state S_t = $St, |m| = $(norm(pa.m)), V = $(pa.V) is outside the domain")
+        pa.s = st.s;  pa.St = St
+    end
+    return nothing
+end
+
+# The target's T_rel (the transport coefficients, the time step): pa.T γ at the tree level (and split, legendre, as before); with sscheme
+# pa.T is T_a and the target's T_rel follows from its rest-frame energy density.
+target_trel(pa, eos) = SSCHEME ? Trel(eos, pa.e) : pa.T * pa.γ
+# The target's velocity of a particle with sscheme (the comoving structures of the viscous step, as star_coef)
+function sscheme_target_velocity(pa, eos)
+    mm = norm(pa.m);  mm > 0 || return zero(pa.m)
+    _, uγ = sscheme_target_energy(pa.H, mm, pa.V, SSchemeConsts(eos))
+    return (uγ / sqrt(1 + uγ * uγ) / mm) * pa.m
+end
+
+# The inverse (the votes, the heat bath, the star coefficients): (s, v_a, T_a) of the particle of energy e, momentum m and volume V.
+function sscheme_inverse(e, m, V, eos)
+    st = sscheme_from_energy(e, m, V, SSchemeConsts(eos))
+    st.ok || return (-Inf, SVector(NaN, NaN), NaN)
+    return (st.s, sscheme_velocity(st, m), st.Ta)
+end
+# The vote weight (Liouville measure): s − ln T_a, no solve.
+sscheme_vote_entropy(e, m, V, eos) = sscheme_from_energy(e, m, V, SSchemeConsts(eos)).weight
+
+# The schemes the S-scheme supports (as check_split).
+function check_sscheme(params)
+    SSCHEME || return nothing
+    hint = "; set SPH_RENORM=split (the default) or SPH_RENORM=0"
+    params.volume === :number && params.hamiltonian === :energy ||
+        error("SPH_RENORM=sscheme needs hamiltonian = :energy and volume = :number" * hint)
+    sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=sscheme: implemented for d = 2" * hint)
+    params.measure === :liouville || error("SPH_RENORM=sscheme needs the Liouville measure (SPH_MEASURE=liouville)" * hint)
+    params.ideal === :grid && error("SPH_RENORM=sscheme is not available with the grid step (SPH_IDEAL=grid)" * hint)
+    return nothing
+end

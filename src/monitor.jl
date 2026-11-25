@@ -37,7 +37,7 @@ end
 
 function observe_particles!(mon::StepMonitor, particles)
     for q in particles
-        s = norm(q.v_over_S * q.S_smooth)
+        s = norm(q.v)
         mon.vmax = max(mon.vmax, s);  mon.vmaxwin = max(mon.vmaxwin, s)
         s > 0.9 && (mon.nfast[1] += 1);  s > 0.99 && (mon.nfast[2] += 1)
     end

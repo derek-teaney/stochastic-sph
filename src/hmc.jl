@@ -31,16 +31,16 @@ end
 # Smooth and solve; returns H, P and Σ ln T_a of the present state.
 function hmc_measure!(ps, params, cl, eos)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
-    return sum(q.s * q.H_over_S for q in ps), sum(q.m for q in ps), sum(log(q.T) for q in ps)
+    return sum(q.H for q in ps), sum(q.m for q in ps), sum(log(q.T) for q in ps)
 end
 
 # 1. Heat bath at fixed positions (the smoothed state must be current).  Returns the acceptance of the chains.
 function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, widen::Float64 = 2.0)
     nacc = 0;  liouville = params.measure === :liouville       # the target S_a − ln T_a (sph.jl, measure)
     for pa in ps
-        V = pa.s / pa.S_smooth;  r = V / tg.Vref
+        V = pa.V;  r = V / tg.Vref
         ē = V * tg.ε̄;  m̄ = V * tg.M̄;  Lw = sqrt(widen * r) * tg.L;  Hn = tg.Hn / r
-        g = LEGENDRE ? (pa.T, pa.v_over_S * pa.S_smooth) : SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
+        g = LEGENDRE ? (pa.T, pa.v) : SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
         logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville; guess = g) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
