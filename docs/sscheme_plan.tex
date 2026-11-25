@@ -624,6 +624,35 @@ reached where $\mathcal D=\partial s/\partial S_{\rm t}=0$.  When $\bm m$ or $V$
 has that label: $H(s,\bm m,V)$ ends on a fold, where $T_a$ and $v_a$ diverge.  At $s_a=16$ the smallest $\mathcal D$ over the 672 particles is
 0.04--0.25 and about one percent of them have $\mathcal D<0.3$ (target entropies down to $S_{\rm t}\approx2.7$, the boundary at rest being $5/2$).
 Split does not have this: its boundary is on the label alone, $u>b$, which the ideal step conserves.
-\textbf{Ask}: the owner decides how to treat $s_a=16$ before campaign F.
+\textbf{Ask}: the owner decides how to treat $s_a=16$ before campaign F.  Decision (owner, 2026-11-25): campaigns F and G at $s_a\ge54$; the failure
+at $s_a=16$ must be explained.
+
+\paragraph{Why the S-scheme has the fold and the earlier schemes do not.}  For a constant speed of sound the counterterm of all three schemes is the
+same function (\Eq{splitrel}, test 4),
+\st
+\Delta=b\,\ln S_{\rm t}+\mathcal N\ln(\gamma V)+\tfrac12\ln\big(1-c_s^2v^2\big)+\text{const},\qquad b=\tfrac D2+1-\mathcal N ,
+\stp
+and what differs is the variable that the ideal step conserves.
+\begin{itemize}
+\item \texttt{SPH\_RENORM=1} and split take the target entropy $u=S_{\rm t}$ as the particle's variable.  The part $b\ln u$, which alone has the
+  boundary ($s=u-b\ln u$ has its minimum at $u=b$), is a change of variables in the measure, $e^{u-b\ln u}(1-b/u)\,du=d\,e^{u-b\ln u}$.  The parts that depend
+  on $\bm m$ and $V$ are left out (\texttt{SPH\_RENORM=1}) or added to $H$ as the smooth energy $T\Delta s^{\rm dyn}$ (split).  The ideal step
+  conserves $u$, so a particle above the boundary $u=b$ stays above it, and $H(u,\bm m,V)$ is defined everywhere.
+\item The S-scheme takes the label $s=S_{\rm t}-\Delta$ as the variable, with the whole of $\Delta$ inside it.  The ideal step conserves $s$, and when the
+  velocity or the volume of a particle changes, its target entropy must change to keep $s$ fixed.  At fixed $s$ the relation
+  $S_{\rm t}-b\ln S_{\rm t}=s+\mathcal N\ln(\gamma V)+\tfrac12\ln(1-c_s^2v^2)+\text{const}$ has a solution only while the right side stays above the minimum of the
+  left, $b-b\ln b$.  The terms in $\bm m$ and $V$ move the right side.  For $c_s^2=1/2$, where $\mathcal N=0$, only the sound term does, and it can
+  lower it by up to $\tfrac12\ln2=0.35$.  A particle whose label lies within that margin of the minimum can be carried by its own acceleration onto
+  the fold, where $\mathcal D=0$ and $T_a$ and $v_a$ diverge.
+\end{itemize}
+\emph{The test} (debug 61998412, the same 40 updates at $s_a=16$, $c_s^2=1/2$): with the sound term removed from $\Delta_\chi$ (a diagnostic setting
+in a separate worktree, not committed), the S-scheme's ideal step is that of \texttt{SPH\_RENORM=1}, and 37 of 40 trajectories are accepted, 3 rejected by
+Metropolis and none leaves the domain.  With the sound term, 8 are accepted and 32 leave the domain.  At $s_a=54$ the labels lie far above the
+minimum (the weight within 3 of the boundary is $3\times10^{-7}$--$5\times10^{-5}$, item A), and no trajectory reaches it.
+
+The fold belongs to the truncation: the exact number of states increases with the energy at every $(\bm m,V)$, so the exact $S(e,\bm m,V)$ has no
+minimum in $S_{\rm t}$ (\nolinkurl{renorm3.tex}, ``The domain'').  At one loop, $s(S_{\rm t})$ at fixed $\bm m,V$ has its minimum at
+$S_{\rm t}\approx b$, and the terms in $\bm m$ and $V$ move that minimum.  Split avoids the problem only because it keeps the counterterm's dependence
+on $\bm m$ and $V$ out of the conserved variable.
 
 \end{document}
