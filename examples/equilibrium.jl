@@ -165,7 +165,9 @@ function one_realization(seed)
                                 L=LBOX, lattice=:hex, seed=1000seed + 4)
         # T_rel0: the temperature of the target fluid at s_rel,0, from the equation of state (not from a particle of the set-up, whose
         # T = ∂H/∂s depends on the Hamiltonian: with SPH_RENORM=legendre the particle variable is the label, not the target entropy)
-        w0 = ps0[1].e + ps0[1].p;  Trel0 = trel_of_srel(eos, SREL0)
+        # w0 likewise from the EOS with the nominal bath (a Legendre set-up particle is hotter: w 1.8× at s_a = 54, 4× at s_a = 16)
+        e0 = e_of_srel(eos, SREL0);  Trel0 = trel_of_srel(eos, SREL0)     # (Trel is a local variable below)
+        w0 = BATH === :nominal ? e0 + pressure(eos, e0) : ps0[1].e + ps0[1].p
         Mx0 = w0 * GAMMA^2 * BOOST
         params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
@@ -188,6 +190,9 @@ function one_realization(seed)
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
         p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
+        # the normalization of KE (the momentum fluctuations, 2(N−1) V w T) and the record's w, T, Trel: the target state with the
+        # nominal bath (EOS at s_rel,0, T = T_rel,0/γ); the set-up particle with SR_BATH=totals (before)
+        BATH === :nominal && (w = w0;  T = Trel0 / GAMMA;  Trel = Trel0)
         hmcinfo = NamedTuple()
         bath = BATH === :nominal ? (GAMMA / Trel0, SVector(GAMMA * BOOST / Trel0, 0.0)) : nothing
         if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run

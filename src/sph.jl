@@ -270,15 +270,16 @@ zeta_eff_by_s(eos::AbstractEOS, d::Integer) =
 srel(eos::ConstantCs2EOS, e::Float64) = (e + pressure(eos, e)) / Trel(eos, e)
 # The rest-frame temperature of the target fluid at the rest-frame entropy density s_rel (docs/inputs.tex, T_rel,0 of a run): the
 # equation of state alone, the same for every Hamiltonian (tree level, split, Legendre).  s_rel(e) is monotonic: bisection in e.
-function trel_of_srel(eos::AbstractEOS, s::Float64)
+function e_of_srel(eos::AbstractEOS, s::Float64)       # the rest-frame energy density at rest-frame entropy density s (bisection)
     lo, hi = 0.0, 1.0
     while srel(eos, hi) < s;  hi *= 2;  end
     for _ in 1:200
         mid = (lo + hi) / 2;  srel(eos, mid) < s ? (lo = mid) : (hi = mid)
         hi - lo <= 1e-15 * hi && break
     end
-    return Trel(eos, (lo + hi) / 2)
+    return (lo + hi) / 2
 end
+trel_of_srel(eos::AbstractEOS, s::Float64) = Trel(eos, e_of_srel(eos, s))
 
 # ─────────────────────────────────────────────────────────────────────────────
 
