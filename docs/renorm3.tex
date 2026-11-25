@@ -1,0 +1,715 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\Tab#1{Table~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+
+
+\begin{document}
+\sloppy
+
+\title{The state-counting renormalization of the particle model}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+This note summarizes the renormalization scheme that we plan to implement.  It applies to any equation of state $p(T_{\rm rel})$ and to neutral
+labels ($\mathcal B=0$).  The entropy of a particle is defined as the logarithm of the number of states below its energy, and the number of states
+is fixed by requiring that one particle at fixed volume has the partition function of the target fluid.  At large volume the number of states is
+given by a saddle point.  The first term of the saddle-point expansion defines \emph{state counting at one loop}.  In this scheme the entropy of a
+particle is the target entropy less two counterterms that are evaluated at the target's own state.  One comes from the determinant of the
+susceptibility and the other from the labels, and both are known in closed form.  The temperature,
+the velocity and the pressure of a particle are then those of the target state with small shifts, and only the two particle-level maps of the code
+change.  The next term of the expansion, of order $1/V$, is also known in closed form in terms of $c_s^2$ and its first two derivatives.  We record
+it in an appendix but do not plan to implement it soon.  The longer derivations, the exact series and the comparison with the other schemes are in
+\nolinkurl{renorm2.tex}.  Written 2026-11-24.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The condition}
+\label{sec:condition}
+
+A particle has a label $s$, a momentum $\bm m$ and a volume $V$, the Liouville measure $e^{s}ds\,d^dm$, and a Hamiltonian $H(s,\bm m,V)$.  At
+fixed positions the particles are independent (\nolinkurl{partition.tex}), so the model is fixed by the partition function of one particle.  We
+require that it be the target's, with the factor that cancels the ideal gas of labels,
+\begin{keyeq}
+\st
+\int ds\,d^dm\;e^{\,s-\beta^0H(s,\bm m,V)+\bm b\cdot\bm m}=\frac{e^{\,p\,\beta^0V}}{e\,V}
+\label{condition}
+\stp
+\end{keyeq}
+for every $\beta^0=1/T$ and $\bm b=\bm v/T$.  When every particle has the mean volume $\bar V$, the partition function of the model is then
+\st
+\frac{\ln\mathcal Z_N}N=\ln\bar V+1+\ln Z_1=p\,\beta^0\bar V .
+\stp
+The model therefore has the pressure, the energy and the momentum of the target, and the
+chemical potential of the labels is zero.  The fluctuations of the volumes correct this at order $1/\bar nh^2$, and that correction is not
+addressed in this note.
+
+\paragraph{The number of states.}  We change the variable of integration from the label to the energy, $e=H(s,\bm m,V)$, at fixed $\bm m$ and $V$.
+Because the measure is $e^sds=d(e^s)$, the quantity $e^{s}$ is the number of states of the particle below the energy $e$.  In the new variable
+\Eq{condition} reads
+\st
+\int de\,d^dm\;\frac{\partial e^{s}}{\partial e}\;e^{-\beta^0e+\bm b\cdot\bm m}=\frac{e^{\,p\beta^0V}}{eV} ,
+\stp
+so the density of states $g$ is the inverse Laplace transform of the target, and the label is the logarithm of its integral over the energy,
+\begin{keyeq}
+\st
+e^{\,p\,\beta^0V}=\int de\,d^dm\;g(e,\bm m,V)\,e^{-\beta^0e+\bm b\cdot\bm m},\qquad
+G(e,\bm m,V)=\int^{e}\!g\,de' ,
+\stp
+\st
+s=S(e,\bm m,V)\equiv\ln G-\ln V-1 .
+\label{Sdef}
+\stp
+\end{keyeq}
+We call $S(e,\bm m,V)$ the entropy function of the particle.  The Hamiltonian is obtained by solving $s=S(e,\bm m,V)$ for the energy.  There is no
+freedom in this construction, since the pressure $p(\beta)$ is the input and the function $S$ is the output.  The derivatives of $S$ are the first
+law of the particle,
+\begin{keyeq}
+\st
+dS=\frac{de-\bm v_a\cdot d\bm m+P_a\,dV}{T_a},\qquad
+T_a=\frac{\partial H}{\partial s},\qquad \bm v_a=\frac{\partial H}{\partial\bm m}=\dot{\bm x}_a,\qquad P_a=-\frac{\partial H}{\partial V} ,
+\label{firstlaw}
+\stp
+\end{keyeq}
+so the temperature, the velocity and the pressure of a particle follow from $S$ by differentiation.  In terms of the number of states and its
+density, $g=\partial G/\partial e$, they are
+\begin{keyeq}
+\st
+T_a=\frac Gg,\qquad \bm v_a=-\frac1g\,\frac{\partial G}{\partial\bm m},\qquad P_a=\frac1g\,\frac{\partial G}{\partial V}-\frac{T_a}V .
+\label{fromG}
+\stp
+\end{keyeq}
+The temperature of a particle is the number of states below its energy divided by the density of states at its energy.  The last term of the
+pressure comes from the factor $1/V$ in \Eq{condition}.
+
+\paragraph{The weight in the energy.}  When the energy is used as the variable in place of the label, the measure becomes
+\st
+e^{s}\,ds=\frac{\partial e^{S}}{\partial e}\,de=\frac{e^{S}}{T_a}\,de .
+\stp
+The weight of a particle in the energy is therefore $S-\ln T_a$, which is $\ln g$ up to the terms in
+the volume.  This is the weight that the viscous step uses (\nolinkurl{scheme.tex}).
+
+%=============================================================================
+\section{The target}
+\label{sec:target}
+
+\paragraph{Notation.}  $P^\mu=(e,\bm m)$ and $\beta_\mu=(-\beta^0,\bm b)$, so that $\beta_\mu P^\mu=-\beta^0e+\bm b\cdot\bm m$; the metric is mostly
+plus, $-\beta_\mu\beta^\mu=1/T_{\rm rel}^2$, $T=T_{\rm rel}/\gamma$ is the bare temperature, and $D=d+1$.  The equation of state enters through
+\st
+q\equiv\frac1{c_s^2}=\frac{d\ln s}{d\ln T_{\rm rel}},\qquad \dot q\equiv\frac{dq}{d\ln T_{\rm rel}},\qquad \ddot q ,
+\stp
+with $w=T_{\rm rel}s$ and $\varepsilon=w-p$ the rest-frame enthalpy and energy densities.
+
+\paragraph{One scalar.}  $p\,\beta^\mu$ is the gradient of a function $\Psi$ of $\beta_\mu\beta^\mu$, and the target is
+\st
+\ln Z_{\rm t}=V\,\Phi,\qquad \Phi\equiv p\,\beta^0=\frac{\partial\Psi}{\partial\beta_0},\qquad
+T^{\mu\nu}=\frac{\partial^2\Psi}{\partial\beta_\mu\partial\beta_\nu},\qquad
+\chi^{\mu\nu}\equiv\frac{\partial^2\Phi}{\partial\beta_\mu\partial\beta_\nu}=\frac{\partial T^{0\mu}}{\partial\beta_\nu} .
+\stp
+$\chi^{\mu\nu}$ is the matrix of susceptibilities of a cell, $\avg{\delta P^\mu\delta P^\nu}=V\chi^{\mu\nu}$, and
+\st
+\det\chi^{\mu\nu}=\gamma^{D}\,(wT_{\rm rel})^{D}\,a,\qquad a\equiv q-v^2=\frac{1-c_s^2v^2}{c_s^2} .
+\label{det}
+\stp
+The quantity $a$ is the acoustic norm of the time normal $n_\mu$ of the cell.  In terms of the acoustic metric it is
+\st
+\gamma^2a=-G_{\rm ac}^{\mu\nu}n_\mu n_\nu,\qquad G_{\rm ac}^{\mu\nu}=g^{\mu\nu}+\Big(1-\frac1{c_s^2}\Big)u^\mu u^\nu .
+\stp
+It lies between $q-1$ and $q$ for $v<1$, so
+it never vanishes.
+
+\paragraph{The target state of a particle.}  The target is the fluid that the model should reproduce.  It is described by the input equation of state, without any
+correction from the fluctuations of a particle.  Given the energy, the momentum and the volume of a particle, its \emph{target state} is the
+temperature $T_{\rm rel}$ and the velocity $\bm v$ that this fluid would have if a cell of volume $V$ held exactly the energy $e$ and the momentum
+$\bm m$.  This is the condition $P^\mu=V\,T^{0\mu}$, or
+\st
+e=V\big(w\gamma^2-p\big),\qquad \bm m=V\,w\gamma^2\bm v,\qquad S_{\rm t}(e,\bm m,V)=\gamma\,s(T_{\rm rel})\,V .
+\label{targetstate}
+\stp
+The velocity is along $\bm m$.  With the rapidity $\theta$, $v=\tanh\theta$ and $\gamma=\cosh\theta$, the thermal vector of the target state is
+\st
+\bar\beta_\mu=\frac{(-\cosh\theta,\ \sinh\theta\,\hat{\bm m})}{T_{\rm rel}} .
+\stp
+This is the state the code assigns to a particle at tree level, by the
+inversion \texttt{eos\_from\_energy}.  $S_{\rm t}$ is the entropy of the target fluid in the cell, and its differential is the first law of the target,
+\st
+dS_{\rm t}=-\bar\beta_\mu\,dP^\mu+p\,\bar\beta^0\,dV .
+\stp
+
+%=============================================================================
+\section{State counting at one loop}
+\label{sec:oneloop}
+
+\paragraph{The saddle point.}  By \Eq{Sdef}, $e^{V\Phi}$ is the Laplace transform of the density of states, so $g$ is the inverse transform,
+\st
+g(e,\bm m,V)=\int\frac{d^D\beta}{(2\pi i)^D}\;\exp\big[V\Phi(\beta)-\beta_\mu P^\mu\big],\qquad -\beta_\mu P^\mu=\beta^0e-\bm b\cdot\bm m .
+\stp
+The number of states is its integral over the energy at fixed momentum.  The energy appears only in the factor $e^{\beta^0e}$, whose integral is
+\st
+\int^{e}e^{\beta^0e'}\,de'=\frac{e^{\beta^0e}}{\beta^0} .
+\stp
+The lower limit does not contribute because the contour has ${\rm Re}\,\beta^0>0$.  The integration
+over the energy therefore puts one factor of $1/\beta^0$ into the integrand,
+\st
+G(e,\bm m,V)=\int^{e}\!g\,de'=\int\frac{d^D\beta}{(2\pi i)^D}\;\frac1{\beta^0}\,\exp\big[V\Phi(\beta)-\beta_\mu P^\mu\big] .
+\stp
+The factor $1/(eV)$ of \Eq{condition} does not depend on $\beta$.  It is not part of the transform and enters only as the terms $-\ln V-1$ of the
+label, \Eq{Sdef}.  In both integrals $V$ is
+the large parameter at fixed $P^\mu/V$.  The exponent is stationary where $V\partial\Phi/\partial\beta_\mu=P^\mu$, which is \Eq{targetstate}.
+The saddle point is therefore the target state of the particle, $\beta=\bar\beta$.  The value of $V\Phi-\beta_\mu P^\mu$ there is the target entropy
+$S_{\rm t}$, and the factor $1/\beta^0$ is the bare temperature $T$ of the target state.  The contour crosses the saddle in the imaginary direction, $\beta=\bar\beta+i\varphi$, where the exponent
+falls as $-\tfrac12V\chi^{\mu\nu}\varphi_\mu\varphi_\nu$, and the Gaussian integral over $\varphi$ gives $1/\sqrt{\det(2\pi V\chi)}$.  Hence
+\st
+\ln G=S_{\rm t}-\tfrac12\ln\det\big(2\pi V\chi^{\mu\nu}\big)+\ln T+O\Big(\frac1{S_{\rm t}}\Big) .
+\stp
+This is the Gaussian integral of G\"ok\c{c}e's note, used here to go from $Z$ to the entropy instead of from the entropy to $Z$.  The entropy that
+appears in the measure is smaller than the thermodynamic entropy by the logarithm of the number of states under the peak.
+
+\paragraph{The scheme.}  We define \emph{state counting at one loop} as the model whose entropy function consists of the first terms of this
+expansion.  We keep the two corrections to the target entropy separate, because they have different origins,
+\begin{keyeq}
+\st
+S(e,\bm m,V)=S_{\rm t}-\Delta_\chi-\Delta_\ell,\qquad
+\Delta_\chi=\tfrac12\ln\det\big(2\pi V\chi^{\mu\nu}\big),\qquad
+\Delta_\ell=\ln\big(e\,\beta^0V\big) ,
+\label{scheme}
+\stp
+\end{keyeq}
+where all three terms are evaluated at the target state of $(e,\bm m,V)$, and the $e$ inside the logarithm is the base of the natural logarithm.  The
+\emph{determinant term} $\Delta_\chi$ is the logarithm of the number of states under the Gaussian peak.  It comes from the fluctuations of the energy
+and the momentum of the particle.  The \emph{label term} $\Delta_\ell$ contains the factor $1/\beta^0$ from the integral over the energy and the factor
+$1/(eV)$ that cancels the ideal gas of labels.  We write $\Delta=\Delta_\chi+\Delta_\ell$ for their sum.  Using \Eq{det} for the determinant, the two terms are
+\st
+\Delta_\chi=\frac D2\ln\big(2\pi V\gamma\,wT_{\rm rel}\big)+\tfrac12\ln a,\qquad
+\Delta_\ell=1+\ln V+\ln\gamma-\ln T_{\rm rel} .
+\label{Delta}
+\stp
+The counterterm is evaluated at the target's own state and does not move that state.  This is the difference from the Legendre Hamiltonian, which
+puts $\Delta$ inside the transform and thereby shifts the stationary point (\Sect{sec:accuracy}).
+
+\paragraph{The cases.}
+\begin{itemize}
+\item For any equation of state the two terms are given by \Eq{Delta}, with $w$, $T_{\rm rel}$ and $c_s^2$ taken at the target state.
+\item For a constant speed of sound, $p=A\,T_{\rm rel}^{\,n}$ and $q=n-1$, the sum of the two terms can be written with $\mathcal N\equiv1-d\,c_s^2$ as
+  \st
+  \Delta=\Big(\frac D2+1-\mathcal N\Big)\ln S_{\rm t}+\mathcal N\ln(\gamma V)+\tfrac12\ln a+\text{const},\qquad
+  \text{const}=\tfrac D2\ln2\pi-d\,c_s^2\ln(nA)+1 .
+  \stp
+  The first two terms are the label part and the dynamical part of the split scheme, and $\tfrac12\ln a$ is its sound term.  In the present
+  scheme all three are part of the entropy.
+\item For the conformal fluid, $q=d$, we have $\mathcal N=0$ and
+  \st
+  \Delta=\Big(\frac D2+1\Big)\ln S_{\rm t}+\tfrac12\ln a+\text{const} .
+  \stp
+  Of the coefficient $D/2+1$, the part $D/2$ comes from the determinant term and the $1$ from the label term.  In $d=2$ the coefficient is $5/2$,
+  and $\tfrac12\ln a$ is $\tfrac12\ln(1-c_s^2v^2)$ up to a constant.  This is \texttt{SPH\_RENORM=1} with the sound term added as a change of variables.
+\end{itemize}
+
+%=============================================================================
+\section{The state of a particle}
+\label{sec:state}
+
+The temperature, the velocity and the pressure of a particle are the derivatives of $S=S_{\rm t}-\Delta_\chi-\Delta_\ell$ with respect to $e$, $\bm m$ and
+$V$, by \Eq{firstlaw}.  Nothing in this section goes beyond differentiating \Eq{scheme} with the chain rule.  The target entropy gives the target's
+own thermal vector and pressure.  The two counterterms depend on $e$, $\bm m$ and $V$ only through the target state, so their derivatives are their
+slopes in $\beta_\mu$ times the response of the target state.  We first write the result in covariant form, where the response is the inverse
+susceptibility, and then in the variables that make the susceptibility diagonal.  In the code the same derivatives could be taken numerically or by
+automatic differentiation of $S(e,\bm m,V)$, and that is a check of the closed forms.
+
+\paragraph{The response of the target state.}  The target state is defined by $P^\rho=V\,T^{0\rho}(\bar\beta)$.  Differentiating this condition, with
+$\chi^{\rho\mu}=\partial T^{0\rho}/\partial\beta_\mu$, gives
+\st
+dP^\rho=T^{0\rho}\,dV+V\chi^{\rho\mu}\,d\bar\beta_\mu ,
+\stp
+so the response of the target state to a change of the energy and momentum, and to a change of the volume, is
+\begin{keyeq}
+\st
+\frac{\partial\bar\beta_\mu}{\partial P^\rho}\bigg|_V=\frac{\chi^{-1}_{\mu\rho}}V,\qquad
+\frac{\partial\bar\beta_\mu}{\partial V}\bigg|_P=-\frac{\chi^{-1}_{\mu\rho}\,T^{0\rho}}V .
+\label{covresponse}
+\stp
+\end{keyeq}
+The matrix $\chi^{-1}_{\mu\rho}$ is the inverse susceptibility, which converts changes of the conserved densities into changes of $\beta_\mu$ everywhere
+in the Density Frame.
+
+\paragraph{The slopes of the two terms.}  Let $\Phi^{\alpha\beta\mu}\equiv\partial\chi^{\alpha\beta}/\partial\beta_\mu$ be the third cumulants of $P^\mu$ per
+unit volume.  The slope of the determinant term follows from the derivative of a determinant, and the slope of the label term from
+$\beta^0=\eta^{0\mu}\beta_\mu$,
+\st
+\Delta_\chi^{\,\mu}\equiv\frac{\partial\Delta_\chi}{\partial\beta_\mu}=\tfrac12\,\chi^{-1}_{\alpha\beta}\,\Phi^{\alpha\beta\mu},\qquad
+\Delta_\ell^{\,\mu}\equiv\frac{\partial\Delta_\ell}{\partial\beta_\mu}=\frac{\eta^{0\mu}}{\beta^0}=T\,\eta^{0\mu} .
+\label{covslopes}
+\stp
+
+\paragraph{The thermal vector of the particle.}  By \Eq{firstlaw} the particle has its own thermal vector,
+\st
+\beta^a_\rho\equiv-\frac{\partial S}{\partial P^\rho}=\frac{(-1,\ \bm v_a)}{T_a} .
+\stp
+The target entropy contributes $\bar\beta_\rho$, and each counterterm contributes its slope times the response \Eq{covresponse}.  The result is
+\begin{keyeq}
+\st
+\beta^a_\rho=\bar\beta_\rho
++\underbrace{\frac1{2V}\,\chi^{-1}_{\rho\mu}\,\Phi^{\mu\alpha\beta}\,\chi^{-1}_{\alpha\beta}}_{\text{determinant term}}
++\underbrace{\frac TV\,\chi^{-1}_{\rho\mu}\,\eta^{\mu0}}_{\text{label term}} .
+\label{betaa}
+\stp
+\end{keyeq}
+The thermal vector of a particle is the target's, shifted by the inverse susceptibility acting on a vector built from the third cumulants and on the
+time direction.  Both shifts are of relative order $1/S_{\rm t}$.  The temperature and the velocity of the particle are the components
+$1/T_a=-\beta^a_0$ and $\bm v_a/T_a=\bm\beta^a$.
+
+\paragraph{The pressure.}  By \Eq{firstlaw}, $P_a/T_a$ is the derivative of $S$ with respect to the volume at fixed $e$ and $\bm m$.  The target
+entropy gives $p\,\bar\beta^0$.  Each counterterm depends on the volume explicitly, through $\tfrac D2\ln V$ and $\ln V$, and through the target state by
+\Eq{covresponse}.  The result is
+\begin{keyeq}
+\st
+\frac{P_a}{T_a}=p\,\bar\beta^0
++\underbrace{\frac1V\Big[-\frac D2+\Delta_\chi^{\,\mu}\,\chi^{-1}_{\mu\rho}T^{0\rho}\Big]}_{\text{determinant term}}
++\underbrace{\frac1V\Big[-1+\Delta_\ell^{\,\mu}\,\chi^{-1}_{\mu\rho}T^{0\rho}\Big]}_{\text{label term}} .
+\label{covPa}
+\stp
+\end{keyeq}
+
+\paragraph{The vector $\chi^{-1}_{\mu\rho}T^{0\rho}$ is simple.}  This vector is the change of the target state when the cell is diluted at fixed
+energy and momentum.  For a constant speed of sound $\Phi=p\,\beta^0$ is a homogeneous function of $\beta_\mu$ of degree $1-n$, so $T^{0\rho}$ is
+homogeneous of degree $-n$.  Euler's theorem then gives $\chi^{\rho\mu}\beta_\mu=-n\,T^{0\rho}$, and therefore
+\st
+\chi^{-1}_{\mu\rho}\,T^{0\rho}=-\frac{\bar\beta_\mu}n=-\frac pw\,\bar\beta_\mu .
+\stp
+Diluting the cell rescales $\bar\beta_\mu$ and does nothing else.  The fluid cools and its velocity does not change.  For a general equation of state
+there is one more term, which points along the pressure mode defined in \Eq{modes} below.  With $\pi^p_\mu$ the covector of that mode,
+\begin{keyeq}
+\st
+\chi^{-1}_{\mu\rho}\,T^{0\rho}=-\frac pw\,\bar\beta_\mu+\frac{\varepsilon-q\,p}{w\,a}\,\pi^p_\mu .
+\label{chiinvT}
+\stp
+\end{keyeq}
+The coefficient $\varepsilon-q\,p=\varepsilon-p/c_s^2$ measures how far the equation of state is from $p=c_s^2\varepsilon$, and it vanishes for a constant
+speed of sound.
+
+\paragraph{The modes.}  To make these expressions explicit we use the variables in which the susceptibility is diagonal.  A change of the target state is a change $\delta\tau$ of $\tau\equiv\ln T_{\rm rel}$ and a change $\delta\theta$ of the rapidity.  (A change of the
+direction of the velocity does not enter, because $\Delta$ does not depend on the direction.)  The thermal vector changes by
+\st
+\delta\bar\beta_\mu=-\bar\beta_\mu\,\delta\tau+\frac{\ell_\mu}{T_{\rm rel}}\,\delta\theta,\qquad \ell_\mu=(-\sinh\theta,\ \cosh\theta\,\hat{\bm m}) ,
+\stp
+and in these variables the susceptibility is
+\st
+V\chi^{\mu\nu}\,\delta\bar\beta_\mu\,\delta\bar\beta_\nu=S_{\rm t}\,\big(q\,\delta\tau^2+2v\,\delta\tau\,\delta\theta+\delta\theta^2\big) .
+\label{quadform}
+\stp
+Completing the square diagonalizes it,
+\st
+V\chi^{\mu\nu}\,\delta\bar\beta_\mu\,\delta\bar\beta_\nu=S_{\rm t}\,\big[a\,\delta\tau^2+(\delta\theta+v\,\delta\tau)^2\big],\qquad a=q-v^2 ,
+\label{diag}
+\stp
+with one more square, $\delta u_\perp^2$, for each direction across the velocity.  The energy and momentum change by $\delta P^\mu=V\chi^{\mu\nu}\delta\bar\beta_\nu$.  The combinations of $\delta e$ and
+$\delta\bm m$ conjugate to $\delta\tau$, to $\delta\theta+v\,\delta\tau$ and to $\delta u_\perp$ are, in units of $T_{\rm rel}$,
+\begin{keyeq}
+\st
+\phi_p=\frac{\gamma\big[(1+v^2)\,\delta e-2v\,\delta m_\parallel\big]}{T_{\rm rel}},\qquad
+\phi_\parallel=\frac{\gamma\,(\delta m_\parallel-v\,\delta e)}{T_{\rm rel}},\qquad
+\phi_{\perp\alpha}=\frac{\delta m_{\perp\alpha}}{T_{\rm rel}} ,
+\label{modes}
+\stp
+\st
+\phi_p=S_{\rm t}\,a\,\delta\tau,\qquad \phi_\parallel=S_{\rm t}\,(\delta\theta+v\,\delta\tau),\qquad
+\avg{\phi_p^2}=S_{\rm t}\,a,\qquad \avg{\phi_\parallel^2}=\avg{\phi_{\perp\alpha}^2}=S_{\rm t} .
+\label{response}
+\stp
+\end{keyeq}
+They are uncorrelated, and each responds to its own variable only.  We write $\pi^p_\mu$ and $\pi^\parallel_\mu$ for the covectors of the first two
+modes, so that $\phi_p=\pi^p_\mu\,\delta P^\mu$ and $\phi_\parallel=\pi^\parallel_\mu\,\delta P^\mu$,
+\st
+\pi^p_\mu=\frac{\gamma\,\big(1+v^2,\ -2v\,\hat{\bm m}\big)}{T_{\rm rel}},\qquad
+\pi^\parallel_\mu=\frac{\gamma\,\big(-v,\ \hat{\bm m}\big)}{T_{\rm rel}} .
+\stp
+In terms of them the inverse susceptibility is a sum of one term per mode,
+\begin{keyeq}
+\st
+\frac{\chi^{-1}_{\rho\mu}}V=\frac1{S_{\rm t}}\Big[\frac{\pi^p_\rho\,\pi^p_\mu}a+\pi^\parallel_\rho\,\pi^\parallel_\mu+\dots\Big] ,
+\label{chiinv}
+\stp
+\end{keyeq}
+where the dots stand for the transverse directions, which have the same form as the second term.
+\begin{itemize}
+\item $\phi_p$ is the \emph{pressure mode}.  Since $\delta p=w\,\delta\tau$, it measures the change of the pressure, which is the Density Frame
+  $\delta p$ at given $\delta e$ and $\delta\bm m$.  Its stiffness is the acoustic norm,
+  \st
+  \delta p=\frac{(1+v^2)\,\delta e-2v\,\delta m_\parallel}{V\,a},\qquad \avg{(\delta\ln T_{\rm rel})^2}=\frac1{S_{\rm t}\,a} .
+  \stp
+\item $\phi_\parallel$ and $\phi_\perp$ are the \emph{comoving momenta}.  They are the momentum of the change as seen in the rest frame of the target, along and
+  across the velocity.
+\end{itemize}
+The determinant is the product of the variances.  The change of variables from $\delta P^\mu$ to the modes has the Jacobian $T_{\rm rel}^{-D}$, so the determinant term of \Eq{Delta} is that of $D$ Gaussian modes,
+\st
+\det(V\chi)=T_{\rm rel}^{2D}\,S_{\rm t}^{D}\,a,\qquad
+\Delta_\chi=\frac D2\ln\big(2\pi\,S_{\rm t}T_{\rm rel}^2\big)+\tfrac12\ln a .
+\stp
+
+\paragraph{The shifts.}  In the modes \Eq{betaa} becomes one division per mode.  Contracting the slopes \Eq{covslopes} with the covectors of the modes
+defines the slopes of the counterterm along the modes,
+\st
+\Delta_p\equiv\pi^p_\mu\,\Delta^\mu=\frac{\partial\Delta}{\partial\tau}-v\,\frac{\partial\Delta}{\partial\theta},\qquad
+\Delta_\theta\equiv\pi^\parallel_\mu\,\Delta^\mu=\frac{\partial\Delta}{\partial\theta} .
+\label{slopes}
+\stp
+The first is the slope of the counterterm in $\tau$ when $\theta+v\tau$ is held fixed, and the second is its slope in $\theta+v\tau$ when $\tau$ is held
+fixed.  These are the natural slopes because $\phi_p$ determines $\delta\tau$ and $\phi_\parallel$ determines $\delta\theta+v\,\delta\tau$.  With \Eq{chiinv} the
+thermal vector of the particle is
+\begin{keyeq}
+\st
+\beta^a_\rho=\bar\beta_\rho+\epsilon_p\,\pi^p_\rho+\epsilon_\parallel\,\pi^\parallel_\rho,\qquad
+\epsilon_p=\frac{\Delta_p}{S_{\rm t}\,a},\qquad \epsilon_\parallel=\frac{\Delta_\theta}{S_{\rm t}} .
+\label{shift}
+\stp
+\end{keyeq}
+Each shift is the slope of the counterterm along a mode divided by the variance of that mode.  Equivalently, the entropy of the particle changes at
+fixed volume by
+\st
+dS=-\beta^a_\rho\,dP^\rho=(1-\epsilon_p)\,\phi_p+(v-\epsilon_\parallel)\,\phi_\parallel .
+\stp
+In the language of thermodynamics the shifts are the entropic conjugates of the modes in the counterterm, just as $1$ and $v$ are their conjugates
+in the target entropy,
+\st
+d\Delta=\epsilon_p\,\phi_p+\epsilon_\parallel\,\phi_\parallel,\qquad dS_{\rm t}=\phi_p+v\,\phi_\parallel .
+\stp
+The components of \Eq{shift} give the temperature and the velocity,
+\begin{keyeq}
+\st
+\frac1{T_a}=\frac{\gamma}{T_{\rm rel}}\big[1-(1+v^2)\,\epsilon_p+v\,\epsilon_\parallel\big],\qquad
+v_a=\frac{v\,(1-2\epsilon_p)+\epsilon_\parallel}{1-(1+v^2)\,\epsilon_p+v\,\epsilon_\parallel},\qquad \bm v_a\parallel\bm m .
+\label{Tava}
+\stp
+\end{keyeq}
+To first order in the shifts this is the target's thermal vector at the temperature $T_{\rm rel}(1+\epsilon_p)$ and the rapidity
+$\theta+\epsilon_\parallel-v\,\epsilon_p$.  \Eq{Tava} itself is exact for the scheme \Eq{scheme}.
+
+\paragraph{The slopes of the two terms in the modes.}  To find the slopes we write \Eq{Delta} as functions of $\tau$, $\theta$ and $V$.  With
+$\gamma=\cosh\theta$, $v=\tanh\theta$ and $T_{\rm rel}=e^{\tau}$ the two terms are
+\st
+\Delta_\chi=\frac D2\Big[\ln\big(2\pi V\,wT_{\rm rel}\big)+\ln\cosh\theta\Big]+\tfrac12\ln\big(q-\tanh^2\theta\big),\qquad
+\Delta_\ell=1+\ln V+\ln\cosh\theta-\tau .
+\stp
+The equation of state enters only the determinant term, through $wT_{\rm rel}$ and $q$.  They depend on $\tau$ alone, with
+$d\ln(wT_{\rm rel})/d\tau=2+q$ and $dq/d\tau=\dot q$.  Differentiating each term and forming the combination \Eq{slopes} gives
+\begin{keyeq}
+\begin{align}
+\Delta_p^{\chi}&=\frac D2\,(2+q-v^2)+\frac{\dot q+2v^2(1-v^2)}{2a}, & \Delta_p^{\ell}&=-(1+v^2), \nonumber\\
+\Delta_\theta^{\chi}&=\frac D2\,v-\frac{v\,(1-v^2)}a, & \Delta_\theta^{\ell}&=v .
+\label{Dderiv}
+\end{align}
+\end{keyeq}
+The slopes in \Eq{shift} are the sums $\Delta_p=\Delta_p^\chi+\Delta_p^\ell$ and $\Delta_\theta=\Delta_\theta^\chi+\Delta_\theta^\ell$, so the shifts
+separate as
+\st
+\epsilon_p=\frac{\Delta_p^{\chi}}{S_{\rm t}\,a}-\frac{1+v^2}{S_{\rm t}\,a},\qquad
+\epsilon_\parallel=\frac{\Delta_\theta^{\chi}}{S_{\rm t}}+\frac v{S_{\rm t}} .
+\stp
+The two terms pull in opposite directions on the temperature.  The determinant term makes a particle hotter than its target state, and the label
+term makes it cooler.  The label term contains no derivative of the equation of state.  At rest $\Delta_\theta=0$ and
+$\Delta_p=\tfrac D2(2+q)+\dot q/2q-1$, where the $-1$ is the label term, so a particle at rest is shifted in temperature only.
+
+\paragraph{The pressure in the modes.}  With \Eq{chiinvT} the contractions in \Eq{covPa} are $\Delta^\mu\bar\beta_\mu=-\partial\Delta/\partial\tau$ and
+$\Delta^\mu\pi^p_\mu=\Delta_p$.  The pressure of the particle is then
+\begin{keyeq}
+\st
+\frac{P_aV}{T_a}=\frac{p\,V\gamma}{T_{\rm rel}}
++\underbrace{\Big[-\frac D2+\frac pw\,\frac{\partial\Delta_\chi}{\partial\tau}+\frac{\varepsilon-q\,p}{w\,a}\,\Delta_p^{\chi}\Big]}_{\text{determinant term}}
++\underbrace{\Big[-1-\frac pw-\frac{\varepsilon-q\,p}{w\,a}\,(1+v^2)\Big]}_{\text{label term}} ,
+\label{Pa}
+\stp
+\end{keyeq}
+where $\partial\Delta_\chi/\partial\tau=\tfrac D2(2+q)+\dot q/2a$.  For a constant speed of sound the terms with $\varepsilon-q\,p$ vanish and $p/w=1/n$.
+
+\paragraph{Why the pressure of the model is the target's.}  The volume enters the single-particle integral \Eq{condition} only through $H$, so the
+derivative of $\ln Z_1$ with respect to the volume is the mean of the particle's pressure.  With the right side of \Eq{condition} for $Z_1$ it is
+\st
+\avg{P_a}=T\,\frac{\partial\ln Z_1}{\partial V}=p-\frac TV .
+\stp
+The pressure of the model is the mean particle pressure plus the pressure $\bar nT$ of the ideal gas of
+labels (\nolinkurl{partition.tex}).  At the mean volume, $V=1/\bar n$, the term $-T/V$ cancels the pressure of the labels, and what is left is $p$.  In
+the one-loop scheme $Z_1$ differs from \Eq{condition} by the factor $e^{-c/S_{\rm t}}$ of \Sect{sec:accuracy}.  The cancellation of the label pressure
+is unchanged, and the pressure is off by the relative amount $n\,c/S_{\rm t}^2$.
+
+\paragraph{The Hamiltonian.}  Given the label, the momentum and the volume of a particle, its energy $H(s,\bm m,V)$ is the solution $e$ of
+\st
+S(e,\bm m,V)=s .
+\label{root}
+\stp
+This is one equation in one unknown.  Its derivative $\partial S/\partial e=1/T_a$ is known from \Eq{Tava}, so Newton's iteration is
+\st
+e\;\to\;e+T_a\,\big[s-S(e,\bm m,V)\big] .
+\label{newton}
+\stp
+
+\paragraph{The domain.}  $H$ exists where $S$ increases with $e$ and $|\bm v_a|<1$, that is, where the thermal vector $\beta^a_\mu$ of the particle is
+timelike.  The condition is
+\st
+1-\epsilon_p>|\epsilon_\parallel-v\,\epsilon_p| .
+\stp
+At rest this condition is $S_{\rm t}>\Delta_p/q$, which is $S_{\rm t}>D/2+1$ for the conformal fluid; this is the label boundary of
+\texttt{SPH\_RENORM=1}.  Below it the saddle point has no meaning, and a state there has no Hamiltonian, as in the present schemes.  The boundary
+belongs to the truncation of the series, because the exact $G$ increases with $e$ by construction.
+
+Equations \Eq{Tava} and \Eq{Pa} were compared with finite differences of \Eq{scheme} for a two-component $p=T^3+0.7\,T^5$
+(\nolinkurl{examples/renorm_count_state.py}).
+
+%=============================================================================
+\section{In the code}
+\label{sec:code}
+
+The variables $(\bm x_a,\bm m_a,s_a)$, the Liouville measure and both steps of the scheme stay as they are.  The new scheme enters only through the
+two particle-level maps of \nolinkurl{src/pointwise.jl}, in the same way as \nolinkurl{renorm.jl} and \nolinkurl{renorm_split.jl} do.  Everything
+a step needs follows once the target state $\bar\beta_\mu$ of the particle is known, so the two maps differ only in how they find it.
+
+\paragraph{From the energy.}  When the energy is known, as in the viscous step, nothing has to be solved beyond what the code does now.  Given $e$,
+$\bm m$ and $V$, we first find $T_{\rm rel}$ and $v$ of the target state with the standard equation of state.  We can then evaluate the label
+$s=S_{\rm t}-\Delta_\chi-\Delta_\ell$ from \Eq{Delta}, and finally the thermal vector of the particle from \Eq{betaa}, or equivalently its temperature and
+velocity from \Eq{Tava}.  For a state outside the domain of \Sect{sec:state} the map returns $s=-\infty$.
+
+\paragraph{From the label.}  In the ideal step the label is known and the energy is not.  The target state is defined by the energy and the
+momentum, so it cannot be found before the energy.  Finding the target state from $(s,\bm m,V)$ and solving \Eq{root} for the energy are the same
+problem, and there are two equivalent ways to solve it.
+\begin{itemize}
+\item We can iterate on the energy alone with Newton's step \Eq{newton}, starting from the previous energy of the particle.  Each iteration calls the
+  map from the energy once, and it reduces the error by a factor of order $1/S_{\rm t}$.
+\item We can instead solve directly for $\tau$ and $\theta$ of the target state from the two equations
+  \st
+  s=\gamma\,s(T_{\rm rel})\,V-\Delta_\chi(\tau,\theta,V)-\Delta_\ell(\tau,\theta,V),\qquad |\bm m|=V\,w\,\gamma^2v ,
+  \stp
+  by a Newton iteration in two unknowns, as \nolinkurl{renorm.jl} does for the Legendre Hamiltonian.  No inner inversion is then needed.
+\end{itemize}
+In either case the energy is a by-product, $e=V(w\gamma^2-p)$, and requires no further iteration.  Once the target state is known, the thermal vector
+$\beta^a_\rho$ and the pressure $P_a$ follow directly from \Eq{betaa} and \Eq{Pa}.
+
+\paragraph{The ideal step} is the same generalized leapfrog at fixed labels.  For each particle we find the target state from $(s_a,\bm m_a,V_a)$ as
+just described, and then use the velocity $\dot{\bm x}_a=\bm v_a$ and build the pressure force from $P_aV_a^2$ in place of $p_aV_a^2$.  The leapfrog is
+implicit, so the solve is repeated at each of its inner iterations, starting each time from the previous target state.  The Hamiltonian of the step
+is $H=\sum_aH(s_a,\bm m_a,V_a)$, so it conserves $H$ and $\bm P$ and preserves the measure $\prod_ad\bm x_a\,d\bm m_a$.  It therefore keeps the
+distribution
+\st
+\pi\propto\exp\sum_a\Big[s_a-\frac{H_a-\bm v\cdot\bm m_a}T\Big] .
+\stp
+
+\paragraph{The viscous step} moves the momenta at fixed positions and energies.  The energy $e_a$ of each particle is known from the last solve of
+the ideal step, so nothing has to be found before the step begins.  Its target is the same distribution written in the energies,
+\st
+\pi\propto\exp\sum_a\Big[S(e_a,\bm m_a,V_a)-\ln T_a\Big] .
+\stp
+For a proposed transfer of momentum $\Delta\bm m$ we evaluate $S(e_a,\bm m_a+\Delta\bm m,V_a)-\ln T_a$ with the map from the energy at the new
+momentum.  The proposals, the Hastings factor and the sweeps do not change.  At the end of the step the label of each particle is set to
+$S(e_a,\bm m_a,V_a)$ with its final momentum.
+
+\paragraph{One function for both steps.}  The weight in the energies must be
+\st
+\ln\frac{\partial e^{S}}{\partial e}=S-\ln T_a ,
+\stp
+with the temperature $T_a$ derived from the same function $S$.  It should not be a separate one-loop formula for $\ln g$.  With this choice both steps keep exactly the same
+distribution, whatever the order to which $S$ approximates \Eq{Sdef}.  The truncation of the series then affects the thermodynamics of the model
+but not its detailed balance.
+
+\paragraph{The rest of the code.}  Hybrid Monte Carlo uses the same Hamiltonian.  The measured energy is $\sum_aH_a$, the virial uses the particle
+pressure $P_a$, and the kinetic stress is $\bm v_a\bm m_a$.  The equation of state must supply $p$, $s$, $c_s^2$ and $\dot q$ at $T_{\rm rel}$.  The
+transport coefficients are evaluated as they are now.
+
+%=============================================================================
+\section{The accuracy of one loop}
+\label{sec:accuracy}
+
+The label of the scheme differs from the exact one by the next term of the series (\App{sec:next}),
+\st
+\ln G-\ln V-1-S=\frac{c}{S_{\rm t}}+O\Big(\frac1{S_{\rm t}^2}\Big),
+\stp
+so the single-particle partition function of the model is slightly off.  For a constant speed of sound the result is the same relative error in
+the energy and the pressure,
+\st
+\ln Z_1=\ln Z_{\rm t}-\ln(eV)-\frac c{S_{\rm t}},\qquad \frac{\delta E}E=\frac{\delta p}p=\frac{n\,c}{S_{\rm t}^2} .
+\stp  \Tab{tab:acc} shows the quadrature of the single particle at rest in $d=2$
+(\nolinkurl{examples/renorm_count_quadrature.py}).
+
+The Legendre Hamiltonian instead takes the extremum of $V\Phi-\Delta-\beta_\mu P^\mu$.  Because $\Delta$ depends on $\beta$, this moves the
+stationary point, and the label is lowered by
+\st
+\frac1{2V}\,\Delta^\mu\,\chi^{-1}_{\mu\nu}\,\Delta^\nu,\qquad \Delta^\mu\equiv\frac{\partial\Delta}{\partial\beta_\mu} .
+\stp
+For the determinant part of $\Delta$ this is the second term of $C_g$ in \Eq{CgCh}, taken without the other two, which nearly cancel it.  In place of $c$ the Legendre scheme
+therefore has the coefficient
+\st
+\kappa=\frac{(3n+1)^2}{8(n-1)}+c ,
+\stp
+and $n\kappa/S_{\rm t}^2$ reproduces its measured residuals
+(\nolinkurl{renorm2.tex}).
+
+\begin{table}[h]
+\caption{The relative error of the pressure and the energy of one particle at rest in $d=2$.  The columns are state counting at one loop from the
+quadrature, its leading term $n\,c/S_{\rm t}^2$, and the Legendre Hamiltonian, $n\kappa/S_{\rm t}^2$.}
+\label{tab:acc}
+\begin{ruledtabular}
+\begin{tabular}{crccc}
+$c_s^2$ & $S_{\rm t}$ & one loop, quadrature & $n\,c/S_{\rm t}^2$ & Legendre \\
+\hline
+$1/2$ & 54  & $1.7\times10^{-4}$ & $0.9\times10^{-4}$ & $6.5\times10^{-3}$ \\
+      & 541 & $9.2\times10^{-7}$ & $8.5\times10^{-7}$ & $6.5\times10^{-5}$ \\
+$1/4$ & 54  & $5.1\times10^{-4}$ & $3.2\times10^{-4}$ & $1.4\times10^{-2}$ \\
+      & 541 & $3.3\times10^{-6}$ & $3.2\times10^{-6}$ & $1.4\times10^{-4}$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+Two checks have not been made yet.  The one-loop scheme has not been tested in motion, and it has not been compared with the quadrature of the split scheme.
+
+%=============================================================================
+\appendix
+
+\section{The next order of the expansion}
+\label{sec:next}
+
+This appendix records the term of order $1/V$.  It is not needed for state counting at one loop, and we do not plan to implement it soon.
+
+
+\paragraph{The expansion.}  Along the contour the exponent is
+\st
+S_{\rm t}-\frac V2\,\chi^{\mu\nu}\varphi_\mu\varphi_\nu-\frac{iV}{3!}\,\Phi^{\mu\nu\rho}\varphi_\mu\varphi_\nu\varphi_\rho+\frac V{4!}\,\Phi^{\mu\nu\rho\sigma}\varphi_\mu\varphi_\nu\varphi_\rho\varphi_\sigma+\dots,
+\stp
+where $\Phi^{\mu\cdots}$ are the derivatives of $\Phi$ with respect to $\beta_\mu$.  They are the cumulants of $P^\mu$ per unit volume.  The term of
+order $1/V$ comes from the quartic vertex taken once and the cubic vertex taken twice.  For the label there is in addition the factor $1/\beta^0$,
+which we write as $e^{h}$ with $h=-\ln\beta^0$ and $h^\mu=\partial h/\partial\beta_\mu$.  The result is
+\st
+\ln g=S_{\rm t}-\tfrac12\ln\det(2\pi V\chi)+\frac{C_g}V,\qquad \ln G=\ln g+\ln T+\frac{C_h}V ,
+\stp
+\begin{align}
+C_g&=\tfrac18\,\Phi^{\mu\nu\rho\sigma}\chi^{-1}_{\mu\nu}\chi^{-1}_{\rho\sigma}
+-\tfrac18\,\Phi^{\mu\nu\rho}\Phi^{\alpha\beta\gamma}\chi^{-1}_{\mu\nu}\chi^{-1}_{\rho\alpha}\chi^{-1}_{\beta\gamma}
+-\tfrac1{12}\,\Phi^{\mu\nu\rho}\Phi^{\alpha\beta\gamma}\chi^{-1}_{\mu\alpha}\chi^{-1}_{\nu\beta}\chi^{-1}_{\rho\gamma}, \nonumber\\
+C_h&=-\tfrac12\big(h^{\mu\nu}+h^\mu h^\nu\big)\chi^{-1}_{\mu\nu}+\tfrac12\,h^\alpha\chi^{-1}_{\alpha\mu}\Phi^{\mu\nu\rho}\chi^{-1}_{\nu\rho} .
+\label{CgCh}
+\end{align}
+Each derivative of $\Phi$ is of order $s\,T_{\rm rel}^{\,k}$, so $C/V=c/S_{\rm t}$ with $c$ of order one.  The series in $1/V$ is thus a series in
+$1/S_{\rm t}$.  All the derivatives follow from one tower of functions of the temperature,
+\st
+b_1=p,\qquad b_{k+1}=T^3\frac{db_k}{dT},\qquad \frac{\partial^k\Psi}{\partial\beta_{\mu_1}\cdots\partial\beta_{\mu_k}}=\sum_jb_{k-j}\,\big[g^{\,j}\beta^{\,k-2j}\big]^{\mu_1\cdots\mu_k}_{\rm sym} ,
+\stp
+where the bracket is the sum over the distinct pairings.  The order $1/V$ needs $b_5$,
+which means that it needs $q$, $\dot q$ and $\ddot q$.
+
+\paragraph{The variables.}  The cubic and quartic terms are simplest in the modes of \Eq{modes}, the pressure mode $\phi_p$ and the comoving momenta
+$\phi_\parallel$, $\phi_{\perp\alpha}$ ($\alpha=1,\dots,d-1$), which diagonalize the quadratic term.
+
+\paragraph{The cumulants.}  Let $k_{ij\cdots}$ be the joint cumulants of $(\phi_p,\phi_\parallel,\phi_\perp)$ divided by $S_{\rm t}$, with the indices
+$p$, $\parallel$ and $\perp$.  Each of them is the corresponding cumulant in the rest frame plus a polynomial in $v^2$, and they are the same in any
+dimension.  We write the rest-frame cumulants of the energy, and of $\delta e^2m_i^2$, as
+\st
+\hat\varepsilon_3=q^2+2q+\dot q,\qquad \hat\varepsilon_4=q^3+5q^2+6q+(3q+5)\dot q+\ddot q,\qquad \hat m_4=(q+2)(q+3)+\dot q ,
+\stp
+\begin{align}
+k_{pp}&=a, & k_{\parallel\parallel}&=k_{\perp\perp}=1, \nonumber\\
+k_{ppp}&=\hat\varepsilon_3-3v^4, & k_{p\parallel\parallel}&=q+2-3v^2, & k_{pp\parallel}&=-v\,k_{p\parallel\parallel}, \nonumber\\
+k_{p\perp\perp}&=q+2-v^2, & k_{\parallel\parallel\parallel}&=3v, & k_{\parallel\perp\perp}&=v, \nonumber\\
+k_{pp\parallel\parallel}&=\hat m_4-3v^2(q+3), & k_{pp\perp\perp}&=\hat m_4-v^2(q+3), \nonumber\\
+k_{pppp}&=\hat\varepsilon_4+2v^2\hat m_4-9v^4(q+3), & k_{\parallel\parallel\parallel\parallel}&=k_{\perp\perp\perp\perp}=3(q+3), &
+k_{\parallel\parallel\perp\perp}&=k_{\perp_1\perp_1\perp_2\perp_2}=q+3 .
+\end{align}
+
+\paragraph{The order $1/V$ in these variables.}  We define $c_g=C_gS_{\rm t}/V$, $c_h=C_hS_{\rm t}/V$ and $w_i\equiv\sum_jk_{ijj}/k_j$.  In the modes
+the susceptibility is diagonal, so \Eq{CgCh} no longer contains an inverse matrix,
+\begin{keyeq}
+\st
+c_g=\frac18\sum_{i,j}\frac{k_{iijj}}{k_ik_j}-\frac18\sum_i\frac{w_i^2}{k_i}-\frac1{12}\sum_{i,j,k}\frac{k_{ijk}^2}{k_ik_jk_k},\qquad
+c_h=-\frac{(1+v^2)^2}a-v^2+\frac12\Big[\frac{(1+v^2)\,w_p}a-v\,w_\parallel\Big] ,
+\label{cdiag}
+\stp
+\end{keyeq}
+where the sums run over $p$, $\parallel$ and the $d-1$ transverse directions.  The three combinations $w_i$ are
+\st
+w_p=\frac{k_{ppp}}a+k_{p\parallel\parallel}+(d-1)\,k_{p\perp\perp},\qquad w_\parallel=\frac{k_{pp\parallel}}a+(d+2)\,v,\qquad w_\perp=0 .
+\stp
+
+\paragraph{The closed form.}  When the result is written in terms of $a$, the velocity enters only through powers of $1/a$.  For the label the
+coefficient is $c=c_g+c_h$, with
+\begin{keyeq}
+\st
+c=-\frac{d^2-1}8-\frac{(d-2)(q+d-1)}{2a}+\frac{\lambda_4}{8a^2}-\frac{5\lambda_3^2}{24a^3},
+\label{c}
+\stp
+\st
+\lambda_3=2q(q-1)-\dot q,\qquad \lambda_4=2q(q-1)(3q+4d-7)-(7q+4d-9)\,\dot q+\ddot q .
+\stp
+\end{keyeq}
+The last two terms have the form of the correction for a single variable with the cumulants $\kappa_2=a$, $\kappa_3=\lambda_3$ and
+$\kappa_4=\lambda_4$, which is
+\st
+\frac{\kappa_4}{8\kappa_2^2}-\frac{5\kappa_3^2}{24\kappa_2^3} .
+\stp  After the momenta are integrated, what remains is the pressure mode.  The two parts are separately
+\begin{align}
+c_h&=-\frac{d-1}2+\frac{2(q+1)(q+d-1)-\dot q}{2a}-\frac{(q+1)\lambda_3}{2a^2}, \nonumber\\
+c_g&=-\frac{(d-1)(d-3)}8-\frac{d(d+3q-1)+\lambda_3}{2a} \nonumber\\
+&\quad+\frac{2q(q-1)(7q+4d-3)-(11q+4d-5)\,\dot q+\ddot q}{8a^2}-\frac{5\lambda_3^2}{24a^3} .
+\end{align}
+The cubic coefficient $\lambda_3$ is the part of $-k_{ppp}$ that does not vanish with $a$.  In terms of the speed of sound it is
+\st
+\frac{\lambda_3}{2q^2}=(1-c_s^2)+\frac w{c_s}\frac{dc_s}{de} ,
+\stp
+which appears to be the steepening coefficient of a relativistic simple wave.  We have not checked this
+identification against the literature.
+
+\paragraph{The cases.}
+\begin{itemize}
+\item For a constant speed of sound, $q=n-1$ and $\dot q=\ddot q=0$, so that $\lambda_3=2q(q-1)$ and $\lambda_4=2q(q-1)(3q+4d-7)$.
+\item In $d=2$ the term in $1/a$ vanishes, and
+  \st
+  c=-\frac38+\frac{\lambda_4}{8a^2}-\frac{5\lambda_3^2}{24a^3} .
+  \stp
+  At rest this is $c=1/12$ for $c_s^2=1/2$ and $c=3/16$ for $c_s^2=1/4$.
+\item For the conformal fluid, $q=d$, the coefficients are $\lambda_3=2d(d-1)$ and $\lambda_4=14\,d\,(d-1)^2$, with $a=d-v^2$.
+\end{itemize}
+
+\paragraph{State counting at two loops} would be \Eq{scheme} with the two terms corrected separately,
+\st
+\Delta_\chi\;\to\;\Delta_\chi-\frac{c_g}{S_{\rm t}},\qquad \Delta_\ell\;\to\;\Delta_\ell-\frac{c_h}{S_{\rm t}} ,
+\stp
+since $c_g$ belongs to the determinant and $c_h$ to the factor $1/\beta^0$.  Everything in \Sect{sec:state} and \Sect{sec:code} then holds with the new
+terms in the slopes.  Their derivatives follow from
+\st
+\frac{\partial\ln S_{\rm t}}{\partial(\tau,\theta,\ln V)}=(q,\,v,\,1),\qquad \frac{\partial a}{\partial(\tau,\theta)}=\big(\dot q,\,-2v(1-v^2)\big) ,
+\stp
+and they need the third derivative of $q$.  The remaining error in the label would be of order $1/S_{\rm t}^2$.
+
+\paragraph{The checks.}  \Eq{c} is an identity with \Eq{cdiag}, for any $d$.  We compared the tensor contraction \Eq{CgCh} with it in three ways.  For
+a general equation of state the two agree symbolically for $d=1,2,3$ at any $v$.  For $p=T^3+0.7\,T^5$ they agree with the direct derivatives of
+$p\,\beta^0$.  For a constant speed of sound in $d=2$ the exact series for $G$ gives $(\ln G-\text{one loop})\,S_{\rm t}$, which converges to $c(v)$
+to three digits at $S_{\rm t}=541$ (\nolinkurl{examples/renorm_saddle_check.py}, \nolinkurl{renorm2.tex}).
+
+\end{document}

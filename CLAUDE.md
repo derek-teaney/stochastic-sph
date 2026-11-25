@@ -25,6 +25,11 @@ the `.tex`).  Owner: D. Teaney.
   To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
   `SPH_DISSIPATION=particle` (before 2026-11-14).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
+- **Current work: the S-scheme** (since 2026-11-25, integration branch `sscheme`, from `split`): the renormalization by
+  state counting, s = S(e, m, V) = S_t − Δ_χ − Δ_ℓ, meant to replace split and legendre.  `docs/sscheme_plan.tex` is the plan
+  (branches, tests, campaigns, the points marked **Ask**); read it first, then `docs/renorm3.tex` (the theory, concise) and
+  `docs/renorm2.tex` (derivations, the order 1/V, the comparison with legendre).  `examples/sscheme_ref.py` is the reference
+  implementation the unit tests take their values from (python3, mpmath).  Not implemented in `src/` yet.
 - **The renormalization, the start and the inputs** (since 2026-11-23, branch `split`):
   - `SPH_RENORM=split` is the default (Step 5: the label part of the one-loop counterterm in the measure, the rest in H;
     `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=legendre` is the alternative scheme,

@@ -1,0 +1,488 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\Tab#1{Table~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+
+\begin{document}
+\sloppy
+
+\title{The exact single-particle renormalization: an inverse Laplace transform}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The renormalized particle Hamiltonians so far (\texttt{SPH\_RENORM=1}, Step~5, the Legendre Hamiltonian; \nolinkurl{partition.tex},
+\nolinkurl{step5_plan.tex}, \nolinkurl{legendre_plan.tex}) cancel the fluctuations of one particle at one loop, and leave $O(T/s_a)$ per particle.
+Here the single-particle problem is posed exactly: the condition that one particle reproduces the target thermodynamics is a Laplace transform, its
+solution is the density of states, and the label of the particle is the logarithm of the number of states below its energy.  For a particle without
+momentum the solution is in closed form and is checked numerically; the one-loop counterterm is the first term of its asymptotic expansion, and the
+label boundary is exact.  With momentum the exact model exists for $c_s^2\le1/2$ in $d=2$; the target is a Boltzmann gas of quanta.  The correction
+from the positions, $O(1/\bar nh^2)$, is not addressed.  For a general $p(\beta)$ the saddle point gives the density of states to order $1/V$, in closed form in $c_s^2$ and its first two derivatives, and the residual of the Legendre Hamiltonian (\Sect{sec:saddle}).  Written 2026-11-23.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The question}
+\label{sec:question}
+
+The particle carries a label $s$ and a momentum $\bm m\in\mathbb R^d$, at a volume $V$, with the measure $e^{s}ds\,d^dm$ and the Hamiltonian
+$H(s,\bm m,V)$.  The positions are held fixed throughout this note.  With the inverse temperature written as a vector,
+\st
+\beta^\mu=(\beta^0,\bm b)=\Big(\frac1T,\frac{\bm v}T\Big),\qquad \beta\cdot\beta=(\beta^0)^2-\bm b^2=\frac1{T_{\rm rel}^2},
+\stp
+the partition function of one particle is
+\st
+Z_{\rm model}(\beta)=\int ds\,d^dm\;e^{s}\,e^{-\beta^0H(s,\bm m)+\bm b\cdot\bm m}.
+\label{Zmodel}
+\stp
+The renormalization asks that it equal the target's, for every $\beta^\mu$.  For the constant-$c_s^2$ fluid, $p=A\,T_{\rm rel}^{\,n}$ with
+$n=1+1/c_s^2$, the target is
+\st
+\ln Z_{\rm t}(\beta)=\frac{p(T_{\rm rel})\,V}{T}=AV\,\beta^0\,(\beta\cdot\beta)^{-n/2} .
+\label{Zt}
+\stp
+Its derivatives give the target entropy, momentum and energy of the particle used in the other notes ($u=nAV\gamma^nT^{n-1}$,
+$|\bm m|=nAV\gamma^{n+2}T^nv$).
+
+\paragraph{The density of states.}  Collect the states of the particle by their energy,
+\st
+g(e,\bm m)=\int ds\;e^{s}\,\delta\big(e-H(s,\bm m)\big),\qquad
+Z_{\rm model}(\beta)=\int de\,d^dm\;g(e,\bm m)\,e^{-\beta^0e+\bm b\cdot\bm m}.
+\stp
+So $Z_{\rm model}=Z_{\rm t}$ says that $g$ is the inverse Laplace transform of $Z_{\rm t}$, in $d+1$ variables.  Given $g$, the Hamiltonian follows
+at each $\bm m$: the measure $e^sds$ integrates to $e^{s}$, so the states with label below $s$ are those with energy below $H$,
+\begin{keyeq}
+\st
+e^{s}=G\big(H(s,\bm m),\bm m\big),\qquad G(e,\bm m)=\int_{e'<e}g(e',\bm m)\,de' .
+\label{HfromG}
+\stp
+\end{keyeq}
+The label is the logarithm of the number of states below the energy, $s=\ln G$ (the ``volume'' entropy), not the logarithm of the density of
+states, $\ln g$.  $H$ is increasing in $s$ by construction, so the fold of the Legendre Hamiltonian cannot occur.  The questions are whether $g$ is a
+positive measure, and how it compares with the one-loop schemes.
+
+%=============================================================================
+\section{A particle without momentum}
+\label{sec:nomomentum}
+
+The structure is seen first in one variable.  Drop the momentum and ask
+\st
+\int ds\;e^{s}\,e^{-\beta H(s)}=\exp\!\big(\alpha\,\beta^{-k}\big),\qquad k\equiv n-1=\frac1{c_s^2},\qquad \alpha\equiv AV .
+\label{toy}
+\stp
+This is not the rest frame of the particle of \Sect{sec:question}: there the momentum is integrated as well (\Sect{sec:momentum}).
+
+\paragraph{The exact solution.}  Expand the exponential and invert term by term, $\beta^{-kN}\leftrightarrow e^{kN-1}/\Gamma(kN)$:
+\st
+g(e)=\delta(e)+\sum_{N\ge1}\frac{\alpha^N\,e^{\,kN-1}}{N!\,\Gamma(kN)},\qquad
+G(e)=\sum_{N\ge0}\frac{\alpha^N\,e^{\,kN}}{N!\,\Gamma(kN+1)} ,
+\label{Gtoy}
+\stp
+a Wright function; for $k=1$, $g(e)=\delta(e)+\sqrt{\alpha/e}\,I_1(2\sqrt{\alpha e})$.  Every term is positive.  The Hamiltonian is
+\begin{keyeq}
+\st
+H(s)=G^{-1}\big(e^{s}\big)\quad(s>0),\qquad H(s)=0\quad(s\le0).
+\label{Htoy}
+\stp
+\end{keyeq}
+
+\paragraph{The label boundary is exact.}  The $N=0$ term is an atom of weight one at zero energy, and the measure below $s=0$ has weight one,
+$\int_{-\infty}^0e^{s}ds=1$: the labels $s\le0$ are the states at $e=0$.  The boundary of \texttt{SPH\_RENORM} ($s_{\rm eff}=\alpha/2$ for the
+conformal fluid, $\tfrac52-\mathcal N$ in Step~5) is its image at one loop.  Its weight in the ensemble is $e^{-\ln Z}=e^{-s_{\rm t}/(k+1)}$,
+smaller than any power of $1/s_{\rm t}$.
+
+\paragraph{One loop.}  For large $e$ the inverse transform, $G(e)=\frac1{2\pi i}\int d\beta\,e^{\beta e}Z(\beta)/\beta$, is done by saddle point.
+The saddle is the target's temperature, $e=k\alpha\beta^{-k-1}$, and the exponent there is the target entropy,
+$s_{\rm t}(e)=\beta e+\alpha\beta^{-k}=(k+1)\alpha\beta^{-k}$.  The Gaussian integral gives
+\st
+\ln G(e)=s_{\rm t}(e)-\tfrac12\ln\big(2\pi k\,s_{\rm t}(e)\big)+\frac{c_k}{s_{\rm t}}+O\big(s_{\rm t}^{-2}\big) .
+\label{oneloop}
+\stp
+With \Eq{HfromG}, $H(s)=e_{\rm t}(s_{\rm eff})$ with $s_{\rm eff}=s+\tfrac12\ln(2\pi k\,s_{\rm eff})$ at one loop: the structure of
+\texttt{SPH\_RENORM}, with the counterterm as the first term of an asymptotic series.  The exact $G$ has no remainder.
+
+\paragraph{The check.}  \Tab{tab:toy} compares the exact $\ln G$, \Eq{Gtoy}, with \Eq{oneloop} (\nolinkurl{examples/renorm_exact_toy.py}).  The remainder column is $-c_k/s_{\rm t}$, with $c_2=1/12$ and $c_4=-1/16$, $c_k=\tfrac12-(k+2)(2k+1)/(24k)$ (\Sect{sec:saddle}).  With the exact $H$, \Eq{Htoy}, the quadrature of
+\Eq{toy} returns the target to all printed digits (eight), for $k=2,4$ and $\beta=0.3,0.7$.
+
+\begin{table}[h]
+\caption{The exact label, $\ln G$, against one loop, at the target's $(e,\beta)$ for a given target entropy $s_{\rm t}$; $\alpha=1$.}
+\label{tab:toy}
+\begin{ruledtabular}
+\begin{tabular}{rrcccc}
+$k$ & $s_{\rm t}$ & $s_{\rm t}-\ln G$ & $\tfrac12\ln(2\pi ks_{\rm t})$ & remainder & remainder$\times s_{\rm t}$ \\
+\hline
+2 & 4   & 1.9434 & 1.9587 & $-1.5\times10^{-2}$ & $-0.061$ \\
+2 & 16  & 2.6466 & 2.6518 & $-5.2\times10^{-3}$ & $-0.083$ \\
+2 & 54  & 3.2585 & 3.2600 & $-1.5\times10^{-3}$ & $-0.083$ \\
+2 & 541 & 4.4121 & 4.4122 & $-1.5\times10^{-4}$ & $-0.083$ \\
+4 & 4   & 2.4777 & 2.3052 & $+1.7\times10^{-1}$ & $+0.69$ \\
+4 & 16  & 3.0032 & 2.9984 & $+4.9\times10^{-3}$ & $+0.078$ \\
+4 & 54  & 3.6078 & 3.6066 & $+1.2\times10^{-3}$ & $+0.067$ \\
+4 & 541 & 4.7589 & 4.7588 & $+1.2\times10^{-4}$ & $+0.063$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+%=============================================================================
+\section{With momentum}
+\label{sec:momentum}
+
+\paragraph{When the exact model exists.}  $g$ must be a positive measure, and, for $|\dot{\bm x}|\le1$ to be possible, supported in the
+forward cone $e\ge|\bm m|$.  A sufficient condition: $\ln Z_{\rm t}$ is itself the Laplace transform of a positive measure $\mu_1$ on the cone.  Then
+\st
+Z_{\rm t}=e^{\ln Z_{\rm t}}\qquad\Longrightarrow\qquad g=\sum_{N\ge0}\frac{\mu_1^{*N}}{N!},
+\stp
+positive, and in the cone because the cone is closed under addition.  The exact particle is a Poisson cloud of classical quanta in the volume
+$V$, with mean number $\bar N=\ln Z_{\rm t}=s_{\rm t}/n$; \Eq{Gtoy} is the same sum in one variable.
+
+\paragraph{The constant-$c_s^2$ fluid is a Boltzmann gas.}  For one species of mass $M$ in $d=2$, the invariant integral is
+$\int d^2k\,e^{-\beta\cdot k}/k^0=2\pi e^{-MB}/B$, $B=\sqrt{\beta\cdot\beta}$, and $-\partial/\partial\beta^0$ of it gives
+\st
+\int d^2k\;e^{-\beta^0k^0+\bm b\cdot\bm k}=2\pi\,\beta^0\,\frac{(1+MB)\,e^{-MB}}{B^3},\qquad k^0=\sqrt{\bm k^2+M^2}.
+\stp
+With a spectrum of masses $\rho(M)\propto M^{a}$, $\int dM\,M^a(1+MB)e^{-MB}\propto B^{-a-1}$, so
+\st
+\ln Z\propto\beta^0\,(\beta\cdot\beta)^{-(a+4)/2},\qquad a=n-4 .
+\stp
+This is \Eq{Zt}.  The spectrum $\rho(M)\propto M^{\,n-4}$ is positive and integrable at $M=0$ for $n>3$, i.e.\ $c_s^2<1/2$; for $c_s^2=1/4$,
+$\rho\propto M$.  The conformal fluid, $c_s^2=1/2$, is the massless gas.  For $c_s^2>1/2$ the spectrum is not integrable and the construction fails.
+
+\paragraph{The equation of state as a spectrum of masses.}  The exact scheme suggests specifying the target by a spectrum $\rho(M)\ge0$ rather
+than by $p(T)$:
+\st
+\ln Z_{\rm t}=V\int dM\,\rho(M)\int\frac{d^2k}{(2\pi)^2}\,e^{-\beta^0k^0+\bm b\cdot\bm k},\qquad k^0=\sqrt{\bm k^2+M^2} .
+\label{Zrho}
+\stp
+Then $\mu_1$ is positive and in the cone by construction, and so is $g$.  A power law, $\rho\propto M^{n-4}$, gives a constant $c_s^2$; other
+spectra (a resonance gas, an exponential spectrum) give $c_s^2(T)$.  Only $c_s^2>1/d$ is excluded.
+
+\paragraph{The particle is not a single body.}  A tempting model is a body of invariant mass $M(s)$, $H=\sqrt{\bm m^2+M(s)^2}$, causal by
+construction.  It fails at leading order.  With its spectrum fitted at rest, $\ln Z=\alpha T_{\rm rel}^{\,n-1}$ there, its partition function in
+motion is
+\st
+\ln Z_{\rm body}=\alpha\,T_{\rm rel}^{\,n-1}+\ln\gamma,\qquad\text{while}\qquad \ln Z_{\rm t}=\gamma\,\alpha\,T_{\rm rel}^{\,n-1} .
+\stp
+The factor $\gamma$ of the target is the rest volume $\gamma V$ of a cell of fixed lab volume, which holds $\gamma$ times more matter; a body does
+not know its rest volume.  The particle is a cell of lab volume $V$ holding a Poisson cloud of quanta, $H$ is the energy of the cloud at its total
+momentum, and this is why $e_{\rm t}(s,\bm m,V)$ depends on $\bm m$ through more than $\sqrt{\bm m^2+M^2}$, and why $g$ is the sum over $N$.
+
+\paragraph{The Hamiltonian.}  $H(s,\bm m)$ follows from \Eq{HfromG} at each $\bm m$.  Two points differ from \Sect{sec:nomomentum}:
+\begin{itemize}
+\item The atom $\delta(e)\delta^d(\bm m)$ of $N=0$ sits at $\bm m=0$ only, where the measure $d^dm$ has no weight; it must be dropped,
+  $Z_{\rm t}\to Z_{\rm t}-1$, a change of $\ln Z$ by $e^{-\bar N}$.  At $\bm m\ne0$, $G(e,\bm m)\to0$ as $e\to|\bm m|$, so the labels run over
+  all of $\mathbb R$: there is no label boundary at $\bm m\ne0$.
+\item At $c_s^2=1/2$ the single quantum, $N=1$, lies on the light cone, $e=|\bm m|$: $G$ jumps there, $H$ is flat at the bottom of the spectrum
+  ($T=0$, $\dot{\bm x}=\hat{\bm m}$), with weight $O(\bar Ne^{-\bar N})$.  For $c_s^2<1/2$, $\mu_1$ has a density and $G$ is continuous.
+\end{itemize}
+
+%=============================================================================
+\section{The saddle point for a general equation of state}
+\label{sec:saddle}
+
+The point: for any $p(T_{\rm rel})$ the density of states at large volume is the target entropy less the logarithm of the fluctuation determinant,
+and the corrections are a series in $1/V$ whose coefficients are derivatives of one scalar.  It is the Gaussian integral of G\"ok\c{c}e's note on
+equilibrium entropy and fluctuations, read from $Z$ to the Boltzmann entropy $S_0=\ln g$ instead of from $S_0$ to $Z$.  (Added 2026-11-24.)
+
+\paragraph{Notation.}  $P^\mu=(e,\bm m)$ and $\beta_\mu=(-\beta^0,\bm b)$, so that the weight of \Eq{Zmodel} is $e^{\beta_\mu P^\mu}$,
+$\beta_\mu P^\mu=-\beta^0e+\bm b\cdot\bm m$; the metric is mostly plus, $\beta\cdot\beta$ of \Sect{sec:question} is $-\beta_\mu\beta^\mu=1/T_{\rm rel}^2$,
+and $D=d+1$.  The input is the pressure,
+\st
+\ln Z_{\rm t}(\beta)=V\,\Phi(\beta),\qquad \Phi\equiv p\,\beta^0,\qquad
+\Phi^{\mu_1\cdots\mu_k}\equiv\frac{\partial^k\Phi}{\partial\beta_{\mu_1}\cdots\partial\beta_{\mu_k}} .
+\stp
+
+\paragraph{One scalar.}  $p\,\beta^\mu$ is a gradient.  With $\Psi$ a function of $\beta\cdot\beta$ alone, $d\Psi/d(\beta\cdot\beta)=-p/2$,
+\st
+p\,\beta^\mu=\frac{\partial\Psi}{\partial\beta_\mu},\qquad
+T^{\mu\nu}=\frac{\partial^2\Psi}{\partial\beta_\mu\partial\beta_\nu}=p\,g^{\mu\nu}+w\,u^\mu u^\nu,\qquad
+\mathcal X^{\mu\nu\rho}=\frac{\partial^3\Psi}{\partial\beta_\mu\partial\beta_\nu\partial\beta_\rho} ,
+\stp
+which is why the susceptibility tensor is fully symmetric,
+\st
+\mathcal X^{\mu\nu\rho}=wT_{\rm rel}\Big[g^{\mu\nu}u^\rho+g^{\mu\rho}u^\nu+g^{\nu\rho}u^\mu+\Big(3+\frac1{c_s^2}\Big)u^\mu u^\nu u^\rho\Big]
+\stp
+($\mathcal X^{\hat0\hat0\hat0}=wT_{\rm rel}/c_s^2$, $\mathcal X^{\hat0\hat\imath\hat\jmath}=wT_{\rm rel}\delta^{ij}$ in the rest frame).  For
+$p=A\,T_{\rm rel}^{\,n}$, $\Psi=A\,(\beta\cdot\beta)^{1-n/2}/(n-2)$.  Every coefficient below is a derivative of $\Psi$ with one index set to zero:
+\st
+\Phi=\frac{\partial\Psi}{\partial\beta_0},\qquad \Phi^\mu=T^{0\mu},\qquad \Phi^{\mu\nu}=\mathcal X^{0\mu\nu}\equiv\chi^{\mu\nu},\qquad
+\Phi^{\mu_1\cdots\mu_k}=\frac{\partial^{k+1}\Psi}{\partial\beta_0\,\partial\beta_{\mu_1}\cdots\partial\beta_{\mu_k}} .
+\stp
+
+\paragraph{The integral.}  The density of states is the inverse transform,
+\st
+g(P,V)=\int\frac{d^D\beta}{(2\pi i)^D}\;\exp\big[V\Phi(\beta)-\beta_\mu P^\mu\big],
+\stp
+and $V$ is the large parameter, at fixed densities $P^\mu/V$.
+
+\paragraph{Tree level.}  The saddle $\bar\beta$ is at $V\Phi^\mu=P^\mu$,
+\st
+P^\mu=V\,T^{0\mu}(\bar\beta) :
+\stp
+$\bar\beta$ is the target's $\beta$ for a cell of volume $V$ with this energy and momentum.  The exponent there is the target entropy, the Legendre
+transform of $V\Phi$,
+\st
+S_{\rm t}(P,V)=V\big(p\,\beta^0-\beta_\mu T^{0\mu}\big)=V\,s^0(\bar\beta),\qquad
+\frac{\partial S_{\rm t}}{\partial P^\mu}=-\bar\beta_\mu,\qquad \frac{\partial S_{\rm t}}{\partial V}=p\,\bar\beta^0 .
+\stp
+
+\paragraph{One loop.}  Along the contour $\beta=\bar\beta+i\varphi$,
+\st
+V\Phi(\bar\beta+i\varphi)-\beta_\mu P^\mu=S_{\rm t}-\frac V2\,\chi^{\mu\nu}\varphi_\mu\varphi_\nu
+-\frac{iV}{3!}\,\Phi^{\mu\nu\rho}\varphi_\mu\varphi_\nu\varphi_\rho+\frac V{4!}\,\Phi^{\mu\nu\rho\sigma}\varphi_\mu\varphi_\nu\varphi_\rho\varphi_\sigma+\dots,
+\stp
+with $\chi^{\mu\nu}=\partial T^{0\mu}/\partial\beta_\nu$ the matrix of susceptibilities, $\avg{\delta P^\mu\delta P^\nu}=V\chi^{\mu\nu}$.  The Gaussian
+integral gives
+\begin{keyeq}
+\st
+S_0(P,V)\equiv\ln g=S_{\rm t}(P,V)-\tfrac12\ln\det\big(2\pi V\chi^{\mu\nu}\big)+\frac{C_g(\bar\beta)}V+O\Big(\frac1{V^2}\Big) .
+\label{S0saddle}
+\stp
+\end{keyeq}
+The entropy in the measure is smaller than the thermodynamic one by the logarithm of the number of states under the peak.  With
+$\det\chi^{\mu\nu}=\gamma^{D}(1-c_s^2v^2)(wT_{\rm rel})^{D}/c_s^2$ (\nolinkurl{partition.tex}), valid for any $c_s^2(T_{\rm rel})$,
+\st
+S_0=V\,s^0-\frac D2\ln V-\frac12\ln\Big[\big(2\pi\gamma\,wT_{\rm rel}\big)^{D}\,\frac{1-c_s^2v^2}{c_s^2}\Big]+\frac{C_g}V+\dots
+\stp
+The leading correction in the volume is $-\tfrac D2\ln V$, half a logarithm for each conserved quantity of the particle: the $\mathcal K_0\ln V$ of
+\nolinkurl{partition.tex}, here on the side of the entropy.
+
+\paragraph{The order $1/V$.}  With $\Delta_{\mu\nu}=(\chi^{-1})_{\mu\nu}$, so that $\avg{\varphi_\mu\varphi_\nu}=\Delta_{\mu\nu}/V$, the quartic
+vertex once and the cubic vertex twice give
+\begin{keyeq}
+\st
+C_g=\tfrac18\,\Phi^{\mu\nu\rho\sigma}\Delta_{\mu\nu}\Delta_{\rho\sigma}
+-\tfrac18\,\Phi^{\mu\nu\rho}\Phi^{\alpha\beta\gamma}\Delta_{\mu\nu}\Delta_{\rho\alpha}\Delta_{\beta\gamma}
+-\tfrac1{12}\,\Phi^{\mu\nu\rho}\Phi^{\alpha\beta\gamma}\Delta_{\mu\alpha}\Delta_{\nu\beta}\Delta_{\rho\gamma} .
+\label{Cg}
+\stp
+\end{keyeq}
+(In one variable, $\tfrac18\kappa_4/\kappa_2^2-\tfrac5{24}\kappa_3^2/\kappa_2^3$.)  Each $\Phi^{(k)}$ is of order $s\,T_{\rm rel}^{\,k}$, so
+$C_g/V=c_g(v)/S_{\rm t}$ with $c_g$ of order one: the series in $1/V$ is the series in $1/S_{\rm t}$.
+
+\paragraph{The label.}  $G=\int^eg$ has one more factor of $1/\beta^0$ in the integrand.  Taking $h(\beta)=-\ln\beta^0$ as a term of order one in the
+exponent, with $h^\mu=\partial h/\partial\beta_\mu$,
+\st
+s=\ln G=S_0-\ln\bar\beta^0+\frac{C_h}V+\dots,\qquad
+C_h=-\tfrac12h^{\mu\nu}\Delta_{\mu\nu}-\tfrac12h^\mu h^\nu\Delta_{\mu\nu}+\tfrac12h^\alpha\Delta_{\alpha\mu}\Phi^{\mu\nu\rho}\Delta_{\nu\rho} .
+\label{Ch}
+\stp
+At one loop $s=S_{\rm t}-\big[\tfrac12\ln\det(2\pi V\chi)-\ln T\big]$: the bracket is the counterterm $\delta\ln Z_1$ of \nolinkurl{partition.tex}
+(without the terms of the label gas, $(1-\mathcal B)\ln V+1$, which do not depend on $\beta$ and add to $S_0$ unchanged).  The two entropies differ by the temperature of the
+particle, $s-S_0=\ln(G/g)=\ln T_a$.
+
+\paragraph{Relation to the Legendre Hamiltonian.}  The Legendre Hamiltonian (Step~5$''$ of \nolinkurl{partition.tex}) is the transform of
+$F_{\rm want}=F_{\rm t}+T\,\delta\ln Z_1$.  Written for the label, with $\delta(\beta)\equiv\delta\ln Z_1=\tfrac12\ln\det(2\pi V\chi)-\ln T$,
+\begin{align}
+s_{\rm L}(P,V)&=\mathop{\rm ext}_\beta\big[V\Phi(\beta)-\delta(\beta)-\beta_\mu P^\mu\big], \nonumber\\
+s=\ln G&=\ln\!\int\!\frac{d^D\beta}{(2\pi i)^D}\,\exp\big[V\Phi(\beta)-\ln\beta^0-\beta_\mu P^\mu\big] :
+\end{align}
+the Legendre scheme takes an extremum with the one-loop term inside it, the exact one does the integral.  They agree at one loop.  The extremum
+is shifted from $\bar\beta$ by $\Delta_{\mu\nu}\delta^\nu/V$ ($\delta^\mu=\partial\delta/\partial\beta_\mu$), which lowers it at second order, so
+\begin{keyeq}
+\st
+s-s_{\rm L}=\frac\kappa{S_{\rm t}}+O\Big(\frac1{S_{\rm t}^2}\Big),\qquad
+\kappa=\frac{S_{\rm t}}V\Big[\tfrac12\,\delta^\mu\Delta_{\mu\nu}\delta^\nu+C_g+C_h\Big] .
+\label{kappa}
+\stp
+\end{keyeq}
+The first term is the square of the counterterm's slope, and it is the large one: at rest, for constant $c_s^2$ in $d=2$, $\delta=-\tfrac12(3n+1)\ln\beta^0+\dots$ and
+$\tfrac12\delta^\mu\Delta_{\mu\nu}\delta^\nu\,S_{\rm t}/V=(3n+1)^2/8(n-1)$: $25/4$ for the conformal fluid against $c=1/12$, and $8$ against $3/16$
+for $c_s^2=1/4$.  The Legendre model then has $\ln Z_1=\ln Z_{\rm t}-\kappa/S_{\rm t}(\beta)$, and with $S_{\rm t}\propto VT_{\rm rel}^{\,n-1}$
+\st
+\frac{\delta E}E=\frac{\delta p}p=\frac{n\,\kappa}{S_{\rm t}^2} ,
+\stp
+$19/S_{\rm t}^2$ for the conformal fluid: $6.5\times10^{-5}$ at $S_{\rm t}=541$ and $6.5\times10^{-3}$ at $54$, against the measured residuals of
+the Legendre quadrature at rest, $6.5\times10^{-5}$ and $7.0\times10^{-3}$ (\nolinkurl{partition.tex}).  So the residual of the Legendre scheme is
+\Eq{kappa}, and adding $\kappa/S_{\rm t}$ to $\ln Z_{\rm want}$ would remove it at this order; the exact $G$ has no such series.
+
+\paragraph{The cumulants from $p$.}  The derivatives of $\Psi$ are one tower of functions of $T_{\rm rel}$,
+\st
+b_1=p,\qquad b_{k+1}=T^3\frac{db_k}{dT},\qquad
+\frac{\partial^k\Psi}{\partial\beta_{\mu_1}\cdots\partial\beta_{\mu_k}}=\sum_jb_{k-j}\,\big[g^{\,j}\beta^{\,k-2j}\big]^{\mu_1\cdots\mu_k}_{\rm sym} ,
+\stp
+the bracket being the sum over the distinct pairings ($b_2=wT^2$, $b_3=wT^4(3+q)$).  With
+\st
+q\equiv\frac1{c_s^2}=\frac{d\ln s}{d\ln T_{\rm rel}},\qquad \dot{}\equiv\frac{d}{d\ln T_{\rm rel}},\qquad
+b_k=wT^{2k-2}r_k,\qquad r_2=1,\qquad r_{k+1}=(2k-1+q)\,r_k+\dot r_k ,
+\stp
+the order $1/V$ needs $b_5$, that is $q$, $\dot q$ and $\ddot q$.  Nothing below assumes a constant $c_s^2$, and $\mathcal B$ does not enter.
+
+\paragraph{The diagonal variables.}  Write the variation of $\beta_\mu$ as $\tau=\delta\ln T_{\rm rel}$, a change of rapidity $\delta\theta$ and a
+transverse $\delta u_\perp$.  The quadratic form is
+\st
+\frac{V\chi^{\mu\nu}\delta\beta_\mu\delta\beta_\nu}{S_{\rm t}}=q\,\tau^2+2v\,\tau\,\delta\theta+\delta\theta^2+\delta u_\perp^2
+=a\,\tau^2+(\delta\theta+v\tau)^2+\delta u_\perp^2,\qquad
+a\equiv q-v^2=\frac{1-c_s^2v^2}{c_s^2} .
+\stp
+In terms of the acoustic metric $G_{\rm ac}^{\mu\nu}=g^{\mu\nu}+(1-1/c_s^2)u^\mu u^\nu$ and the normal $n_\mu$ of the cell,
+$\gamma^2c_s^2\,a=-c_s^2G_{\rm ac}^{\mu\nu}n_\mu n_\nu$: $a$ is the acoustic norm of the normal, and
+$\det\chi^{\mu\nu}=\gamma^D(wT_{\rm rel})^D\,a$.  The conjugate variables, in units of $T_{\rm rel}$, are
+\begin{keyeq}
+\st
+Y=\frac{\gamma\big[(1+v^2)\,\delta e-2v\,\delta m_\parallel\big]}{T_{\rm rel}},\qquad
+\pi=\frac{\gamma\,(\delta m_\parallel-v\,\delta e)}{T_{\rm rel}},\qquad
+t_\alpha=\frac{\delta m_{\perp\alpha}}{T_{\rm rel}}\quad(\alpha=1,\dots,d-1) .
+\label{diagvars}
+\stp
+\end{keyeq}
+$Y$ is the pressure: $Y=S_{\rm t}\,a\,\delta\ln T_{\rm rel}$, i.e.\ $\delta p=[(1+v^2)\delta e-2v\,\delta m_\parallel]/(Va)$, the Density Frame
+$\delta p$ at given $\delta e$ and $\delta\bm m$; $\pi$ is the momentum of the fluctuation in the rest frame.  They are uncorrelated,
+\st
+\avg{Y^2}=S_{\rm t}\,a,\qquad \avg{\pi^2}=\avg{t_\alpha^2}=S_{\rm t},\qquad \avg{(\delta\ln T_{\rm rel})^2}=\frac1{S_{\rm t}\,a} .
+\stp
+(Completing the square the other way gives the rest energy $-u_\mu\delta P^\mu$, with the thermodynamic cumulants $q$, $\hat\varepsilon_3$,
+$\hat\varepsilon_4$ below and no $v$, and a velocity variable of variance $a/q$; its mixed cumulants are longer.)
+
+\paragraph{The order $1/V$ in the diagonal basis.}  Let $k_{ij\cdots}$ be the joint cumulants of $(Y,\pi,t_\alpha)$ divided by $S_{\rm t}$,
+$k_i\equiv k_{ii}$, and $c_g\equiv C_gS_{\rm t}/V$, $c_h\equiv C_hS_{\rm t}/V$.  \Eq{Cg} has no inverse matrix left:
+\begin{keyeq}
+\st
+c_g=\frac18\sum_{i,j}\frac{k_{iijj}}{k_ik_j}-\frac18\sum_i\frac{w_i^2}{k_i}-\frac1{12}\sum_{i,j,k}\frac{k_{ijk}^2}{k_ik_jk_k},\qquad
+w_i\equiv\sum_j\frac{k_{ijj}}{k_j} .
+\label{cgdiag}
+\stp
+\end{keyeq}
+The cumulants are those of the rest frame plus polynomials in $v^2$.  With the rest-frame
+\st
+\hat\varepsilon_3=q^2+2q+\dot q,\qquad \hat\varepsilon_4=q^3+5q^2+6q+(3q+5)\dot q+\ddot q,\qquad \hat m_4=(q+2)(q+3)+\dot q
+\stp
+(the third and fourth cumulants of the energy, and that of $\delta e^2m_i^2$), they are, in any $d$,
+\begin{align}
+k_{YY}&=a, & k_{\pi\pi}&=k_{tt}=1, \nonumber\\
+k_{YYY}&=\hat\varepsilon_3-3v^4, & k_{Y\pi\pi}&=q+2-3v^2, & k_{YY\pi}&=-v\,k_{Y\pi\pi}, \nonumber\\
+k_{Ytt}&=q+2-v^2, & k_{\pi\pi\pi}&=3v, & k_{\pi tt}&=v, \nonumber\\
+k_{YY\pi\pi}&=\hat m_4-3v^2(q+3), & k_{YYtt}&=\hat m_4-v^2(q+3), \nonumber\\
+k_{YYYY}&=\hat\varepsilon_4+2v^2\hat m_4-9v^4(q+3), & k_{\pi\pi\pi\pi}&=k_{tttt}=3(q+3), & k_{\pi\pi tt}&=k_{t_1t_1t_2t_2}=q+3 ,
+\end{align}
+with $t$ any one transverse direction.  Summing over the $d-1$ transverse directions,
+\begin{align}
+\sum_{i,j}\frac{k_{iijj}}{k_ik_j}&=\frac{k_{YYYY}}{a^2}+\frac{2k_{YY\pi\pi}+2(d-1)k_{YYtt}}a+d(d+2)(q+3), \nonumber\\
+w_Y&=\frac{k_{YYY}}a+k_{Y\pi\pi}+(d-1)k_{Ytt},\qquad w_\pi=\frac{k_{YY\pi}}a+(d+2)\,v,\qquad w_t=0, \nonumber\\
+\sum_{i,j,k}\frac{k_{ijk}^2}{k_ik_jk_k}&=\frac{k_{YYY}^2}{a^3}+\frac{3k_{YY\pi}^2}{a^2}+\frac{3k_{Y\pi\pi}^2+3(d-1)k_{Ytt}^2}a+3(d+2)\,v^2 .
+\end{align}
+The label adds, from $h=-\ln\beta^0$, which depends on the energy alone,
+\st
+c_h=-\frac{(1+v^2)^2}a-v^2+\frac12\Big[\frac{(1+v^2)\,w_Y}a-v\,w_\pi\Big] .
+\label{chdiag}
+\stp
+
+\paragraph{The collapsed form.}  Written in $a$, all the dependence on the velocity is in powers of $1/a$, with coefficients fixed by the equation
+of state.  For the label, $c=c_g+c_h$,
+\begin{keyeq}
+\st
+c=-\frac{d^2-1}8-\frac{(d-2)(q+d-1)}{2a}+\frac{\lambda_4}{8a^2}-\frac{5\lambda_3^2}{24a^3},
+\label{ccollapsed}
+\stp
+\st
+\lambda_3=2q(q-1)-\dot q,\qquad
+\lambda_4=2q(q-1)(3q+4d-7)-(7q+4d-9)\,\dot q+\ddot q .
+\stp
+\end{keyeq}
+The last two terms are the correction of one variable, $\tfrac18\kappa_4/\kappa_2^2-\tfrac5{24}\kappa_3^2/\kappa_2^3$, with the variance $a$: once the
+momenta are integrated, what is left is the pressure, with the acoustic norm as its stiffness.  In $d=2$ the term in $1/a$ vanishes.  Separately,
+\begin{align}
+c_h&=-\frac{d-1}2+\frac{2(q+1)(q+d-1)-\dot q}{2a}-\frac{(q+1)\lambda_3}{2a^2}, \nonumber\\
+c_g&=-\frac{(d-1)(d-3)}8-\frac{d(d+3q-1)+\lambda_3}{2a} \nonumber\\
+&\quad+\frac{2q(q-1)(7q+4d-3)-(11q+4d-5)\,\dot q+\ddot q}{8a^2}-\frac{5\lambda_3^2}{24a^3} .
+\end{align}
+The cubic coefficient is $-k_{YYY}$ at $a=0$, and in terms of the speed of sound
+\st
+\frac{\lambda_3}{2q^2}=(1-c_s^2)+\frac w{c_s}\frac{dc_s}{de} ,
+\stp
+which appears to be the steepening coefficient of a relativistic simple wave (the change of the characteristic rapidity
+$\theta+\operatorname{artanh}c_s$ per unit of fluid rapidity, times $1-c_s^2$); not checked against the literature.  \Eq{ccollapsed} is an identity
+with \Eq{cgdiag} and \Eq{chdiag}, in $d$.  The tensor contraction of \Eq{Cg} and \Eq{Ch} was compared with it for $d=1,2,3$ at any $v$, and with
+the direct derivatives of $p\,\beta^0$ for a two-component $p=T^3+0.7\,T^5$, where $c_s^2$ runs from $1/2$ to $1/4$
+(\nolinkurl{examples/renorm_saddle_check.py}).
+
+\paragraph{Constant $c_s^2$ in $d=2$.}  For $p=A\,T_{\rm rel}^{\,n}$, $q=n-1$ and $\dot q=\ddot q=0$ in \Eq{ccollapsed}; written out in $v^2$, with $c\equiv(C_g+C_h)S_{\rm t}/V$,
+\st
+\ln G=S_{\rm t}-\tfrac12\ln\det\big(2\pi V\chi\big)-\ln\bar\beta^0+\frac{c(v)}{S_{\rm t}}+\dots,
+\stp
+\st
+c(v)=\frac{-2n^4+27n^3-95n^2+117n-47-(18n^3-93n^2+126n-51)\,v^2-27(n-1)\,v^4+9\,v^6}{24\,(n-1-v^2)^3} ,
+\label{cv}
+\stp
+with $n-1-v^2=(1-c_s^2v^2)/c_s^2$.  In particular
+\st
+c(v)\Big|_{c_s^2=1/2}=\frac{16+24v^2-54v^4+9v^6}{24\,(2-v^2)^3},\qquad
+c(v)\Big|_{c_s^2=1/4}=\frac{3\,(4+v^2)(8-16v^2+v^4)}{8\,(4-v^2)^3} ,
+\stp
+$1/12$ and $3/16$ at rest.  For $\ln g$ alone the coefficient is larger, $c_g(0)=-29/12$ and $-29/16$.
+
+\paragraph{The check.}  \Tab{tab:saddle} compares $(\ln G-\text{one loop})\times S_{\rm t}$, with $G$ from the exact series of \Sect{sec:momentum}
+(each term $\partial_e^{\,N-1}(e^2-\bm m^2)^{nN/2-3/2}$ is a sum of positive terms by Leibniz), with \Eq{cv}
+(\nolinkurl{examples/renorm_saddle_check.py}).  The same formulas in one variable give the coefficient of \Eq{oneloop},
+$c_k=\tfrac12-(k+2)(2k+1)/(24k)$.
+
+\begin{table}[h]
+\caption{$(\ln G-\text{one loop})\times S_{\rm t}$ from the exact series at the target point of entropy $S_{\rm t}$ and velocity $v$, against $c(v)$, \Eq{cv}; $d=2$.}
+\label{tab:saddle}
+\begin{ruledtabular}
+\begin{tabular}{crrrrr}
+$c_s^2$ & $v$ & $S_{\rm t}=10$ & $S_{\rm t}=54$ & $S_{\rm t}=541$ & $c(v)$ \\
+\hline
+$1/4$ & 0    & $+0.400$ & $+0.214$ & $+0.190$ & $+0.188$ \\
+      & 0.5  & $+0.247$ & $+0.143$ & $+0.125$ & $+0.123$ \\
+      & 0.8  & $-0.092$ & $-0.081$ & $-0.084$ & $-0.084$ \\
+      & 0.95 & $-0.395$ & $-0.354$ & $-0.349$ & $-0.348$ \\
+$1/2$ & 0    & $+0.255$ & $+0.102$ & $+0.085$ & $+0.083$ \\
+      & 0.5  & $+0.345$ & $+0.170$ & $+0.148$ & $+0.146$ \\
+      & 0.8  & $+0.283$ & $+0.213$ & $+0.194$ & $+0.192$ \\
+      & 0.95 & $-0.026$ & $+0.007$ & $+0.009$ & $+0.009$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+%=============================================================================
+\section{Open questions and next steps}
+\label{sec:next}
+
+\begin{enumerate}
+\item Causality: $g$ in the cone gives $H\ge|\bm m|$, but $|\dot{\bm x}|=|\partial H/\partial\bm m|_s|\le1$ needs $G$ to decrease along the null
+  directions; not shown.
+\item Computing $G(e,\bm m)$: each term of the sum is a derivative of a Riesz distribution,
+  $[\beta^0(\beta\cdot\beta)^{-n/2}]^N\leftrightarrow\partial_e^{\,N}(e^2-\bm m^2)_+^{nN/2-3/2}$ up to a constant, so $G$ is a function of
+  $(\bar N, e, e^2-\bm m^2)$, and by scaling of two variables.  A table computed once would replace the iterative inverse of the code.
+\item The volume: $\ln Z_{\rm t}$ is linear in $V$, and the pressure of the model, $-\avg{\partial H/\partial V}$, equals the target's exactly
+  for one particle at fixed $V$.  In the fluid $V$ is set by the positions, and the correction $O(1/\bar nh^2)$ remains.
+\item Variable $c_s^2$: specify the EOS by $\rho(M)\ge0$, \Eq{Zrho}; the tables of $G$ are then computed from $\rho$.
+\item Related work: the saddle-point approximation and its exact cases (Daniels, 1954, 1980); the microcanonical density of states at fixed
+  four-momentum (the statistical model of Fermi, Hagedorn); the volume and surface entropies of the microcanonical ensemble.
+\end{enumerate}
+The next step is the rest frame with momentum in $d=2$: compute $g$ and $G$ for $c_s^2=1/4$, build $H(s,\bm m)$, and run the single-particle
+quadrature of \nolinkurl{examples/renorm_quadrature_split.py} with it, beside Step~5 and Legendre.
+
+\end{document}

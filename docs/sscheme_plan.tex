@@ -1,0 +1,520 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\newcommand{\one}{\mathds{1}}
+\newcommand{\avg}[1]{\langle #1\rangle}
+\newcommand{\klab}{\mathcal B}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{algobox}[1]{enhanced, colback=tint, colframe=accent, boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt, fonttitle=\bfseries\small, coltitle=white,
+  colbacktitle=accent, title={#1}, before skip=10pt, after skip=10pt}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Fig#1{Fig.~\ref{#1}}
+\def\App#1{Appendix~\ref{#1}}
+\def\tr{\operatorname{tr}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+
+\begin{document}
+\sloppy
+
+\title{The S-scheme (state counting): development plan}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+This is the plan for implementing the state-counting renormalization of \nolinkurl{renorm3.tex}, which we call the S-scheme in the code.  The work has
+two levels.  Level~1 is the single-particle scheme at one loop, for a constant speed of sound.  Level~2 adds the counterterm for the loop of the
+particle positions.  Each level is implemented, tested, and then compared with the split scheme, first in equilibrium with hybrid Monte Carlo and then
+in the dynamics.  The plan is written for the session at NERSC, which will do the work while the owner checks in from time to time.  It lists the
+branches, the order of the work, the formulas to code, the tests, the campaigns, and the points where the owner must be asked.  Written 2026-11-25,
+before any change to \nolinkurl{src/}.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The goal}
+\label{sec:goal}
+
+The split scheme (\texttt{SPH\_RENORM=split}, \nolinkurl{step5_plan.tex}) removes the one-loop error of a single particle.  It keeps the part of the
+counterterm that depends on the label in the measure, and it adds the rest to the Hamiltonian as an energy.  The S-scheme removes the same error in a
+different way.  It defines the entropy of a particle as the logarithm of the number of states below its energy, and at one loop this puts the whole
+counterterm into the entropy as an exact change of variables.  The theory is in \nolinkurl{renorm3.tex}, and the session should read that note first.
+
+There are three reasons to prefer it.
+\begin{enumerate}
+\item Its single-particle error is smaller.  At rest the relative error of the pressure is $n\,c/S_{\rm t}^2$ with $c=1/12$ for $c_s^2=1/2$, which is
+  $9\times10^{-7}$ at $S_{\rm t}=541$ and about $10^{-4}$ at $S_{\rm t}=54$ (\nolinkurl{renorm3.tex}, ``The accuracy of one loop'').
+\item The weight of the votes needs no solve.  It follows directly from the target state of $(e,\bm m,V)$.
+\item It extends to the loop of the positions.  The counterterm of level~2 is one more term in the entropy, of the same kind as the others.
+\end{enumerate}
+The aim is to show, with the same measurements as before, that level~1 does at least as well as split, and then that level~2 removes most of what
+remains, which is the correction of the positions.  We expect the S-scheme to become the default, so the code is to be designed for it and not for
+the older schemes.
+
+\paragraph{The two levels.}
+\begin{itemize}
+\item \emph{Level 1} is state counting at one loop for one particle at fixed volume.  We assume a constant speed of sound (\texttt{ConstantCs2EOS}) in
+  $d=2$, with neutral labels, $\mathcal B=0$.
+\item \emph{Level 2} adds the positional counterterm $\omega$, built from the one-loop integral $I_0(\sigma)$ over the density modes and a term
+  $a_2\nu_*^2$ whose coefficient is first zero and is then estimated from hybrid Monte Carlo.
+\end{itemize}
+The term of order $1/V$ in the single-particle expansion (\nolinkurl{renorm3.tex}, Appendix) is not part of this plan.
+
+%=============================================================================
+\section{For the NERSC session}
+\label{sec:nersc}
+
+The rules of \nolinkurl{CLAUDE.md} apply.  The points below are specific to this work.
+\begin{enumerate}
+\item \emph{Read first.}  Read \nolinkurl{docs/renorm3.tex} for the theory, \nolinkurl{docs/step5_plan.tex} for how the split scheme was implemented
+  and measured, \nolinkurl{docs/split_dynamics.tex} for the dynamical runs, and \nolinkurl{nersc/LOG.md} for the state of the campaigns.
+\item \emph{The reference implementation.}  \nolinkurl{examples/sscheme_ref.py} implements both levels in a few lines of Python, with the formulas of
+  \Sect{sec:model1} and \Sect{sec:model2}.  It checks the closed forms against central differences of $H$ to $10^{-18}$.  Use it for reference values in
+  the unit tests.  It is slow and is not a model for the Julia code.
+\item \emph{Branches.}  Work only on the branches of \Sect{sec:branches}.  Do not commit to \texttt{split}, \texttt{legendre} or \texttt{main}.  Merge a
+  feature branch into the integration branch \texttt{sscheme} only when its gate in \Sect{sec:branches} is passed.  Only the owner merges
+  \texttt{sscheme} into \texttt{main}.
+\item \emph{Checkout.}  Use a new worktree, \texttt{git worktree add \textasciitilde/stochastic-sph-sscheme sscheme}, and precompile there with
+  \texttt{julia --project=nersc}.  Do not change the branch or the files of any existing worktree.
+\item \emph{Design for the S-scheme.}  The S-scheme is expected to become the default, and the split and Legendre schemes to be removed later.  Write
+  the code so that it is clear for the S-scheme (\Sect{sec:work1}~C).  The older schemes must keep running and pass their tests, but they need not
+  stay bit-identical.  The default stays \texttt{split} until the owner changes it.
+\item \emph{Budget.}  Tests and smoke runs go to \texttt{-q debug}.  Before each campaign, record the estimate in the log.  Ask the owner before
+  submitting more than about 20 node-hours in one go.
+\item \emph{Output.}  Each campaign has its own directory under \texttt{\$SCRATCH/sph/}.  In \nolinkurl{nersc/LOG.md} add one section per campaign of
+  this plan and append only to it.
+\item \emph{Check-ins.}  Stop and report to the owner at the points marked \textbf{Ask} below, and whenever a gate fails.  Otherwise continue to the
+  next item.  At each check-in, update \Sect{sec:results} of this note with what was done and what was found.
+\end{enumerate}
+
+%=============================================================================
+\section{Branches and merge points}
+\label{sec:branches}
+
+The integration branch \texttt{sscheme} is made from \texttt{split} at its present head, and this note is its first commit.  Each piece of work is a
+feature branch made from \texttt{sscheme} and merged back with \texttt{--no-ff} when its gate is passed.
+\begin{center}
+\small
+\begin{tabular}{llp{0.31\textwidth}p{0.27\textwidth}}
+\toprule
+branch & work & content & gate for the merge into \texttt{sscheme} \\
+\midrule
+\texttt{sscheme-maps} & \Sect{sec:work1} A, B, D & the quadrature decision, \nolinkurl{src/sscheme.jl}, \nolinkurl{test/testsscheme.jl} &
+  unit tests of the maps pass \\
+\texttt{sscheme-steps} & \Sect{sec:work1} C, E & the new particle field, the interface, both steps and hybrid Monte Carlo, timing, smoke runs &
+  \texttt{test/run.sh all} passes, smoke runs agree with split within errors \\
+\texttt{sscheme-eos} & \Sect{sec:work1} F & campaign \texttt{eos\_sscheme}, analysis, a new section of \nolinkurl{step5_plan.tex} &
+  owner has read the comparison \\
+\texttt{sscheme-dyn} & \Sect{sec:work1} G & campaign \texttt{hastings\_sscheme}, a new section of \nolinkurl{split_dynamics.tex} &
+  owner has read the comparison \\
+\midrule
+\texttt{sscheme2-table} & \Sect{sec:work2} H & the kernel transform, the table of $I_0$ and its derivative, $\nu_*$, $\omega$ &
+  reference values reproduced \\
+\texttt{sscheme2-maps} & \Sect{sec:work2} I & $\omega$ in the maps, the setting for level~2, tests & as for \texttt{sscheme-steps} \\
+\texttt{sscheme2-eos} & \Sect{sec:work2} J & campaign \texttt{eos\_sscheme2} with $a_2=0$ & owner has read the comparison \\
+\texttt{sscheme2-dyn} & \Sect{sec:work2} K & campaign \texttt{hastings\_sscheme2} with $a_2=0$ & owner has read the comparison \\
+\texttt{sscheme2-a2} & \Sect{sec:work2} L, M & the scan for $a_2$, the final equilibrium and dynamical runs & owner has read the comparison \\
+\bottomrule
+\end{tabular}
+\end{center}
+After \texttt{sscheme-dyn} is merged, level~1 is complete, and that is the first point at which the owner may merge \texttt{sscheme} into \texttt{main}.
+Level~2 starts from the merged \texttt{sscheme}.  The second such point is after \texttt{sscheme2-a2}.  Campaign files, analysis scripts and figures are
+committed on the branch of their campaign.  Raw data are never committed.
+
+%=============================================================================
+\section{Level 1: the model for a constant speed of sound}
+\label{sec:model1}
+
+This section gives the formulas to code.  They are those of \nolinkurl{renorm3.tex}, specialized to $p=A\,T_{\rm rel}^{\,n}$ in $d=2$, where
+\st
+n=1+q,\qquad q=\frac1{c_s^2},\qquad D=d+1=3 .
+\stp
+
+\paragraph{The two entropies of a particle.}  The particle carries two entropies, and the code keeps both.
+\begin{itemize}
+\item The \emph{label} $s$ is the variable of \nolinkurl{renorm3.tex}.  Its measure is the flat Liouville one, $e^{s}ds$, and the ideal step conserves
+  it.  It is stored in \texttt{pa.s}.  It is not a physical entropy, and it can be negative.
+\item The \emph{target entropy} $S_{\rm t}=\gamma\,s(T_{\rm rel})\,V$ is the entropy that the standard equation of state assigns to the particle's present
+  $(e,\bm m,V)$.  It is stored in a new field, \texttt{pa.St}.  The ideal step changes it.  It is the entropy to use wherever the code needs a physical
+  entropy of the particle, and it is the starting point of the next solve.
+\end{itemize}
+There is no third variable.  The stored variable of the split scheme, $s_{\rm eff}$ (the \texttt{u} of the code), is not used by the S-scheme.
+
+\paragraph{The scheme.}  The label of a particle is its target entropy less the determinant term and the label term, all evaluated at the target
+state of $(e,\bm m,V)$,
+\begin{keyeq}
+\st
+s=S_{\rm t}-\Delta_\chi-\Delta_\ell,\qquad
+\Delta_\chi=\frac D2\ln\big(2\pi V\gamma\,wT_{\rm rel}\big)+\tfrac12\ln a,\qquad
+\Delta_\ell=1+\ln V+\ln\gamma-\ln T_{\rm rel} ,
+\label{label}
+\stp
+\end{keyeq}
+with $a\equiv q-v^2$ and $w=nA\,T_{\rm rel}^{\,n}$.  The logarithms contain dimensionful quantities in the units of the code.  A change of units adds a
+constant to every label and has no other effect.
+
+\paragraph{The state of the particle.}  Each term has its own slopes along the two modes,
+\begin{align}
+\Delta_p^{\chi}&=\frac D2\,(2+q-v^2)+\frac{v^2(1-v^2)}a, & \Delta_p^{\ell}&=-(1+v^2), \nonumber\\
+\Delta_\theta^{\chi}&=\frac D2\,v-\frac{v\,(1-v^2)}a, & \Delta_\theta^{\ell}&=v ,
+\label{slopes1}
+\end{align}
+and the shifts are built from their sums, $\Delta_p=\Delta_p^\chi+\Delta_p^\ell$ and $\Delta_\theta=\Delta_\theta^\chi+\Delta_\theta^\ell$,
+\st
+\epsilon_p=\frac{\Delta_p}{S_{\rm t}\,a},\qquad \epsilon_\parallel=\frac{\Delta_\theta}{S_{\rm t}},\qquad
+\mathcal D\equiv1-(1+v^2)\,\epsilon_p+v\,\epsilon_\parallel .
+\stp
+With $T=T_{\rm rel}/\gamma$ the bare temperature of the target state, the temperature, the velocity and the pressure of the particle are
+\begin{keyeq}
+\st
+T_a=\frac{\partial H}{\partial s}=\frac T{\mathcal D},\qquad
+v_a=\frac{v\,(1-2\epsilon_p)+\epsilon_\parallel}{\mathcal D},\qquad
+\frac{P_aV}{T_a}=\frac{S_{\rm t}}n-\Big(\frac D2+1\Big)+\frac1n\Big[\frac D2\,(2+q)-1\Big] .
+\label{state1}
+\stp
+\end{keyeq}
+The velocity $\bm v_a$ is along $\bm m$.  The energy is the target's, $H=V(w\gamma^2-p)$.  The quantity $\mathcal D$ is also the derivative of the
+label with respect to the target entropy at fixed $\bm m$ and $V$, which is what the solve needs.
+
+\paragraph{The weight of the votes.}  With the Liouville measure the weight of a particle in the energy is the label less $\ln T_a$,
+\begin{keyeq}
+\st
+\texttt{vote\_entropy}(e,\bm m,V)=S_{\rm t}-\Delta_\chi-\Delta_\ell-\ln T_a .
+\label{weight}
+\stp
+\end{keyeq}
+All four terms follow from the target state of $(e,\bm m,V)$.  The weight needs no solve.
+
+\paragraph{The domain.}  A state has a Hamiltonian when $\mathcal D>0$, so that $T_a>0$, and $|v_a|<1$.  Outside this domain the maps return a state
+with no Hamiltonian, and the weight is $-\infty$.  There is no separate label boundary.
+
+\paragraph{The relation to the split scheme.}  For a constant speed of sound the two terms combine into
+\st
+\Delta_\chi+\Delta_\ell=b\,\ln S_{\rm t}+\mathcal N\ln(\gamma V)+\tfrac12\ln\big(1-c_s^2v^2\big)+\text{const},\qquad
+\mathcal N=1-d\,c_s^2,\qquad b=\frac D2+1-\mathcal N ,
+\label{splitrel}
+\stp
+which are the label part and the dynamical part of the split scheme.  The split scheme keeps the first in the measure and adds the rest to the
+energy.  The S-scheme puts all of it into the entropy.  This identity is used only as a test.
+
+%=============================================================================
+\section{Level 1: the work, in order}
+\label{sec:work1}
+
+\subsection{A. The single particle, before the code}
+
+Extend \nolinkurl{examples/renorm_count_quadrature.py}, which is at rest, to a moving bath, following
+\nolinkurl{examples/renorm_quadrature_split.py}.  Compute the relative errors of $E$, $M$, $P$, the violation $R$ of the density-frame relation and
+$\mu/T$ for the S-scheme and for split, at $c_s^2=1/2$ and $1/4$, $s_a=16$, $54$, $541$, and $v=0$, $0.8$.  Use the domain of \Sect{sec:model1}.  The
+expectation is that the S-scheme is as good as split or better at $s_a\ge54$.  Record the table in \Sect{sec:results}.
+\textbf{Ask} the owner before going on if the S-scheme is worse than split anywhere at $s_a\ge54$, or if more than a few percent of the weight lies
+outside the domain at $s_a=16$.
+
+\subsection{B. The maps: \texorpdfstring{\nolinkurl{src/sscheme.jl}}{src/sscheme.jl}}
+
+Write this file for the S-scheme alone.  It should not borrow the structure or the names of \nolinkurl{src/renorm_split.jl} or
+\nolinkurl{src/renorm.jl}.  Its centre is one function that takes a target state and returns everything about the particle there, namely
+$S_{\rm t}$, the label, the energy, $T_a$, $\bm v_a$, $P_a$, $\mathcal D$ and the weight, by \Eq{label}--\Eq{weight}.  Both maps call it.
+
+\begin{algobox}{The map from the energy: $(e,\bm m,V)\to$ the state of the particle}
+\begin{algorithmic}[1]
+\State Find the target state $(T_{\rm rel},\bm v)$ with the standard equation of state.  For \texttt{ConstantCs2EOS} this is in closed form.
+\State Evaluate the state of the particle there.  This gives the label $s$, $T_a$, $\bm v_a$ and the weight.
+\State If $\mathcal D\le0$ or $|v_a|\ge1$, return a state with no Hamiltonian.
+\end{algorithmic}
+\end{algobox}
+
+\begin{algobox}{The map from the label: $(s,\bm m,V)\to$ the state of the particle}
+\begin{algorithmic}[1]
+\State Start from the particle's present target entropy, \texttt{pa.St}.
+\State Find the target state at $(S_{\rm t},\bm m,V)$ with the standard equation of state, and evaluate the state of the particle there.
+\State Newton's step is $S_{\rm t}\leftarrow S_{\rm t}-\big(s(S_{\rm t})-s\big)/\mathcal D$.  Repeat from line 2 until the relative change is below $10^{-13}$.
+\State Store the new $S_{\rm t}$ in \texttt{pa.St} and fill the fields: the energy, $T_a$, $\bm v_a$, $P_a$, and the target's rest-frame energy density
+  and Lorentz factor.
+\State If the iteration leaves the domain or does not converge, fall back to bisection on $S_{\rm t}$ between the edge of the domain and an upper
+  bound, and count the event.  If no root exists, return a state with no Hamiltonian.
+\end{algorithmic}
+\end{algobox}
+
+The reference implementation needs five or six Newton steps from a start that is off by thirty percent, and it will need fewer from the previous
+value.  The maps must be robust first and fast second.  Keep counters of solves, iterations, fallbacks and states with no Hamiltonian.
+
+\subsection{C. The design of the code}
+
+The S-scheme is expected to become the default, and the split and Legendre schemes are expected to be removed later.  Design the code so that it is
+clear and logical for the S-scheme.  Do not shape it around the older schemes.
+
+\paragraph{The particle.}  Add the field \texttt{pa.St} for the target entropy (\Sect{sec:model1}).  With it the fields of a particle have one meaning
+each.
+\begin{itemize}
+\item \texttt{pa.s} is the label, conserved by the ideal step and changed only by the viscous step.
+\item \texttt{pa.St} is the target entropy of the present state.
+\item \texttt{pa.T} is $T_a=\partial H/\partial s$, the velocity is $\bm v_a$ and the pressure is $P_a$.  These are the particle's own.
+\item The target's $T_{\rm rel}$, Lorentz factor and rest-frame energy density are kept for the transport coefficients.
+\end{itemize}
+Go through the code and find every place that reads \texttt{pa.s} as a physical entropy, for example in a smoothed entropy density, in a division, or
+in an output.  Each of these should read \texttt{pa.St}.  Find every use of the temperature and decide whether it wants $T_a$ or the target's.  Write the
+list and the decisions in \Sect{sec:results}.
+
+\paragraph{The interface.}  The two maps are the only place where the scheme enters, and the rest of the code should call them through one clear
+interface.
+\begin{itemize}
+\item The ideal step and hybrid Monte Carlo call the map from the label.
+\item The viscous step, the heat bath and the measurements call the map from the energy.  \texttt{vote\_entropy} is \Eq{weight} and calls no solve.
+\item The starting guesses that the older schemes pass around (\texttt{VOTE\_GUESS}, the guess in \nolinkurl{src/hmc.jl}) are not needed.  The only
+  starting point is \texttt{pa.St}.
+\item A trajectory of hybrid Monte Carlo that leaves the domain is rejected, as now.
+\end{itemize}
+If the present interface (\texttt{particle\_forward}, \texttt{particle\_inverse}) is awkward for this, change it, and adapt the older schemes to the
+new one.
+
+\paragraph{The switch and the older schemes.}  \texttt{SPH\_RENORM=sscheme} selects the scheme at load time.  Its requirements are the energy
+Hamiltonian, the number volume, $d=2$, the Liouville measure, and not the grid step.  The older schemes must keep running and pass their own tests,
+because we may want to rerun a comparison.  They do not have to stay bit-identical.  If keeping one of them working makes the new code noticeably less
+clear, \textbf{ask} the owner, who may decide to drop it.  The default is changed to \texttt{sscheme} by the owner after the comparisons of F and G.
+
+\subsection{D. Tests: \texorpdfstring{\nolinkurl{test/testsscheme.jl}}{test/testsscheme.jl}}
+
+\begin{enumerate}
+\item The identities $\partial H/\partial s=T_a$, $\partial H/\partial\bm m=\bm v_a$ and $\partial H/\partial V=-P_a$ by central differences of $H$, to
+  $10^{-9}$, at rest and in motion, for $c_s^2=1/2$ and $1/4$, and $S_{\rm t}=16$, $54$, $541$.
+\item The map from the energy applied to the result of the map from the label returns the label to $10^{-13}$, and the reverse.
+\item Reference values of the label, $T_a/T$, $v_a$ and $P_aV/T_a$ from \nolinkurl{examples/sscheme_ref.py} for the states it prints.
+\item The identity \Eq{splitrel} to $10^{-12}$, with the constant taken from one state.
+\item For the conformal fluid at rest the weight differs from that of \texttt{SPH\_RENORM=1} by a constant.
+\item A state outside the domain returns no Hamiltonian from both maps, and the weight is $-\infty$.
+\item Hybrid Monte Carlo has an energy error proportional to $\delta t^2$, and a reasonable acceptance.
+\item \texttt{test/run.sh all}.  Every test passes with \texttt{SPH\_RENORM=sscheme}, the older schemes pass their own tests, and the regression with
+  \texttt{SPH\_RENORM=0} is bit-identical to \texttt{main} unless a change was agreed with the owner.
+\end{enumerate}
+
+\subsection{E. Speed and smoke runs}
+
+Time one update of \nolinkurl{examples/eos_measure.jl} at $h/a=2$ ($N=360$) and one step of the dynamics (\nolinkurl{examples/bench_step.jl}) for
+split and for the S-scheme.  The stochastic step of the S-scheme should cost less than split's, since its weight needs no solve.  Then make smoke
+runs at rest, $L=0.45$, $h/a=2$, $s_a=54$, two seeds, both values of $c_s^2$, against the numbers of split in \nolinkurl{step5_plan.tex}.  Finally make
+one dynamical run with \nolinkurl{examples/stability.jl} to $t=20$ and check that $H$ does not drift.
+
+\subsection{F. The equilibrium comparison: campaign \texttt{eos\_sscheme}}
+
+Repeat the lines of \texttt{eos\_split} with \texttt{SPH\_RENORM=sscheme}.  These are $c_s^2\in\{1/2,1/4\}$, $s_a\in\{16,54,541\}$, $h/a\in\{2,3\}$,
+$v\in\{0,0.8\}$, with 8 seeds of 300 updates, which makes 192 tasks.  The split campaign took 1.7 node-hours.  The split, tree-level and
+\texttt{SPH\_RENORM=1} lines are reused from \texttt{eos\_split}.
+
+The analysis is that of \nolinkurl{examples/eos_split.py} and \nolinkurl{examples/eos_compare.py} with one more Hamiltonian.  Add a new section,
+``The S-scheme, level 1'', to \nolinkurl{step5_plan.tex}, with the same panels as its figures for split and the S-scheme side by side at $h/a=2$ and $3$.
+Every caption begins with the campaign, the run sets and the commit.  On the panels for $E$ and $P$ at rest, add the prediction of the one-loop
+correction of the positions as a dashed line,
+\st
+\frac{(P-p)\,\bar V}{T}=\frac{I_0+I_0'}{2\,\bar nh^2},\qquad \frac{(E-e)\,\bar V}{T}=\frac{q\,I_0'}{2\,\bar nh^2},\qquad I_0'\equiv\frac{dI_0}{d\ln\sigma} ,
+\label{loopPE}
+\stp
+with $I_0$ of \Sect{sec:model2}.  These predictions already describe the offsets that split measured.  For Wendland C2 at $h/a=2$ and $c_s^2=1/4$ they
+give $P/p-1$ of about $-5.1\%$ at $s_a=54$ and $-1.6\%$ at $s_a=541$, where split measured $-4.7\%$ and $-1.7\%$.  For $c_s^2=1/2$ at $s_a=541$ they give
+$P/p-1=-1.2\%$ and $E/e-1=-0.4\%$, where split measured about $-1.3\%$ and $-0.4\%$.
+
+What we want to learn is listed here.
+\begin{itemize}
+\item At $s_a\ge54$ the S-scheme and split should agree within errors, because both are dominated by the correction of the positions.
+\item At $s_a=16$ the S-scheme should not be worse than split in $E$, $P$, $R$ and the susceptibilities.
+\item There should be no failed solve, and the acceptance should not be below split's.
+\end{itemize}
+\textbf{Ask} the owner to read the new section before the branch is merged.
+
+\subsection{G. The dynamical comparison: campaign \texttt{hastings\_sscheme}}
+
+Repeat the split lines of \texttt{hastings\_bath} with \texttt{SPH\_RENORM=sscheme}.  These are the run sets \texttt{hs<sa>\_sp\_v<v>} and
+\texttt{hq<sa>\_sp\_v<v>} with $s_a\in\{16,54\}$ and $v\in\{0,0.8\}$, 16 seeds of the full dynamics to $t=100$ and 16 chains of hybrid Monte Carlo,
+which makes 128 runs.  All other settings are those of \texttt{hastings\_bath}.  That campaign took 3.9 node-hours for 256 runs.
+
+Add a new section, ``The S-scheme, level 1'', to \nolinkurl{split_dynamics.tex}, with the following subset of its results, split and the S-scheme side by
+side.
+\begin{itemize}
+\item The equal-time spectra of the dynamics against hybrid Monte Carlo of the same model.
+\item The energy against time, to show that $H$ does not drift.
+\item The advection speed and the damping rate of the shear mode from the fits.
+\item The shear and sound correlators at $s_a=54$, at rest and at $v_0=0.8$.
+\item The case that is open for split, $s_a=16$ at $v_0=0.8$.
+\end{itemize}
+The provenance rule of that note applies to every figure.  \textbf{Ask} the owner to read the new section before the branch is merged.
+
+%=============================================================================
+\section{Level 2: the model with the positional counterterm}
+\label{sec:model2}
+
+\paragraph{The loop of the positions.}  With the level~1 scheme the positions have the weight $\exp\sum_a[\lambda V_a-\ln(eV_a)]$ with
+$\lambda=p\,\beta^0$.  In the Gaussian theory of \nolinkurl{partition.tex} their structure factor and its loop integral are
+\st
+\frac1{S(k)}=\big(1-\widetilde W\big)\big[1+(2\sigma-1)\widetilde W\big],\qquad
+I_0(\sigma)=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\,\ln S(k),\qquad \sigma=\lambda\,\bar V ,
+\label{I0}
+\stp
+with $\widetilde W(k)$ the Fourier transform of the kernel, normalized to $\widetilde W(0)=1$.  The partition function per particle is then
+$\sigma+I_0/(2\bar nh^2)$, and the second term is what the counterterm must cancel.
+
+\paragraph{The counterterm.}  We subtract from the label term $\Delta_\ell$ a function of the particle's own target state and volume,
+\begin{keyeq}
+\st
+\omega=a_1\,\nu_*+a_2\,\nu_*^2,\qquad
+\nu_*\equiv-\frac{I_0(\bar\sigma)}{2\,a_1}\,\frac{V}{h^2},\qquad
+\bar\sigma=\frac{p\,\gamma\,V}{T_{\rm rel}}=\frac{S_{\rm t}}n,\qquad a_1=\frac{\pi}{2\sin(2\pi/n_W)} .
+\label{omega}
+\stp
+\end{keyeq}
+Here $n_W$ is the power with which the kernel's transform falls, which is $5$, $7$ and $9$ for Wendland C2, C4 and C6 in $d=2$.  The first term of
+$\omega$ is $-(V/2h^2)\,I_0(\bar\sigma)$ whatever $a_1$ is, so it is the one-loop counterterm exactly.  The variable $\nu_*$ is the number of stiff modes
+per particle at large $\sigma$, and $a_2$ parametrizes what lies beyond one loop.  It is zero at first.  The label equation becomes
+\begin{keyeq}
+\st
+s=S_{\rm t}-\Delta_\chi-\Delta_\ell+\omega(\bar\sigma,V) .
+\label{label2}
+\stp
+\end{keyeq}
+
+\paragraph{The slopes.}  With $\omega'\equiv a_1+2a_2\nu_*$, the two derivatives of the counterterm are
+\st
+\omega_\sigma\equiv\frac{\partial\omega}{\partial\ln\bar\sigma}\bigg|_V=\omega'\,\nu_*\,\frac{I_0'}{I_0},\qquad
+\omega_V\equiv\frac{\partial\omega}{\partial\ln V}\bigg|_{\bar\sigma}=\omega'\,\nu_* .
+\stp
+Since $\partial\ln\bar\sigma/\partial\tau=q$, $\partial\ln\bar\sigma/\partial\theta=v$ and $\partial\ln\bar\sigma/\partial\ln V=1$, the formulas of
+\Sect{sec:model1} hold with
+\begin{keyeq}
+\st
+\Delta_p\to\Delta_p-a\,\omega_\sigma,\qquad \Delta_\theta\to\Delta_\theta-v\,\omega_\sigma,\qquad
+\frac{P_aV}{T_a}\to\frac{P_aV}{T_a}+\omega_V+\frac{\omega_\sigma}n ,
+\label{slopes2}
+\stp
+\end{keyeq}
+and with $\omega$ added to the weight \Eq{weight}.  The reference implementation checks these against central differences of $H$.
+
+%=============================================================================
+\section{Level 2: the work, in order}
+\label{sec:work2}
+
+\subsection{H. The table of \texorpdfstring{$I_0$}{I0}}
+
+\begin{enumerate}
+\item Compute $\widetilde W(k)$ for the kernels of the code by a Hankel transform of the kernel as it is defined in \nolinkurl{src/sph.jl}, with its
+  support and normalization.  The transform must be accurate where it is small.  A plain trapezoid sum loses accuracy beyond $kh\approx80$.  For
+  Wendland C2, $\widetilde W\,(kh)^5\approx78$ from $kh\approx3$ on, with an oscillation of about ten percent.
+\item Compute $I_0(\sigma)$ of \Eq{I0} on a grid in $\ln\sigma$ from $\sigma=1$ to $10^4$.  Integrate numerically to a large $kh$ and add the tail from
+  the power law of $\widetilde W$ analytically.
+\item Store $I_0$ and $I_0'=dI_0/d\ln\sigma$ in a table and interpolate with a spline whose derivative is consistent with the stored $I_0'$.
+\item Reproduce the reference values for Wendland C2, which are $I_0=-0.979$, $-3.645$, $-3.874$, $-7.743$ and $-13.288$ at $\sigma=3.89$, $16.4$,
+  $18$, $60$ and $179$.  As a check of the code, the same integral with $1/S=1+2\Pi\widetilde W-(2\Pi-\mathcal K)\widetilde W^2$, $\Pi=\sigma+3/2$ and
+  $\mathcal K=3/2$ must give the values of \nolinkurl{partition.tex}, which are $-2.03$, $-4.14$ and $-13.43$ at $\sigma=3.89$, $16.4$ and $179$.
+\item Provide $\nu_*$, $\omega$, $\omega_\sigma$ and $\omega_V$ of \Eq{omega} as functions of $(\bar\sigma,V)$, with $a_2$ a setting,
+  \texttt{SPH\_SSCHEME\_A2}, whose default is zero.
+\end{enumerate}
+
+\subsection{I. The maps with \texorpdfstring{$\omega$}{omega}}
+
+Level~2 is a setting of the same scheme, \texttt{SPH\_SSCHEME\_LEVEL=2}, and not a new one.  Both maps of \Sect{sec:work1}~B keep their structure.
+The label is \Eq{label2}, the slopes are \Eq{slopes2}, and the derivative of the label with respect to $S_{\rm t}$ at fixed $\bm m$ and $V$ is still
+$\mathcal D$, now with the new slopes.  Repeat the tests D1, D2, D3, D6, D7 and D8 with $\omega$ on, with $a_2=0$ and with $a_2=0.3$.  With the table replaced by
+zero the maps must equal those of level~1 bit for bit.  Repeat the timing and the smoke runs of E.
+
+\subsection{J. The equilibrium comparison with \texorpdfstring{$a_2=0$}{a2 = 0}: campaign \texttt{eos\_sscheme2}}
+
+Repeat the campaign of F at level~2 with $a_2=0$.  Add a section ``The S-scheme, level 2'' to \nolinkurl{step5_plan.tex} with the
+same panels, for split, level~1 and level~2.  The expectation is that the offsets of $E$ and $P$ that remain at $s_a\ge54$, which are the correction of
+the positions, are reduced by a large factor, and by more at $h/a=3$ than at $h/a=2$.  Also measure two quantities that test the positions directly.
+\begin{itemize}
+\item The mean volume.  The condition $\ln\mathcal Z_N=p\,\beta^0L^2$ requires $\big\langle V_a\,(1+\partial\omega/\partial\bar\sigma)\big\rangle=\bar V$.
+\item The structure factor at small $k$.  Its inverse extrapolated to $k=0$ is the stiffness of the labels, which should be small.
+\end{itemize}
+\textbf{Ask} the owner to read the section before the branch is merged.
+
+\subsection{K. The dynamics with \texorpdfstring{$a_2=0$}{a2 = 0}: campaign \texttt{hastings\_sscheme2}}
+
+Repeat the campaign of G with level~2 and $a_2=0$, and add the same subset of results to the section of \nolinkurl{split_dynamics.tex}, now with three
+columns.  The counterterm changes the forces between particles, so check the drift of $H$ and the time step first, in a smoke run.
+
+\subsection{L. The estimate of \texorpdfstring{$a_2$}{a2}}
+
+The aim is to test that the remaining error depends on $\sigma$ and $h/a$ only through $\nu_*$, and to measure $a_2$.  If the model lacks a term
+$a_2\nu_*^2$ in $\omega$, then with $a_2=0$ the remaining offsets at rest are
+\begin{keyeq}
+\st
+\frac{(P-p)\,\bar V}{T}=-2a_2\,\nu_*^2\,\Big(1+\frac{I_0'}{I_0}\Big),\qquad
+\frac{(E-e)\,\bar V}{T}=-2a_2\,\nu_*^2\,q\,\frac{I_0'}{I_0} .
+\label{a2}
+\stp
+\end{keyeq}
+Run hybrid Monte Carlo at rest with level~2 and $a_2=0$ on a grid of $s_a\in\{16,54,160,541\}$ and $h/a\in\{2,2.5,3,4\}$ at $c_s^2=1/2$, with enough
+updates that the errors of $E$ and $P$ are a tenth of the offsets.  \textbf{Ask} the owner with the cost estimate before submitting.  Then do the
+following.
+\begin{enumerate}
+\item Plot the two left sides of \Eq{a2}, each divided by its factor in $I_0'/I_0$, against $\nu_*^2$.  If the parametrization is right, all points
+  fall on one line through the origin with slope $-2a_2$.
+\item Fit $a_2$, with its error, from the points with $\nu_*<1/2$.  Report separately how the points at larger $\nu_*$ deviate.
+\item Repeat a few points at $c_s^2=1/4$ to check that $a_2$ does not depend on the equation of state.
+\item Rerun the grid with the fitted $a_2$ and confirm that the offsets are reduced.
+\end{enumerate}
+\textbf{Ask} the owner to read the result before going on.  If the points do not collapse, stop there and report.
+
+\subsection{M. The final comparison}
+
+With the fitted $a_2$, repeat the equilibrium campaign of J and the dynamical campaign of K, and add the fully renormalized results as a last column to
+the sections of \nolinkurl{step5_plan.tex} and \nolinkurl{split_dynamics.tex}.
+
+%=============================================================================
+\section{Reporting}
+\label{sec:reporting}
+
+\begin{itemize}
+\item \emph{This note.}  \Sect{sec:results} is the running record of the work.  For each item A to M it states what was implemented, what the tests
+  gave, and any decision taken, with the commit.
+\item \emph{The comparisons.}  The equilibrium results go into new sections of \nolinkurl{step5_plan.tex} and the dynamical ones into new sections of
+  \nolinkurl{split_dynamics.tex}.  Existing sections of those notes are not edited.
+\item \emph{Provenance.}  Every figure caption begins with the campaign, the run sets and the commit.  Tables go to \nolinkurl{docs/figs/} as
+  \texttt{sscheme\_*.csv}.
+\item \emph{The log.}  \nolinkurl{nersc/LOG.md} gets one section per campaign, with the job numbers and the node-hours.
+\item \emph{Style.}  Full sentences, displayed equations, symbols defined, and no material that was not asked for.
+\end{itemize}
+
+%=============================================================================
+\section{Open points for the owner}
+\label{sec:open}
+
+\begin{itemize}
+\item The particle stores the label $s$ and the target entropy $S_{\rm t}$ (\Sect{sec:model1}).  The reported entropy per particle is the mean of
+  $S_{\rm t}$.
+\item The older schemes are kept running but are not kept bit-identical.  The owner decides when to remove them.
+\item The constant $\mathcal B$ is zero throughout.  The stiffness that the loop induces is measured in J and is not corrected.
+\item A variable speed of sound needs $\dot q$ in the slopes and is not part of this plan (\nolinkurl{renorm3.tex}).
+\item A position update in the stochastic step is not part of this plan.
+\end{itemize}
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+To be filled by the session, item by item.
+
+\end{document}
