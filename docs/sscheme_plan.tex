@@ -608,4 +608,22 @@ The energy measured by the drivers is $\sum_aH_a$ and the virial uses $P_aV_a^2$
 $\delta t$ is halved twice, 5 of 5 updates are accepted, about $9\times10^4$ solves from the label take 1.7 Newton steps each with no fallback and no
 state outside the domain.
 
+\subsection*{E. First smoke runs (2026-11-25, debug 61997657, 61997960; commit 3fa7a3e)}
+
+\paragraph{Dynamics.}  \nolinkurl{examples/equilibrium.jl}, $L=0.6$ ($N=672$), $h/a=2$, $c_s^2=1/2$, 5 time units, one seed.  At $s_a=54$ at rest the
+S-scheme and split agree: hybrid Monte Carlo acceptance 0.99 for both, $\Delta H/H=-5.9\times10^{-6}$ against $-2.2\times10^{-6}$, KE/eq 0.984 against
+0.986, the stochastic step's acceptances 0.988/0.885 against 0.988/0.886, 11 guard rejections against 2.  At $s_a=54$, $v_0=0.8$: $\Delta H/H=+3.5\times10^{-7}$,
+no guard rejection.  At $s_a=16$ at rest the dynamics holds its fluctuations (KE/eq 1.003) but drifts more than split ($+1.9\times10^{-3}$ in 5 time units
+against $+3\times10^{-4}$), has $1.2\times10^5$ guard rejections, and the hybrid Monte Carlo start accepted only 0.11 of its trajectories (split 0.99).
+
+\paragraph{Why hybrid Monte Carlo fails at $s_a=16$.}  40 updates at the start of \nolinkurl{examples/equilibrium.jl}: every rejection is a trajectory
+that leaves the domain (32 of 40 at the driver's $\delta t$, 31 of 40 at a $\delta t$ 3.5 times smaller), none is a Metropolis rejection, and the
+accepted trajectories conserve $H$ to $10^{-6}$; split accepts 40 of 40.  The exits are therefore not an error of the integrator but a property of
+$H$.  The ideal step conserves the label, and at fixed $s$ the domain is $s\ge s_{\min}(\bm m,V)$, the smallest label at that momentum and volume,
+reached where $\mathcal D=\partial s/\partial S_{\rm t}=0$.  When $\bm m$ or $V$ of a particle changes so that $s_{\min}$ rises above its label, no state
+has that label: $H(s,\bm m,V)$ ends on a fold, where $T_a$ and $v_a$ diverge.  At $s_a=16$ the smallest $\mathcal D$ over the 672 particles is
+0.04--0.25 and about one percent of them have $\mathcal D<0.3$ (target entropies down to $S_{\rm t}\approx2.7$, the boundary at rest being $5/2$).
+Split does not have this: its boundary is on the label alone, $u>b$, which the ideal step conserves.
+\textbf{Ask}: the owner decides how to treat $s_a=16$ before campaign F.
+
 \end{document}
