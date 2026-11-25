@@ -27,14 +27,30 @@ sscheme_counts() = (t = sum(SS_CNT; dims = 2);  (solves = t[1], iters = t[2], fa
 const SS_TOL = 1e-13          # relative change of S_t at which the map from the label stops
 const SS_MAXIT = 30           # Newton steps before the bisection
 const SS_D = 3                # D = d + 1 (d = 2)
+const SS_SOUND = setting("SPH_SSCHEME_SOUND", 1.0)
+const SS_CUT = setting("SPH_SSCHEME_CUT", 0.0)
+const SS_G = setting("SPH_SSCHEME_G", 0.0)   # DIAGNOSTIC: X = ½ ln(a/q) times g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t (c_s² = 1/2)   # DIAGNOSTIC: labels below s_min(rest) + CUT·½ ln(q/(q−1)) have no state   # DIAGNOSTIC: the factor of the sound term ½ ln a in Δ_χ (1 = the scheme)
 
 struct SSchemeConsts
     c2 :: Float64;  q :: Float64;  n :: Float64;  A :: Float64
     Pconst :: Float64         # [(D/2)(2 + q) − 1]/n − (D/2 + 1): P_a V/T_a = S_t/n + Pconst
+    sb :: Float64             # DIAGNOSTIC: the cut on the label (SPH_SSCHEME_CUT=1), −Inf without it
 end
 function SSchemeConsts(eos::ConstantCs2EOS)
     c2 = eos.cs2_val;  q = 1 / c2;  n = 1 + q
-    return SSchemeConsts(c2, q, n, c2 * eos.T_scale^(-n), ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1))
+    c0 = SSchemeConsts(c2, q, n, c2 * eos.T_scale^(-n), ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1), -Inf)
+    SS_CUT > 0 || return c0
+    abs(c2 - 0.5) < 1e-12 || error("SPH_SSCHEME_CUT: c_s^2 = 1/2 only (no V dependence of s_min)")
+    # s_min at rest (V = 1; at c_s^2 = 1/2 it does not depend on V): golden section on ln S_t, the label without the domain test
+    lab(St) = (r = sscheme_target_entropy(St, 0.0, 1.0, c0);  Tr = r[1];  p = c0.A * Tr^n;  w = n * p;
+               St - ((SS_D / 2) * log(2π * w * Tr) + 0.5 * log(q)) - (1 - log(Tr)))
+    lo, hi = log(0.5), log(20.0);  φ = (sqrt(5) - 1) / 2
+    for _ in 1:200
+        x1 = hi - φ * (hi - lo);  x2 = lo + φ * (hi - lo)
+        lab(exp(x1)) < lab(exp(x2)) ? (hi = x2) : (lo = x1)
+    end
+    smin = lab(exp((lo + hi) / 2))
+    return SSchemeConsts(c2, q, n, c0.A, c0.Pconst, smin + SS_CUT * 0.5 * log(q / (q - 1)))
 end
 SSchemeConsts(eos::AbstractEOS) = error("SPH_RENORM=sscheme: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
@@ -48,18 +64,28 @@ const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN,
     (isfinite(Tr) && Tr > 0 && γ <= GAMMA_MAX) || return SS_NOSTATE
     a = q - v2
     p = A * Tr^n;  w = n * p;  St = γ * (w / Tr) * V
-    Dχ = (SS_D / 2) * log(2π * V * γ * w * Tr) + 0.5 * log(a)
+    Dχ = (SS_D / 2) * log(2π * V * γ * w * Tr) + SS_SOUND * 0.5 * log(a)
     Dℓ = 1 + log(V) + log(γ) - log(Tr)
     s = St - Dχ - Dℓ
-    Dp = (SS_D / 2) * (2 + q - v2) + v2 * (1 - v2) / a - (1 + v2)
-    Dθ = (SS_D / 2) * v - v * (1 - v2) / a + v
+    Dp = (SS_D / 2) * (2 + q - v2) + SS_SOUND * v2 * (1 - v2) / a - (1 + v2)
+    Dθ = (SS_D / 2) * v - SS_SOUND * v * (1 - v2) / a + v
+    Pg = 0.0
+    if SS_G > 0                                                        # Δ → Δ − h X: s += h X, slopes and pressure from h(S_t), X(v)
+        b = SS_D / 2 + 1 - (1 - 2 * c.c2);  u = b / St
+        h = 3u^2 - 2u^3;  dh = -6u^2 * (1 - u)                         # dh/d ln S_t;  ∂ln S_t/∂(τ, θ, ln V) = (q, v, 1)
+        X = 0.5 * log(a / q);  Xθ = -v * (1 - v2) / a                  # ∂X/∂θ
+        s += h * X
+        Dp += -dh * X * a + v * h * Xθ                                 # M = −h X:  ΔM_p = ∂M/∂τ − v ∂M/∂θ
+        Dθ += -dh * v * X - h * Xθ
+        Pg = dh * X / n                                                # P_a V/T_a += (∂M/∂τ)/n − ∂M/∂ln V
+    end
     εp = Dp / (St * a);  εpar = Dθ / St
     D = 1 - (1 + v2) * εp + v * εpar
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
-    ok = D > 0 && abs(va) < 1
+    ok = D > 0 && abs(va) < 1 && s > c.sb
     ok || return SS_NOSTATE
-    Pa = (St / n + c.Pconst) * Ta / V
+    Pa = (St / n + c.Pconst + Pg) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = s - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
 end
