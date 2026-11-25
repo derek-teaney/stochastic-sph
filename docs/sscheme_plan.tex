@@ -712,4 +712,26 @@ The single particle with option 2 (\nolinkurl{examples/renorm_quadrature_sscheme
 and from $2.8\times10^{-4}$ to $4.2\times10^{-4}$ at $v=0.8$ (split: $2.4\times10^{-4}$, $6.9\times10^{-4}$), and $R$ falls from $1.9\times10^{-5}$ to
 $6\times10^{-6}$; at $s_a=16$ about the same as one loop (4 percent).  Option 1 has not yet been put into the quadrature (the excluded weight).
 
+\subsection*{E2. The regularization near the boundary: a family of cutoff functions (planned, 2026-11-25)}
+
+The owner: ``we will need different cutoff functions and play with the sensitivity of our results to it.''  The one-loop S-scheme is to be completed
+near $S_{\rm t}\sim b$ by a regularization $R$ that leaves it unchanged to order $1/S_{\rm t}^2$, and every result at $s_a\lesssim30$ is to be quoted with
+its spread over the family.
+\begin{itemize}
+\item \emph{The family.}  (i) The hard limit $s>s_b+\delta$, $\delta\ge0$.  (ii) The momentum and volume part switched off,
+  $\Delta=b\ln S_{\rm t}+g(S_{\rm t})X+\text{const}$, $X=\mathcal N\ln(\gamma V/\bar V)+\tfrac12\ln(1-c_s^2v^2)$, $\bar V=L^2/N$, with $g$ of order $k\ge2$ in
+  $b/S_{\rm t}$ and a zero of order $j\ge2$ at $S_{\rm t}=b$ (the present $g$ is $k=j=2$), and a width $\lambda$, $g\big((S_{\rm t}-b)/\lambda+b\big)$.
+  (iii) A function of $\Delta/S_{\rm t}$ as in option 3, once worked out.
+\item \emph{The requirement of each member}, checked numerically on a grid of $(S_{\rm t},\gamma,V)$ before it is used: $\partial s/\partial S_{\rm t}>0$
+  above the boundary and a smallest label that does not depend on $\bm m$ and $V$.  For (ii) at $c_s^2=1/4$ this is the condition
+  $X<S_{\rm t}^3/6b^2$ near the boundary, which $\tfrac12\ln\gamma$ violates for $\gamma\gtrsim2$; the grid will show whether a higher $j$ or a width
+  $\lambda$ is needed.
+\item \emph{The sensitivity}, cheapest first: the single particle by quadrature at $s_a=16,30,54$ for each member (minutes on the login node);
+  then hybrid Monte Carlo at $s_a=16$ (acceptance, exits, the weight removed); then campaign F at $s_a=16$ and $30$ with two or three members; then
+  the dynamics of campaign G at $s_a=16$.
+\item \emph{In the code}: one setting chooses the member and its parameters (\texttt{SPH\_SSCHEME\_REG}), the default to be decided by the owner; the
+  tests of item D are repeated for each member.
+\end{itemize}
+Not started: campaigns F and G at $s_a\ge54$ come first, since the regularization changes nothing there at the order kept.
+
 \end{document}
