@@ -1,0 +1,222 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{dsfont}
+\usepackage[most]{tcolorbox}
+\newcommand{\one}{\mathds{1}}
+\definecolor{darkblue}{RGB}{20,60,140}
+\definecolor{accent}{RGB}{30,80,150}
+\definecolor{tint}{RGB}{243,246,251}
+\newtcolorbox{keyeq}{enhanced, colback=tint, frame hidden, borderline west={2pt}{0pt}{accent},
+  sharp corners, left=4pt, right=4pt, top=0pt, bottom=0pt, before skip=6pt, after skip=6pt}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Tab#1{Table~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+
+\begin{document}
+\sloppy
+
+\title{The S-scheme in the code, and its fold at low entropy per particle}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+This note records the work of 2026-11-25 on the state-counting renormalization (the S-scheme, \nolinkurl{renorm3.tex}, \nolinkurl{sscheme_plan.tex}).
+The single particle of the S-scheme was compared with split by quadrature; the two maps of the scheme were implemented and tested; the scheme was
+put into the steps, which required storing the particle volume.  At $s_a\ge54$ the S-scheme is as good as split or better.  At $s_a=16$ hybrid
+Monte Carlo fails: the one-loop Hamiltonian ends on a fold, which the earlier schemes do not have.  We explain why, confirm the explanation by a
+test, and describe the regularizations that remove the fold, with the one chosen.  The running record, with every job number, is the Results
+section of \nolinkurl{sscheme_plan.tex}.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{The scheme}
+\label{sec:scheme}
+
+A particle has a label $s$, a momentum $\bm m$ and a volume $V$, with the Liouville measure $e^s\,ds\,d^2m$.  Its \emph{target state} is the temperature
+$T_{\rm rel}$ and velocity $\bm v$ that the input equation of state gives to a cell of volume $V$ holding the particle's energy and momentum, and its
+\emph{target entropy} is $S_{\rm t}=\gamma\,s(T_{\rm rel})\,V$.  At one loop the S-scheme sets
+\begin{keyeq}
+\st
+s=S_{\rm t}-\Delta,\qquad \Delta=\tfrac D2\ln\big(2\pi V\gamma\,wT_{\rm rel}\big)+\tfrac12\ln a+1+\ln V+\ln\gamma-\ln T_{\rm rel},
+\label{scheme}
+\stp
+\end{keyeq}
+with $D=3$ and $a=1/c_s^2-v^2$.  The temperature, the velocity and the pressure of the particle follow by differentiation; at fixed $\bm m$ and $V$,
+\st
+\mathcal D\equiv\frac{\partial s}{\partial S_{\rm t}},\qquad T_a=\frac{\partial H}{\partial s}=\frac T{\mathcal D} ,
+\stp
+so a state has a positive temperature only where $\mathcal D>0$.  For a constant speed of sound the counterterm is a sum of three pieces,
+\begin{keyeq}
+\st
+\Delta=b\ln S_{\rm t}+X(\bm m,V)+\text{const},\qquad X=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\label{split}
+\stp
+\end{keyeq}
+with $b=\tfrac D2+1-\mathcal N$, $\mathcal N=1-2c_s^2$.  At $c_s^2=1/2$, $b=5/2$ and $\mathcal N=0$.  The same three pieces are the counterterm of split
+(\texttt{SPH\_RENORM=split}): $b\ln S_{\rm t}$ is its label part and $X$ its dynamical part.  The schemes differ only in where they put them.
+
+%=============================================================================
+\section{What was done}
+\label{sec:done}
+
+\paragraph{The single particle.}  \nolinkurl{examples/renorm_quadrature_sscheme.py} integrates the single-particle partition function of the tree level,
+split and the S-scheme, at rest and in a moving bath.  The quadrature had to be moved to the variables $(\ln T,\text{rapidity})$: in $(T,v)$ the weight
+of both renormalized models rises toward the light cone, so the Gaussian grid of the earlier script had no peak to sit on and missed a tail worth a few
+$10^{-4}$.  Converged to $10^{-6}$, the relative errors of $E$ and $p$ are those of \Tab{tab:single}.  The S-scheme is as good as split or better wherever
+one loop applies, by up to a factor of ten in motion; at $s_a=16$ both are off by 4 to 10 percent.
+
+\begin{table}[h]
+\caption{The single particle by quadrature (\nolinkurl{examples/renorm_quadrature_sscheme.py}): relative errors of $E$ and of $p$, split and the
+S-scheme.  $s_a=16$ is outside the range of one loop for both.}
+\label{tab:single}
+\small
+\begin{tabular}{cccrrrr}
+\toprule
+ & & & \multicolumn{2}{c}{split} & \multicolumn{2}{c}{S-scheme} \\
+$c_s^2$ & $s_a$ & $v$ & $E$ & $p$ & $E$ & $p$ \\
+\midrule
+$1/2$ & 16 & 0 & $3.9\times10^{-2}$ & $3.9\times10^{-2}$ & $4.2\times10^{-2}$ & $4.2\times10^{-2}$ \\
+ & 54 & 0 & $2.4\times10^{-4}$ & $2.4\times10^{-4}$ & $1.8\times10^{-4}$ & $1.8\times10^{-4}$ \\
+ & 54 & 0.8 & $6.9\times10^{-4}$ & $8.0\times10^{-4}$ & $2.8\times10^{-4}$ & $2.4\times10^{-4}$ \\
+ & 541 & 0.8 & $6.1\times10^{-6}$ & $7.2\times10^{-6}$ & $2.3\times10^{-6}$ & $2.0\times10^{-6}$ \\
+$1/4$ & 54 & 0 & $5.3\times10^{-4}$ & $2.4\times10^{-3}$ & $5.8\times10^{-4}$ & $5.7\times10^{-4}$ \\
+ & 54 & 0.8 & $-4.4\times10^{-4}$ & $1.0\times10^{-3}$ & $4.4\times10^{-5}$ & $-1.0\times10^{-4}$ \\
+ & 541 & 0.8 & $-3.7\times10^{-6}$ & $9.5\times10^{-6}$ & $-1.3\times10^{-7}$ & $-1.5\times10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The maps.}  \nolinkurl{src/sscheme.jl} evaluates everything about a particle at its target state: the label, the energy, $T_a$, $\bm v_a$, $P_a$,
+$\mathcal D$ and the weight of a vote, $s-\ln T_a$, which needs no solve.  For a constant speed of sound both target inversions are one-dimensional.
+The map from the label iterates on $S_{\rm t}$ from its previous value (1.7 Newton steps per solve in hybrid Monte Carlo).  The tests
+(\nolinkurl{test/testsscheme.jl}) check $\partial H/\partial s=T_a$, $\partial H/\partial\bm m=\bm v_a$, $-\partial H/\partial V=P_a$ to $3\times10^{-10}$, the
+two maps against each other to $2\times10^{-15}$, an independent implementation in mpmath to $10^{-15}$, and the relation \Eq{split} to split.
+
+\paragraph{The steps: the volume is stored.}  The code kept the volume as the smoothed entropy density $S_a=s_an_a$ and recovered $V_a=s_a/S_a$, the
+energy $s_a\,(H/s)_a$ and the velocity $(v/S)_aS_a$ through the label.  The label of the S-scheme can be zero or negative, so the particle now stores
+its volume, energy, velocity and target entropy.  Every scheme fills them, the tree level, split and Legendre with the expressions used before, so
+their dynamics is bit-identical to \texttt{main}.  Three diagnostics of the equilibrium driver changed because they now read a consistent state: the
+energy series (the old expression mixed labels after the stochastic step with energies before it, a noise of $10^{-5}$ in $\Delta H/H$; now $10^{-7}$),
+and the kinetic energy and the volume spread.  With the S-scheme the ideal step and hybrid Monte Carlo use the particle's own $T_a$, $\bm v_a$, $P_a$;
+the votes use $s-\ln T_a$; the transport coefficients and the comoving structures of the viscous step use the target state.  Hybrid Monte Carlo
+conserves $H$ to second order in $\delta t$ (ratio 16.1 under two halvings), and the full test suite passes.
+
+\paragraph{The dynamics at $s_a=54$.}  With the S-scheme, at rest, 5 time units: hybrid Monte Carlo acceptance 0.99, $\Delta H/H=-5.9\times10^{-6}$,
+KE/eq $0.984$; split $-2.2\times10^{-6}$, $0.986$.  At $v_0=0.8$, $\Delta H/H=+3.5\times10^{-7}$.  The equilibrium campaign at $s_a=54$ and $541$
+(\texttt{eos\_sscheme}) is running.
+
+%=============================================================================
+\section{The fold at $s_a=16$}
+\label{sec:fold}
+
+\paragraph{What was seen.}  At $s_a=16$, $c_s^2=1/2$, at rest, hybrid Monte Carlo accepted 11 percent of its trajectories (split 99 percent), and the
+dynamics drifted by $1.9\times10^{-3}$ in 5 time units (split $3\times10^{-4}$).  Of 40 trajectories, 32 left the domain of $H$ and none was
+rejected by Metropolis; at a time step 3.5 times smaller, 31 left.  The trajectories that stayed conserved $H$ to $10^{-6}$.  The exits are a property
+of $H$, not of the integrator.
+
+\paragraph{Why.}  At fixed $\bm m$ and $V$, \Eq{split} gives
+\st
+s=S_{\rm t}-b\ln S_{\rm t}-X(\bm m,V)-\text{const},\qquad \frac{\partial s}{\partial S_{\rm t}}=1-\frac b{S_{\rm t}} .
+\stp
+The label has a minimum at $S_{\rm t}=b$, the fold, where $\mathcal D=0$ and $T_a$, $v_a$ diverge.  Its value,
+\st
+s_{\min}(\bm m,V)=b-b\ln b-X(\bm m,V)-\text{const},
+\stp
+depends on $\bm m$ and $V$ through $X$.  The ideal step conserves the label while $\bm m$ and $V$ change.  If $X$ falls, $s_{\min}$ rises, and a particle
+whose label lies just above $s_{\min}$ is left with no state: it has run onto the fold.  At $c_s^2=1/2$, $X=\tfrac12\ln(1-v^2/2)$ can fall by $\tfrac12\ln2=0.35$,
+so a particle within $0.35$ of the minimum can be carried onto the fold by its own acceleration.  At $s_a=16$ about one percent of the particles are
+that close at any moment; at $s_a=54$ essentially none are.
+
+\paragraph{Why split and \texttt{SPH\_RENORM=1} do not have it.}  They take the target entropy $u=S_{\rm t}$ as the particle's variable.  The label part
+$b\ln u$ sits in the measure, $e^{u-b\ln u}(1-b/u)\,du$, and their boundary $u>b$ is on the variable that the ideal step conserves, so it cannot be
+crossed.  The part $X$ is left out (\texttt{SPH\_RENORM=1}) or added to $H$ as an energy (split), where it moves nothing.  The S-scheme puts $X$ inside
+the conserved label.
+
+\paragraph{The test.}  With the sound term removed from $\Delta$, the S-scheme at $c_s^2=1/2$ has $X=0$, and its ideal step is that of
+\texttt{SPH\_RENORM=1}.  Then 37 of 40 trajectories were accepted and none left the domain.
+
+\paragraph{It belongs to the truncation.}  The exact number of states increases with the energy at every $(\bm m,V)$, and at $\bm m\ne0$ its labels cover
+the real line (\nolinkurl{renorm2.tex}): the exact scheme has no fold.  The next term of the series does not remove it.  With $\Delta\to\Delta-c/S_{\rm t}$ the
+slope $1-b/S_{\rm t}-c/S_{\rm t}^2$ still vanishes, near $S_{\rm t}\approx b+c/b$, and $c$ depends on $v$.  The fold sits where the expansion parameter is of
+order one: the exact particle is a Poisson cloud of $\bar N=S_{\rm t}/n$ quanta, and at the fold $\bar N\approx1$.
+
+%=============================================================================
+\section{Removing the fold}
+\label{sec:fix}
+
+Two conditions are needed.  At fixed $\bm m$ and $V$ the label must increase with $S_{\rm t}$, and its smallest value must not depend on $\bm m$ and $V$.
+One loop has the first and not the second.  Any change confined to $S_{\rm t}\sim b$, where one loop does not apply, is admissible, and changes of order
+$1/S_{\rm t}^2$ are accepted.
+
+\paragraph{A hard limit on the label.}  Allow only $s>s_b=\max_{\bm m,V}s_{\min}$; for $c_s^2=1/2$, $s_b=s_{\min}(\text{rest})+\tfrac12\ln2$.  The ideal step
+conserves $s$ and cannot reach the fold.  The stochastic step, the heat bath of hybrid Monte Carlo and the equilibrium draw are the only places where
+labels change, and they reject a state below the limit as they reject any state outside the domain.  It removes the labels within $0.35$ of the minimum
+(at rest the target entropies $b<S_{\rm t}\lesssim4$) and leaves $H$ unchanged elsewhere.  The volume is not touched.
+
+\paragraph{Switching off $X$ at the boundary.}  Replace $X$ by $g(S_{\rm t})X$ with
+\st
+g=\Big(1-\frac b{S_{\rm t}}\Big)^2\Big(1+\frac{2b}{S_{\rm t}}\Big)=1-\frac{3b^2}{S_{\rm t}^2}+\frac{2b^3}{S_{\rm t}^3} .
+\stp
+Since $g(b)=g'(b)=0$ the smallest label is the same for every $\bm m$ and $V$ (checked: $-2.79548$ at $\gamma v=0,1,3,10$), and the change is of order
+$1/S_{\rm t}^2$.  The slope becomes $(1-b/S_{\rm t})(1-6b^2X/S_{\rm t}^3)$, so the second factor must stay positive, $X<S_{\rm t}^3/6b^2\approx0.33$ near the
+boundary.  It also removes a symptom of the fold: a particle at $S_{\rm t}=3$ with $|\bm m|=2$ moved against its momentum ($v_a=-0.15$) and now moves with it
+($v_a=0.57$).
+
+\paragraph{The choice (owner).}  Multiply by $g$ only the parts of $X$ that raise the smallest label, and put the hard limit at the rest minimum, as split's
+$u>b$.  The velocity part, $\mathcal N\ln\gamma+\tfrac12\ln(1-c_s^2v^2)$, raises the minimum for $c_s^2>1/3$ and lowers it for $c_s^2<1/3$.  The volume part,
+$\mathcal N\ln(V/\bar V)$, raises it for $V<\bar V$ whenever $\mathcal N>0$.  So $g$ multiplies the velocity part at $c_s^2=1/2$ and the volume part at
+$c_s^2=1/4$.  Putting $g$ on every term would need $g'X<1-b/S_{\rm t}$, which the velocity part at $c_s^2=1/4$ violates for fast particles near the
+boundary ($\tfrac12\ln\gamma$ reaches 2.3 at $\gamma=100$).  The volume part with $g$ needs $V<1.9\bar V$ near the boundary, five standard deviations in the
+measured spread of the volumes at $s_a=16$.
+
+\paragraph{The tests at $s_a=16$, $c_s^2=1/2$} (40 updates of hybrid Monte Carlo, and 5 time units of the dynamics):
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+ & accepted & left the domain & $\Delta H/H$ & KE/eq \\
+\midrule
+one loop & 8 & 32 & $+1.9\times10^{-3}$ & 1.003 \\
+hard limit & 40 & 0 & & \\
+$g$ & 39 & 0 & $-9.8\times10^{-6}$ & 0.996 \\
+split & 40 & 0 & $-3.4\times10^{-6}$ & 1.024 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The single particle is not affected where one loop applies.  With the hard limit the errors at $s_a=54$ are identical to one loop's.  With $g$ they are
+unchanged at $s_a=541$; at $s_a=54$, $v=0.8$ they grow from $2.8\times10^{-4}$ to $4.2\times10^{-4}$, because $g$ approaches one as $1/S_{\rm t}^2$.  At $s_a=16$
+all three are near 4 percent, as split is.  The guard rejections of the stochastic step at $s_a=16$ (about $1.2\times10^5$ in 5 time units) are the same
+for $g$ and split, so they are a property of the entropy per particle, not of the fold.
+
+%=============================================================================
+\section{Where things stand}
+\label{sec:next}
+
+\begin{itemize}
+\item Merged into the integration branch \texttt{sscheme}: the maps, the steps, the tests.  The regularizations are diagnostic settings on the branch
+  \texttt{sscheme-fold-diag}, for $c_s^2=1/2$ only.
+\item Running: the equilibrium campaign \texttt{eos\_sscheme} at $s_a=54$ and $541$ (\nolinkurl{sscheme_plan.tex}, item F).
+\item Next: the dynamical campaign at $s_a=54$ (item G); the chosen regularization implemented as a setting with its tests, and checked at $c_s^2=1/4$;
+  then the family of cutoff functions and the sensitivity of the results at $s_a\lesssim30$ to them (item E2).
+\item Open, for the owner: a label written as a function of $\Delta/S_{\rm t}$ that is increasing for every $S_{\rm t}$, guided by the known higher orders and the
+  exact Poisson cloud.
+\end{itemize}
+
+\end{document}
