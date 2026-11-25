@@ -743,4 +743,19 @@ its spread over the family.
 \end{itemize}
 Not started: campaigns F and G at $s_a\ge54$ come first, since the regularization changes nothing there at the order kept.
 
+\paragraph{The rule chosen (owner, 2026-11-25).}  Multiply by $g(S_{\rm t})$ only the parts of $X$ that raise the smallest label, and leave the others
+as they are; the smallest label is then its value at rest for every $\bm m$ and $V$, and the hard limit sits there ($\delta=0$), as split's $u>b$.  Which
+parts raise it (\nolinkurl{examples/renorm_quadrature_sscheme.py}, the smallest label over $S_{\rm t}$ on a grid of $v$ and $V$):
+\begin{itemize}
+\item the velocity part $\tfrac{\mathcal N}2\ln(1-v^2)\cdot(-1)+\tfrac12\ln(1-c_s^2v^2)$ raises it for $c_s^2>1/3$ (to first order as $(3c_s^2-1)/2$ in $v^2$) and
+  lowers it for $c_s^2<1/3$: at $c_s^2=1/2$ by up to $+\tfrac12\ln2$, at $c_s^2=1/4$ by $-0.17$ at $v=0.8$ and $-0.84$ at $v=0.99$;
+\item the volume part $\mathcal N\ln(V/\bar V)$ raises it for $V<\bar V$ whenever $\mathcal N>0$ ($c_s^2<1/2$): $+\tfrac12\ln2$ at $V=\bar V/2$ for $c_s^2=1/4$.
+\end{itemize}
+So $g$ multiplies the velocity part at $c_s^2=1/2$ and the volume part at $c_s^2=1/4$.  The alternative, $g$ on every term, needs
+$g'X<1-b/S_{\rm t}$ above $b$, which the velocity part at $c_s^2=1/4$ violates for $v\gtrsim0.92$ near the boundary ($\tfrac12\ln\gamma$ up to 2.3 at
+$\gamma_{\max}=100$) unless $g$ is made steeper or wider; not pursued.  The volume part with $g$ needs $\tfrac12\ln(V/\bar V)<S_{\rm t}^3/6b^2\approx0.33$
+near the boundary, $V<1.9\bar V$ (5$\sigma$ in the measured spread, $\langle(V/\bar V-1)^2\rangle^{1/2}=0.18$ at $s_a=16$, $h/a=2$, \texttt{eos\_split}).
+\emph{Tested}: $c_s^2=1/2$ (hybrid Monte Carlo 39--40 of 40, no exit; the dynamics at $s_a=16$, 5 time units, debug 62001399: $\Delta H/H=-9.8\times10^{-6}$,
+KE/eq 0.996, against one loop $+1.9\times10^{-3}$ and split $-3.4\times10^{-6}$).  \emph{Not yet}: $c_s^2=1/4$.
+
 \end{document}
