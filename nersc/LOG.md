@@ -757,6 +757,17 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
 - **Legendre dynamics smoke** (debug 61893274, then 61894564 with the EOS bath): runs, bath exact (T0 = 84.23 at v = 0.8), cost ≈ split.
   But at s_a = 16 at rest ΔH/H = +2.0e-2 in 5 time units, acceptances 0.83/0.45, 270k guard rejections (split: 3e-4, 0.97/0.58, 43k).
   Campaign hastings_legendre held until this is understood.
+- **Legendre smoke at s_a = 54** (debug 61901626, `$SCRATCH/sph/lg_smoke54`, 5 time units): healthy.  At rest ΔH/H = +2.2e-4, acceptances
+  0.987/0.880, 142 guard rejections, |v| > 0.9 in 1e-5 of samples (split at rest: −3.6e-4, 0.988/0.886, 2); v = 0.8: +2.1e-4, 0 rejections.
+  The s_a = 16 trouble: the counterterm takes T(K − c_s²) = 7T (c_s² = 1/2) from the inertia |m|/v ≈ 16T at rest and 2.5T/V from the
+  pressure, about half the tree values, so particles with low entropy content go to the light cone; at s_a = 54 it is ~14%.
+  KE/eq at rest was 0.56 (s_a = 54) and 0.38 (s_a = 16) with Legendre: the normalization 2(N−1)VwT took w, T from a set-up particle,
+  which under Legendre is hotter (wT 1.79×, 4.06×); corrected 1.00 (s_a = 54) and 1.05 → 1.55 (s_a = 16, heating).  Fixed in
+  equilibrium.jl (SR_BATH=nominal: w0 and the KE normalization from the EOS at s_rel,0, T = T_rel,0/γ; e_of_srel in sph.jl); debug
+  61903312, s_a = 54 at rest, 3 time units: KE/eq Legendre 1.001, split 1.011.
+- **Campaign `hastings_legendre` dropped** (owner, 2026-11-25): superseded by the S-scheme (docs/renorm3.tex: the Legendre Hamiltonian moves
+  the stationary point; docs/sscheme_plan.tex).  Never submitted; its campaign file was not committed.  The KE fix went to branch
+  `sscheme-kefix` (merged into `sscheme`), since the S-scheme's set-up particle is likewise not at the target state.
 
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
