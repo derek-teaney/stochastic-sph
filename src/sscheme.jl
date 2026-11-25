@@ -29,6 +29,7 @@ const SS_MAXIT = 30           # Newton steps before the bisection
 const SS_D = 3                # D = d + 1 (d = 2)
 const SS_SOUND = setting("SPH_SSCHEME_SOUND", 1.0)
 const SS_CUT = setting("SPH_SSCHEME_CUT", 0.0)
+const SS_SB_CACHE = Dict{Tuple{Float64,Float64},Float64}();  const SS_SB_LOCK = ReentrantLock()
 const SS_G = setting("SPH_SSCHEME_G", 0.0)   # DIAGNOSTIC: X = ½ ln(a/q) times g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t (c_s² = 1/2)   # DIAGNOSTIC: labels below s_min(rest) + CUT·½ ln(q/(q−1)) have no state   # DIAGNOSTIC: the factor of the sound term ½ ln a in Δ_χ (1 = the scheme)
 
 struct SSchemeConsts
@@ -41,6 +42,7 @@ function SSchemeConsts(eos::ConstantCs2EOS)
     c0 = SSchemeConsts(c2, q, n, c2 * eos.T_scale^(-n), ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1), -Inf)
     SS_CUT > 0 || return c0
     abs(c2 - 0.5) < 1e-12 || error("SPH_SSCHEME_CUT: c_s^2 = 1/2 only (no V dependence of s_min)")
+    k = (c2, eos.T_scale);  haskey(SS_SB_CACHE, k) && return SSchemeConsts(c2, q, n, c0.A, c0.Pconst, SS_SB_CACHE[k])
     # s_min at rest (V = 1; at c_s^2 = 1/2 it does not depend on V): golden section on ln S_t, the label without the domain test
     lab(St) = (r = sscheme_target_entropy(St, 0.0, 1.0, c0);  Tr = r[1];  p = c0.A * Tr^n;  w = n * p;
                St - ((SS_D / 2) * log(2π * w * Tr) + 0.5 * log(q)) - (1 - log(Tr)))
@@ -50,7 +52,9 @@ function SSchemeConsts(eos::ConstantCs2EOS)
         lab(exp(x1)) < lab(exp(x2)) ? (hi = x2) : (lo = x1)
     end
     smin = lab(exp((lo + hi) / 2))
-    return SSchemeConsts(c2, q, n, c0.A, c0.Pconst, smin + SS_CUT * 0.5 * log(q / (q - 1)))
+    sb = smin + SS_CUT * 0.5 * log(q / (q - 1))
+    lock(() -> (SS_SB_CACHE[k] = sb), SS_SB_LOCK)
+    return SSchemeConsts(c2, q, n, c0.A, c0.Pconst, sb)
 end
 SSchemeConsts(eos::AbstractEOS) = error("SPH_RENORM=sscheme: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
