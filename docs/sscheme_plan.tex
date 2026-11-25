@@ -608,6 +608,15 @@ The energy measured by the drivers is $\sum_aH_a$ and the virial uses $P_aV_a^2$
 $\delta t$ is halved twice, 5 of 5 updates are accepted, about $9\times10^4$ solves from the label take 1.7 Newton steps each with no fallback and no
 state outside the domain.
 
+\paragraph{The test suite} (interactive 62000863, \texttt{test/run.sh all} against \texttt{main} 00064e7 at the default scheme, and \texttt{unit},
+\texttt{load} with \texttt{SPH\_RENORM=sscheme}; commit 578487e, whose \nolinkurl{src/} and \nolinkurl{test/} are those of 3fa7a3e).  All unit tests,
+including \texttt{testsscheme} and \texttt{testsscheme\_hmc}, the physics tests, the load test and three of the five regression items pass; every
+script loads with the S-scheme.  The equilibrium driver (at rest and boosted) has a bit-identical trajectory, and three diagnostics differ because they
+now read the stored fields: the energy series $H(t)$ (before, $s_a\,(H/s)_a$ mixed the labels after the stochastic step with $(H/s)_a$ from before it, a
+noise of $10^{-5}$ in $\Delta H/H$; now $10^{-7}$), and KE/eq and the volume spread (before, $s_a/S_a$ with a stale $S_a$; $10^{-6}$ at rest, 0.3 percent
+boosted).  The known differences \texttt{hast\_lq\_*} remain.  The tree-level unit tests fail when \texttt{SPH\_RENORM=sscheme} is forced on them, as
+they did for split; they set \texttt{SPH\_RENORM=0} themselves in the default run.
+
 \subsection*{E. First smoke runs (2026-11-25, debug 61997657, 61997960; commit 3fa7a3e)}
 
 \paragraph{Dynamics.}  \nolinkurl{examples/equilibrium.jl}, $L=0.6$ ($N=672$), $h/a=2$, $c_s^2=1/2$, 5 time units, one seed.  At $s_a=54$ at rest the
