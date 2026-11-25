@@ -23,6 +23,7 @@ function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
             end
         end
         particles[a].S_smooth = S_acc
+        particles[a].V = particles[a].s / S_acc
         particles[a].M_smooth = M_acc
     end
 end
@@ -43,9 +44,14 @@ function smooth_entropy_energy!(particles::Vector{Particle}, params::SimParams,
             r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
             S_acc += (number ? 1.0 : particles[b].s) * kernel_W(r_mag, params.h, params.kernel)
         end
+        if SSCHEME                                # V_a = 1/n_a stored; S_smooth the target's entropy density (the label can be ≤ 0)
+            pa = particles[a];  pa.V = 1 / S_acc;  pa.M_smooth = pa.m * S_acc;  pa.S_smooth = pa.St * S_acc
+            continue
+        end
         number && (S_acc *= particles[a].s)
         particles[a].S_smooth = S_acc
         particles[a].M_smooth = particles[a].m * (S_acc / particles[a].s)
+        particles[a].V = particles[a].s / S_acc   # the expression the code used before V was stored (bit-identical)
     end
 end
 
@@ -81,7 +87,7 @@ function update_velocities_energy!(particles::Vector{Particle},
                                    params::SimParams, cl::CellList2D)
     if params.volume === :number
         Threads.@threads for a in eachindex(particles)
-            pa = particles[a];  pa.dotx = pa.v_over_S * pa.S_smooth;  pa.Teff = pa.T
+            pa = particles[a];  pa.dotx = pa.v;  pa.Teff = pa.T
         end
         return
     end
@@ -144,7 +150,7 @@ function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
     number = params.volume === :number
     Threads.@threads for a in eachindex(particles)
         sa  = number ? 1.0 : particles[a].s
-        pSa = number ? particles[a].p * (particles[a].s / particles[a].S_smooth)^2 :
+        pSa = number ? particles[a].p * particles[a].V^2 :
                        particles[a].p / particles[a].S_smooth^2
         acc = zero(SVector{2,Float64})
         for b in neighbors(nl, a)
@@ -154,7 +160,7 @@ function hamiltonian_force_energy!(dotm::Vector{SVector{2,Float64}},
             r_mag >= 2params.h && continue
             grad = kernel_gradW(r_vec, r_mag, params.h, params.kernel)
             pb   = particles[b]
-            acc -= number ? (pSa + pb.p * (pb.s / pb.S_smooth)^2) * grad :
+            acc -= number ? (pSa + pb.p * pb.V^2) * grad :
                             sa * pb.s * (pSa + pb.p / pb.S_smooth^2) * grad
         end
         dotm[a] = acc
@@ -186,9 +192,9 @@ function compute_dt(particles, params, eos;
     if T0 !== nothing
         Trel_min = T0
     else
-        s_mean = sum(pa.s for pa in particles) / length(particles)
+        s_mean = sum(entropy_of(pa) for pa in particles) / length(particles)
         s_cut  = s_thresh * s_mean
-        Trel_min = minimum(pa.T * pa.γ for pa in particles if pa.s > s_cut)   # T_rel = γ T
+        Trel_min = minimum(target_trel(pa, eos) for pa in particles if entropy_of(pa) > s_cut)   # T_rel = γ T
     end
 
     Γ_s          = visc / Trel_min

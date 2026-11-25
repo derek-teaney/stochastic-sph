@@ -42,7 +42,7 @@ const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)"
 const RECORD = Ref{Any}(NamedTuple());  const RECORD_LOCK = ReentrantLock()   # for the run record
 
 Hof(ps, params, cl, eos) = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos);
-                            sum(p.s * p.H_over_S for p in ps))
+                            sum(p.H for p in ps))
 
 function spec(ps, kvs)
     L = zeros(length(kvs));  T = zeros(length(kvs))
@@ -72,7 +72,7 @@ function run(kind, seed=1)
     params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                    L=0.6, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-    p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  eq = N * V * w * T
+    p = ps[1];  V = p.V;  w = p.e + p.p;  T = p.T;  eq = N * V * w * T
     seed == 1 && @printf("%-7s h/a=%.1f η/s=%.2f s_a=%.1f  thermal |δv| per component=%.3f\n", kind, HA, ETAS, p.s, sqrt(T / (V * w)))
     initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))   # SR_START (default eq)
     dt = DTF * 0.5 * compute_dt(ps, params, eos; mode=:viscous)

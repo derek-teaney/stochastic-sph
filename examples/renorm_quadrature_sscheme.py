@@ -24,8 +24,10 @@ D = 3   # d + 1
 
 
 class SScheme(Split):
-    def sstate(self, T, v, V):
-        """the S-scheme at the target state (bare T, |v|): label s, T_a, v_a, 𝒟, S_t, and the target energy and M/v"""
+    def sstate(self, T, v, V, reshape=False):
+        """the S-scheme at the target state (bare T, |v|): label s, T_a, v_a, 𝒟, S_t, and the target energy and M/v.
+        reshape = True: the momentum part X = ½ ln(1 − c_s² v²) of the counterterm multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t
+        (c_s² = 1/2; the minimum label at S_t = b for every v; a change of order 1/S_t²)"""
         n, A, q = self.n, self.A, 1 / self.c2
         g = 1 / np.sqrt(1 - v * v);  Tr = g * T;  a = q - v * v
         p = A * Tr**n;  w = n * p;  St = g * (w / Tr) * V
@@ -34,11 +36,30 @@ class SScheme(Split):
         s = St - Dchi - Dell
         Dp = D / 2 * (2 + q - v * v) + v * v * (1 - v * v) / a - (1 + v * v)
         Dth = D / 2 * v - v * (1 - v * v) / a + v
+        if reshape:
+            b = D / 2 + 1 - (1 - 2 * self.c2);  u = b / St
+            h = 3 * u**2 - 2 * u**3;  dh = -6 * u**2 * (1 - u)
+            X = 0.5 * np.log(a / q);  Xth = -v * (1 - v * v) / a
+            s = s + h * X
+            Dp = Dp - dh * X * a + v * h * Xth
+            Dth = Dth - dh * v * X - h * Xth
         ep, epar = Dp / (St * a), Dth / St
         den = 1 - (1 + v * v) * ep + v * epar
         Ta = T / den;  va = (v * (1 - 2 * ep) + epar) / den
         e = V * (w * g * g - p);  Mv = V * w * g * g
         return s, Ta, va, den, St, e, Mv
+
+    def label_limit(self):
+        """the hard limit on the label (sscheme_plan.tex, E, option 1; c_s^2 = 1/2): s_b = s_min(rest) + ½ ln(q/(q−1)), s_min(rest)
+        the smallest label of a particle at rest (at c_s^2 = 1/2 it does not depend on V)"""
+        if not hasattr(self, "_sb"):
+            assert abs(self.c2 - 0.5) < 1e-12, "the hard limit is defined for c_s^2 = 1/2 only"
+            q = 1 / self.c2;  n = self.n
+            St = np.exp(np.linspace(np.log(0.5), np.log(20.0), 200001))
+            T = (St / (n * self.A))**(1 / (n - 1))                   # at rest, V = 1: S_t = n A T^(n-1)
+            s = self.sstate(T, np.zeros_like(T), 1.0)[0]
+            self._sb = s[np.isfinite(s)].min() + 0.5 * np.log(q / (q - 1))
+        return self._sb
 
     def jac_e(self, T, v, V):
         """|∂(e, M)/∂(T, v)| at fixed V, M = |m|"""
@@ -52,13 +73,15 @@ class SScheme(Split):
         return np.abs(eT * Mvv - ev * MT)
 
     def logweight(self, name, T, vx, vy, Tb, vb, V):
-        if name != "sscheme":
+        if name not in ("sscheme", "sscheme-g", "sscheme-cut"):
             return super().logweight(name, T, vx, vy, Tb, vb, V)
         v = np.hypot(vx, vy)
         ok = (T > 0) & (v < 1 - 1e-9)
         T = np.where(ok, T, 1.0);  v = np.where(ok, v, 0.0)
-        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V)
+        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V, reshape=(name == "sscheme-g"))
         ok = ok & (den > 0) & (np.abs(va) < 1)
+        if name == "sscheme-cut":
+            ok = ok & (s > self.label_limit())
         Ta = np.where(ok, Ta, 1.0)
         mx = Mv * vx
         lw = s - np.log(Ta) - (e - vb * mx) / Tb + np.log(np.where(ok, self.jac_e(T, v, V) * Mv, 1.0))

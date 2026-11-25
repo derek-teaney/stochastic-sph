@@ -102,8 +102,12 @@ const LEGENDRE = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase
 # Split supports d = 2, the energy Hamiltonian with the number volume, the Liouville measure, not the grid step (check_split): any other
 # scheme stops with a message to set SPH_RENORM=0.
 const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(strip(r)) == "split";  end
-# the Hamiltonian has a domain (legendre, split): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
-const HAS_DOMAIN = LEGENDRE || SPLIT
+# SPH_RENORM=sscheme (docs/renorm3.tex, docs/sscheme_plan.tex): state counting at one loop, s = S_t − Δ_χ − Δ_ℓ (sscheme.jl).  The particle
+# carries the label pa.s (which can be ≤ 0) and its target entropy pa.St; the volume, energy and velocity are stored (pa.V, pa.H, pa.v), not
+# derived from s.  Same requirements as split (check_sscheme).
+const SSCHEME = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "sscheme";  end
+# the Hamiltonian has a domain (legendre, split, sscheme): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
+const HAS_DOMAIN = LEGENDRE || SPLIT || SSCHEME
 const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
@@ -184,6 +188,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, sim_dim=2, phys
     measure === :liouville && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
     sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
     check_split(sp)                               # SPH_RENORM=split: the schemes it supports and V̄, before any map is used (renorm_split.jl)
+    check_sscheme(sp)                             # SPH_RENORM=sscheme: the schemes it supports (sscheme.jl)
     sp
 end
 
@@ -191,6 +196,7 @@ end
 function check_stochastic_dims(params::SimParams)
     check_legendre(params)                        # SPH_RENORM=legendre: the schemes it supports (renorm.jl)
     check_split(params)                           # SPH_RENORM=split (renorm_split.jl)
+    check_sscheme(params)                         # SPH_RENORM=sscheme (sscheme.jl)
     sim_dim(params) == 2 || error("stochastic runs need sim_dim = 2; one-dimensional stochastic runs were removed (dimension.tex)")
     params.phys_dim == sim_dim(params) ||
         error("stochastic runs need phys_dim = sim_dim (= 2), got phys_dim = $(params.phys_dim): with fluctuations the fluid is the " *
@@ -222,6 +228,10 @@ struct ConstantCs2EOS <: AbstractEOS
     η_by_s  :: Float64   # specific shear viscosity η/s (constant)
     ζ_by_s  :: Float64   # specific bulk viscosity  ζ/s (constant)
 end
+
+# The physical entropy of a particle: the label at the tree level (and split, legendre, whose label is the target's entropy), the
+# target entropy S_t with SPH_RENORM=sscheme, whose label s = S_t − Δ is not an entropy.
+entropy_of(pa) = SSCHEME ? pa.St : pa.s
 
 # Gluon-gas Stefan-Boltzmann scale: e = (16π²/30) T⁴  →  T_scale = (30/(16π²))^(1/4)
 const T_scale_gluon = (30.0 / (16π^2))^(1/4)
@@ -311,6 +321,12 @@ mutable struct Particle
     # accepted increments land here and are folded in by apply_sweep! afterwards.
     Δs       :: Float64                # Σ over accepted bonds of −b_a·δ_ab
     Δm       :: SVector{2, Float64}   # Σ over accepted bonds of ±δ_ab
+
+    # Stored by the density pass and solve_eos! (every scheme; the code reads these, not s/S_smooth, s·H_over_S, v_over_S·S_smooth):
+    V        :: Float64                # the particle volume (1/n_a with the number volume)
+    H        :: Float64                # the particle energy H(s_a, m_a, V_a)
+    v        :: SVector{2, Float64}   # the particle velocity ∂H/∂m_a
+    St       :: Float64                # the target entropy γ s(T_rel) V of the present state (= s_a at the tree level; SPH_RENORM=sscheme)
 end
 
 Particle(x::SVector{2,Float64}, s::Float64) =
@@ -322,7 +338,8 @@ Particle(x::SVector{2,Float64}, s::Float64) =
              zero(SVector{2,Float64}),   # v_over_S
              0.0, 0.0,                    # F_over_S, H_over_S
              zero(SVector{2,Float64}), 0.0,   # dotx, Teff
-             0.0, zero(SVector{2,Float64}))   # Δs, Δm
+             0.0, zero(SVector{2,Float64}),   # Δs, Δm
+             NaN, NaN, zero(SVector{2,Float64}), s)   # V, H, v, St
 
 Particle(x::SVector{2,Float64}, s::Float64, m::SVector{2,Float64}) =
     Particle(x, s, m,
@@ -332,7 +349,8 @@ Particle(x::SVector{2,Float64}, s::Float64, m::SVector{2,Float64}) =
              zero(SVector{2,Float64}),   # v_over_S
              0.0, 0.0,                    # F_over_S, H_over_S
              zero(SVector{2,Float64}), 0.0,   # dotx, Teff
-             0.0, zero(SVector{2,Float64}))   # Δs, Δm
+             0.0, zero(SVector{2,Float64}),   # Δs, Δm
+             NaN, NaN, zero(SVector{2,Float64}), s)   # V, H, v, St
 
 function kernel_W(r::Float64, h::Float64, ::WendlandC2_2D)::Float64
     q = r / h
@@ -442,6 +460,7 @@ end
 # with SPH_RENORM=legendre the Legendre Hamiltonian (renorm.jl), whose pa.e is the target's rest-frame energy density at T_rel
 # (the warm start, with pa.γ) and pa.p the particle's pressure −∂H/∂V.
 function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
+    SSCHEME && return sscheme_solve!(pa, eos)
     S   = pa.S_smooth
     st  = particle_forward(pa.s, S, pa.M_smooth, pa.e, eos; γ0 = pa.γ, tol, maxiter, verbose)
     pa.e        = st.e
@@ -451,6 +470,8 @@ function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbo
     pa.v_over_S = st.v / S
     pa.F_over_S = st.FS
     pa.H_over_S = st.HS
+    pa.H        = pa.s * pa.H_over_S          # the expressions the code used before the fields were stored (bit-identical)
+    pa.v        = pa.v_over_S * pa.S_smooth
 end
 
 function update_thermodynamics!(particles::Vector{Particle}, eos::AbstractEOS)

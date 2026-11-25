@@ -209,7 +209,7 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
                            eos::AbstractEOS; rng::AbstractRNG = Random.default_rng(),
                            E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false, bath = nothing)
     thermalize!(particles, params, cl, eos)
-    V = [pa.s / pa.S_smooth for pa in particles]
+    V = [pa.V for pa in particles]
     Etot = E === nothing ? sum(particle_energy(pa, eos) for pa in particles) : Float64(E)
     Mtot = M === nothing ? sum(pa.m for pa in particles) : SVector{2,Float64}(M)
     liouville = params.measure === :liouville                     # draw with S_a − ln T_a (sph.jl, measure)
@@ -317,7 +317,7 @@ function record!(rec::Recorder, particles::Vector{Particle}, t::Float64, eos::Ab
         M = zero(SVector{2,ComplexF64});  s = 0.0im;  en = 0.0im
         for (a, pa) in enumerate(particles)
             ph = cis(-dot(k, pa.x))
-            M += pa.m * ph;  s += pa.s * ph
+            M += pa.m * ph;  s += entropy_of(pa) * ph
             rec.energies && (en += ea[a] * ph)
         end
         ML[i] = kh[1] * M[1] + kh[2] * M[2];  MT[i] = kh[1] * M[2] - kh[2] * M[1];  S[i] = s
@@ -335,7 +335,7 @@ end
 function record_grid!(rec::Recorder, F::GridFFT, particles::Vector{Particle}, t::Float64, eos::AbstractEOS)
     nk = length(rec.ks)
     fk(f) = grid_fft(F, f)
-    Mx = fk([pa.m[1] for pa in particles]);  My = fk([pa.m[2] for pa in particles]);  Sk = fk([pa.s for pa in particles])
+    Mx = fk([pa.m[1] for pa in particles]);  My = fk([pa.m[2] for pa in particles]);  Sk = fk([entropy_of(pa) for pa in particles])
     Ek = rec.energies ? fk([particle_energy(pa, eos) for pa in particles]) : nothing
     ML = zeros(ComplexF64, nk);  MT = zeros(ComplexF64, nk);  S = zeros(ComplexF64, nk)
     E  = zeros(ComplexF64, rec.energies ? nk : 0)
@@ -666,9 +666,9 @@ function energy_pressure(particles::Vector{Particle}, params::SimParams, cl::Cel
     Threads.@threads for a in 1:n
         pa = particles[a]
         ea[a] = particle_energy(pa, eos)
-        v = pa.v_over_S * pa.S_smooth
+        v = pa.v
         kin[a] = v * pa.m'
-        PV2 = pa.p * (pa.s / pa.S_smooth)^2
+        PV2 = pa.p * pa.V^2
         Q = zero(SMatrix{2,2,Float64})
         for b in neighbors(nl, a)
             b == a && continue

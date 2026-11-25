@@ -85,7 +85,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
             end
         end
         # comoving forms at the particle's velocity (docs/stochastic.tex, "A moving fluid")
-        va = pa.dotx                                     # coarse-grained ẋ_a
+        va = SSCHEME ? sscheme_target_velocity(pa, eos) : pa.dotx   # coarse-grained ẋ_a (sscheme: the target's velocity, as star_coef)
         ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2(eos), 2)
         common = lab_weights(params)                     # one kernel (commonkernel.tex): lab weights
         moment = is_moment(params)                       # no Λ_a, inverse-moment faces (inverse_moment.tex)
@@ -93,7 +93,7 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
                   common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb,
                                                  ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
-        Ta = pa.T * pa.γ;  sr = srel(eos, pa.e)          # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s
+        Ta = target_trel(pa, eos);  sr = srel(eos, pa.e)   # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s (sscheme: the target's T_rel)
         κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η (sph.jl, dimension.tex)
         ℓh = sqrt_comoving(va)
         # E_k = ℓ^{1/2} e_k ℓ^{1/2} − (P:ℓ^{1/2}e_kℓ^{1/2}/⟨Pℓ⟩) ℓ;  bulk ℓ/⟨Pℓ⟩
@@ -224,7 +224,7 @@ end
 # Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
 # T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
 # HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
-const RENORM = (LEGENDRE || SPLIT) ? (setting("SPH_RENORM", :split); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
+const RENORM = (LEGENDRE || SPLIT || SSCHEME) ? (setting("SPH_RENORM", :split); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
 @noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
     u, _, T = particle_inverse(e, m, V, eos)
     (isfinite(u) && T > 0) || return -Inf
@@ -237,6 +237,8 @@ end
 # the method is chosen at load time, so that with SPH_RENORM off the code is exactly that of before (bit-identical regression)
 if RENORM
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = renorm_vote_entropy(e, m, V, eos, liouville)
+elseif SSCHEME
+    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)   # liouville (check_sscheme)
 elseif SPLIT
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville; guess)
 else
@@ -401,17 +403,31 @@ end
 
 # nothing for a state no fluid can have
 function star_coef(e, m, V, eos, d; guess = nothing)
+    SSCHEME && return sscheme_star_coef(e, m, V, eos, d)
     s, vi, Ti = particle_inverse(e, m, V, eos; guess);  isfinite(s) || return nothing
     S_in = s / V;  M = m / V
     st = particle_forward(s, S_in, M, e / V, eos; M_mag = norm(M), guess = (Ti, vi))   # the state at (s, m, V)
-    ε = st.e;  γ = st.γ;  v = st.v
-    Ta = st.T * γ;  sr = srel(eos, ε)
+    return star_coef_at(st.e, st.v, st.T * st.γ, eos, d)
+end
+# The coefficients at the rest-frame energy density ε, the velocity v and the T_rel of the star's particle
+@inline function star_coef_at(ε, v, Ta, eos, d)
+    sr = srel(eos, ε)
     ℓ, ℓi, P, Pℓ = comoving_structures(v, cs2(eos), 2)
     κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η
     ℓh = sqrt_comoving(v)
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     E(ek) = (X = ℓh * ek * ℓh;  X - (sum(P .* X) / Pℓ) * ℓ)
     return StarCoef(Ta, κs, κb, ℓ, ℓh, ℓi, (sqrt(2κs) * E(e1), sqrt(2κs) * E(e2), sqrt(κb) * ℓ / Pℓ))
+end
+
+# SPH_RENORM=sscheme: the coefficients at the target state of (e, m, V), as build_stars (sscheme_plan.tex, item C: the target's ε, v and T_rel)
+function sscheme_star_coef(e, m, V, eos, d)
+    c = SSchemeConsts(eos);  mm = norm(m)
+    Tr, uγ = sscheme_target_energy(e, mm, V, c)
+    st = isfinite(Tr) ? sscheme_state(Tr, uγ, V, c) : SS_NOSTATE
+    st.ok || return nothing
+    v = mm > 0 ? (st.v / mm) * m : zero(m)
+    return star_coef_at(st.erest, v, st.Trel, eos, d)
 end
 
 symvec(X) = SVector(X[1, 1], X[1, 2], X[2, 2])
@@ -560,7 +576,7 @@ function stochastic_frozen(particles::Vector{Particle}, params::SimParams, cl::C
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
     N = length(particles);  V = Vector{Float64}(undef, N);  e = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N
-        pa = particles[a];  V[a] = pa.s / pa.S_smooth;  e[a] = particle_energy(pa, eos)
+        pa = particles[a];  V[a] = pa.V;  e[a] = particle_energy(pa, eos)
     end
     return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V; cache))
 end
@@ -637,7 +653,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     RENORM && !liouville && error("SPH_RENORM needs the Liouville measure (SPH_MEASURE=liouville)")
     if LEGENDRE                                      # the starting points of the votes' inverse solves (renorm.jl)
         resize!(VOTE_GUESS, N)
-        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v_over_S * pa.S_smooth);  end
+        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v);  end
     elseif SPLIT                                     # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
