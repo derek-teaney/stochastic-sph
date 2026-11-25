@@ -576,4 +576,36 @@ $v_a$ and $P_a$ to $3\times10^{-10}$ or better.  The two maps invert each other 
 \nolinkurl{examples/sscheme_ref.py} are reproduced to $10^{-15}$.  The relation to split, \Eq{splitrel}, holds to $6\times10^{-14}$, and at rest the
 weight differs from that of \texttt{SPH\_RENORM=1} by a constant to $3\times10^{-13}$.  Test 7 (hybrid Monte Carlo) comes with item C.
 
+\subsection*{C. The design (branch \texttt{sscheme-steps}, commit 3fa7a3e; in progress)}
+
+\paragraph{The volume is stored.}  The code kept the number volume as \texttt{S\_smooth}$\,=s_an_a$ and recovered $V_a=s_a/S_a$, $\bm m_a/V_a$, the
+energy $s_a\,(H/s)_a$ and the velocity $(v/S)_aS_a$ through the label.  The label of the S-scheme can be zero or negative, so (owner, 2026-11-25) the
+particle now stores four more fields, filled by every scheme: \texttt{pa.V} (set by the density pass), \texttt{pa.H}, \texttt{pa.v} and \texttt{pa.St}.  At the
+tree level, split and Legendre they are filled with the expressions the code used before, so the regression against \texttt{main} should stay
+bit-identical; the code reads the fields in place of those expressions.  With the S-scheme the density pass sets $V_a=1/n_a$ and
+$\bm M_a=\bm m_an_a$ directly, and \texttt{S\_smooth} is the target's entropy density $S_{\rm t}/V$.
+
+\paragraph{The uses of the label as an entropy.}  The helper \texttt{entropy\_of(pa)} returns $S_{\rm t}$ with the S-scheme and the label otherwise.
+It is used by the cut of the diffusive time step (\texttt{compute\_dt}), the entropy Fourier mode of the records (\nolinkurl{measure.jl}) and the
+spread of the entropies (\nolinkurl{examples/equilibrium.jl}).  The set-up (\texttt{setup\_ic}) gives each particle the target entropy $S(\bm x)V$; with
+the S-scheme \texttt{sscheme\_labels!} replaces it by the label of the state with that target entropy, momentum and volume.  The set-ups of
+\nolinkurl{examples/equilibrium.jl} that rescale the label as an entropy (\texttt{SR\_JITTER}, \texttt{SR\_POSITIONS=poisson}) stop with a message;
+the default start (lattice, then hybrid Monte Carlo and the equilibrium draw) sets the labels through the inverse map.  Not changed: the
+gradient-corrected conversion map and the smoothed Hamiltonian, which the S-scheme does not support (\texttt{check\_sscheme}).
+
+\paragraph{The temperatures and velocities.}
+\begin{itemize}
+\item The ideal step and hybrid Monte Carlo use the particle's own $T_a$ (\texttt{pa.T}), $\bm v_a$ (\texttt{pa.v}, also \texttt{pa.dotx}) and $P_a$
+  (\texttt{pa.p}, in the force $P_aV_a^2$).
+\item The votes use the weight $s-\ln T_a$ from the map from the energy, and the stochastic step's $\bm v_a/T_a$ is the particle's.
+\item The transport coefficients and the comoving structures of the viscous step use the target state: $T_{\rm rel}$ (\texttt{target\_trel}), the
+  rest-frame energy density (\texttt{pa.e}) and the target's velocity, in \texttt{build\_stars} and, for the Hastings correction, in
+  \texttt{star\_coef} at each proposal, so that both evaluate the coefficients at the same state.  The time step uses the target's $T_{\rm rel}$.
+\end{itemize}
+The energy measured by the drivers is $\sum_aH_a$ and the virial uses $P_aV_a^2$ and $\bm v_a\bm m_a$.
+
+\paragraph{Test 7.}  \nolinkurl{test/testsscheme_hmc.jl}: at $s_a=54$, $h/a=2$, both $c_s^2$, the energy error of a trajectory falls by 16.1 when
+$\delta t$ is halved twice, 5 of 5 updates are accepted, about $9\times10^4$ solves from the label take 1.7 Newton steps each with no fallback and no
+state outside the domain.
+
 \end{document}
