@@ -517,4 +517,63 @@ the sections of \nolinkurl{step5_plan.tex} and \nolinkurl{split_dynamics.tex}.
 
 To be filled by the session, item by item.
 
+\subsection*{A. The single particle (2026-11-25, branch \texttt{sscheme-maps}, commit 8aaccb6)}
+
+\nolinkurl{examples/renorm_quadrature_sscheme.py} adds the S-scheme to the models of \nolinkurl{examples/renorm_quadrature_split.py} and
+integrates $Z_1(T,\bm v,V)$ with the label gas for the tree level, split (the model \texttt{step5-du0}, which is \texttt{SPH\_RENORM=split}) and the
+S-scheme.  The quadrature now runs in $\ln T$ and the rapidity vector.  In the variables $(T,\bm v)$ of the split script the weight of both
+renormalized models rises toward the light cone, because the volume element does, so there is no peak near the bath state to centre the Gaussian
+grid on.  That grid failed at $c_s^2=1/2$, $s_a=16$, $v=0.8$, and at $s_a=54$, $v=0.8$ it missed a tail worth a few $10^{-4}$ in $E$.  In the new
+variables the results converge to about $10^{-6}$ with $201^3$ points over $\pm26\sigma$.  Table~\ref{tab:A} gives the relative errors of $E$ and $p$ and
+the violation $R$ of the Density Frame relation $M=v(E+pV)$ (the error of $M$ follows $E$).  The rows are in \nolinkurl{docs/figs/sscheme_quadrature.csv}.
+
+\begin{table}[h]
+\caption{Item A: the single particle by quadrature (\nolinkurl{examples/renorm_quadrature_sscheme.py}, commit 8aaccb6), split against the
+S-scheme.  Relative errors of the energy and the pressure, and $R=M/[v(E+pV)]-1$.}
+\label{tab:A}
+\small
+\begin{tabular}{cccrrrrrr}
+\toprule
+ & & & \multicolumn{3}{c}{split} & \multicolumn{3}{c}{S-scheme} \\
+$c_s^2$ & $s_a$ & $v$ & $E$ & $p$ & $R$ & $E$ & $p$ & $R$ \\
+\midrule
+$1/2$ & 16 & 0 & $3.9\times10^{-2}$ & $3.9\times10^{-2}$ & & $4.2\times10^{-2}$ & $4.2\times10^{-2}$ & \\
+ & 16 & 0.8 & $3.9\times10^{-2}$ & $4.0\times10^{-2}$ & $-3.1\times10^{-4}$ & $4.0\times10^{-2}$ & $3.9\times10^{-2}$ & $4.2\times10^{-4}$ \\
+ & 54 & 0 & $2.4\times10^{-4}$ & $2.4\times10^{-4}$ & & $1.8\times10^{-4}$ & $1.8\times10^{-4}$ & \\
+ & 54 & 0.8 & $6.9\times10^{-4}$ & $8.0\times10^{-4}$ & $-5.2\times10^{-5}$ & $2.8\times10^{-4}$ & $2.4\times10^{-4}$ & $1.9\times10^{-5}$ \\
+ & 541 & 0 & $9.7\times10^{-7}$ & $9.7\times10^{-7}$ & & $9.2\times10^{-7}$ & $9.2\times10^{-7}$ & \\
+ & 541 & 0.8 & $6.1\times10^{-6}$ & $7.2\times10^{-6}$ & $-5.8\times10^{-7}$ & $2.3\times10^{-6}$ & $2.0\times10^{-6}$ & $1.3\times10^{-7}$ \\
+$1/4$ & 16 & 0 & $8.5\times10^{-2}$ & $1.0\times10^{-1}$ & & $8.0\times10^{-2}$ & $7.3\times10^{-2}$ & \\
+ & 16 & 0.8 & $8.0\times10^{-2}$ & $9.6\times10^{-2}$ & $4.1\times10^{-4}$ & $7.3\times10^{-2}$ & $6.3\times10^{-2}$ & $1.5\times10^{-3}$ \\
+ & 54 & 0 & $5.3\times10^{-4}$ & $2.4\times10^{-3}$ & & $5.8\times10^{-4}$ & $5.7\times10^{-4}$ & \\
+ & 54 & 0.8 & $-4.4\times10^{-4}$ & $1.0\times10^{-3}$ & $3.5\times10^{-5}$ & $4.4\times10^{-5}$ & $-1.0\times10^{-4}$ & $7.6\times10^{-5}$ \\
+ & 541 & 0 & $3.3\times10^{-6}$ & $2.1\times10^{-5}$ & & $3.3\times10^{-6}$ & $3.3\times10^{-6}$ & \\
+ & 541 & 0.8 & $-3.7\times10^{-6}$ & $9.5\times10^{-6}$ & $3.2\times10^{-7}$ & $-1.3\times10^{-7}$ & $-1.5\times10^{-6}$ & $6.9\times10^{-7}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $s_a\ge54$ the S-scheme is as good as split or better in $E$ and $p$, by up to a factor of ten at $c_s^2=1/4$, $s_a=54$, $v=0.8$.  Its $R$ is of
+the same size as split's, larger by a factor of two to four in some rows; all are below $10^{-4}$.  At rest the S-scheme has $E$ and $p$ equal, as
+\nolinkurl{renorm3.tex} predicts for one loop, and at $s_a=541$ they agree with $n\,c/S_{\rm t}^2$.  At $s_a=16$ both schemes are off by 4 to 10
+percent, about the same.  The weight of the tree-level particle that lies outside the S-scheme's domain at $s_a=16$ is $1$--$9\times10^{-4}$, below
+the few percent at which the plan asks; 3.5 to 5 percent of the S-scheme's own weight lies within 3 of the boundary in $S_{\rm t}$.  The owner was
+shown the table and agreed to go on.
+
+\subsection*{B. The maps (commit 8aaccb6)}
+
+\nolinkurl{src/sscheme.jl}.  The centre is \texttt{sscheme\_state}$(T_{\rm rel},\gamma v,V)$, which returns the label, $S_{\rm t}$, $H$, $T_a$,
+$v_a$, $P_a$, $\mathcal D$ and the weight by \Eq{label}--\Eq{weight}.  For \texttt{ConstantCs2EOS} both target inversions are one-dimensional: from
+the energy the rest-frame energy density is in closed form, and from $(S_{\rm t},|\bm m|,V)$ the temperature solves
+$(nAV)^2T_{\rm rel}^{2n-4}(T_{\rm rel}^2+|\bm m|^2/S_{\rm t}^2)=S_{\rm t}^2$, monotonic, by Newton in $\ln T_{\rm rel}$.  The map from the label iterates
+on $S_{\rm t}$ from the previous value, 2.4 steps per solve in the tests, with a bisection on $S_{\rm t}$ as the fallback.  The file is loaded but not
+yet called by the steps.
+
+\subsection*{D. Tests 1--6 (commit 8aaccb6)}
+
+\nolinkurl{test/testsscheme.jl}, on the login node in 9~s, all passing.  The derivatives of $H$ by fourth-order central differences agree with $T_a$,
+$v_a$ and $P_a$ to $3\times10^{-10}$ or better.  The two maps invert each other to $2\times10^{-15}$.  The reference values of
+\nolinkurl{examples/sscheme_ref.py} are reproduced to $10^{-15}$.  The relation to split, \Eq{splitrel}, holds to $6\times10^{-14}$, and at rest the
+weight differs from that of \texttt{SPH\_RENORM=1} by a constant to $3\times10^{-13}$.  Test 7 (hybrid Monte Carlo) comes with item C.
+
 \end{document}
