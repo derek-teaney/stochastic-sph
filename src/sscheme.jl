@@ -27,14 +27,47 @@ sscheme_counts() = (t = sum(SS_CNT; dims = 2);  (solves = t[1], iters = t[2], fa
 const SS_TOL = 1e-13          # relative change of S_t at which the map from the label stops
 const SS_MAXIT = 30           # Newton steps before the bisection
 const SS_D = 3                # D = d + 1 (d = 2)
+# The regularization near the boundary (sscheme_plan.tex, E2; sscheme_fold.tex, "Removing the fold"), SPH_SSCHEME_REG=1 (default; 0 = one loop
+# as in renorm3.tex).  With Δ = b ln S_t + X_vel + X_vol + const, X_vel = 𝒩 ln γ + ½ ln(1 − c_s² v²), X_vol = 𝒩 ln(V/V̄), the parts of X that
+# raise the smallest label are multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t (g(b) = g′(b) = 0; a change of order 1/S_t²): X_vel when
+# c_s² > 1/3, X_vol when 𝒩 > 0 (c_s² < 1/2).  The smallest label is then its value at rest at V = V̄ for every m and V, and labels below it have no
+# state (the hard limit, s > s_b; the ideal step conserves s, the votes and the heat bath reject a state below it).
+const SS_REG = setting("SPH_SSCHEME_REG", 1)
+# V̄, the reference volume of X_vol (SPH_SSCHEME_VBAR; default the mean volume L²/N of the run, set by check_sscheme)
+const SS_VBAR = Ref(NaN)
+const SS_VBAR_SETTING = setting("SPH_SSCHEME_VBAR", 0.0)
+const SS_SB_CACHE = Dict{NTuple{3,Float64},Float64}();  const SS_SB_LOCK = ReentrantLock()
 
 struct SSchemeConsts
     c2 :: Float64;  q :: Float64;  n :: Float64;  A :: Float64
     Pconst :: Float64         # [(D/2)(2 + q) − 1]/n − (D/2 + 1): P_a V/T_a = S_t/n + Pconst
+    N :: Float64;  b :: Float64        # 𝒩 = 1 − 2c_s², b = D/2 + 1 − 𝒩
+    gvel :: Bool;  gvol :: Bool        # the parts under g (SPH_SSCHEME_REG=1)
+    lVbar :: Float64                   # ln V̄
+    sb :: Float64                      # the hard limit on the label (−Inf without the regularization)
 end
 function SSchemeConsts(eos::ConstantCs2EOS)
-    c2 = eos.cs2_val;  q = 1 / c2;  n = 1 + q
-    return SSchemeConsts(c2, q, n, c2 * eos.T_scale^(-n), ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1))
+    c2 = eos.cs2_val;  q = 1 / c2;  n = 1 + q;  N = 1 - 2c2;  b = SS_D / 2 + 1 - N
+    A = c2 * eos.T_scale^(-n);  Pc = ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1)
+    SS_REG == 0 && return SSchemeConsts(c2, q, n, A, Pc, N, b, false, false, 0.0, -Inf)
+    gvel = c2 > 1 / 3;  gvol = N > 0
+    gvol && !isfinite(SS_VBAR[]) && error("SPH_SSCHEME_REG=1: V̄ not set (check_sscheme(params), called when SimParams is built)")
+    lVbar = gvol ? log(SS_VBAR[]) : 0.0
+    c0 = SSchemeConsts(c2, q, n, A, Pc, N, b, gvel, gvol, lVbar, -Inf)
+    k = (c2, eos.T_scale, lVbar)
+    sb = get(SS_SB_CACHE, k, NaN)
+    if !isfinite(sb)                  # the smallest label at rest at V = V̄ (regularized parts zero there): golden section in ln S_t
+        V0 = gvol ? SS_VBAR[] : 1.0
+        lab(St) = sscheme_label(St, 0.0, V0, c0)
+        lo, hi = log(b) - 1.0, log(b) + 3.0;  φ = (sqrt(5) - 1) / 2
+        for _ in 1:200
+            x1 = hi - φ * (hi - lo);  x2 = lo + φ * (hi - lo)
+            lab(exp(x1)) < lab(exp(x2)) ? (hi = x2) : (lo = x1)
+        end
+        sb = lab(exp((lo + hi) / 2))
+        lock(() -> (SS_SB_CACHE[k] = sb), SS_SB_LOCK)
+    end
+    return SSchemeConsts(c2, q, n, A, Pc, N, b, gvel, gvol, lVbar, sb)
 end
 SSchemeConsts(eos::AbstractEOS) = error("SPH_RENORM=sscheme: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
@@ -53,15 +86,40 @@ const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN,
     s = St - Dχ - Dℓ
     Dp = (SS_D / 2) * (2 + q - v2) + v2 * (1 - v2) / a - (1 + v2)
     Dθ = (SS_D / 2) * v - v * (1 - v2) / a + v
+    Pg = 0.0
+    if c.gvel || c.gvol                                        # Δ → Δ + M, M = −h X_sel (X_sel the parts under g)
+        u = c.b / St;  h = u * u * (3 - 2u);  dh = -6u * u * (1 - u)     # h = 1 − g;  dh = dh/d ln S_t
+        X = 0.0;  Xθ = 0.0;  XV = 0.0                                    # X_sel and its derivatives at fixed (τ, θ, V)
+        c.gvel && (X += c.N * log(γ) + 0.5 * log(a / q);  Xθ += c.N * v - v * (1 - v2) / a)
+        c.gvol && (X += c.N * (log(V) - c.lVbar);  XV += c.N)
+        Mτ = -dh * q * X;  Mθ = -dh * v * X - h * Xθ;  MV = -dh * X - h * XV   # ∂ln S_t/∂(τ, θ, ln V) = (q, v, 1)
+        s -= -h * X                                                       # s = S_t − Δ − M
+        Dp += Mτ - v * Mθ;  Dθ += Mθ
+        Pg = Mτ / n - MV                                                  # P_a V/T_a = S_t/n − ∂Δ/∂ln V + (∂Δ/∂τ)/n
+    end
     εp = Dp / (St * a);  εpar = Dθ / St
     D = 1 - (1 + v2) * εp + v * εpar
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
-    ok = D > 0 && abs(va) < 1
+    ok = D > 0 && abs(va) < 1 && s > c.sb
     ok || return SS_NOSTATE
-    Pa = (St / n + c.Pconst) * Ta / V
+    Pa = (St / n + c.Pconst + Pg) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = s - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
+end
+
+# The label alone at (S_t, γv, V), without the domain test (s_b)
+function sscheme_label(St::Float64, uγ::Float64, V::Float64, c::SSchemeConsts)
+    γ = sqrt(1 + uγ * uγ);  Tr = (St / (γ * c.n * c.A * V))^(1 / (c.n - 1))   # S_t = γ n A T_rel^(n−1) V
+    v = uγ / γ;  a = c.q - v * v;  p = c.A * Tr^c.n;  w = c.n * p
+    s = St - (SS_D / 2) * log(2π * V * γ * w * Tr) - 0.5 * log(a) - (1 + log(V) + log(γ) - log(Tr))
+    if c.gvel || c.gvol
+        u = c.b / St;  h = u * u * (3 - 2u);  X = 0.0
+        c.gvel && (X += c.N * log(γ) + 0.5 * log(a / c.q))
+        c.gvol && (X += c.N * (log(V) - c.lVbar))
+        s += h * X
+    end
+    return s
 end
 
 # The target state of the energy e, momentum magnitude |m| and volume V: (T_rel, γv); (NaN, NaN) if no fluid has it (|M| ≥ ε).
@@ -210,5 +268,6 @@ function check_sscheme(params)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=sscheme: implemented for d = 2" * hint)
     params.measure === :liouville || error("SPH_RENORM=sscheme needs the Liouville measure (SPH_MEASURE=liouville)" * hint)
     params.ideal === :grid && error("SPH_RENORM=sscheme is not available with the grid step (SPH_IDEAL=grid)" * hint)
+    isfinite(SS_VBAR[]) || (SS_VBAR[] = SS_VBAR_SETTING > 0 ? SS_VBAR_SETTING : prod(params.L) / params.N)
     return nothing
 end

@@ -8,6 +8,7 @@
 #   5. conformal (c_s² = 1/2) at rest: the vote weight differs from that of SPH_RENORM=1 (stochastic.jl, renorm_vote_entropy) by a constant;
 #   6. a state outside the domain has no Hamiltonian from either map, and its weight is −Inf.
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")     # the maps are called directly; renorm_vote_entropy (test 5) needs the target's inverse
+ENV["SPH_SSCHEME_REG"] = "0"                                # tests 1–6: one loop as in renorm3.tex (the regularization: testsscheme_reg.jl)
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 ok = true
