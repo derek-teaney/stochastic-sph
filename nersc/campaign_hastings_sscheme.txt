@@ -1,0 +1,12 @@
+# Campaign `hastings_sscheme` (branch sscheme-reg, docs/sscheme_plan.tex, item G): the split lines of hastings_bath with the regularized S-scheme
+# (SPH_RENORM=sscheme, SPH_SSCHEME_REG=1), s_a = 16 and 54, v0 = 0, 0.8; the full dynamics to t = 100 against hybrid Monte Carlo chains of the same
+# Hamiltonian; same lengths, seeds and settings as hastings_bath, so the runs compare line by line with hs*_sp, hs*_tr there.  L = 0.6 (N = 672),
+# h/a = 2, eta/s = 0.2, c_s^2 = 1/2.  128 tasks of 4 cores, 4 nodes for about an hour (hastings_bath: 256 tasks, 3.9 node-hours).
+hs16_ss_v0      16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ss_v0
+hs16_ss_v0.8    16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ss_v0.8
+hs54_ss_v0      16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ss_v0
+hs54_ss_v0.8    16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6  SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ss_v0.8
+hq16_ss_v0      16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=2.956e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ss_v0
+hq16_ss_v0.8    16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=2.956e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ss_v0.8
+hq54_ss_v0      16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=9.977e4 SR_BOOST=0   SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ss_v0
+hq54_ss_v0.8    16  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_SREL0=9.977e4 SR_BOOST=0.8               SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ss_v0.8

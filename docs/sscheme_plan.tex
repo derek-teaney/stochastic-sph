@@ -758,4 +758,34 @@ near the boundary, $V<1.9\bar V$ (5$\sigma$ in the measured spread, $\langle(V/\
 \emph{Tested}: $c_s^2=1/2$ (hybrid Monte Carlo 39--40 of 40, no exit; the dynamics at $s_a=16$, 5 time units, debug 62001399: $\Delta H/H=-9.8\times10^{-6}$,
 KE/eq 0.996, against one loop $+1.9\times10^{-3}$ and split $-3.4\times10^{-6}$).  \emph{Not yet}: $c_s^2=1/4$.
 
+\paragraph{The sign of the particle pressure (owner's question, 2026-11-25).}  The fold is the statement $T_a=T/\mathcal D>0$, with $T_a\to\infty$ at the
+fold and $T_a<0$ beyond it.  The pressure is a separate condition.  At one loop, for a constant speed of sound,
+\st
+\frac{P_aV}{T_a}=\frac{S_{\rm t}}n+\frac{\tfrac D2(2+q)-1}{n}-\Big(\frac D2+1\Big),
+\stp
+the same at every $v$ and $V$, and the constant is negative: $-0.83$ at $c_s^2=1/2$, $-0.90$ at $c_s^2=1/4$.  At $c_s^2=1/2$ the pressure is positive
+exactly above the boundary, $S_{\rm t}>5/2=b$.  At $c_s^2=1/4$ it is negative for $b=2<S_{\rm t}<4.5$: particles just above the boundary pull their
+neighbours in.  With the regularization the factor $g$ on the volume part adds $\partial(hX_{\rm vol})/\partial\ln V$ terms; at $V=\bar V$ the
+addition is $h\mathcal N$, $+\tfrac12$ at the boundary, which cancels the deficit there.  $P_aV/T_a$ on a grid ($A=1$ units;
+\texttt{SPH\_SSCHEME\_REG}$=0/1$; -- outside the domain):
+\begin{center}\small
+\begin{tabular}{lcrrrrrr}
+\toprule
+ & & \multicolumn{6}{c}{$S_{\rm t}$} \\
+ & $v$, $V/\bar V$ & $b{+}0.1$ & $b{+}0.5$ & 3.5 & 4.5 & 6 & 10 \\
+\midrule
+$c_s^2=1/2$, one loop and regularized & $0$, any & $+0.033$ & $+0.167$ & $+0.333$ & $+0.667$ & $+1.167$ & $+2.500$ \\
+\quad regularized & $0.8$, any & $+0.047$ & $+0.211$ & $+0.390$ & $+0.720$ & $+1.206$ & $+2.518$ \\
+$c_s^2=1/4$, one loop & any & $-0.480$ & $-0.400$ & $-0.200$ & $0.000$ & $+0.300$ & $+1.100$ \\
+\quad regularized & $0$, $0.5$ & $+0.035$ & $+0.101$ & $+0.161$ & $+0.254$ & $+0.460$ & $+1.165$ \\
+ & $0$, $1$ & $+0.017$ & $+0.048$ & $+0.103$ & $+0.209$ & $+0.430$ & $+1.152$ \\
+ & $0$, $1.5$ & $+0.006$ & $+0.017$ & $+0.069$ & $+0.182$ & $+0.412$ & $+1.144$ \\
+ & $0.8$, $1$ & -- & -- & $+0.103$ & $+0.209$ & $+0.430$ & $+1.152$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+So the regularization chosen also makes the particle pressure positive above the boundary on this grid, at both speeds of sound.  At large $V$ the
+margin shrinks ($+0.006$ at $S_{\rm t}=b+0.1$, $V=1.5\bar V$), because the term $\partial h/\partial\ln S_{\rm t}\,X_{\rm vol}/n$ is negative for $V>\bar V$;
+whether it turns negative for still larger volumes is to be checked with the cutoff family (E2).
+
 \end{document}
