@@ -730,6 +730,48 @@ $-1.7$ to $-2.1$ at $h/a=3$, $-0.5$ to $-1.7$ at $s_a=541$.  The one difference 
 against $-4.71\pm0.05$ percent at $h/a=2$ and $-2.10\pm0.03$ against $-1.92\pm0.03$ at $h/a=3$, which is the single-particle difference of item A
 ($p$: split $+0.24$, S-scheme $+0.06$ percent).
 
+\subsection*{F at $s_a=16$ (campaign \texttt{eos\_sscheme16}, debug 62003678, 1 node, 21 min; regularized, commit f628ad0)}
+
+The $s_a=16$ lines of \texttt{eos\_split} with \texttt{SPH\_SSCHEME\_REG=1} (64 tasks, all complete; $1.5\times10^{10}$ solves from the label,
+$1.5\times10^5$ bisection fallbacks, 44 without a state; acceptance 0.98--0.99).  Percent, split $|$ S-scheme:
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+ & $E/e-1$ & $P/p-1$ or $T^{yy}/p-1$ & $M/M_{\rm t}-1$ & $R$ \\
+\midrule
+$c_s^2=1/2$, $h/a=2$, rest & $2.09\,|\,2.11$ & $-1.40\,|\,-1.38$ & & \\
+$c_s^2=1/2$, $h/a=2$, $v=0.8$ & $-1.75\,|\,-1.64$ & $-4.65\,|\,-4.65$ & $-1.77\,|\,-1.64$ & $0.33\,|\,0.37$ \\
+$c_s^2=1/4$, $h/a=2$, rest & $7.35\,|\,9.17$ & $5.69\,|\,6.39$ & & \\
+$c_s^2=1/4$, $h/a=3$, rest & $8.87\,|\,10.44$ & $9.31\,|\,9.71$ & & \\
+$c_s^2=1/4$, $h/a=2$, $v=0.8$ & $-1.21\,|\,-0.64$ & $-3.87\,|\,-3.69$ & $-1.12\,|\,-0.62$ & $0.28\,|\,0.24$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+At $c_s^2=1/2$ the two agree within errors.  At $c_s^2=1/4$ at rest the S-scheme is worse by $1.5$--$1.8$ percent in $E$ (the errors are $0.1$), more
+than the single-particle difference of one loop (item A: $8.0$ against $8.5$ percent), so the regularization at $c_s^2=1/4$ ($g$ on the volume part) is
+the likely contributor; in motion it is better.  A first data point for the sensitivity study E2.
+
+\subsection*{G. The dynamics against hybrid Monte Carlo (campaign \texttt{hastings\_sscheme}, interactive 62003679, 4 nodes, 16 min; commit f628ad0)}
+
+The split lines of \texttt{hastings\_bath} with the regularized S-scheme, $s_a=16,54$, $v_0=0,0.8$, 16 runs to $t=100$ and 16 chains of hybrid Monte
+Carlo each (128 tasks, all complete).  Analysis with the run sets side by side ($\$$SCRATCH/sph/ss\_cmp, links):
+\texttt{HA\_SPLIT=1 HA\_SS=1} \nolinkurl{examples/hastings_analysis.jl}, \texttt{BOOST\_GROUP=SS16, SS54} \nolinkurl{examples/boost_analysis.jl},
+\nolinkurl{examples/energy_time.jl}; figures \nolinkurl{docs/figs/hastings_sscheme_spectra.png}, \nolinkurl{boost_*_SS16.png}, \nolinkurl{boost_*_SS54.png},
+\nolinkurl{energy_time_sscheme.png}.
+\begin{itemize}
+\item \emph{Dynamics against its own hybrid Monte Carlo}: $\langle|M_{L,T}|^2\rangle$ at $kh=0.52$--$1.56$, $0.99$--$1.05$ at $s_a=16$ at rest (split $0.99$--$1.04$),
+  consistent with one in motion and at $s_a=54$.  The S-scheme's own equilibrium is split's: its chains over the tree-level chains are $0.72$ against
+  $0.72$--$0.73$ at $s_a=16$ at rest, $0.86$--$0.90$ against $0.87$--$0.90$ at $s_a=54$.
+\item \emph{Equal-time spectra against the equation of state}, $C_{AA}(k,0)/\chi_{AA}$ at the smallest $k$: S-scheme $0.99$--$1.06$ at $s_a=16$ at rest (split
+  $1.03$--$1.07$, tree $1.26$--$1.42$).
+\item \emph{Energy}, $\Delta H/H$ at $t=100$ (mean; range over the 16 runs): $s_a=16$ at rest, S-scheme $+1.9\times10^{-4}$ ($-4\times10^{-5}$ to $+5\times10^{-4}$),
+  split $+9.2\times10^{-4}$ ($-1.7\times10^{-3}$ to $+3.2\times10^{-3}$), tree $+6.0\times10^{-4}$; $s_a=16$, $v_0=0.8$, S-scheme $+1.2\times10^{-5}$, split
+  $+3.7\times10^{-4}$; $s_a=54$ at rest, S-scheme $+2.2\times10^{-5}$, split $+7.5\times10^{-5}$.  The S-scheme conserves the energy best, and its runs
+  scatter five to twenty times less.
+\item \emph{Shear damping}, $\Gamma$/hydrodynamics at the smallest $k$: $5.7$--$5.9$ at $s_a=16$ at rest, as split ($5.3$--$5.9$); $3.5$--$3.6$ at $s_a=54$
+  (split $3.9$).  The excess over hydrodynamics is the fluctuation correction of \nolinkurl{split_dynamics.tex}, not the scheme.
+\end{itemize}
+
 \subsection*{E2. The regularization near the boundary: a family of cutoff functions (planned, 2026-11-25)}
 
 The owner: ``we will need different cutoff functions and play with the sensitivity of our results to it.''  The one-loop S-scheme is to be completed

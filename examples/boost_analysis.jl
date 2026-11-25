@@ -79,6 +79,10 @@ const SETS = GROUP == "L24" ?
              GROUP == "SP54" ?                    # the same at s_a = 54
     [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
      ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+             GROUP in ("SS16", "SS54") ?          # campaign hastings_sscheme (sscheme_plan.tex G): tree, split, the regularized S-scheme; DIR = $SCRATCH/sph/ss_cmp (links)
+    (sa = GROUP[3:4];
+     [("tree v=0", ["hs$(sa)_tr_v0"], 0.0, "C0"), ("split v=0", ["hs$(sa)_sp_v0"], 0.0, "C1"), ("S-scheme v=0", ["hs$(sa)_ss_v0"], 0.0, "C2"),
+      ("tree v=0.8", ["hs$(sa)_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs$(sa)_sp_v0.8"], 0.8, "C4"), ("S-scheme v=0.8", ["hs$(sa)_ss_v0.8"], 0.8, "C5")]) :
              GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
     (sa = GROUP[3:4];
      [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
