@@ -25,7 +25,7 @@ const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 const BURN   = setting("SR_BURN", 1 / 3)
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const OUTDIR = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data", "eos")))
-const SCHEME = LEGENDRE ? "legendre" : SPLIT ? "split" : RENORM ? "shift" : "tree"
+const SCHEME = SSCHEME ? "sscheme" : LEGENDRE ? "legendre" : SPLIT ? "split" : RENORM ? "shift" : "tree"
 const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V", 0.0)
 const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)") * "_seed$(SEED)"
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
@@ -53,6 +53,7 @@ e_t = st.ε;  M_t = st.M[1];  nbar = params.N / prod(params.L);  σp = p_t / (Tr
         params.N, HA, SA, SCHEME, CS2, vb, T0, σp, NSTEPS, NUPD)
 LEGENDRE && reset_legendre_counts!()
 SPLIT && reset_split_counts!()
+SSCHEME && reset_sscheme_counts!()
 
 ks = box_wavevectors(params, KHMAX)
 rec = Recorder(ks);  prec = ParticleRecorder(ps, params; ks, cl)
@@ -65,7 +66,7 @@ for n in 1:NUPD
     r = energy_pressure(ps, params, cl, eos)
     push!(E, r.E);  push!(P, r.P);  push!(Pk, r.Pkin);  push!(Pv, r.Pvir);  push!(Tyy, r.P - r.Sxxyy)
     Ptot = sum(q.m for q in ps);  push!(Px, Ptot[1]);  push!(Py, Ptot[2])
-    Vn = [q.s / q.S_smooth for q in ps] .* nbar;  push!(vmean, mean(Vn));  push!(vvar, var(Vn) / mean(Vn)^2)
+    Vn = [q.V for q in ps] .* nbar;  push!(vmean, mean(Vn));  push!(vvar, var(Vn) / mean(Vn)^2)
     record!(prec, ps, n * NSTEPS * dt; cl);  record!(rec, ps, n * NSTEPS * dt, eos)
     (n % max(1, NUPD ÷ 10) == 0) && @printf("update %4d  acc %.2f  E/e-1 %+.4f  Tyy/p-1 %+.4f  %.0f s\n",
                                             n, mean(acc), E[end] / e_t - 1, Tyy[end] / p_t - 1, time() - t0)
@@ -122,7 +123,9 @@ mM, dM = mean_err(Mx);  mTyy, dTyy = mean_err(Tyy)
 # R = M/(v(E + T^yy)) − 1, its error from the blocks of the ratio's pieces (jackknife)
 Rf(Ek, Mk, Tk) = (R = vb > 0 ? mean(Mk) / (vb * (mean(Ek) + mean(Tk))) - 1 : NaN,)
 Rv, Re = jackknife3(Rf, E, Mx, Tyy)
-lc = LEGENDRE ? legendre_counts() : SPLIT ? split_counts() : (solves = 0, iters = 0, fails = 0, nostate = 0, cold = 0)
+lc = LEGENDRE ? legendre_counts() : SPLIT ? split_counts() :
+     SSCHEME ? (sc = sscheme_counts();  (solves = sc.solves, iters = sc.iters, fails = sc.fallbacks, nostate = sc.nostate, cold = 0)) :
+     (solves = 0, iters = 0, fails = 0, nostate = 0, cold = 0)
 summary = [
     "tag" => TAG, "renorm" => RENORM, "scheme" => SCHEME, "cs2" => CS2, "v" => vb, "gamma" => γb, "w_target" => w_t, "M_target" => M_t, "L" => LBOX, "ha" => HA, "nbar_h2" => nbar * H^2, "N" => params.N, "s_a_start" => SA,
     "T0" => T0, "sigma" => σp, "e_target" => e_t, "p_target" => p_t, "nupdates" => NUPD, "acceptance" => mean(acc),
