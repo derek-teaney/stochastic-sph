@@ -1172,3 +1172,14 @@ Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
 examples/stochrep_correlators.jl L1.2` (and L2.4, in an interactive job), then a short
 note in `docs/` with the tables and figures.
+
+### S-scheme campaigns — 2026-11-25, branches sscheme-eos, sscheme-reg (docs/sscheme_plan.tex, docs/sscheme_fold.tex)
+
+- Diagnostics on debug: 61997657 (first S-scheme dynamics smoke), 61997960 / 61998412 / 61998896 / 62000114 (HMC at s_a = 16: the fold; without
+  the sound term; the hard limit; g), 62001399 (dynamics with the limit, g, split at s_a = 16), 62003407 (SPH_SSCHEME_REG=1 at s_a = 16, both c_s^2).
+- Test suite: interactive 62000863 (regular 61997654 cancelled after 3 h pending): passes; the driver's H, KE, Vspr now read the stored fields.
+- `eos_sscheme` (item F, s_a = 54, 541, one loop): interactive 62002646, 2 nodes, 20 min, pinned ~/stochastic-sph-ssF (17ec558); agrees with split.
+- `eos_sscheme16` (s_a = 16, SPH_SSCHEME_REG=1): debug 62003678, 1 node; pinned ~/stochastic-sph-ssR16 (f628ad0).
+- `hastings_sscheme` (item G, s_a = 16, 54, SPH_SSCHEME_REG=1): interactive 62003679, 4 nodes, up to 2 h; pinned ~/stochastic-sph-ssR16 (f628ad0).
+- Lesson: the regular queue waited > 3 h on 2026-11-25; interactive (salloc -q interactive, up to 4 nodes) and debug start at once.
+  salloc ... bash nersc/node.sh <campaign> <name> runs node.sh with the allocation (its srun steps land on the nodes).

@@ -721,6 +721,15 @@ The single particle with option 2 (\nolinkurl{examples/renorm_quadrature_sscheme
 and from $2.8\times10^{-4}$ to $4.2\times10^{-4}$ at $v=0.8$ (split: $2.4\times10^{-4}$, $6.9\times10^{-4}$), and $R$ falls from $1.9\times10^{-5}$ to
 $6\times10^{-6}$; at $s_a=16$ about the same as one loop (4 percent).  Option 1 has not yet been put into the quadrature (the excluded weight).
 
+\subsection*{F. The equilibrium at $s_a=54$ and $541$ (campaign \texttt{eos\_sscheme}, interactive 62002646, 2 nodes, 20 min; commit 17ec558)}
+
+The lines of \texttt{eos\_split} at $s_a=54,541$ with the S-scheme at one loop (128 tasks, all complete, no failed solve, acceptance 0.98--0.99);
+\nolinkurl{examples/eos_sscheme.py}, \nolinkurl{docs/figs/sscheme_eos.csv}.  As expected, the S-scheme and split agree within errors in $E$, $P$,
+$T^{yy}$, $M$, $R$ and $\chi_{MM}$, because both are dominated by the correction of the positions: $P/p-1=-3.9$ to $-4.9$ percent at $s_a=54$, $h/a=2$,
+$-1.7$ to $-2.1$ at $h/a=3$, $-0.5$ to $-1.7$ at $s_a=541$.  The one difference beyond the errors is $P$ at $c_s^2=1/4$, $s_a=54$, at rest: $-4.92\pm0.04$
+against $-4.71\pm0.05$ percent at $h/a=2$ and $-2.10\pm0.03$ against $-1.92\pm0.03$ at $h/a=3$, which is the single-particle difference of item A
+($p$: split $+0.24$, S-scheme $+0.06$ percent).
+
 \subsection*{E2. The regularization near the boundary: a family of cutoff functions (planned, 2026-11-25)}
 
 The owner: ``we will need different cutoff functions and play with the sensitivity of our results to it.''  The one-loop S-scheme is to be completed
