@@ -386,10 +386,50 @@ present runs belong to the code, not to the Hamiltonian.  384 + 128 runs, 4 inte
 \item \emph{Equal-time spectra against the susceptibilities} (\Fig{fig:cmpeq}).  At rest $C_{AA}(k,0)/\chi_{AA}$ at the smallest $k$ is $0.96$--$1.12$ for all
   four at both $s_a$; the positional counterterm does not move it beyond the errors (it changes the mean energy and pressure of the fluid by the
   percent of the tables of level 2, not the fluctuations at small $k$).  In motion along the flow the errors are 10--20\%.
-\item \emph{The correlators} (Figs.~\ref{fig:cmpcorr16}--\ref{fig:cmpcorr16c} and \ref{fig:cmpcorr54}--\ref{fig:cmpcorr54c}) look the same for the four Hamiltonians at each $s_a$ and velocity.
+\item \emph{The phase of the sound} (Table~\ref{tab:cmpsound}).  The frequency of the sound correlators at the smallest $k$, from their zero crossings,
+  \st
+  \omega=\frac{\pi\,(n_z-1)}{\tau_{n_z}-\tau_1}\,,
+  \stp
+  with $\tau_1,\dots,\tau_{n_z}$ the first $n_z\le6$ zero crossings of the normalized correlator at $\tau\le15$, divided by the same estimator applied to the
+  hydrodynamic curve at the bath (so the damping enters both alike; jackknife errors over the runs).  At $s_a=54$ the sound without $\omega$ is about 1\% slow at
+  rest (split $0.9912\pm0.0013$, S-scheme $0.9896\pm0.0011$) and 1.7\% slow across the flow, so after the five oscillations shown in \Fig{fig:cmpcorr54} the phase
+  lags hydrodynamics by a tenth of a period; with $\omega$ it is $0.998$--$0.999$ at rest and $0.991$--$0.994$ across the flow.  The positional counterterm is a
+  modest improvement that keeps the sound in phase at $s_a=54$: the speed of sound of the fluid is that of the equation of state once the offset of the
+  positions (level 2) is removed.  Along the flow the Doppler shift dominates, $\omega/k$ depends on $c_s$ only through $(1-v^2)$, and all four are within
+  $0.15\%$.  At $s_a=16$ the four are within 1\% of hydrodynamics, with errors 2--5 times larger, and $\omega$ makes no difference there, except one entry:
+  S-scheme$+\omega$ at rest gives $1.360\pm0.009$.  That is a real effect, not a failure of the estimator: the correlator (\Fig{fig:cmpcorr16}, bottom right)
+  oscillates cleanly at a frequency 36\% above hydrodynamics from the first period on.  The sound of that Hamiltonian at $s_a=16$ at rest is too fast; split$+\omega$
+  at the same state is not ($1.01\pm0.02$), nor is S-scheme$+\omega$ in motion, where the lab entropy per particle is $\gamma s_a=26.7$.  The cause is not
+  yet known (at $s_a=16$ the one-loop $\omega$ no longer describes the offset of the positions, \texttt{sscheme\_plan.tex}, level 2).
+\item \emph{The correlators} (Figs.~\ref{fig:cmpcorr16}--\ref{fig:cmpcorr16c} and \ref{fig:cmpcorr54}--\ref{fig:cmpcorr54c}) look the same for the four Hamiltonians at each $s_a$ and velocity, except the sound of S-scheme$+\omega$ at $s_a=16$ at rest (above).
 \end{itemize}
-So in the dynamics the four are interchangeable within the present errors: neither the S-scheme nor the positional counterterm changes the
-equilibration, the conservation of $H$, the advection or the over-damping, which belongs to the viscous step (\Sect{sec:results}).  What the positional
+\begin{table}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, split lines \texttt{d7d26ad}), the smallest $k$ ($kh=0.52$): the frequency of the sound
+mode from the zero crossings of its normalized correlator, over the same estimator applied to the prediction of linearized hydrodynamics at the bath
+($\eta/s=0.2$); errors by jackknife over the 16 runs (\texttt{examples/boost\_analysis.jl}, groups \texttt{CMP16}, \texttt{CMP54}).  Along the flow:
+$\mathrm{Re}\,C_{xx}(k\hat x)$ ($\omega_{\rm hydro}/k=0.963$); across: $\mathrm{Re}\,C_{yy}(k\hat y)$ ($\omega_{\rm hydro}/k=0.515$); at rest
+$\mathrm{Re}\,C_{xx}(k\hat x)$ ($\omega_{\rm hydro}/k=0.707=c_s$).  $^\dagger$\,a real excess, see the text.}
+\label{tab:cmpsound}
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+$s_a$ & correlator & split & split$+\omega$ & S-scheme & S-scheme$+\omega$ \\
+\midrule
+54 & at rest           & $0.9912(13)$ & $0.9981(12)$ & $0.9896(11)$ & $0.9994(10)$ \\
+54 & $v_0=0.8$, along  & $1.0014(3)$  & $1.0009(5)$  & $1.0003(4)$  & $1.0008(4)$ \\
+54 & $v_0=0.8$, across & $0.9823(16)$ & $0.9943(16)$ & $0.9829(15)$ & $0.9914(20)$ \\
+\midrule
+16 & at rest           & $1.0048(42)$ & $1.010(22)$  & $1.0094(23)$ & $1.360(9)^\dagger$ \\
+16 & $v_0=0.8$, along  & $1.0020(5)$  & $1.0018(18)$ & $1.0112(75)$ & $1.0030(20)$ \\
+16 & $v_0=0.8$, across & $1.0017(40)$ & $1.0118(48)$ & $1.0118(61)$ & $1.0169(37)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+So in the dynamics the four are nearly interchangeable within the present errors, with one exception, the sound of S-scheme$+\omega$ at $s_a=16$
+at rest: neither the S-scheme nor the positional counterterm changes the
+equilibration, the conservation of $H$, the advection or the over-damping, which belongs to the viscous step (\Sect{sec:results}); the positional
+counterterm brings the phase of the sound at $s_a=54$ onto hydrodynamics.  What the positional
 counterterm changes is the equation of state the fluid is at (\texttt{sscheme\_plan.tex}, level 2).
 
 \begin{figure}[h]

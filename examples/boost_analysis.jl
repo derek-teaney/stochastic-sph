@@ -411,6 +411,32 @@ for run in runs
     end
     fit[run] = out
 end
+# ── the phase of the sound modes: the frequency from the zero crossings of the normalized correlator, against the same of hydrodynamics ──
+# ω = π / (mean spacing of the zero crossings) over the first NZ crossings (τ ≤ 15), the measured and the hydrodynamic curve on the same τ grid;
+# the ratio ω/ω_hydro is the sound speed (Doppler-shifted along the flow) of the dynamics over that of the equation of state at the bath.
+function zero_omega(τ, y; nz = 6)
+    zs = Float64[]
+    for i in 1:length(y) - 1
+        y[i] * y[i+1] < 0 && push!(zs, τ[i] - y[i] * (τ[i+1] - τ[i]) / (y[i+1] - y[i]))
+        length(zs) == nz && break
+    end
+    length(zs) < 2 && return NaN
+    return π * (length(zs) - 1) / (zs[end] - zs[1])
+end
+println("sound modes (smallest k): ω from the zero crossings of the correlator, over hydrodynamics (the same estimator on the hydrodynamic curve)")
+for run in runs
+    r = res[run]
+    for (dir, a, lab) in ((:par, 2, "Re C_xx k∥"), (:par, 1, "Re C_EE k∥"), (:perp, 3, "Re C_yy k⊥"))
+        (dir === :perp || a == 1) && r.v < 0.1 && continue
+        haskey(r.C, (dir, 1)) || continue
+        c = r.C[(dir, 1)];  it = findall(<=(15.0), c.τ);  τ = c.τ[it]
+        pred, χ, _ = predict(r.Trel, r.v, r.ν, c.k, τ)
+        ωh = zero_omega(τ, [real(p[a, a]) for p in pred] ./ χ[a, a])
+        ω, dω = jack(C -> zero_omega(τ, real.(C[a, a, it]) ./ real(C[a, a, 1])), c.Cs)
+        @printf("  %-15s %-11s kh=%.2f  ω/ω_hydro = %.4f ± %.4f   (ω_hydro/k = %.4f)\n", r.lab, lab, norm(c.k) * r.h, ω / ωh, dω / ωh, ωh / norm(c.k))
+    end
+end
+
 fig, axs = subplots(1, 2, figsize = (13, 4.8))
 fmethod(run) = replace(run, r" v=[0-9.]+" => "")                       # one colour per method (comparison groups), shifted in v
 fmeths = unique(fmethod.(fitruns))
