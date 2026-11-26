@@ -101,7 +101,7 @@ const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN,
     D = 1 - (1 + v2) * εp + v * εpar
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
-    ok = D > 0 && abs(va) < 1 && s > c.sb
+    ok = D > 0 && abs(va) < 1 && s > c.sb && (c.sb == -Inf || St > c.b)   # regularized: no state at S_t ≤ b (g is built for S_t ≥ b)
     ok || return SS_NOSTATE
     Pa = (St / n + c.Pconst + Pg) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = s - log(Ta),

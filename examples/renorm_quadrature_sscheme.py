@@ -26,7 +26,7 @@ D = 3   # d + 1
 class SScheme(Split):
     def sstate(self, T, v, V, reshape=False):
         """the S-scheme at the target state (bare T, |v|): label s, T_a, v_a, 𝒟, S_t, and the target energy and M/v.
-        reshape = True: the momentum part X = ½ ln(1 − c_s² v²) of the counterterm multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t
+        reshape = True: SPH_SSCHEME_REG=1, the parts of the counterterm that raise the smallest label multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t
         (c_s² = 1/2; the minimum label at S_t = b for every v; a change of order 1/S_t²)"""
         n, A, q = self.n, self.A, 1 / self.c2
         g = 1 / np.sqrt(1 - v * v);  Tr = g * T;  a = q - v * v
@@ -36,10 +36,14 @@ class SScheme(Split):
         s = St - Dchi - Dell
         Dp = D / 2 * (2 + q - v * v) + v * v * (1 - v * v) / a - (1 + v * v)
         Dth = D / 2 * v - v * (1 - v * v) / a + v
-        if reshape:
-            b = D / 2 + 1 - (1 - 2 * self.c2);  u = b / St
+        if reshape:      # SPH_SSCHEME_REG=1 (src/sscheme.jl): g on X_vel = N ln γ + ½ ln(a/q) when c_s² > 1/3, on X_vol = N ln(V/V̄) when N > 0 (V̄ = 1)
+            N = 1 - 2 * self.c2;  b = D / 2 + 1 - N;  u = b / St
             h = 3 * u**2 - 2 * u**3;  dh = -6 * u**2 * (1 - u)
-            X = 0.5 * np.log(a / q);  Xth = -v * (1 - v * v) / a
+            X = 0.0;  Xth = 0.0
+            if self.c2 > 1 / 3:
+                X = X + N * np.log(g) + 0.5 * np.log(a / q);  Xth = Xth + N * v - v * (1 - v * v) / a
+            if N > 0:
+                X = X + N * np.log(V)
             s = s + h * X
             Dp = Dp - dh * X * a + v * h * Xth
             Dth = Dth - dh * v * X - h * Xth
@@ -49,17 +53,18 @@ class SScheme(Split):
         e = V * (w * g * g - p);  Mv = V * w * g * g
         return s, Ta, va, den, St, e, Mv
 
-    def label_limit(self):
+    def label_limit(self, rest_only=False):
         """the hard limit on the label (sscheme_plan.tex, E, option 1; c_s^2 = 1/2): s_b = s_min(rest) + ½ ln(q/(q−1)), s_min(rest)
         the smallest label of a particle at rest (at c_s^2 = 1/2 it does not depend on V)"""
-        if not hasattr(self, "_sb"):
-            assert abs(self.c2 - 0.5) < 1e-12, "the hard limit is defined for c_s^2 = 1/2 only"
+        key = "_sb_rest" if rest_only else "_sb"
+        if not hasattr(self, key):
+            assert rest_only or abs(self.c2 - 0.5) < 1e-12, "the hard limit is defined for c_s^2 = 1/2 only"
             q = 1 / self.c2;  n = self.n
             St = np.exp(np.linspace(np.log(0.5), np.log(20.0), 200001))
             T = (St / (n * self.A))**(1 / (n - 1))                   # at rest, V = 1: S_t = n A T^(n-1)
             s = self.sstate(T, np.zeros_like(T), 1.0)[0]
-            self._sb = s[np.isfinite(s)].min() + 0.5 * np.log(q / (q - 1))
-        return self._sb
+            setattr(self, key, s[np.isfinite(s)].min() + (0.0 if rest_only else 0.5 * np.log(q / (q - 1))))
+        return getattr(self, key)
 
     def jac_e(self, T, v, V):
         """|∂(e, M)/∂(T, v)| at fixed V, M = |m|"""
@@ -82,6 +87,8 @@ class SScheme(Split):
         ok = ok & (den > 0) & (np.abs(va) < 1)
         if name == "sscheme-cut":
             ok = ok & (s > self.label_limit())
+        if name == "sscheme-g":                  # the domain of SPH_SSCHEME_REG=1: S_t > b and the hard limit (the smallest label at rest at V = V̄ = 1)
+            ok = ok & (St > D / 2 + 1 - (1 - 2 * self.c2)) & (s > self.label_limit(rest_only=True))
         Ta = np.where(ok, Ta, 1.0)
         mx = Mv * vx
         lw = s - np.log(Ta) - (e - vb * mx) / Tb + np.log(np.where(ok, self.jac_e(T, v, V) * Mv, 1.0))
