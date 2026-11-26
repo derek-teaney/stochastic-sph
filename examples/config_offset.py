@@ -17,7 +17,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIGS = os.path.join(HERE, "..", "docs", "figs")
 SCR = os.environ.get("SCRATCH", "")
 SETS = [("split", os.path.join(SCR, "sph", "eos_split"), "eosS_split_", "step5-du0"),
-        ("sscheme-full", os.path.join(SCR, "sph", "eos_sscheme"), "eosS_ss_", "sscheme")]
+        ("sscheme-full", os.path.join(SCR, "sph", "eos_sscheme"), "eosS_ss_", "sscheme"),
+        ("measure", os.path.join(SCR, "sph", "eos_measure"), "eosS_ssm_", "sscheme-m"),            # β = D/2 + 1
+        ("measure-b", os.path.join(SCR, "sph", "eos_measure"), "eosS_ssmb_", "sscheme-m@2.0")]      # β = b = 2 (c_s² = 1/4)
 for x in filter(None, os.environ.get("SR_SETS", "").split(",")):
     SETS.append(tuple(x.split(":")))
 
@@ -74,11 +76,25 @@ for r in sorted(rows, key=lambda r: (-r["c2"], r["s_a"], r["ha"], r["scheme"])):
           f"{100*r['E_hmc']:+6.2f}±{100*r['dE']:4.2f} {100*r['E_quad']:+7.3f} {100*r['offE']:+7.2f} {100*r['predE']:+7.2f} | "
           f"{r['yP']:+7.3f}±{r['dyP']:5.3f} {r['yE']:+7.3f}±{r['dyE']:5.3f}")
 
+A2 = float(os.environ.get("SR_A2", "0.091"))
+print("\nthe EOS error after each correction, percent: (0) HMC, (1) − single particle, (2) − positions at one loop, (3) − a_2 term (a_2 = %g)" % A2)
+for sch in ("split", "measure", "measure-b", "sscheme-full"):
+    rr = sorted([r for r in rows if r["scheme"] == sch], key=lambda r: (-r["c2"], r["s_a"], r["ha"]))
+    if not rr: continue
+    print(f"  {sch}:")
+    for r in rr:
+        sig, nu, i0, i0p = r["sigma"], r["nu"], r["I0"], r["I0p"]
+        P2, E2 = r["offP"] - r["predP"], r["offE"] - r["predE"]
+        P3 = P2 + 2 * A2 * nu**2 * (1 + i0p / i0) / sig;  E3 = E2 + 2 * A2 * nu**2 * (i0p / i0) / sig
+        r.update(P2=P2, P3=P3, E2=E2, E3=E3)
+        print(f"    c_s² {r['c2']:.2f} s_a {r['s_a']:4d} h/a {r['ha']:.0f} ν_* {nu:.3f} | P {100*r['P_hmc']:+6.2f} {100*r['offP']:+6.2f} {100*P2:+6.3f} {100*P3:+6.3f} ±{100*r['dP']:.2f}"
+              f" | E {100*r['E_hmc']:+6.2f} {100*r['offE']:+6.2f} {100*E2:+6.3f} {100*E3:+6.3f} ±{100*r['dE']:.2f}")
+
 out = os.path.join(FIGS, "config_offset.csv")
 with open(out, "w") as f:
-    keys = list(rows[0].keys())
+    keys = sorted(set().union(*[r.keys() for r in rows]), key=lambda k: list(rows[0].keys()).index(k) if k in rows[0] else 99)
     f.write(",".join(keys) + "\n")
-    for r in rows: f.write(",".join(str(r[k]) for k in keys) + "\n")
+    for r in rows: f.write(",".join(str(r.get(k, "")) for k in keys) + "\n")
 print("written", out)
 
 try:
@@ -92,7 +108,7 @@ try:
     for ax, (y, dy, name, lab) in zip(axs, panels):
         for c2, mk in ((0.5, "o"), (0.25, "s")):
             for ha, col in ((2.0, "C0"), (3.0, "C1")):
-                for sc, fill in (("split", True), ("sscheme-full", False)):
+                for sc, fill in (("split", True), ("sscheme-full", False)):          # the figure: split and the full form
                     rr = [r for r in rows if r["c2"] == c2 and r["ha"] == ha and r["scheme"] == sc and r["s_a"] >= 54]
                     if rr:
                         ax.errorbar([r["nu"]**2 for r in rr], [r[y] for r in rr], [r[dy] for r in rr], fmt=mk, color=col,

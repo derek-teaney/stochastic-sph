@@ -982,6 +982,66 @@ $c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & 
 \end{tabular}
 \end{center}
 \end{table}
+
+\paragraph{The measure form} (\Tab{tab:eoserrm}, \Tab{tab:eoserrb}).
+\begin{table}[h]
+\caption{The error of the equation of state of the measure form with $\beta=D/2+1$ (\texttt{SPH\_SSCHEME\_FORM=measure}, the default), in percent.  Campaign \texttt{eos\_measure} (interactive 62015696, commit c0ea823), at rest, $L=0.45$, 8 seeds of 300 updates; the single particle is the model \texttt{sscheme-m} of N1. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
+the same scheme is subtracted, (2) after the one-loop correction of the positions is also subtracted, (3) after the $a_2$ term ($a_2=0.091$) is also
+subtracted; $\pm$ the statistical error.}
+\label{tab:eoserrm}
+\begin{center}\small
+\begin{tabular}{lrrr|rrrrr|rrrrr}
+\toprule
+ & & & & \multicolumn{5}{c|}{$P/p-1$ (\%)} & \multicolumn{5}{c}{$E/e-1$ (\%)} \\
+$c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & (2) & (3) & $\pm$ \\
+\midrule
+1/2 & 16 & 2 & 0.092 & $-1.42$ & $-5.36$ & $+0.80$ & $+0.86$ & 0.09 & $+2.06$ & $-1.90$ & $+1.33$ & $+1.36$ & 0.09 \\
+ & 16 & 3 & 0.041 & $+1.79$ & $-2.15$ & $+0.59$ & $+0.60$ & 0.03 & $+3.30$ & $-0.66$ & $+0.78$ & $+0.78$ & 0.03 \\
+ & 54 & 2 & 0.254 & $-3.93$ & $-3.95$ & $-0.11$ & $+0.00$ & 0.04 & $-1.50$ & $-1.52$ & $-0.01$ & $+0.03$ & 0.03 \\
+ & 54 & 3 & 0.113 & $-1.69$ & $-1.71$ & $-0.00$ & $+0.02$ & 0.03 & $-0.63$ & $-0.65$ & $+0.02$ & $+0.03$ & 0.02 \\
+ & 541 & 2 & 0.877 & $-1.30$ & $-1.30$ & $-0.12$ & $-0.00$ & 0.01 & $-0.42$ & $-0.42$ & $-0.04$ & $-0.00$ & 0.01 \\
+ & 541 & 3 & 0.390 & $-0.54$ & $-0.54$ & $-0.02$ & $+0.01$ & 0.01 & $-0.17$ & $-0.17$ & $-0.00$ & $+0.01$ & 0.01 \\
+\midrule
+1/4 & 16 & 2 & 0.041 & $+6.98$ & $-3.85$ & $+2.95$ & $+2.98$ & 0.08 & $+8.17$ & $-0.31$ & $+4.21$ & $+4.23$ & 0.08 \\
+ & 16 & 3 & 0.018 & $+10.54$ & $-0.29$ & $+2.74$ & $+2.74$ & 0.04 & $+9.58$ & $+1.10$ & $+3.11$ & $+3.11$ & 0.03 \\
+ & 54 & 2 & 0.178 & $-4.91$ & $-4.88$ & $-0.10$ & $-0.00$ & 0.02 & $-2.33$ & $-2.06$ & $-0.00$ & $+0.04$ & 0.02 \\
+ & 54 & 3 & 0.079 & $-2.24$ & $-2.21$ & $-0.08$ & $-0.06$ & 0.04 & $-1.25$ & $-0.97$ & $-0.06$ & $-0.05$ & 0.03 \\
+ & 541 & 2 & 0.685 & $-1.68$ & $-1.68$ & $-0.12$ & $-0.01$ & 0.02 & $-0.56$ & $-0.55$ & $-0.04$ & $-0.00$ & 0.02 \\
+ & 541 & 3 & 0.305 & $-0.71$ & $-0.71$ & $-0.01$ & $+0.01$ & 0.01 & $-0.23$ & $-0.23$ & $+0.00$ & $+0.01$ & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+\begin{table}[h]
+\caption{As \Tab{tab:eoserrm} for the measure form with $\beta=b=2$ at $c_s^2=1/4$ (\texttt{SPH\_SSCHEME\_BETA=2}, the S-scheme coding of split); the single particle is the model \texttt{sscheme-m@2.0}.  For $c_s^2=1/2$, $b=D/2+1$ and the form is that of \Tab{tab:eoserrm}. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
+the same scheme is subtracted, (2) after the one-loop correction of the positions is also subtracted, (3) after the $a_2$ term ($a_2=0.091$) is also
+subtracted; $\pm$ the statistical error.}
+\label{tab:eoserrb}
+\begin{center}\small
+\begin{tabular}{lrrr|rrrrr|rrrrr}
+\toprule
+ & & & & \multicolumn{5}{c|}{$P/p-1$ (\%)} & \multicolumn{5}{c}{$E/e-1$ (\%)} \\
+$c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & (2) & (3) & $\pm$ \\
+\midrule
+1/4 & 16 & 2 & 0.042 & $+5.83$ & $-4.56$ & $+2.24$ & $+2.27$ & 0.07 & $+7.43$ & $-0.98$ & $+3.50$ & $+3.53$ & 0.06 \\
+ & 16 & 3 & 0.019 & $+9.31$ & $-1.08$ & $+1.94$ & $+1.95$ & 0.04 & $+8.78$ & $+0.37$ & $+2.36$ & $+2.37$ & 0.03 \\
+ & 54 & 2 & 0.178 & $-4.71$ & $-4.95$ & $-0.16$ & $-0.07$ & 0.05 & $-2.07$ & $-2.13$ & $-0.06$ & $-0.02$ & 0.04 \\
+ & 54 & 3 & 0.079 & $-1.92$ & $-2.16$ & $-0.04$ & $-0.02$ & 0.03 & $-0.88$ & $-0.93$ & $-0.01$ & $-0.01$ & 0.02 \\
+ & 541 & 2 & 0.685 & $-1.68$ & $-1.68$ & $-0.12$ & $-0.01$ & 0.02 & $-0.56$ & $-0.56$ & $-0.04$ & $-0.01$ & 0.02 \\
+ & 541 & 3 & 0.305 & $-0.71$ & $-0.71$ & $-0.02$ & $+0.01$ & 0.01 & $-0.23$ & $-0.23$ & $+0.00$ & $+0.01$ & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+\begin{itemize}
+\item $c_s^2=1/2$: the measure form gives the numbers of split in every column within the errors (it is split in another coding).
+\item $c_s^2=1/4$, $\beta=b$: the numbers of split within the errors, at every $s_a$.
+\item $c_s^2=1/4$, $\beta=D/2+1$: at $s_a\ge54$ as split (column (3) at most $0.07\%$); at $s_a=16$ worse than split, $P$ $+2.7$--$3.0\%$ and $E$
+  $+3.1$--$4.2\%$ in column (3) against split's $+2.0$--$2.2\%$ and $+2.4$--$3.4\%$.  The raw error (0) at $s_a=16$, $h/a=2$ is $E$ $+8.2\%$ against
+  split's $+7.4\%$, the size of the gap found with the regulator g (Results, F at $s_a=16$): with $c_s^2=1/4$ the remainder of $\Delta^H$ depends on
+  the temperature, and at $s_a=16$ the positions feel it.
+\end{itemize}
+
 \begin{itemize}
 \item At $s_a\ge54$ the one-loop prediction accounts for the offset to $0.1\%$ or better, and what remains grows with $\nu_*$.  Fitting
   $-2a_2\nu_*^2$ to the 16 remainders of split ($P$ and $E$, both $c_s^2$, both $h/a$): $a_2=0.091\pm0.008$, $\chi^2/{\rm dof}=0.73$.  Separately,
