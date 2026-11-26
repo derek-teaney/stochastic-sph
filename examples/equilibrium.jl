@@ -293,6 +293,7 @@ function one_realization(seed)
             GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
                    record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
             push!(Ht, sum(q.H for q in ps) / H0 - 1)       # smoothed state is current
+            SSCHEME && isnan(Ht[end]) && @printf("seed %d: a particle without a state at t = %.4f (sscheme_faillog: %d)\n", seed, n * dt, length(sscheme_faillog()))
             if JITTER > 0 || POSITIONS in (:poisson, :hmc)                  # unequal volumes: the mean flow is V_a M̄,
                 Md = sum(q.m for q in ps) / sum(q.V for q in ps)    # M̄ the mean momentum density
                 push!(KE, sum((d = q.m - q.V * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
@@ -333,6 +334,7 @@ function one_realization(seed)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",
                                          seed, g.sum_dH_over_H, g.sum_dS_T_over_S, g.sum_absdS_T_over_S, g.disp_max, g.div_max, g.roundtrip_max, g.dP_max, g.eos_fail))
     print_summary(mon; label = "seed $seed")
+    SSCHEME && !isempty(sscheme_faillog()) && serialize(base * "_ssfail.jls", collect(sscheme_faillog()))   # diagnosis of the states without a Hamiltonian
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
