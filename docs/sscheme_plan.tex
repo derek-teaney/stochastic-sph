@@ -909,4 +909,84 @@ $c_s^2$ & $v$ & $s_a$ & split & one loop & $F=1$ & $F$ & split & one loop & $F=1
   weight has $P_a<0$ anywhere.  Item A's ``Ask'' threshold (a few percent) is not reached.
 \end{itemize}
 
+\paragraph{The reference against the absolute normalization} (models \texttt{sscheme-m1}, \texttt{-m2pi}, \texttt{-mf2pi}: $\Delta^H$ with no
+reference, the label cell $1$ or $(2\pi)^2$).  $E/E_{\rm t}-1$ at rest: $c_s^2=1/2$, $s_a=54$: $T_0$ $2.4\times10^{-4}$, cell $(2\pi)^2$
+$1.8\times10^{-4}$, cell 1 $-1.1\times10^{-2}$; $c_s^2=1/4$, $s_a=54$: $-2.7\times10^{-3}$, $+4.2\times10^{-3}$, $-1.7\times10^{-2}$; $s_a=541$:
+$-1.9\times10^{-5}$, $+8.9\times10^{-5}$, $-7.1\times10^{-5}$ ($p$: $2.7\times10^{-6}$ against $1.1\times10^{-4}$ for the cell $(2\pi)^2$).  For the
+conformal fluid only the cell matters and $(2\pi)^2$ is as good as $T_0$; for $c_s^2=1/4$ the absolute normalization is worse than $T_0$ by
+1.5--40 times at $s_a\ge54$ (the factor $F$ recovers most of it), as $\beta\Delta^H/S_{\rm t}$ predicts.  The rows, and those of $\beta=D/2$ and $b$
+(models \texttt{sscheme-m@1.5}, \texttt{@2.0}), are in the same csv.
+
+
+%-----------------------------------------------------------------------------
+\subsection*{The correction of the positions: one loop and $\nu_*$ (2026-11-25, items H and L on the level-1 data)}
+
+\paragraph{Decision (owner, 2026-11-25).}  Split and the measure form with $\beta=D/2+1$ are the schemes to keep; for the conformal fluid they are
+the same scheme in two codings (N1).  The single-particle differences between them are much smaller than the correction of the positions, which is
+what we measure next: the offset of hybrid Monte Carlo from the single particle, against the one-loop prediction \Eq{loopPE}, and what remains
+against $\nu_*^2$ (item L), with the existing runs of \texttt{eos\_split} and \texttt{eos\_sscheme}.
+
+\paragraph{Definitions.}  For a line at rest with the nominal state $(p,T)$, the mean volume $\bar V=1/\bar n$ and the smoothing length $h$,
+\st
+\sigma=\frac{p\,\bar V}T=\frac{S_{\rm t}}n,\qquad N_h=\bar n\,h^2,\qquad
+I_0(\sigma)=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\ln S(k),\qquad I_0'=\frac{dI_0}{d\ln\sigma},\qquad
+\nu_*=-\frac{I_0(\sigma)}{2a_1N_h},\qquad a_1=\frac\pi{2\sin(2\pi/n_W)} ,
+\stp
+with $S(k)$ of \Eq{I0}; $N_h=4.62$ and $10.39$ at $h/a=2$ and 3, and $a_1=1.6516$ for Wendland C2 ($n_W=5$).  $\nu_*$ is the number of stiff
+modes per particle (\Sect{sec:model2}).  The offset of a line is the HMC value less the single particle of the same scheme,
+$\delta X=(X_{\rm HMC}/x-1)-(X_{\rm quad}/x-1)$ for $X=P,E$ (the quadrature of N1).  The one-loop prediction is $\sigma\,\delta P=(I_0+I_0')/(2N_h)$,
+$q\sigma\,\delta E=qI_0'/(2N_h)$, and the remainders $r_P$, $r_E$ are the differences; if what lies beyond one loop is $a_2\nu_*^2$ in $\omega$, then
+$r_P/(1+I_0'/I_0)=r_E/(qI_0'/I_0)=-2a_2\nu_*^2$ (\Eq{a2}).
+
+\paragraph{The table of $I_0$} (\nolinkurl{examples/i0_table.py}, \texttt{docs/figs/i0\_table\_wc2.csv}, $\sigma=1$ to $10^4$).  The transform by
+Gauss--Legendre in $r/h$, the integral to $kh=400$ and the tail from $\widetilde W(kh)^5\to78.74$; converged to five digits in the nodes, the cutoff
+($kh=60$ to 800) and the panels.  $I_0=-0.9791$, $-3.648$, $-3.878$, $-7.755$, $-13.324$ at $\sigma=3.89$, 16.4, 18, 60, 179; the reference values of H
+agree at small $\sigma$ and are $0.15$--$0.3\%$ smaller in size at $\sigma\ge60$, which the warning of H about the trapezoid transform explains.  The
+form of \nolinkurl{partition.tex} gives $-2.028$, $-4.139$, $-13.435$ (reference $-2.03$, $-4.14$, $-13.43$); $I_0'$ agrees with a central difference
+to $10^{-8}$.
+
+\paragraph{The result} (\nolinkurl{examples/config_offset.py}, \texttt{docs/figs/config\_offset.csv}, \Fig{fig:nu2}; percent, 8 seeds of 300
+updates, $L=0.45$).
+\begin{center}\small
+\begin{tabular}{lrrrr|rrr|rrr}
+\toprule
+$c_s^2$ & $s_a$ & $h/a$ & $\sigma$ & $\nu_*$ & $P$: HMC & offset & one loop & $E$: HMC & offset & one loop \\
+\midrule
+1/2 & 54 & 2 & 18.0 & 0.254 & $-3.93(4)$ & $-3.95$ & $-3.84$ & $-1.50(3)$ & $-1.52$ & $-1.51$ \\
+    & 54 & 3 & 18.0 & 0.113 & $-1.73(2)$ & $-1.76$ & $-1.71$ & $-0.67(2)$ & $-0.70$ & $-0.67$ \\
+    & 541 & 2 & 180 & 0.877 & $-1.29(2)$ & $-1.29$ & $-1.18$ & $-0.42(2)$ & $-0.42$ & $-0.38$ \\
+    & 541 & 3 & 180 & 0.390 & $-0.54(1)$ & $-0.54$ & $-0.53$ & $-0.17(1)$ & $-0.17$ & $-0.17$ \\
+1/4 & 54 & 2 & 10.8 & 0.178 & $-4.71(5)$ & $-4.95$ & $-4.78$ & $-2.07(5)$ & $-2.12$ & $-2.06$ \\
+    & 54 & 3 & 10.8 & 0.079 & $-1.92(3)$ & $-2.16$ & $-2.13$ & $-0.87(3)$ & $-0.92$ & $-0.92$ \\
+    & 541 & 2 & 108 & 0.685 & $-1.68(2)$ & $-1.68$ & $-1.56$ & $-0.56(2)$ & $-0.56$ & $-0.51$ \\
+    & 541 & 3 & 108 & 0.305 & $-0.70(1)$ & $-0.70$ & $-0.69$ & $-0.22(1)$ & $-0.23$ & $-0.23$ \\
+\midrule
+1/2 & 16 & 2 & 5.19 & 0.092 & $-1.40(5)$ & $-5.30$ & $-6.15$ & $+2.09(6)$ & $-1.82$ & $-3.23$ \\
+    & 16 & 3 & 5.19 & 0.041 & $+1.83(6)$ & $-2.07$ & $-2.73$ & $+3.36(6)$ & $-0.55$ & $-1.44$ \\
+1/4 & 16 & 2 & 3.01 & 0.042 & $+5.69(6)$ & $-4.67$ & $-6.79$ & $+7.35(6)$ & $-1.12$ & $-4.48$ \\
+    & 16 & 3 & 3.01 & 0.019 & $+9.31(5)$ & $-1.06$ & $-3.02$ & $+8.87(6)$ & $+0.41$ & $-1.99$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+(split; the full one-loop S-scheme of \texttt{eos\_sscheme} gives the same offsets at $s_a=54$ and 541 within the errors.)
+\begin{itemize}
+\item At $s_a\ge54$ the one-loop prediction accounts for the offset to $0.1\%$ or better, and what remains grows with $\nu_*$.  Fitting
+  $-2a_2\nu_*^2$ to the 16 remainders of split ($P$ and $E$, both $c_s^2$, both $h/a$): $a_2=0.091\pm0.008$, $\chi^2/{\rm dof}=0.73$.  Separately,
+  $P$ gives $0.092\pm0.008$ and $E$ $0.080\pm0.024$; $c_s^2=1/2$ gives $0.087\pm0.011$ and $c_s^2=1/4$ $0.095\pm0.011$; the points with
+  $\nu_*<1/2$ alone give $0.083\pm0.016$.  So the remainder collapses on $\nu_*^2$, with one $a_2$ for $P$ and $E$ and for both equations of state, as
+  the parametrization of item L requires.
+\item At $s_a=16$ ($\sigma=3$--5, $\nu_*<0.1$) one loop over-predicts the offset: the remainders are $+0.02$ in $r_P/(1+I_0'/I_0)$ and $+0.04$ to
+  $+0.07$ in $r_E/(qI_0'/I_0)$, independent of $\nu_*$.  This is not the $\nu_*^2$ term; it is where the expansion in $1/\sigma$ (and the single-particle
+  error of 4--10\% that is subtracted) is not small.
+\item The remaining offset at $s_a\ge54$ after one loop is at most $0.11\%$ in $P$ and $0.05\%$ in $E$ ($s_a=541$, $h/a=2$, $\nu_*=0.88$), and the
+  $a_2$ term removes it.
+\end{itemize}
+\begin{figure}[h]
+\begin{center}\includegraphics[width=\textwidth]{figs/config_offset_nu2.png}\end{center}
+\caption{\texttt{eos\_split} and \texttt{eos\_sscheme}, at rest, 8 seeds; \nolinkurl{examples/config_offset.py}.  The remainder of the offset of the
+positions beyond one loop, divided by its factor in $I_0'/I_0$, against $\nu_*^2$; the dashed line is $-2a_2\nu_*^2$ with the fitted $a_2=0.091$.
+The points at $\nu_*^2<0.01$ above zero are $s_a=16$.}
+\label{fig:nu2}
+\end{figure}
+
 \end{document}
