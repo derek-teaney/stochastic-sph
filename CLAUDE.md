@@ -29,7 +29,9 @@ the `.tex`).  Owner: D. Teaney.
   state counting, s = S(e, m, V) = S_t − Δ_χ − Δ_ℓ, meant to replace split and legendre.  `docs/sscheme_plan.tex` is the plan
   (branches, tests, campaigns, the points marked **Ask**); read it first, then `docs/renorm3.tex` (the theory, concise) and
   `docs/renorm2.tex` (derivations, the order 1/V, the comparison with legendre).  `examples/sscheme_ref.py` is the reference
-  implementation the unit tests take their values from (python3, mpmath).  Not implemented in `src/` yet.
+  implementation the unit tests take their values from (python3, mpmath).
+  Since 2026-11-26 the form to implement has the term (D/2+1) ln S_t in the measure of the labels, ρ(s) = e^s s^(-β)(1 − β/s) on s > β = D/2+1,
+  and s = S_t − Δ^H in the label: `docs/sscheme_plan.tex`, "Level 1, amended" (items N1–N5), and `docs/renorm3.tex`, "The bounds, …".
 - **The renormalization, the start and the inputs** (since 2026-11-23, branch `split`):
   - `SPH_RENORM=split` is the default (Step 5: the label part of the one-loop counterterm in the measure, the rest in H;
     `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=legendre` is the alternative scheme,

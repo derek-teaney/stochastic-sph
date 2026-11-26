@@ -509,7 +509,85 @@ the sections of \nolinkurl{step5_plan.tex} and \nolinkurl{split_dynamics.tex}.
 \item The constant $\mathcal B$ is zero throughout.  The stiffness that the loop induces is measured in J and is not corrected.
 \item A variable speed of sound needs $\dot q$ in the slopes and is not part of this plan (\nolinkurl{renorm3.tex}).
 \item A position update in the stochastic step is not part of this plan.
+\item The form of the S-scheme (2026-11-26): the logarithm of the entropy in the measure, \Sect{sec:amend}.  The owner chooses between the plain form
+  and the form with the factor after items N1 and N4.
 \end{itemize}
+
+%=============================================================================
+\section{Level 1, amended: the logarithm of the entropy in the measure}
+\label{sec:amend}
+
+Added by the owner's desktop session on 2026-11-26, after the fold of item~E.  The owner has decided on this form as the default of the S-scheme.
+The theory is in \nolinkurl{renorm3.tex}, Sect.~``The bounds, and the logarithm of the entropy in the measure''.  It is a fourth member of the family
+of item~E2, and the one to implement first.  Items N1 to N5 below come before campaigns F and G.
+
+\paragraph{The idea.}  The fold comes from the term $(D/2+1)\ln S_{\rm t}$ of $\Delta$.  The ideal step preserves $d\bm x\,d\bm m$ and conserves the
+label, so any positive function of the label may stand in the measure.  We therefore move that term into the measure, as split does with $b\ln u$, and
+keep the rest of $\Delta$ in the label, where it is inverted exactly as in the S-scheme.  What remains in the Hamiltonian is a function of
+$T_{\rm rel}$ and the bounded sound factor.  It has no explicit volume, it is almost independent of the velocity, and its slope has the safe sign.
+
+\paragraph{The model for a constant speed of sound.}  With $\beta=D/2+1$ and $T_0$ the rest-frame temperature of the nominal state of the run
+(\texttt{trel\_of\_srel} of \texttt{SR\_SREL0}),
+\begin{keyeq}
+\st
+s=S_{\rm t}-F\,\Delta^H,\qquad \Delta^H=-(q-d)\ln\frac{T_{\rm rel}}{T_0}+\tfrac12\ln\big(1-c_s^2v^2\big),\qquad
+\rho(s)=e^{\,s}s^{-\beta}\Big(1-\frac\beta s\Big)\quad(s>\beta) .
+\label{amend}
+\stp
+\end{keyeq}
+There are two forms.  In the plain form $F=1$.  In the form with the factor, $F=(S_{\rm t}+2\beta)/(S_{\rm t}+\beta)$, which restores the agreement
+with \Eq{label} to order $1/S_{\rm t}^2$.  With
+\st
+\Delta_p^H=-(q-d)+\frac{v^2(1-v^2)}{a},\quad \Delta_\theta^H=-\frac{v(1-v^2)}{a},\quad
+\epsilon_p=\frac{F\Delta_p^H}{S_{\rm t}a},\quad \epsilon_\parallel=\frac{F\Delta_\theta^H}{S_{\rm t}},\quad
+\kappa=1+\frac{\beta\,\Delta^H}{(S_{\rm t}+\beta)^2}
+\stp
+(and $\kappa=1$ in the plain form), the state of the particle is
+\st
+T_a=\frac{T}{\mathcal D},\qquad \mathcal D=\kappa-(1+v^2)\epsilon_p+v\,\epsilon_\parallel,\qquad
+v_a=\frac{v(\kappa-2\epsilon_p)+\epsilon_\parallel}{\mathcal D},\qquad
+\frac{P_aV}{T_a}=\frac{\kappa\,S_{\rm t}-F\,(q-d)}{q+1} .
+\label{amendstate}
+\stp
+The weight of the votes, of the heat bath and of the equilibrium draw is
+\st
+\ln\rho(s)-\ln T_a=s-\beta\ln s+\ln\Big(1-\frac\beta s\Big)-\ln T_a ,
+\label{amendweight}
+\stp
+and it is $-\infty$ for $s\le\beta$.  The reference implementation is \texttt{state\_m} in \nolinkurl{examples/sscheme_ref.py}.
+
+\paragraph{N1. The single particle.}  Add the two forms to \nolinkurl{examples/renorm_quadrature_sscheme.py} (models \texttt{sscheme-m} and
+\texttt{sscheme-mf}), with the measure $\rho(s)$ in place of $e^s$ and the labels restricted to $s>\beta$.  Repeat Table~\ref{tab:A} for both, with
+$s_a=30$ added.  Report $E$, $p$, $R$, and the weight of the tree-level particle below the bound.  The expectation is that the form with the factor
+reproduces the S-scheme columns at $s_a\ge54$, and that the plain form differs from them in motion by an amount of the size of split's errors.
+
+\paragraph{N2. The maps.}  One setting selects the form, \texttt{SPH\_SSCHEME\_FORM} with the values \texttt{full} (\Eq{label}, the present code),
+\texttt{measure} (plain) and \texttt{measure-f} (with the factor).  \texttt{sscheme\_state} returns the same fields, computed from \Eq{amend} and
+\Eq{amendstate}, and the weight \Eq{amendweight}.  The map from the label is the same Newton iteration on $S_{\rm t}$ with the derivative
+$\mathcal D$.  The level~2 counterterm will enter as $\Delta^H\to\Delta^H-\omega$, so keep $\Delta^H$ and its slopes in one place.  The weight is the
+only place where $\rho$ enters.  The ideal step never evaluates it.
+
+\paragraph{N3. Tests.}  Repeat tests 1 to 3 of item~D against \texttt{state\_m} for both forms.  Add three tests.  (i) On a grid of $(\bm m,V)$ the
+label increases with $S_{\rm t}$ for every $S_{\rm t}$ whose label is above $\beta$, and every label above $\beta$ has a root.  (ii) For a small system
+the Jacobian determinant of one ideal step in $(\bm x,\bm m)$ at fixed labels is one, by finite differences.  This tests that $\bm v_a$ and $P_a$ are
+the derivatives of one Hamiltonian, whatever the form.  (iii) Test~7 at $s_a=16$, both $c_s^2$: the expectation is the acceptance of split, with no
+trajectory leaving the domain.
+
+\paragraph{N4. Smoke runs and the decision.}  Repeat the smoke runs of item~E at $s_a=16$ and $54$, at rest and at $v_0=0.8$, for both forms.  Record
+the fraction of particles with $P_a<0$ and the number of proposals rejected at the bound.  \textbf{Ask}: show the owner N1 and N4.  The owner chooses
+between the plain form and the form with the factor.
+
+\paragraph{N5. The campaigns.}  Campaigns F and G then run with the chosen form, and include $s_a=16$.  The sensitivity study of item~E2 becomes a
+variation of this form: $\beta=D/2$, $b$ and $D/2+1$, with and without the factor, and a bound of the measure placed above $\beta$.
+
+\paragraph{The bounds to expect} (\nolinkurl{renorm3.tex}, the table of bounds).  Above $s=\beta$ the temperature is positive and $|v_a|<1$ at every
+velocity for $c_s^2=1/2$, $1/3$, $1/4$ and $1/6$ in the scans of the desktop session.  The pressure is positive for $S_{\rm t}>q-d$, which is below the
+bound of the measure for $c_s^2\ge1/4$ in the plain form.  With the factor at $c_s^2=1/4$ and $s_a=16$ the pressure was negative up to the label
+$2.8$, slightly above the bound.
+
+\paragraph{Level 2.}  The model of \Sect{sec:model2} is unchanged except that $\omega$ is subtracted from $\Delta^H$ instead of $\Delta_\ell$.  The
+slopes \Eq{slopes2} apply to $\Delta_p^H$ and $\Delta_\theta^H$.  Since $\omega$ grows with $S_{\rm t}$, the test (i) of N3 must be repeated with
+$\omega$ before the level~2 runs.
 
 %=============================================================================
 \section{Results}

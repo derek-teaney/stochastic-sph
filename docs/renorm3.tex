@@ -49,7 +49,9 @@ given by a saddle point.  The first term of the saddle-point expansion defines \
 particle is the target entropy less two counterterms that are evaluated at the target's own state.  One comes from the determinant of the
 susceptibility and the other from the labels, and both are known in closed form.  The temperature,
 the velocity and the pressure of a particle are then those of the target state with small shifts, and only the two particle-level maps of the code
-change.  The next term of the expansion, of order $1/V$, is also known in closed form in terms of $c_s^2$ and its first two derivatives.  We record
+change.  At small entropy the one-loop label has bounds, and its smallest value depends on the momentum and the volume of the particle.  We
+therefore implement the scheme with the logarithm of the target entropy in the measure of the labels (\Sect{sec:bounds}), which agrees with it at
+one loop and has a single bound on the label.  The next term of the expansion, of order $1/V$, is also known in closed form in terms of $c_s^2$ and its first two derivatives.  We record
 it in an appendix but do not plan to implement it soon.  The longer derivations, the exact series and the comparison with the other schemes are in
 \nolinkurl{renorm2.tex}.  Written 2026-11-24.
 \end{abstract}
@@ -483,10 +485,193 @@ timelike.  The condition is
 \stp
 At rest this condition is $S_{\rm t}>\Delta_p/q$, which is $S_{\rm t}>D/2+1$ for the conformal fluid; this is the label boundary of
 \texttt{SPH\_RENORM=1}.  Below it the saddle point has no meaning, and a state there has no Hamiltonian, as in the present schemes.  The boundary
-belongs to the truncation of the series, because the exact $G$ increases with $e$ by construction.
+belongs to the truncation of the series, because the exact $G$ increases with $e$ by construction.  \Sect{sec:bounds} gives the bounds in detail
+and the form of the scheme that avoids them.
 
 Equations \Eq{Tava} and \Eq{Pa} were compared with finite differences of \Eq{scheme} for a two-component $p=T^3+0.7\,T^5$
 (\nolinkurl{examples/renorm_count_state.py}).
+
+%=============================================================================
+\section{The bounds, and the logarithm of the entropy in the measure}
+\label{sec:bounds}
+
+The exact number of states increases with the energy, so the exact scheme has a positive temperature for every state.  The one-loop truncation does
+not have this property at small entropy.  This section records where it fails, why the failure matters for the ideal step, and the form of the scheme
+that we will implement in its place.  The new form differs from \Eq{scheme} by terms of the order that one loop neglects.  (Added 2026-11-26.)
+
+\paragraph{The bounds of one loop.}  Three conditions make a particle usable.  Its temperature must be positive, its velocity must be below the speed
+of light, and its pressure should be positive, since a particle with a negative pressure attracts its neighbours.  For a constant speed of sound
+the scheme \Eq{scheme} has $\mathcal D=1-b/S_{\rm t}$ at rest and the pressure of \Eq{Pa}, so the first and the third condition are
+\st
+S_{\rm t}>b,\qquad S_{\rm t}>b+(q+1)\,\mathcal N,\qquad\text{with}\qquad b\equiv\frac D2+d\,c_s^2,\qquad \mathcal N\equiv1-d\,c_s^2 .
+\label{bounds1}
+\stp
+The pressure of \Eq{Pa} does not depend on the velocity.  For the conformal fluid the two bounds coincide.  For a softer fluid there is a window in
+which the Hamiltonian exists and the pressure is negative.  In motion the bound on $\mathcal D$ moves by a few tenths, and near the light cone the
+velocity condition takes over.  The first row of each block of \Tab{tab:bounds} gives the numbers in $d=2$.
+
+\paragraph{The fold.}  The bound on the temperature is more than a restriction on the states.  The ideal step holds the label fixed while the
+momentum and the volume of a particle change.  With the whole of $\Delta$ in the label, the smallest label that a particle can have depends on its
+momentum and volume.  A particle with a label near that minimum can therefore be carried by its own acceleration to a point where no state has its
+label.  There $\mathcal D=0$, and $T_a$ and $v_a$ diverge.  This was found in the first runs at $s_a=16$, where most trajectories of hybrid Monte Carlo
+left the domain (\nolinkurl{sscheme_plan.tex}, Results, item E).  A usable scheme needs a label that increases with $S_{\rm t}$ at fixed $\bm m$ and
+$V$, over a range of labels that does not depend on $\bm m$ and $V$.
+
+\paragraph{What the counterterm counts.}  To see which part of $\Delta$ causes the fold, we collect the dependence of $\Delta$ on the target entropy.
+With $w=T_{\rm rel}\,s$ and $S_{\rm t}=\gamma\,s\,V$, the two terms of \Eq{Delta} add up to
+\begin{keyeq}
+\st
+\Delta_\chi+\Delta_\ell=\Big(\frac D2+1\Big)\ln S_{\rm t}+\ln\frac{T_{\rm rel}^{\,d}}{s(T_{\rm rel})}+\tfrac12\ln a+\tfrac D2\ln2\pi+1 ,
+\label{Deltasplit}
+\stp
+\end{keyeq}
+for any equation of state.  The number of states is thus
+\st
+e^{S}\;\propto\;\frac{e^{S_{\rm t}}}{S_{\rm t}^{D/2}\;\,T_{\rm rel}^{\,d}\,\gamma V\,\sqrt a} .
+\stp
+The factor $S_{\rm t}^{D/2}$ is the product of the Gaussian widths of the $D$ conserved quantities, which are $\sqrt{S_{\rm t}}$ each in units of the
+temperature (\Eq{modes}).  It is the half-logarithm of Stirling's formula, once for each conserved quantity, and it does not depend on the equation
+of state.  The factor $T_{\rm rel}^{\,d}\,\gamma V$ is the phase-space volume of the particle.  For the conformal fluid $s\propto T_{\rm rel}^{\,d}$, so
+the phase-space volume is proportional to $S_{\rm t}$ and the whole counterterm is $(D/2+1)\ln S_{\rm t}$ plus the sound factor.  For a constant
+speed of sound in general $T_{\rm rel}^{\,d}\gamma V\propto S_{\rm t}^{\,dc_s^2}(\gamma V)^{\mathcal N}$, which is the form
+$\Delta=b\ln S_{\rm t}+\mathcal N\ln(\gamma V)+\tfrac12\ln(1-c_s^2v^2)+\text{const}$ used by the split scheme.  The two exponents always add up to
+$b+\mathcal N=D/2+1$.
+
+\paragraph{The freedom of the measure.}  At fixed labels the ideal step is a Hamiltonian flow in $(\bm x_a,\bm m_a)$.  It preserves
+$\prod_ad\bm x_a\,d\bm m_a$ and it conserves every label.  A density is therefore stationary under the ideal step whenever it is a function of
+conserved quantities only, and in particular
+\st
+d\mu=\prod_a\rho(s_a)\,ds_a\,d\bm m_a\,d\bm x_a
+\stp
+is preserved for any positive function $\rho$.  The Liouville measure $e^{s}ds$ is one choice.  A relabeling $s\to\ell(s)$ changes $\rho$ and leaves
+the trajectories, $\bm v_a$ and $P_a$ unchanged, because the Hamiltonian step only knows the level sets of $S(e,\bm m,V)$.  So a part of $\Delta$ that
+is a function of the label alone does not have to be inverted inside the Hamiltonian.  It can be placed in the measure, where the only requirement is
+that $\rho$ is positive.  The volume changes along the flow, so nothing that depends on $V$ or on $\bm m$ can be moved in this way.  We also note
+that $G$ is the phase-space volume below an energy surface, which is the adiabatic invariant of a Hamiltonian system, so the label $\ln G$ is the
+natural quantity for the ideal step to conserve.
+
+\paragraph{The scheme with the logarithm in the measure.}  We move the term $\beta\ln S_{\rm t}$ of \Eq{Deltasplit} into the measure, with
+\st
+\beta\equiv\frac D2+1 .
+\stp
+The label of a particle is its target entropy less what remains,
+\begin{keyeq}
+\st
+s=S_{\rm t}-\Delta^{H},\qquad
+\Delta^{H}\equiv\ln\frac{T_{\rm rel}^{\,d}}{s(T_{\rm rel})}-\ln\frac{T_0^{\,d}}{s(T_0)}+\tfrac12\ln\frac{a}{q(T_0)} ,
+\label{schemeH}
+\stp
+\end{keyeq}
+where $T_0$ is the rest-frame temperature of the nominal state of the run, so that $\Delta^H$ vanishes there at rest.  The Hamiltonian
+$H(s,\bm m,V)$ is the solution $e$ of this equation, as in \Eq{root}.  The measure of the labels is
+\begin{keyeq}
+\st
+d\mu=\rho(s)\,ds\,d\bm m\,d\bm x,\qquad \rho(s)=\frac{d}{ds}\Big[e^{\,s}s^{-\beta}\Big]=e^{\,s}\,s^{-\beta}\Big(1-\frac\beta s\Big),\qquad s>\beta .
+\label{rho}
+\stp
+\end{keyeq}
+The factor $1-\beta/s$ is the Jacobian of the relabeling $s'=s-\beta\ln s$, for which $\rho\,ds=e^{s'}ds'$.  We keep it, because dropping it would
+change the weight by $-\beta/s$, which is much larger than the term $c/S_{\rm t}$ that one loop neglects.  With the Jacobian the density is positive
+only for $s>\beta$, and this is the one bound of the scheme.  The ideal step conserves the label, so a particle above the bound stays above it.  The
+viscous step, the heat bath of hybrid Monte Carlo and the equilibrium draw reject a proposal below it.  The density vanishes linearly at the bound,
+so few proposals arrive there.
+
+\paragraph{The relation to \Eq{scheme}.}  In the new label the old one is $s'=s-\beta\ln s$, up to a constant.  Since $\ln s$ is evaluated at the
+label and not at $S_{\rm t}$,
+\st
+s-\beta\ln s=S_{\rm t}-\Delta_\chi-\Delta_\ell+\frac{\beta\,\Delta^H}{S_{\rm t}}+\text{const}+O\Big(\frac1{S_{\rm t}^2}\Big) .
+\label{mismatch}
+\stp
+The two schemes agree at one loop and differ at the order of $c/S_{\rm t}$.  The difference vanishes in the nominal state at rest.  In motion
+$\beta\Delta^H$ is $-0.17$, $-0.48$ and $-0.75$ at $v=0.5$, $0.8$ and $0.95$ for $c_s^2=1/2$, which is comparable to $c$.  If the comparison of the
+single particle (\Sect{sec:accuracy}) shows that this matters, the difference can be removed to the next order by the label
+\st
+s=S_{\rm t}-F(S_{\rm t})\,\Delta^{H},\qquad F(S_{\rm t})=\frac{S_{\rm t}+2\beta}{S_{\rm t}+\beta} .
+\label{schemeF}
+\stp
+The factor $F$ is the inverse of the Jacobian, $S_{\rm t}/(S_{\rm t}-\beta)$, with its pole removed.  With it the left side of \Eq{mismatch} agrees with
+\Eq{scheme} up to $O(1/S_{\rm t}^2)$, and it no longer depends on $T_0$ to that order.
+
+\paragraph{The state of the particle.}  The steps of \Sect{sec:state} apply with $\Delta^H$ in place of $\Delta$.  Its slopes along the two modes are
+\st
+\Delta_p^{H}=-(q-d)+\frac{\dot q}{2a}+\frac{v^2(1-v^2)}{a},\qquad
+\Delta_\theta^{H}=-\frac{v\,(1-v^2)}{a},\qquad
+\frac{\partial\Delta^H}{\partial\tau}=-(q-d)+\frac{\dot q}{2a} .
+\label{slopesH}
+\stp
+We write the state for the label \Eq{schemeF}; the label \Eq{schemeH} is the case $F=1$, $\kappa=1$.  With
+\st
+\epsilon_p=\frac{F\,\Delta_p^{H}}{S_{\rm t}\,a},\qquad \epsilon_\parallel=\frac{F\,\Delta_\theta^{H}}{S_{\rm t}},\qquad
+\kappa=1-\frac{dF}{dS_{\rm t}}\,\Delta^H=1+\frac{\beta\,\Delta^H}{(S_{\rm t}+\beta)^2},
+\stp
+the temperature, the velocity and the pressure of the particle are
+\begin{keyeq}
+\st
+\frac1{T_a}=\frac\gamma{T_{\rm rel}}\,\mathcal D,\qquad
+\mathcal D=\kappa-(1+v^2)\,\epsilon_p+v\,\epsilon_\parallel,\qquad
+v_a=\frac{v\,(\kappa-2\epsilon_p)+\epsilon_\parallel}{\mathcal D} ,
+\label{TavaH}
+\stp
+\st
+\frac{P_aV}{T_a}=\kappa\,\frac{p\,V\gamma}{T_{\rm rel}}+F\Big[\frac pw\,\frac{\partial\Delta^H}{\partial\tau}+\frac{\varepsilon-q\,p}{w\,a}\,\Delta_p^{H}\Big] .
+\label{PaH}
+\stp
+\end{keyeq}
+As before $\mathcal D$ is the derivative of the label with respect to $S_{\rm t}$ at fixed $\bm m$ and $V$.  For a constant speed of sound and $F=1$
+the pressure is
+\st
+\frac{P_aV}{T_a}=\frac{S_{\rm t}-(q-d)}{q+1}
+\stp
+at every velocity.  The weight of a particle in the energy, which the viscous step uses, is
+\st
+\ln\rho(s)-\ln T_a=s-\beta\ln s+\ln\Big(1-\frac\beta s\Big)-\ln T_a .
+\label{weightH}
+\stp
+
+\paragraph{Why this form is safe.}  What remains in the Hamiltonian is almost independent of the velocity.  The temperature $T_{\rm rel}$ is a
+Lorentz scalar, so the first term of $\Delta^H$ does not know the velocity at all.  The only frame dependence is the sound factor
+$\tfrac12\ln a$, which is bounded, and which is the dependence of the Density Frame on its foliation.  Accordingly $\Delta_\theta^H$ vanishes at rest
+and at the light cone and is at most $0.24$ in between for $c_s^2=1/2$, so $v_a$ stays close to $v$.  The first term measures the departure from conformality.
+For a constant speed of sound it is $-(q-d)\ln(T_{\rm rel}/T_0)$, and at rest and fixed volume the label is
+\st
+s=S_{\rm t}+\mathcal N\ln S_{\rm t}+\text{const} ,
+\stp
+which increases for every $S_{\rm t}$ when $c_s^2\le1/d$.  The slope that is left in the Hamiltonian has the safe sign, and there is no fold.
+
+\paragraph{The choice of $\beta$.}  Any exponent between $0$ and $D/2+1$ could be moved to the measure, with the rest of the logarithm left in the
+Hamiltonian.  The choices agree at one loop.  \Tab{tab:bounds} compares four of them.  The exponent $D/2$ is the Gaussian width alone, and $b$ is the
+choice of the split scheme.  With $\beta=D/2+1$ the exponent does not depend on the equation of state, the remainder has no explicit volume, and
+for $c_s^2=1/4$ every condition holds above the bound of the measure, which none of the other choices achieves.  For a very soft fluid, $q>d+D/2+1$,
+the pressure bound $S_{\rm t}>q-d$ rises above the bound of the measure.
+
+\begin{table}[h]
+\caption{The lower bounds on $S_{\rm t}$ in $d=2$ for a constant speed of sound when $\beta\ln S_{\rm t}$ is in the measure and the rest of $\Delta$ in
+the Hamiltonian ($F=1$).  Each entry is the smallest $S_{\rm t}$ above which the condition held for all $v\le0.995$ and three volumes; a dash means that
+it held everywhere, or wherever $T_a>0$.  The bound of the measure is on the label, which is close to $S_{\rm t}$.}
+\label{tab:bounds}
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+$c_s^2$ & $\beta$ & measure, $s>\beta$ & $T_a>0$ & $|v_a|<1$ & $P_a>0$ \\
+\midrule
+$1/2$ & $0$ (\Eq{scheme}) & --- & 2.8 & 2.9 & --- \\
+      & $D/2$ & 1.5 & 1.3 & 1.4 & --- \\
+      & $D/2+1=b$ & 2.5 & 0.4 & 0.4 & --- \\
+\midrule
+$1/4$ & $0$ (\Eq{scheme}) & --- & 2.0 & 2.5 & 4.5 \\
+      & $D/2$ & 1.5 & 0.5 & 1.0 & 3.0 \\
+      & $b=2$ & 2.0 & --- & 0.5 & 2.5 \\
+      & $D/2+1$ & 2.5 & --- & --- & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\paragraph{What has been checked.}  Equations \Eq{TavaH} and \Eq{PaH} agree with finite differences of the label, with and without the factor $F$,
+and with the derivatives of $H$ (\nolinkurl{examples/sscheme_ref.py}).  On a grid of momenta and volumes the label increases with $S_{\rm t}$
+everywhere above the bound of the measure, the smallest $\mathcal D$ there being $0.84$ ($0.72$ with $F$) for $c_s^2=1/2$ and $1$ for the softer
+fluids.  The single-particle integral, the hybrid Monte Carlo at $s_a=16$ and the choice between \Eq{schemeH} and \Eq{schemeF} are items of
+\nolinkurl{sscheme_plan.tex}.
 
 %=============================================================================
 \section{In the code}
@@ -495,6 +680,12 @@ Equations \Eq{Tava} and \Eq{Pa} were compared with finite differences of \Eq{sch
 The variables $(\bm x_a,\bm m_a,s_a)$, the Liouville measure and both steps of the scheme stay as they are.  The new scheme enters only through the
 two particle-level maps of \nolinkurl{src/pointwise.jl}, in the same way as \nolinkurl{renorm.jl} and \nolinkurl{renorm_split.jl} do.  Everything
 a step needs follows once the target state $\bar\beta_\mu$ of the particle is known, so the two maps differ only in how they find it.
+
+\paragraph{With the logarithm in the measure.}  The paragraphs below are written for the label \Eq{scheme} and the Liouville measure.  For the form
+of \Sect{sec:bounds}, which is the one to implement, three things change and nothing else.  The label is \Eq{schemeH} or \Eq{schemeF} in place of
+\Eq{scheme}.  The state of the particle is \Eq{TavaH} and \Eq{PaH} in place of \Eq{Tava} and \Eq{Pa}.  The weight in the energies is
+$\ln\rho(s)-\ln T_a$ of \Eq{weightH} in place of $S-\ln T_a$, and it is $-\infty$ for a label below the bound $s=\beta$.  The ideal step never
+evaluates $\rho$.
 
 \paragraph{From the energy.}  When the energy is known, as in the viscous step, nothing has to be solved beyond what the code does now.  Given $e$,
 $\bm m$ and $V$, we first find $T_{\rm rel}$ and $v$ of the target state with the standard equation of state.  We can then evaluate the label
@@ -589,7 +780,7 @@ $1/4$ & 54  & $5.1\times10^{-4}$ & $3.2\times10^{-4}$ & $1.4\times10^{-2}$ \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
-Two checks have not been made yet.  The one-loop scheme has not been tested in motion, and it has not been compared with the quadrature of the split scheme.
+The one-loop scheme in motion and its comparison with the split scheme are in \nolinkurl{sscheme_plan.tex}, Results, item A.
 
 %=============================================================================
 \appendix
