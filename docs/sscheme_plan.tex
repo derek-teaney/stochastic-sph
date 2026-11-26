@@ -509,8 +509,7 @@ the sections of \nolinkurl{step5_plan.tex} and \nolinkurl{split_dynamics.tex}.
 \item The constant $\mathcal B$ is zero throughout.  The stiffness that the loop induces is measured in J and is not corrected.
 \item A variable speed of sound needs $\dot q$ in the slopes and is not part of this plan (\nolinkurl{renorm3.tex}).
 \item A position update in the stochastic step is not part of this plan.
-\item The form of the S-scheme (2026-11-26): the logarithm of the entropy in the measure, \Sect{sec:amend}.  The owner chooses between the plain form
-  and the form with the factor after items N1 and N4.
+\item The form of the S-scheme (2026-11-26): the logarithm of the entropy in the measure, \Sect{sec:amend}.  The owner: the plain form, $F=1$, first.
 \end{itemize}
 
 %=============================================================================
@@ -520,6 +519,10 @@ the sections of \nolinkurl{step5_plan.tex} and \nolinkurl{split_dynamics.tex}.
 Added by the owner's desktop session on 2026-11-26, after the fold of item~E.  The owner has decided on this form as the default of the S-scheme.
 The theory is in \nolinkurl{renorm3.tex}, Sect.~``The bounds, and the logarithm of the entropy in the measure''.  It is a fourth member of the family
 of item~E2, and the one to implement first.  Items N1 to N5 below come before campaigns F and G.
+
+\paragraph{Decision (owner, 2026-11-26).}  We first try the plain form, $F=1$.  The maps, the tests, the smoke runs and the campaigns are done for
+the plain form only.  The form with the factor is kept in the single-particle quadrature of N1 as a comparison, and in the reference script.  It is
+implemented in \nolinkurl{src/} only if N1 or the campaigns show that the plain form loses accuracy in motion, and only after asking the owner.
 
 \paragraph{The idea.}  The fold comes from the term $(D/2+1)\ln S_{\rm t}$ of $\Delta$.  The ideal step preserves $d\bm x\,d\bm m$ and conserves the
 label, so any positive function of the label may stand in the measure.  We therefore move that term into the measure, as split does with $b\ln u$, and
@@ -561,23 +564,22 @@ and it is $-\infty$ for $s\le\beta$.  The reference implementation is \texttt{st
 $s_a=30$ added.  Report $E$, $p$, $R$, and the weight of the tree-level particle below the bound.  The expectation is that the form with the factor
 reproduces the S-scheme columns at $s_a\ge54$, and that the plain form differs from them in motion by an amount of the size of split's errors.
 
-\paragraph{N2. The maps.}  One setting selects the form, \texttt{SPH\_SSCHEME\_FORM} with the values \texttt{full} (\Eq{label}, the present code),
-\texttt{measure} (plain) and \texttt{measure-f} (with the factor).  \texttt{sscheme\_state} returns the same fields, computed from \Eq{amend} and
+\paragraph{N2. The maps.}  One setting selects the form, \texttt{SPH\_SSCHEME\_FORM} with the values \texttt{full} (\Eq{label}, the present code)
+and \texttt{measure} (the plain form, to become the default).  The value \texttt{measure-f} (with the factor) is reserved and not implemented now.  \texttt{sscheme\_state} returns the same fields, computed from \Eq{amend} and
 \Eq{amendstate}, and the weight \Eq{amendweight}.  The map from the label is the same Newton iteration on $S_{\rm t}$ with the derivative
 $\mathcal D$.  The level~2 counterterm will enter as $\Delta^H\to\Delta^H-\omega$, so keep $\Delta^H$ and its slopes in one place.  The weight is the
 only place where $\rho$ enters.  The ideal step never evaluates it.
 
-\paragraph{N3. Tests.}  Repeat tests 1 to 3 of item~D against \texttt{state\_m} for both forms.  Add three tests.  (i) On a grid of $(\bm m,V)$ the
+\paragraph{N3. Tests.}  Repeat tests 1 to 3 of item~D against \texttt{state\_m} for the plain form.  Add three tests.  (i) On a grid of $(\bm m,V)$ the
 label increases with $S_{\rm t}$ for every $S_{\rm t}$ whose label is above $\beta$, and every label above $\beta$ has a root.  (ii) For a small system
 the Jacobian determinant of one ideal step in $(\bm x,\bm m)$ at fixed labels is one, by finite differences.  This tests that $\bm v_a$ and $P_a$ are
 the derivatives of one Hamiltonian, whatever the form.  (iii) Test~7 at $s_a=16$, both $c_s^2$: the expectation is the acceptance of split, with no
 trajectory leaving the domain.
 
-\paragraph{N4. Smoke runs and the decision.}  Repeat the smoke runs of item~E at $s_a=16$ and $54$, at rest and at $v_0=0.8$, for both forms.  Record
-the fraction of particles with $P_a<0$ and the number of proposals rejected at the bound.  \textbf{Ask}: show the owner N1 and N4.  The owner chooses
-between the plain form and the form with the factor.
+\paragraph{N4. Smoke runs and the decision.}  Repeat the smoke runs of item~E at $s_a=16$ and $54$, at rest and at $v_0=0.8$, for the plain form.  Record
+the fraction of particles with $P_a<0$ and the number of proposals rejected at the bound.  \textbf{Ask}: show the owner N1 and N4 before the campaigns.
 
-\paragraph{N5. The campaigns.}  Campaigns F and G then run with the chosen form, and include $s_a=16$.  The sensitivity study of item~E2 becomes a
+\paragraph{N5. The campaigns.}  Campaigns F and G then run with the plain form, and include $s_a=16$.  The sensitivity study of item~E2 becomes a
 variation of this form: $\beta=D/2$, $b$ and $D/2+1$, with and without the factor, and a bound of the measure placed above $\beta$.
 
 \paragraph{The bounds to expect} (\nolinkurl{renorm3.tex}, the table of bounds).  Above $s=\beta$ the temperature is positive and $|v_a|<1$ at every
