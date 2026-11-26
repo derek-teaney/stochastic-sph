@@ -15,8 +15,10 @@ for c2 in (0.5, 0.25)
     Sd = 54.0 / (sqrt(3) / 2 * (0.05 / 2)^2)                       # s_a = 54 at h/a = 2
     params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> Sd, (x, y) -> SVector(0.0, 0.0); L = 0.3, lattice = :hex, seed = 4))
     eSt = maximum(abs(q.St / (Sd * params.vol) - 1) for q in ps);  eV = maximum(abs(q.V / params.vol - 1) for q in ps)
-    check(eSt < 1e-12 && eV < 2e-3 && all(q.s < q.St for q in ps),
-          @sprintf("c_s² = %.2f: set-up S_t = S V to %.0e, V = 1/n_a within %.0e of the nominal volume (the lattice sum of W), label s = %.3f < S_t = %.3f", c2, eSt, eV, ps[1].s, ps[1].St))
+    # the label: below S_t in the full form; within a few 1e-3 of S_t in the measure form (Δ^H = 0 at the reference state, V within 2e-3 of it)
+    lab_ok = SS_MEASURE ? all(abs(q.s - q.St) < 0.02 for q in ps) : all(q.s < q.St for q in ps)
+    check(eSt < 1e-12 && eV < 2e-3 && lab_ok,
+          @sprintf("c_s² = %.2f (form %s): set-up S_t = S V to %.0e, V = 1/n_a within %.0e of the nominal volume (the lattice sum of W), label s = %.4f, S_t = %.4f", c2, SS_FORM, eSt, eV, ps[1].s, ps[1].St))
     r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1)))
     Hnow() = hmc_measure!(ps, params, cl, eos)[1]
     dt0 = 0.5 * compute_dt(ps, params, eos; mode = :ideal)
@@ -37,6 +39,27 @@ for c2 in (0.5, 0.25)
     check(na >= 3, @sprintf("c_s² = %.2f: %d of 5 updates accepted, heat-bath acceptance %.2f", c2, na, sum(x.heatbath for x in acc) / 5))
     check(sc.nostate == 0, @sprintf("c_s² = %.2f: %d solves from the label, %.2f Newton steps per solve, %d fallbacks, %d with no state",
                                     c2, sc.solves, sc.iters / max(1, sc.solves), sc.fallbacks, sc.nostate))
+end
+
+if get(ENV, "SR_TEST_QUICK", "0") != "1"
+    println("8. (N3 iii) hybrid Monte Carlo at s_a = 16, 20 updates of length 0.6/c_s (SR_TEST_QUICK=1 skips it)")
+    for c2 in (0.5, 0.25)
+        global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
+        h = 0.6 / sqrt(672 / (2 / sqrt(3))) * 2;  S0 = 16 / (sqrt(3) / 2 * (h / 2)^2)
+        params, ps, cl, _ = quiet(() -> setup_ic(h, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex, seed = 5))
+        Tr0 = trel_of_srel(eos, S0)
+        r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1), bath = (1 / Tr0, SVector(0.0, 0.0))))
+        tg = HMCTarget(r.β0, r.β, params.vol, eos)
+        dt = 0.35 * compute_dt(ps, params, eos; mode = :ideal);  ns = round(Int, 0.6 / sqrt(c2) / dt)
+        nacc = 0;  nexit = 0;  hb = 0.0;  reset_sscheme_counts!()
+        for i in 1:20
+            u = hmc_update!(ps, params, cl, eos, tg, Xoshiro(100i); nsteps = ns, dt = dt)
+            nacc += u.accepted;  nexit += !isfinite(u.dH);  hb += u.heatbath / 20
+        end
+        smin = minimum(q.s for q in ps);  sc = sscheme_counts()
+        check(nexit == 0 && nacc >= 16, @sprintf("c_s² = %.2f: %d of 20 accepted, %d left the domain, heat-bath acceptance %.3f; smallest label %.3f (β = %.2f); %d solves without a state",
+                                                c2, nacc, nexit, hb, smin, SS_MEASURE ? SSchemeConsts(eos).β : NaN, sc.nostate))
+    end
 end
 
 ok || error("testsscheme_hmc: failures")

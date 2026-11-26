@@ -7,6 +7,7 @@
 #   4. Δ_χ + Δ_ℓ = b ln S_t + 𝒩 ln(γV) + ½ ln(1 − c_s² v²) + const (the relation to the split scheme), to 1e-12;
 #   5. conformal (c_s² = 1/2) at rest: the vote weight differs from that of SPH_RENORM=1 (stochastic.jl, renorm_vote_entropy) by a constant;
 #   6. a state outside the domain has no Hamiltonian from either map, and its weight is −Inf.
+ENV["SPH_SSCHEME_FORM"] = "full"                            # tests 1–6: the full form (the measure form: testsscheme_measure.jl)
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")     # the maps are called directly; renorm_vote_entropy (test 5) needs the target's inverse
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
