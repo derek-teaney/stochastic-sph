@@ -945,30 +945,43 @@ agree at small $\sigma$ and are $0.15$--$0.3\%$ smaller in size at $\sigma\ge60$
 form of \nolinkurl{partition.tex} gives $-2.028$, $-4.139$, $-13.435$ (reference $-2.03$, $-4.14$, $-13.43$); $I_0'$ agrees with a central difference
 to $10^{-8}$.
 
-\paragraph{The result} (\nolinkurl{examples/config_offset.py}, \texttt{docs/figs/config\_offset.csv}, \Fig{fig:nu2}; percent, 8 seeds of 300
-updates, $L=0.45$).
+\paragraph{The result} (\nolinkurl{examples/config_offset.py}, \texttt{docs/figs/config\_offset.csv}, \Tab{tab:eoserr}, \Fig{fig:nu2}).
+\begin{table}[h]
+\caption{The error of the equation of state of split in hybrid Monte Carlo, in percent, and what is left of it after each correction is
+subtracted.  Runs \texttt{eos\_split} (at rest, $L=0.45$, 8 seeds of 300 updates; the full one-loop S-scheme of \texttt{eos\_sscheme} gives the same
+numbers at $s_a=54$ and 541 within the errors).  For $X=P$ and $E$ the columns are:
+(0) the measured error $X_{\rm HMC}/x-1$, with $x=p,e$ the pressure and energy of the target equation of state;
+(1) the error left after the single-particle error is subtracted, $(X_{\rm HMC}/x-1)-(X_{\rm quad}/x-1)$, with $X_{\rm quad}$ the exact
+single-particle value of the same scheme (the quadrature of N1); this is the offset of the positions;
+(2) the error left after the one-loop correction of the positions, $(I_0+I_0')/(2N_h\sigma)$ for $P$ and $I_0'/(2N_h\sigma)$ for $E$, is also
+subtracted;
+(3) the error left after the term beyond one loop, $-2a_2\nu_*^2(1+I_0'/I_0)/\sigma$ for $P$ and $-2a_2\nu_*^2(I_0'/I_0)/\sigma$ for $E$, with the
+fitted $a_2=0.091$, is also subtracted.
+$\pm$ is the statistical error of (0), which every column carries.  $\sigma$, $N_h$, $I_0$, $\nu_*$ are defined above; $\nu_*$ is given for each line.}
+\label{tab:eoserr}
 \begin{center}\small
-\begin{tabular}{lrrrr|rrr|rrr}
+\begin{tabular}{lrrr|rrrrr|rrrrr}
 \toprule
-$c_s^2$ & $s_a$ & $h/a$ & $\sigma$ & $\nu_*$ & $P$: HMC & offset & one loop & $E$: HMC & offset & one loop \\
+ & & & & \multicolumn{5}{c|}{$P/p-1$ (\%)} & \multicolumn{5}{c}{$E/e-1$ (\%)} \\
+$c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & (2) & (3) & $\pm$ \\
 \midrule
-1/2 & 54 & 2 & 18.0 & 0.254 & $-3.93(4)$ & $-3.95$ & $-3.84$ & $-1.50(3)$ & $-1.52$ & $-1.51$ \\
-    & 54 & 3 & 18.0 & 0.113 & $-1.73(2)$ & $-1.76$ & $-1.71$ & $-0.67(2)$ & $-0.70$ & $-0.67$ \\
-    & 541 & 2 & 180 & 0.877 & $-1.29(2)$ & $-1.29$ & $-1.18$ & $-0.42(2)$ & $-0.42$ & $-0.38$ \\
-    & 541 & 3 & 180 & 0.390 & $-0.54(1)$ & $-0.54$ & $-0.53$ & $-0.17(1)$ & $-0.17$ & $-0.17$ \\
-1/4 & 54 & 2 & 10.8 & 0.178 & $-4.71(5)$ & $-4.95$ & $-4.78$ & $-2.07(5)$ & $-2.12$ & $-2.06$ \\
-    & 54 & 3 & 10.8 & 0.079 & $-1.92(3)$ & $-2.16$ & $-2.13$ & $-0.87(3)$ & $-0.92$ & $-0.92$ \\
-    & 541 & 2 & 108 & 0.685 & $-1.68(2)$ & $-1.68$ & $-1.56$ & $-0.56(2)$ & $-0.56$ & $-0.51$ \\
-    & 541 & 3 & 108 & 0.305 & $-0.70(1)$ & $-0.70$ & $-0.69$ & $-0.22(1)$ & $-0.23$ & $-0.23$ \\
+1/2 & 16 & 2 & 0.092 & $-1.40$ & $-5.30$ & $+0.86$ & $+0.92$ & 0.05 & $+2.09$ & $-1.82$ & $+1.41$ & $+1.44$ & 0.06 \\
+ & 16 & 3 & 0.041 & $+1.83$ & $-2.07$ & $+0.67$ & $+0.68$ & 0.06 & $+3.36$ & $-0.55$ & $+0.88$ & $+0.89$ & 0.06 \\
+ & 54 & 2 & 0.254 & $-3.93$ & $-3.95$ & $-0.11$ & $-0.00$ & 0.04 & $-1.50$ & $-1.52$ & $-0.01$ & $+0.03$ & 0.03 \\
+ & 54 & 3 & 0.113 & $-1.73$ & $-1.76$ & $-0.05$ & $-0.03$ & 0.02 & $-0.67$ & $-0.70$ & $-0.03$ & $-0.02$ & 0.02 \\
+ & 541 & 2 & 0.877 & $-1.29$ & $-1.29$ & $-0.11$ & $+0.00$ & 0.02 & $-0.42$ & $-0.42$ & $-0.04$ & $+0.00$ & 0.02 \\
+ & 541 & 3 & 0.390 & $-0.54$ & $-0.54$ & $-0.01$ & $+0.01$ & 0.01 & $-0.17$ & $-0.17$ & $-0.00$ & $+0.01$ & 0.01 \\
 \midrule
-1/2 & 16 & 2 & 5.19 & 0.092 & $-1.40(5)$ & $-5.30$ & $-6.15$ & $+2.09(6)$ & $-1.82$ & $-3.23$ \\
-    & 16 & 3 & 5.19 & 0.041 & $+1.83(6)$ & $-2.07$ & $-2.73$ & $+3.36(6)$ & $-0.55$ & $-1.44$ \\
-1/4 & 16 & 2 & 3.01 & 0.042 & $+5.69(6)$ & $-4.67$ & $-6.79$ & $+7.35(6)$ & $-1.12$ & $-4.48$ \\
-    & 16 & 3 & 3.01 & 0.019 & $+9.31(5)$ & $-1.06$ & $-3.02$ & $+8.87(6)$ & $+0.41$ & $-1.99$ \\
+1/4 & 16 & 2 & 0.042 & $+5.69$ & $-4.67$ & $+2.12$ & $+2.15$ & 0.06 & $+7.35$ & $-1.12$ & $+3.37$ & $+3.39$ & 0.06 \\
+ & 16 & 3 & 0.019 & $+9.31$ & $-1.06$ & $+1.96$ & $+1.97$ & 0.05 & $+8.87$ & $+0.41$ & $+2.40$ & $+2.41$ & 0.06 \\
+ & 54 & 2 & 0.178 & $-4.71$ & $-4.95$ & $-0.17$ & $-0.07$ & 0.05 & $-2.07$ & $-2.12$ & $-0.06$ & $-0.02$ & 0.05 \\
+ & 54 & 3 & 0.079 & $-1.92$ & $-2.16$ & $-0.03$ & $-0.01$ & 0.03 & $-0.87$ & $-0.92$ & $-0.00$ & $+0.00$ & 0.03 \\
+ & 541 & 2 & 0.685 & $-1.68$ & $-1.68$ & $-0.12$ & $-0.01$ & 0.02 & $-0.56$ & $-0.56$ & $-0.04$ & $-0.00$ & 0.02 \\
+ & 541 & 3 & 0.305 & $-0.70$ & $-0.70$ & $-0.01$ & $+0.01$ & 0.01 & $-0.22$ & $-0.22$ & $+0.00$ & $+0.01$ & 0.01 \\
 \bottomrule
 \end{tabular}
 \end{center}
-(split; the full one-loop S-scheme of \texttt{eos\_sscheme} gives the same offsets at $s_a=54$ and 541 within the errors.)
+\end{table}
 \begin{itemize}
 \item At $s_a\ge54$ the one-loop prediction accounts for the offset to $0.1\%$ or better, and what remains grows with $\nu_*$.  Fitting
   $-2a_2\nu_*^2$ to the 16 remainders of split ($P$ and $E$, both $c_s^2$, both $h/a$): $a_2=0.091\pm0.008$, $\chi^2/{\rm dof}=0.73$.  Separately,
@@ -978,8 +991,10 @@ $c_s^2$ & $s_a$ & $h/a$ & $\sigma$ & $\nu_*$ & $P$: HMC & offset & one loop & $E
 \item At $s_a=16$ ($\sigma=3$--5, $\nu_*<0.1$) one loop over-predicts the offset: the remainders are $+0.02$ in $r_P/(1+I_0'/I_0)$ and $+0.04$ to
   $+0.07$ in $r_E/(qI_0'/I_0)$, independent of $\nu_*$.  This is not the $\nu_*^2$ term; it is where the expansion in $1/\sigma$ (and the single-particle
   error of 4--10\% that is subtracted) is not small.
-\item The remaining offset at $s_a\ge54$ after one loop is at most $0.11\%$ in $P$ and $0.05\%$ in $E$ ($s_a=541$, $h/a=2$, $\nu_*=0.88$), and the
-  $a_2$ term removes it.
+\item The final error of the equation of state (\Tab{tab:eoserr}).  At $s_a\ge54$: with the single particle only, 0.5--5\% in $P$ and
+  0.2--2\% in $E$ (the positions dominate); with the positions at one loop, at most $0.17\%$ in $P$ and $0.06\%$ in $E$; with the $a_2$ term, at most
+  $0.07\%$ and $0.03\%$, within about one and a half statistical errors.  At $s_a=16$ one loop over-corrects and the error left is $0.7$--$0.9\%$ in
+  $P$ and $0.9$--$1.4\%$ in $E$ for $c_s^2=1/2$, $2.0$--$2.2\%$ and $2.4$--$3.4\%$ for $c_s^2=1/4$; the $a_2$ term does not change it.
 \end{itemize}
 \begin{figure}[h]
 \begin{center}\includegraphics[width=\textwidth]{figs/config_offset_nu2.png}\end{center}
