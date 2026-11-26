@@ -6,12 +6,13 @@
 ENV["SPH_RENORM"] = "sscheme"
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 
 println("N3 (ii): the Jacobian determinant of the ideal step at fixed labels (form $(SS_FORM))")
-for c2 in (0.5, 0.25)
+for c2 in CS2S
     global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
     h = 0.033;  S0 = 16 / (sqrt(3) / 2 * (h / 2)^2)
     params, ps, cl, _ = quiet(() -> setup_ic(h, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.2, lattice = :hex, seed = 3))

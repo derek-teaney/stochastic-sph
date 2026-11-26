@@ -1282,4 +1282,71 @@ divided by hybrid Monte Carlo of the same Hamiltonian; errors from the spread be
 \label{fig:posapp}
 \end{figure}
 
+%-----------------------------------------------------------------------------
+\section{The exact form: all of the renormalization in the label (2026-11-26, branch \texttt{sscheme-measure})}
+\label{sec:exact}
+
+\paragraph{The idea (owner, 2026-11-26).}  The exact count of the states of one particle (\nolinkurl{examples/exact_count.py}, ``The exact count in
+the quadrature'' above) cuts the dynamics off at small $S_{\rm t}$ in a natural way, so it is put into the label, as the S-scheme first meant to do:
+\st
+s=s_{\rm exact}(e,\bm m,V)=\ln G(e,|\bm m|,V)-\ln V-1=S_{\rm 1loop}+\delta(\ln S_{\rm t},\theta)\,,\qquad S_{\rm 1loop}=S_{\rm t}-\Delta_\chi-\Delta_\ell\,,
+\label{sexact}
+\stp
+with the flat Liouville measure $e^s\,ds\,d^2m\,d^2x$: no wall, no $\beta\ln S_{\rm t}$ in the measure, no reference state.  $\theta$ is the rapidity
+of the target and $\delta$ depends on $(S_{\rm t},\theta)$ alone (the constant $A$ of $p=AT_{\rm rel}^n$ cancels).  Two properties make it the natural
+cutoff.  The exact number of states increases with the energy at every $(\bm m,V)$, so $s(e)$ has no fold (the one loop folds at $S_{\rm t}\approx b$,
+\Sect{sec:results}, E).  And as $S_{\rm t}\to0$ the count is that of one quantum, so for $c_s^2=1/2$ the label has a floor,
+\st
+s\to s_{\rm min}=\ln\!\big(A\,K(\tfrac n2)\big)-1=\ln\frac{A}{2\pi}-1\,,
+\stp
+with $K$ the constant of the Riesz kernel.  Labels below it have no state, and near it $\partial s/\partial e\to0$ and $T_a=\partial H/\partial s\to\infty$:
+a particle cannot be emptied.  The single-particle error that is left is the $N=0$ state and the light cone (3\% at $s_a=16$, $10^{-6}$ at $s_a=54$,
+above), which no label removes.  The positional counterterm enters as before, $s\to s+\omega(S_{\rm t}/n,V)$.  The comparison in the dynamics is
+split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, campaign \texttt{hastings\_compare}).
+
+\paragraph{The steps and their checks.}
+\begin{enumerate}
+\item[X1.] \emph{The table.}  \texttt{python3 examples/exact\_count.py dyntable}: $\ell=\ln g$, $g=s_{\rm exact}-s_{\rm min}$ at $A=V=1$, on
+  $x=\ln S_{\rm t}\in[\ln10^{-3},\ln10^6]$ (step 0.05) and $\theta\in[0,6]$ (step 0.1), $c_s^2=1/2$: the exact count up to $S_{\rm t}=600$, above it
+  $S_{\rm 1loop}+c(a)/S_{\rm t}+d(\theta)/S_{\rm t}^2$ with $d$ matched at 600.  The nodal derivatives $\ell_x,\ell_\theta,\ell_{x\theta}$ are those of a
+  bicubic spline through the values, the grid mirrored in $\theta$ ($g$ is even), in \texttt{src/tables/exact\_lng\_c05.csv}.  Why $\ln g$: as
+  $S_{\rm t}\to0$, $g\propto S_{\rm t}^3$ ($9\times10^{-12}$ at $S_{\rm t}=10^{-3}$), so a table of $\delta=s_{\rm exact}-S_{\rm 1loop}\approx-17$ there
+  (the first try) cannot give $\mathcal D=\partial s/\partial S_{\rm t}$ (a difference of numbers near one) and made spurious folds; $\ell$ is linear in
+  $x$ there with slope 3.  Check (\texttt{checkpoints}, 85 points off the grid, $10^{-3}\le S_{\rm t}\le600$): the interpolant gives the exact
+  label to $3\times10^{-7}$ (the largest at $S_{\rm t}\approx2$--8, where $\ell$ curves most) and its slopes to $5\times10^{-6}$.
+\item[X2.] \emph{The label in the code} (\texttt{SPH\_SSCHEME\_FORM=exact}, \nolinkurl{src/sscheme_exact.jl}).  For the conformal fluid the label is a
+  function of $(S_{\rm t},\theta)$ alone, plus $\ln A$:
+  \st
+  s=s_{\rm min}+\ln A+g(\ln S_{\rm t},\theta)\ (+\,\omega)\,,
+  \stp
+  with $g$ from a bicubic Hermite interpolant of $\ell$ (C$^1$: the forces are derivatives of one $H$); outside the table $\ell$ is linear in $x$ and
+  $\theta>6$ is clamped.  The state follows from the slopes $G_x=\partial s/\partial x$, $G_\theta=\partial s/\partial\theta|_x$ directly, with no one-loop
+  parts to cancel:
+  \st
+  y=\frac{aG_x-vG_\theta}{aS_{\rm t}}\,,\quad z=\frac{vG_x+G_\theta}{S_{\rm t}}\,,\quad\mathcal D=(1+v^2)y-vz\,,\quad T_a=\frac T{\mathcal D}\,,\quad
+  v_a=\frac{2vy-z}{\mathcal D}\,,\quad\frac{P_aV}{T_a}=\frac{G_x}n+\omega_V\,,
+  \stp
+  the relations of the S-scheme with $\Delta=S_{\rm t}-s$ (at rest $\mathcal D=G_x/S_{\rm t}$, $P_aV/T_a=G_x/n$).  There is no wall: every $S_{\rm t}>0$
+  has a state.  Checks (\texttt{test/testsscheme\_exact.jl}): the interpolant; the edges; $\partial H/\partial s=T_a$, $\partial H/\partial\bm m=\bm v_a$,
+  $\partial H/\partial V=-P_a$ by differences from $S_{\rm t}=0.5$ to 2000 (to $10^{-10}$--$10^{-8}$); the inverse maps; no fold on a dense grid
+  ($S_{\rm t}=0.5$--$10^5$, $\theta\le5.2$: smallest $\mathcal D=0.0069$ at $S_{\rm t}=0.5$); the floor; $\bm v_a=0$ at $\bm m=0$.
+\item[X3.] \emph{The steps.}  The Jacobian of the ideal step (\texttt{testsscheme\_jacobian.jl}), hybrid Monte Carlo at $s_a=16$
+  (\texttt{testsscheme\_hmc.jl}), $\omega$ with the exact form (\texttt{testpositional.jl}, \texttt{testpositional\_steps.jl}), and the full suite
+  (\texttt{test/run.sh all}) for the defaults.
+\item[X4.] \emph{Smoke runs} at NERSC: the dynamics and hybrid Monte Carlo at $s_a=16$ and 54, at rest and $v_0=0.8$, with the counters (no state,
+  the wall, bisections) and $\Delta H/H$.
+\item[X5.] \emph{The equation of state}: hybrid Monte Carlo with $\omega$ against the quadrature of the model \texttt{exact}, as in the tables of level 2.
+\item[X6.] \emph{The dynamics}: the lines of \texttt{hastings\_compare} for the exact form$+\omega$, against split$+\omega$.
+\end{enumerate}
+
+\paragraph{Results.}
+\begin{itemize}
+\item X1, X2 (debug 62047724 for the table and its checks): all pass, as above.
+\item X3 (debug 62048441): the Jacobian of the ideal step at fixed labels, $\ln\det J=6\times10^{-8}$ ($N=168$, $s_a=16$); hybrid Monte Carlo at
+  $s_a=54$ and 16: $|\Delta H/H|$ falls as $\delta t^2$ (ratio 16.1), 19 of 20 updates accepted at $s_a=16$, $9\times10^4$ solves from the label with 1.7
+  Newton steps each and no fallback and no solve without a state; with $\omega$: the derivatives of $H$ to $10^{-10}$, the inverse maps, the Jacobian
+  ($8\times10^{-8}$) and hybrid Monte Carlo (19 of 20).  The smallest label in the HMC chains at $s_a=16$ is $-3.5$, near the floor
+  ($s_{\rm min}+\ln A$).
+\end{itemize}
+
 \end{document}

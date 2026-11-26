@@ -9,6 +9,7 @@ haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "sscheme")
 ENV["SPH_POSITIONAL"] = "1";  ENV["SPH_POSITIONAL_A2"] = "0.3"
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 rel(a, b) = b == 0 ? abs(a) : abs(a / b - 1)
@@ -29,7 +30,7 @@ if SSCHEME
     state_St(St, m, V, c) = (r = sscheme_target_entropy(St, m, V, c);  sscheme_state(r[1], r[2], V, c))
     Hof(s, m, V, c, St0) = sscheme_from_label(s, m, V, c, St0).H
     println("1. the derivatives of H(s, m, V) with ω")
-    for c2 in (0.5, 0.25), (St, m, V) in ((16.0, 0.0, 1.0), (16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (54.0, 300.0, 0.8), (4.0, 2.0, 1.0))
+    for c2 in CS2S, (St, m, V) in ((16.0, 0.0, 1.0), (16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (54.0, 300.0, 0.8), (4.0, 2.0, 1.0))
         c = SSchemeConsts(eos_A1(c2));  st = state_St(St, m, V, c);  s = st.s;  mv = SVector(m, 0.0)
         st.ok || (println(@sprintf("  (c_s² = %.2f, S_t = %.0f: no state, the label is at or below the wall)", c2, St));  continue)
         eT = abs(d4(x -> Hof(x, mv, V, c, St), s, 1e-3) / st.Ta - 1)
@@ -40,14 +41,14 @@ if SSCHEME
               @sprintf("c_s² = %.2f, S_t = %3.0f, |m| = %5.1f (ω = %+.3f, ν_* = %.3f): T_a %.0e, v_a %.0e, P_a %.0e", c2, St, m, o.ω, o.ν, eT, max(abs(vx - st.va), abs(vy)), eP))
     end
     println("2. the inverse")
-    for c2 in (0.5, 0.25), (St, m, V) in ((16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (4.0, 2.0, 1.0))
+    for c2 in CS2S, (St, m, V) in ((16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (4.0, 2.0, 1.0))
         c = SSchemeConsts(eos_A1(c2));  st = state_St(St, m, V, c);  mv = SVector(m, 0.0)
         st.ok || continue
         back = sscheme_from_energy(st.H, mv, V, c);  fl = sscheme_from_label(st.s, mv, V, c, 1.3St)
         check(abs(back.s - st.s) < 1e-12 * max(1, abs(st.s)) && rel(fl.St, St) < 1e-12, @sprintf("c_s² = %.2f, S_t = %3.0f: label %.0e, S_t %.0e", c2, St, abs(back.s - st.s), rel(fl.St, St)))
     end
     println("3. (N3 i) with ω: the label increases with S_t, and every label above the wall has a state")
-    for c2 in (0.5, 0.25)
+    for c2 in CS2S
         c = SSchemeConsts(eos_A1(c2));  bad = 0;  Dmin = Inf;  n = 0
         for mm in (0.0, 1.0, 10.0, 100.0), V in (0.25, 1.0, 4.0)
             n += 1;  sts = [state_St(St, mm, V, c) for St in exp.(range(log(0.5), log(2000.0), length = 3000))]
@@ -68,7 +69,7 @@ else
         return c.n * c.A * V * γ^c.n * T^(c.n - 1), c.n * c.A * V * γ^(c.n + 2) * T^c.n * v
     end
     println("1. the fields of the forward map with ω (central differences of H)")
-    for c2 in (0.5, 0.25), (T, v, V) in ((3.0, 0.0, 4.0), (3.0, 0.8, 4.0), (1.7, 0.95, 0.5), (2.0, 0.5, 1.3), (0.6, 0.3, 1.0))
+    for c2 in CS2S, (T, v, V) in ((3.0, 0.0, 4.0), (3.0, 0.8, 4.0), (1.7, 0.95, 0.5), (2.0, 0.5, 1.3), (0.6, 0.3, 1.0))
         eos = ConstantCs2EOS(cs2_val = c2)
         u, mm = target_um(T, v, V, eos);  m = SVector(mm * 0.6, mm * 0.8);  st = fwd(u, m, V, eos)
         hu = 1e-5 * u;  hm = 1e-5 * (norm(m) + u * T * 1e-2);  hV = 1e-5 * V
@@ -82,7 +83,7 @@ else
                                                c2, u, v, o.ω, o.ν, eT, ex, eP))
     end
     println("2. the inverse of the forward map with ω")
-    for c2 in (0.5, 0.25)
+    for c2 in CS2S
         eos = ConstantCs2EOS(cs2_val = c2);  worst = 0.0;  nst = 0;  rng = Xoshiro(3)
         for sa in (8.0, 16.0, 54.0, 541.0), γ in (1.0, 1.5, 4.0)
             v = sqrt(1 - 1 / γ^2);  T = 1.0;  c = SplitConsts(eos);  V = sa / (c.n * c.A * γ^c.n * T^(c.n - 1))

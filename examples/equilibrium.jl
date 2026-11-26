@@ -339,8 +339,9 @@ function one_realization(seed)
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
     SSCHEME && (c = sscheme_counts();  ss = minimum(q.s for q in ps);
-                @printf("seed %d: S-scheme (form %s): %d solves from the label (%.2f Newton steps, %d fallbacks, %d without a state, %.2e with P_a < 0); %d states from the energy, %d refused at the wall (%.2e); smallest label now %.3f\n",
-                        seed, SS_FORM, c.solves, c.iters / max(1, c.solves), c.fallbacks, c.nostate, c.negP / max(1, c.solves), c.fromenergy, c.wall, c.wall / max(1, c.fromenergy), ss))
+                @printf("seed %d: S-scheme (form %s): %d solves from the label (%.2f Newton steps, %d fallbacks, %d without a state, %.2e with P_a < 0); %d states from the energy, %d refused at the wall (%.2e); smallest label now %.3f, smallest S_t now %.3f\n",
+                        seed, SS_FORM, c.solves, c.iters / max(1, c.solves), c.fallbacks, c.nostate, c.negP / max(1, c.solves), c.fromenergy, c.wall, c.wall / max(1, c.fromenergy), ss,
+                        minimum(q.St for q in ps)))
 end
 
 Threads.@threads for s in SEEDOFF + SEED0 * STRIDE .+ (1:NREAL)

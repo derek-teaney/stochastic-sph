@@ -118,5 +118,80 @@ def table():
                 f.write(f"{x:.12g},{t:.12g},{v:.15g}\n")
         print("written", out, flush=True)
 
+LMIN, LMAX, DL = float(log(mpf('1e-3'))), float(log(mpf('1e6'))), 0.05     # the table of the dynamics (SPH_SSCHEME_FORM=exact)
+XEX = float(log(mpf(600)))                                                   # the exact count below, the asymptotic series above
+THMAX, DTH = 6.0, 0.1
+
+def g_exact(St, v, c):
+    """g = s_exact - s_min at A = V = 1 (s_min = ln K(n/2) - 1, the floor: the states of one quantum), by the exact count"""
+    e, m, Tr = target(St, v, mpf(1), c)
+    return lnG(e, m, mpf(1), c)[0] - 1 - (lnK(c.nu) - 1)
+
+def _gpt(args):
+    cs2, x, t = args
+    mp.dps = 40
+    c = EOS(cs2);  St = exp(mpf(x));  v = tanh(abs(mpf(t)))
+    if x <= XEX + 1e-12:
+        return float(log(g_exact(St, v, c)))
+    # above: s_exact = S_1loop + c(a)/S_t + d/S_t^2, d matched to the exact count at S_t = 600
+    S6 = exp(mpf(XEX))
+    d = S6**2 * (g_exact(S6, v, c) + lnK(c.nu) - 1 - S1loop(S6, v, mpf(1), c) - c_of_a(c, v) / S6)
+    s = S1loop(St, v, mpf(1), c) + c_of_a(c, v) / St + d / St**2
+    return float(log(s - (lnK(c.nu) - 1)))
+
+def dyntable():
+    """the table of the dynamics: l = ln g, g = s_exact - s_min (A = V = 1), on x = ln S_t in [ln 1e-3, ln 1e6] (step 0.05) and theta in [0, 6]
+    (step 0.1), c_s^2 = 1/2; the exact count up to S_t = 600, above it S_1loop + c(a)/S_t + d(theta)/S_t^2 matched at 600.  The nodal
+    derivatives (l_x, l_theta, l_x_theta) are those of a bicubic spline through the values with the grid mirrored in theta (g is even in the
+    rapidity) -> src/tables/exact_lng_c05.csv, read by src/sscheme_exact.jl (bicubic Hermite, C1).  The exact label is
+    s = s_min + ln A + g(ln S_t, theta), s_min = ln K(n/2) - 1 (one quantum; ln(1/2 pi) - 1 for c_s^2 = 1/2)."""
+    import numpy as np
+    from multiprocessing import Pool
+    from scipy.interpolate import RectBivariateSpline
+    npr = int(os.environ.get("SR_NPROC", "8"));  cs2 = '0.5'
+    nx = int(round((LMAX - LMIN) / DL)) + 1;  xs = LMIN + DL * np.arange(nx)
+    nt = int(round(THMAX / DTH)) + 1;  ts = DTH * np.arange(nt)
+    pts = [(cs2, float(x), float(t)) for x in xs for t in ts]
+    order = sorted(range(len(pts)), key=lambda i: -(min(pts[i][1], XEX) + 0.5 * pts[i][2]))       # the expensive corner first
+    with Pool(npr) as pool:
+        vs = pool.map(_gpt, [pts[i] for i in order], chunksize=1)
+    vals = np.empty(len(pts));  vals[order] = vs
+    L = vals.reshape(nx, nt)
+    tm = np.concatenate([-ts[:0:-1], ts]);  Lm = np.concatenate([L[:, :0:-1], L], axis=1)
+    sp = RectBivariateSpline(xs, tm, Lm, kx=3, ky=3, s=0)
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "tables", "exact_lng_c05.csv")
+    smin = float(lnK(EOS(cs2).nu)) - 1
+    with open(out, "w") as f:
+        f.write(f"# exact_count.py dyntable: l = ln(s_exact - s_min), A = V = 1, c_s^2 = 1/2; exact count to S_t = 600, asymptotic above; nx = {nx} nt = {nt}; s_min(A=V=1) = {smin:.17g}\n")
+        f.write("lnSt,theta,l,lx,lth,lxth\n")
+        for i in range(nx):
+            for j in range(nt):
+                x, th = xs[i], ts[j]
+                f.write(f"{x:.17g},{th:.17g},{L[i, j]:.17g},{sp.ev(x, th, dx=1):.17g},{sp.ev(x, th, dy=1):.17g},{sp.ev(x, th, dx=1, dy=1):.17g}\n")
+    print("written", out, flush=True)
+
+def _ckpt(args):
+    x, t = args
+    mp.dps = 40
+    c = EOS('0.5');  h = mpf('1e-7')
+    G = lambda xx, tt: g_exact(exp(mpf(xx)), tanh(abs(mpf(tt))), c)
+    g0 = G(x, t);  gx = (G(x + h, t) - G(x - h, t)) / (2 * h);  gt = (G(x, t + h) - G(x, t - h)) / (2 * h)
+    return (x, t, float(g0), float(gx), float(gt))
+
+def checkpoints():
+    """g = s_exact - s_min and its derivatives (central differences in mpmath) at points off the grid, S_t <= 600, for test/testsscheme_exact.jl"""
+    import random
+    from multiprocessing import Pool
+    random.seed(7)
+    pts = [(random.uniform(LMIN, XEX), random.uniform(0, THMAX)) for _ in range(80)] + [(-6.5, 0.0), (-2.0, 5.9), (0.0, 0.0), (2.77, 0.0), (6.3, 5.5)]
+    with Pool(int(os.environ.get("SR_NPROC", "8"))) as pool:
+        rows = pool.map(_ckpt, pts, chunksize=1)
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "tables", "exact_lng_c05_check.csv")
+    with open(out, "w") as fo:
+        fo.write("lnSt,theta,g,gx,gth\n")
+        for r in rows:
+            fo.write(",".join(f"{v:.17g}" for v in r) + "\n")
+    print("written", out)
+
 if __name__ == "__main__":
-    {"check": check, "table": table}[sys.argv[1] if len(sys.argv) > 1 else "check"]()
+    {"check": check, "table": table, "dyntable": dyntable, "checkpoints": checkpoints}[sys.argv[1] if len(sys.argv) > 1 else "check"]()

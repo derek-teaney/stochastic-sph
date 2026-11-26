@@ -43,8 +43,9 @@ const SS_D = 3                # D = d + 1 (d = 2)
 #            (τ = ln T_rel, rapidity, ln V); it shifts Δ_p by −β(q − v²), Δ_θ by −βv and P_a V/T_a by β(1 − q/n).
 #   The reference (s̄_rel, V̄) is set from the initial condition (sscheme_reference!, called by sscheme_labels!): s̄_rel the mean rest-frame
 #   entropy density of the targets, V̄ = L²/N, as split sets its V̄.  measure-f (the factor F of eq. schemeF) is reserved.
+#   exact    s = S_1loop + δ(ln S_t, θ), the exact count of states of the particle, flat measure (sscheme_exact.jl; c_s² = 1/2 only).
 const SS_FORM = setting("SPH_SSCHEME_FORM", :measure)
-SS_FORM in (:full, :measure) || error("SPH_SSCHEME_FORM = $SS_FORM: full or measure (measure-f is reserved, not implemented)")
+SS_FORM in (:full, :measure, :exact) || error("SPH_SSCHEME_FORM = $SS_FORM: full, measure or exact (measure-f is reserved, not implemented)")
 const SS_MEASURE = SS_FORM === :measure
 const SS_BETA = setting("SPH_SSCHEME_BETA", SS_D / 2 + 1)
 const SS_REF = Ref((NaN, NaN))          # (s̄_rel, V̄)
@@ -63,6 +64,7 @@ end
 function SSchemeConsts(eos::ConstantCs2EOS)
     c2 = eos.cs2_val;  q = 1 / c2;  n = 1 + q;  A = c2 * eos.T_scale^(-n)
     Pc = ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1)
+    SS_FORM === :exact && check_sscheme_exact(eos)
     SS_MEASURE || return SSchemeConsts(c2, q, n, A, Pc, 0.0, 0.0)
     β = SS_BETA;  N = 1 - (SS_D - 1) * c2;  k = SS_D / 2 + 1 - β
     srel, Vb = SS_REF[]
@@ -93,6 +95,7 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
     (isfinite(Tr) && Tr > 0 && (!cap || γ <= GAMMA_MAX)) || return SS_NOSTATE
     a = q - v2
     p = A * Tr^n;  w = n * p;  St = γ * (w / Tr) * V
+    SS_FORM === :exact && return sscheme_state_exact(Tr, γ, v, uγ, a, p, w, St, V, c)
     Dχ = (SS_D / 2) * log(2π * V * γ * w * Tr) + 0.5 * log(a)
     Dℓ = 1 + log(V) + log(γ) - log(Tr)
     s = St - Dχ - Dℓ
@@ -105,7 +108,7 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
     Pω = 0.0
     if POS_ON                                                  # the positional counterterm, s → s + ω(S_t/n, V) (positional.jl)
         o = positional_omega(St / n, V)
-        s += o.ω;  Dp -= a * o.ωσ;  Dθ -= v * o.ωσ;  Pω = o.ωσ / n + o.ωV
+        s += o.ω;  Dp -= a * o.ωσ;  Dθ -= v * o.ωσ;  Pω += o.ωσ / n + o.ωV
     end
     εp = Dp / (St * a);  εpar = Dθ / St
     D = 1 - (1 + v2) * εp + v * εpar
@@ -115,6 +118,26 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
     SS_MEASURE && s <= c.β && return SS_WALL                 # measure: the wall s > β
     Pa = (St / n + c.Pconst + Pω) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = ss_lnrho(s, c) - log(Ta),
+            γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
+end
+
+# The exact form (SPH_SSCHEME_FORM=exact, sscheme_exact.jl): s = s_min + ln A + g(ln S_t, θ) (+ ω), the state from the slopes of s directly.
+@inline function sscheme_state_exact(Tr, γ, v, uγ, a, p, w, St, V, c::SSchemeConsts)
+    n = c.n;  v2 = v * v
+    g, Gx, Gθ = exact_g(log(St), asinh(uγ))
+    s = ssx_table().smin + log(c.A) + g
+    ωV = 0.0
+    if POS_ON
+        o = positional_omega(St / n, V)
+        s += o.ω;  Gx += o.ωσ;  ωV = o.ωV
+    end
+    y = (a * Gx - v * Gθ) / (a * St);  z = (v * Gx + Gθ) / St
+    D = (1 + v2) * y - v * z
+    T = Tr / γ
+    Ta = T / D;  va = (2v * y - z) / D
+    (D > 0 && abs(va) < 1) || return SS_NOSTATE
+    Pa = (Gx / n + ωV) * Ta / V
+    return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = s - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
 end
 

@@ -7,13 +7,14 @@ haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "sscheme")
 ENV["SPH_POSITIONAL"] = "1"
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 println("scheme ", SSCHEME ? "sscheme ($(SS_FORM), β = $(SS_BETA))" : SPLIT ? "split" : "other", ", ω on, a₂ = ", POS_A2)
 
 println("1. the Jacobian determinant of the ideal step")
-for c2 in (0.5, 0.25)
+for c2 in CS2S
     global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
     h = 0.033;  S0 = 16 / (sqrt(3) / 2 * (h / 2)^2)
     params, ps, cl, _ = quiet(() -> setup_ic(h, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.2, lattice = :hex, seed = 3))
@@ -37,7 +38,7 @@ for c2 in (0.5, 0.25)
 end
 
 println("2. hybrid Monte Carlo at s_a = 16")
-for c2 in (0.5, 0.25)
+for c2 in CS2S
     global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
     h = 0.6 / sqrt(672 / (2 / sqrt(3))) * 2;  S0 = 16 / (sqrt(3) / 2 * (h / 2)^2)
     params, ps, cl, _ = quiet(() -> setup_ic(h, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex, seed = 5))

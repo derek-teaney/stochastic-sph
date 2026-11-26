@@ -4,13 +4,14 @@
 ENV["SPH_RENORM"] = "sscheme"
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
+const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 SSCHEME || error("SPH_RENORM=sscheme not set at load")
 
 println("7. hybrid Monte Carlo with SPH_RENORM=sscheme")
-for c2 in (0.5, 0.25)
+for c2 in CS2S
     global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
     Sd = 54.0 / (sqrt(3) / 2 * (0.05 / 2)^2)                       # s_a = 54 at h/a = 2
     params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> Sd, (x, y) -> SVector(0.0, 0.0); L = 0.3, lattice = :hex, seed = 4))
@@ -43,7 +44,7 @@ end
 
 if get(ENV, "SR_TEST_QUICK", "0") != "1"
     println("8. (N3 iii) hybrid Monte Carlo at s_a = 16, 20 updates of length 0.6/c_s (SR_TEST_QUICK=1 skips it)")
-    for c2 in (0.5, 0.25)
+    for c2 in CS2S
         global eos = ConstantCs2EOS(cs2_val = c2, η_by_s = 0.2)
         h = 0.6 / sqrt(672 / (2 / sqrt(3))) * 2;  S0 = 16 / (sqrt(3) / 2 * (h / 2)^2)
         params, ps, cl, _ = quiet(() -> setup_ic(h, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex, seed = 5))
