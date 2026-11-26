@@ -13,7 +13,7 @@ The exact label is s = ln G - ln V - 1 (the label gas, renorm3.tex, "The accurac
 a function of the target entropy S_t and velocity v alone (scaling).  At large S_t, delta S_t -> c(a) (renorm3.tex, appendix, eq. c).
 
   python3 examples/exact_count.py check     the Laplace transform of G at one point; delta S_t against c(a) at S_t = 54, 541, 2000
-  python3 examples/exact_count.py table     delta on a grid of (ln S_t, rapidity), c_s^2 = 1/2 and 1/4 -> docs/figs/exact_delta_c<..>.csv
+  python3 examples/exact_count.py table     delta on a grid of (ln S_t, rapidity), c_s^2 = 1/2 and 1/4 -> docs/figs/exact_delta_c<..>.csv (SR_NPROC)
 Needs mpmath."""
 import sys, os
 from mpmath import mp, mpf, gamma, loggamma, log, exp, pi, sqrt, cosh, tanh, binomial, ff, quad, inf, fsum
@@ -95,19 +95,28 @@ def check():
                 dl, N = delta(St, mpf(v), c)
                 print(f"c_s^2 = {cs2} v = {v:>3} S_t = {St:5d}: delta = {float(dl):+.6e}  delta*S_t = {float(dl * St):+.5f}  c(a) = {float(c_of_a(c, mpf(v))):+.5f}  (N <= {N})")
 
+def _pt(args):
+    cs2, x, t = args
+    mp.dps = 40
+    dl, N = delta(mpf(x).__class__(exp(mpf(x))), tanh(mpf(t)), EOS(cs2))
+    return float(dl)
+
 def table():
+    """delta on a grid of x = ln S_t (0.5 to 200, 141 points) and the rapidity theta (0 to 4, 41 points), both c_s^2; SR_NPROC workers"""
     import numpy as np
+    from multiprocessing import Pool
+    npr = int(os.environ.get("SR_NPROC", "8"))
     for cs2 in ('0.5', '0.25'):
-        c = EOS(cs2)
-        lS = np.linspace(np.log(0.5), np.log(200.0), 121);  th = np.linspace(0.0, 4.0, 41)
+        lS = np.linspace(np.log(0.5), np.log(200.0), 141);  th = np.linspace(0.0, 4.0, 41)
+        pts = [(cs2, float(x), float(t)) for x in lS for t in th]
+        with Pool(npr) as pool:
+            vals = pool.map(_pt, pts, chunksize=8)
         out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "figs", f"exact_delta_c{cs2.replace('.', '')}.csv")
         with open(out, "w") as f:
             f.write("lnSt,theta,delta\n")
-            for x in lS:
-                for t in th:
-                    dl, N = delta(mpf(float(np.exp(x))), tanh(mpf(float(t))), c)
-                    f.write(f"{x:.10g},{t:.10g},{float(dl):.15g}\n")
-        print("written", out)
+            for (c_, x, t), v in zip(pts, vals):
+                f.write(f"{x:.12g},{t:.12g},{v:.15g}\n")
+        print("written", out, flush=True)
 
 if __name__ == "__main__":
     {"check": check, "table": table}[sys.argv[1] if len(sys.argv) > 1 else "check"]()

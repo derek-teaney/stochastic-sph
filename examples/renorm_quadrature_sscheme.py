@@ -17,7 +17,8 @@
 # T_rel; reported also: the tree-level weight below the wall, the weight within 1 of the wall, the weight with P_a < 0.  General names
 # sscheme-m[f][1|2pi][@β]: the factor, the absolute normalization of Δ^H (label cell 1 or (2π)²; no reference), the exponent β (default D/2 + 1),
 # e.g. sscheme-m@2 (β = b at c_s^2 = 1/4), sscheme-m2pi; a suffix -2 adds the next order of the label, s → s + c(a)/S_t (renorm3.tex,
-# appendix, eq. c): sscheme-m-2, sscheme-mf-2.  Model sscheme-2: the full form with it.
+# appendix, eq. c): sscheme-m-2, sscheme-mf-2.  Model sscheme-2: the full form with it.  Model exact: the exact count of states of
+# examples/exact_count.py, the full form plus the tabulated delta(S_t, θ) (docs/figs/exact_delta_c*.csv); its error should be zero.
 #   python3 examples/renorm_quadrature_sscheme.py [c_s^2 ...]   (default 0.5 0.25; SR_SA=16,54,541  SR_V=0,0.8  SR_MODELS=tree,step5-du0,sscheme)
 # SR_CSV=<file>: one row per model and state, c2,s,v,model,E,M,p,R,mu (docs/figs/sscheme_quadrature.csv).
 import os, sys
@@ -45,8 +46,24 @@ def add2loop(s, Dp, Dth, St, v, q, a, F=1.0):
     return s + F * c / St, Dp + Mt - v * Mth, Dth + Mth
 
 
+_XTAB = {}
+def exact_delta(c2, lnSt, th):
+    """the exact count's correction to one loop, delta(S_t, theta) = s_exact − S_1loop (examples/exact_count.py, docs/figs/exact_delta_c*.csv),
+    by a bicubic spline in (ln S_t, rapidity); returns delta, ∂delta/∂ln S_t, ∂delta/∂theta.  Outside the table: clamped at the small end
+    (S_t < 0.5, no weight at s_a ≥ 16) and theta ≤ 4; above S_t = 200 the caller uses the next order c(a)/S_t."""
+    from scipy.interpolate import RectBivariateSpline
+    if c2 not in _XTAB:
+        f = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "figs", f"exact_delta_c{str(c2).replace('.', '')}.csv")
+        a = np.loadtxt(f, delimiter=",", skiprows=1)
+        xs = np.unique(a[:, 0]);  ts = np.unique(a[:, 1])
+        _XTAB[c2] = (RectBivariateSpline(xs, ts, a[:, 2].reshape(len(xs), len(ts))), xs[0], xs[-1], ts[-1])
+    sp, x0, x1, t1 = _XTAB[c2]
+    x = np.clip(lnSt, x0, x1);  t = np.clip(th, 0.0, t1)
+    return sp.ev(x, t), sp.ev(x, t, dx=1), sp.ev(x, t, dy=1)
+
+
 class SScheme(Split):
-    def sstate(self, T, v, V, reshape=False, loop2=False):
+    def sstate(self, T, v, V, reshape=False, loop2=False, exact=False):
         """the S-scheme at the target state (bare T, |v|): label s, T_a, v_a, 𝒟, S_t, and the target energy and M/v.
         reshape = True: the momentum part X = ½ ln(1 − c_s² v²) of the counterterm multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t
         (c_s² = 1/2; the minimum label at S_t = b for every v; a change of order 1/S_t²)"""
@@ -60,6 +77,13 @@ class SScheme(Split):
         Dth = D / 2 * v - v * (1 - v * v) / a + v
         if loop2:
             s, Dp, Dth = add2loop(s, Dp, Dth, St, v, q, a)
+        if exact:                                   # the exact count: s → s + delta(S_t, θ); as Δ → Δ + M, M = −delta:
+            th = np.arctanh(np.minimum(v, 1 - 1e-15));  lS = np.log(St)   # M_τ = −q δ_x, M_θ = −(v δ_x + δ_θ) (δ_x = ∂δ/∂ln S_t)
+            dl, dx, dt = exact_delta(self.c2, lS, th)
+            big = lS > np.log(200.0)                 # above the table: the next order, c(a)/S_t
+            s2, Dp2, Dth2 = add2loop(0.0, 0.0, 0.0, St, v, q, a)
+            Mt = -q * dx;  Mth = -(v * dx + dt)
+            s = s + np.where(big, s2, dl);  Dp = Dp + np.where(big, Dp2, Mt - v * Mth);  Dth = Dth + np.where(big, Dth2, Mth)
         if reshape:
             b = D / 2 + 1 - (1 - 2 * self.c2);  u = b / St
             h = 3 * u**2 - 2 * u**3;  dh = -6 * u**2 * (1 - u)
@@ -144,7 +168,7 @@ class SScheme(Split):
         return np.abs(eT * Mvv - ev * MT)
 
     def logweight(self, name, T, vx, vy, Tb, vb, V):
-        if name not in ("sscheme", "sscheme-g", "sscheme-cut", "sscheme-2") and self.mparse(name) is None:
+        if name not in ("sscheme", "sscheme-g", "sscheme-cut", "sscheme-2", "exact") and self.mparse(name) is None:
             return super().logweight(name, T, vx, vy, Tb, vb, V)
         v = np.hypot(vx, vy)
         ok = (T > 0) & (v < 1 - 1e-9)
@@ -158,7 +182,7 @@ class SScheme(Split):
             mx = Mv * vx
             lw = np.where(ok, lnrho, 0.0) - np.log(Ta) - (e - vb * mx) / Tb + np.log(np.where(ok, self.jac_e(T, v, V) * Mv, 1.0))
             return np.where(ok, lw, -np.inf), np.where(ok, e, 0.0), np.where(ok, mx, 0.0)
-        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V, reshape=(name == "sscheme-g"), loop2=(name == "sscheme-2"))
+        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V, reshape=(name == "sscheme-g"), loop2=(name == "sscheme-2"), exact=(name == "exact"))
         ok = ok & (den > 0) & (np.abs(va) < 1)
         if name == "sscheme-cut":
             ok = ok & (s > self.label_limit())
