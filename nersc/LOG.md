@@ -589,6 +589,21 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### S-scheme measure form and the positional counterterm — 2026-11-25, branch `sscheme-measure` (docs/sscheme_plan.tex, "Level 1, amended", level 2; docs/split_dynamics.tex, last section)
+
+All on interactive nodes with nersc/node.sh (salloc ... bash node.sh <campaign> <name>; at most 2 interactive jobs per user, up to 4 nodes each).
+- `eos_measure` (job 62015696, c0ea823, 144 tasks, 2 nodes, 20 min): the measure form at rest, beta = D/2+1 and beta = b.  = split at c_s^2 = 1/2 and with beta = b.
+- `eos_positional` (62017396, 67471dc, 192 tasks; tasks 107, 114 rerun at 4dda501): equilibrium with omega (SPH_POSITIONAL=1).  The positional error is gone at s_a >= 54.
+- `hastings_positional` (62017421, 67471dc, 160 tasks, 4 nodes; tasks 8, 45 rerun at 4dda501): dynamics with omega at rest, and the approach from the lattice.
+- `hastings_compare` (62019278, d3aacca, 384 tasks, 4 nodes, 35 min) + `hastings_compare_sp` (62020908, d7d26ad, 128 tasks, 15 min): split, split+omega, S-scheme,
+  S-scheme+omega with the seeds of hastings_bath.  The split reference was rerun at the present code, because hastings_bath's split (3262b00) drifts 10-300x more in H.
+- Lessons:
+  - srun --overlap steps from the login node into one allocation all bind to the same few cores (32 runs at 25% of a CPU each).  Start many runs in ONE step
+    (srun -c 256 --cpu-bind=none bash script-that-backgrounds-them), or use node.sh.
+  - pdflatex is not on the default path: module load texlive/2024.
+  - The table of I_0 must reach sigma -> 0, because split's vote Newton steps try labels u -> 0; it now starts at 1e-8.
+- Node-hours this session: about 36 of the 100 granted.
+
 ### `eos_legendre` — 2026-11-22, the renormalized Hamiltonian as a Legendre transform — TO DO (note for the NERSC session)
 
 **Plan: docs/legendre_plan.tex (read it first; it is self-contained).**  Implement `SPH_RENORM=legendre`: the particle Hamiltonian is
