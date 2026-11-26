@@ -22,10 +22,11 @@
 # The map from the label iterates on S_t alone, S_t ← S_t − (s(S_t) − s)/𝒟 (𝒟 = ∂s/∂S_t at fixed m, V), from the particle's previous S_t,
 # with a bisection on S_t as the fallback.
 
-const SS_CNT = zeros(Int, 8, Threads.maxthreadid())     # rows: solves, iterations, fallbacks (bisection), no state
+const SS_CNT = zeros(Int, 8, Threads.maxthreadid())     # rows: solves, iterations, fallbacks (bisection), no state, states from the energy,
+                                                        # those refused at the wall only (measure form), solves with P_a < 0
 @inline sscnt!(i, x = 1) = (@inbounds SS_CNT[i, Threads.threadid()] += x;  nothing)
 reset_sscheme_counts!() = fill!(SS_CNT, 0)
-sscheme_counts() = (t = sum(SS_CNT; dims = 2);  (solves = t[1], iters = t[2], fallbacks = t[3], nostate = t[4]))
+sscheme_counts() = (t = sum(SS_CNT; dims = 2);  (solves = t[1], iters = t[2], fallbacks = t[3], nostate = t[4], fromenergy = t[5], wall = t[6], negP = t[7]))
 
 const SS_TOL = 1e-13          # relative change of S_t at which the map from the label stops
 const SS_MAXIT = 30           # Newton steps before the bisection
@@ -81,6 +82,7 @@ SSchemeConsts(eos::AbstractEOS) = error("SPH_RENORM=sscheme: implemented for Con
 
 const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN, Pa = NaN, D = NaN, weight = -Inf,
                     γ = NaN, Trel = NaN, T = NaN, v = NaN, erest = NaN)
+const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because the label is at or below the wall (the counters)
 
 # Everything about the particle at a target state: T_rel, uγ = γv ≥ 0 (along m) and V.
 # cap = true: no state above the Lorentz factor γ_max (SPH_GAMMA_MAX), the map from the energy only (the votes, the heat bath), as at the tree level
@@ -104,8 +106,8 @@ const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN,
     D = 1 - (1 + v2) * εp + v * εpar
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
-    ok = D > 0 && abs(va) < 1 && (!SS_MEASURE || s > c.β)    # measure: the wall s > β
-    ok || return SS_NOSTATE
+    (D > 0 && abs(va) < 1) || return SS_NOSTATE
+    SS_MEASURE && s <= c.β && return SS_WALL                 # measure: the wall s > β
     Pa = (St / n + c.Pconst) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = ss_lnrho(s, c) - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
@@ -142,7 +144,9 @@ end
 @inline function sscheme_from_energy(e::Float64, m::SVector{2,Float64}, V::Float64, c::SSchemeConsts)
     Tr, uγ = sscheme_target_energy(e, norm(m), V, c)
     isfinite(Tr) || return SS_NOSTATE
-    return sscheme_state(Tr, uγ, V, c)
+    st = sscheme_state(Tr, uγ, V, c)
+    sscnt!(5);  st.D == Inf && sscnt!(6)
+    return st
 end
 
 # The map from the label: (s, m, V) → the state of the particle, by Newton's iteration on S_t from St0 (the particle's previous S_t),
@@ -212,6 +216,7 @@ function sscheme_solve!(pa::Particle, eos::AbstractEOS)
         pa.v_over_S = SVector(NaN, NaN);  pa.H_over_S = NaN;  pa.F_over_S = NaN
         return nothing
     end
+    st.Pa < 0 && sscnt!(7)
     pa.e = st.erest;  pa.p = st.Pa;  pa.T = st.Ta;  pa.γ = st.γ;  pa.H = st.H;  pa.St = st.St
     pa.v = sscheme_velocity(st, pa.m)
     pa.S_smooth = st.St / pa.V;  pa.M_smooth = pa.m / pa.V

@@ -219,7 +219,7 @@ function one_realization(seed)
         gchecks = GRID ? grid_checks(gstencil, params, eos, dt) : NamedTuple()
         GRID && print_grid_checks(gchecks)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.H for q in ps))
-        reset_guards!()
+        reset_guards!();  SSCHEME && reset_sscheme_counts!()
         x0 = [q.x for q in ps]
         NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos, stoch_opts(params); rng, rngs)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
@@ -338,6 +338,9 @@ function one_realization(seed)
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
+    SSCHEME && (c = sscheme_counts();  ss = minimum(q.s for q in ps);
+                @printf("seed %d: S-scheme (form %s): %d solves from the label (%.2f Newton steps, %d fallbacks, %d without a state, %.2e with P_a < 0); %d states from the energy, %d refused at the wall (%.2e); smallest label now %.3f\n",
+                        seed, SS_FORM, c.solves, c.iters / max(1, c.solves), c.fallbacks, c.nostate, c.negP / max(1, c.solves), c.fromenergy, c.wall, c.wall / max(1, c.fromenergy), ss))
 end
 
 Threads.@threads for s in SEEDOFF + SEED0 * STRIDE .+ (1:NREAL)
