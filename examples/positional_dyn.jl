@@ -52,41 +52,48 @@ function set_scalars(set, hmc)
     return (ke = meanerr(ke), dh = isempty(dh) ? (NaN, NaN) : meanerr(dh), dhmax = isempty(dh) ? NaN : maximum(abs, dh), n = length(fs))
 end
 
-const SCH = [("pp", "split+ω"), ("pm", "measure+ω")]
+# PD_SCH: the schemes, "prefix:name:label" (sets <prefix>hs<sa>_<name>_v<v>, <prefix>hq<sa>_<name>_v<v>; prefix relative to DIR);
+# default the sets of hastings_positional.  PD_V: the velocities (default 0).  Campaign hastings_compare:
+#   PD_SCH=../hastings_bath/:sp:split,:spw:split+ω,:ssm:measure,:ssmw:measure+ω PD_V=0,0.8
+const SCH = [(String.(split(x, ":"))...,) for x in split(get(ENV, "PD_SCH", ":pp:split+ω,:pm:measure+ω"), ",")]
+const VS = split(get(ENV, "PD_V", "0"), ",")
 const SAS = (16, 54)
 println("1. the dynamics against its own HMC (ratios dynamics/HMC per band of kh; KE/eq; ΔH/H at the end of the runs)")
-fig, axs = subplots(length(SAS), 3, figsize = (14, 4.2 * length(SAS)), squeeze = false)
-for (si, sa) in enumerate(SAS), (ci, (sch, lab)) in enumerate(SCH)
-    dyn = set_spectra("hs$(sa)_$(sch)_v0", false);  ref = set_spectra("hq$(sa)_$(sch)_v0", true)
-    (dyn === nothing || ref === nothing) && (println("  s_a = $sa $lab: missing");  continue)
-    sd = set_scalars("hs$(sa)_$(sch)_v0", false);  sq = set_scalars("hq$(sa)_$(sch)_v0", true)
-    @printf("  s_a = %d, %s: %d runs / %d chains.  KE/eq %.4f±%.4f (1 in equilibrium);  ΔH/H at t_end %+.1e±%.1e (largest |ΔH/H| %.1e)\n",
-            sa, lab, dyn.n, ref.n, sd.ke..., sd.dh..., sd.dhmax)
+fig, axs = subplots(length(SAS) * length(VS), 3, figsize = (14, 4.2 * length(SAS) * length(VS)), squeeze = false)
+for (vi0, v) in enumerate(VS), (si0, sa) in enumerate(SAS), (ci, (pre, sch, lab)) in enumerate(SCH)
+    si = (vi0 - 1) * length(SAS) + si0
+    dyn = set_spectra("$(pre)hs$(sa)_$(sch)_v$(v)", false);  ref = set_spectra("$(pre)hq$(sa)_$(sch)_v$(v)", true)
+    (dyn === nothing || ref === nothing) && (println("  s_a = $sa v0 = $v $lab: missing");  continue)
+    sd = set_scalars("$(pre)hs$(sa)_$(sch)_v$(v)", false);  sq = set_scalars("$(pre)hq$(sa)_$(sch)_v$(v)", true)
+    @printf("  s_a = %d, v0 = %s, %s: %d runs / %d chains.  KE/eq %.4f±%.4f (1 in equilibrium);  ΔH/H at t_end %+.1e±%.1e (largest |ΔH/H| %.1e)\n",
+            sa, v, lab, dyn.n, ref.n, sd.ke..., sd.dh..., sd.dhmax)
     bands = [b for b in dyn.bands if b in ref.bands && b > 0]
     for (vi, var) in enumerate(("M_L", "M_T", "E"))
         rat = [dyn.m[b][vi] / ref.m[b][vi] for b in bands]
         err = [abs(rat[j]) * sqrt((dyn.e[b][vi] / dyn.m[b][vi])^2 + (ref.e[b][vi] / ref.m[b][vi])^2) for (j, b) in enumerate(bands)]
         @printf("    %-3s dyn/HMC: %s\n", var, join([@sprintf("kh=%.2f %.3f±%.3f", b, rat[j], err[j]) for (j, b) in enumerate(bands) if b <= 2.1], "  "))
         ax = axs[si, vi]
-        ax.errorbar(bands .+ (ci - 1.5) * 0.03, rat, err, fmt = ci == 1 ? "o-" : "s--", ms = 4, label = lab)
-        ax.axhline(1, color = "k", lw = 0.5);  ax.set_xlabel("kh");  ax.set_title("s_a = $sa: $var, dynamics / own HMC", fontsize = 10)
+        ax.errorbar(bands .+ (ci - (length(SCH) + 1) / 2) * 0.025, rat, err, fmt = ("o-", "s--", "^-.", "D:")[mod1(ci, 4)], ms = 4, label = lab)
+        ax.axhline(1, color = "k", lw = 0.5);  ax.set_xlabel("kh");  ax.set_title("s_a = $sa, v0 = $v: $var, dynamics / own HMC", fontsize = 10)
         ax.set_ylim(0.85, 1.15)
     end
 end
 axs[1, 1].legend(fontsize = 8)
-fig.suptitle("hastings_positional (SPH_POSITIONAL=1, a₂ = 0), c_s² = 1/2, L = 0.6, h/a = 2, at rest: equal-time spectra of the dynamics (t = 100, " *
+const TAG = get(ENV, "PD_TAG", "positional_dyn")
+fig.suptitle("$(basename(normpath(DIR))): c_s² = 1/2, L = 0.6, h/a = 2: equal-time spectra of the dynamics (t = 100, " *
              "after 20%) over those of hybrid Monte Carlo of the same Hamiltonian", fontsize = 9)
-fig.tight_layout();  fig.savefig(joinpath(FIGS, "positional_dyn_spectra.png"), dpi = 120);  plt.close(fig)
+fig.tight_layout();  fig.savefig(joinpath(FIGS, TAG * "_spectra.png"), dpi = 120);  plt.close(fig)
+get(ENV, "PD_APPROACH", "1") == "1" || (println("written ", joinpath(FIGS, TAG * "_spectra.png"));  exit())
 
 println("\n2. the approach to equilibrium from the lattice (hl): |ψ6|(t) and the spectra in windows of t over HMC")
 println("   (KE/eq of the lattice-start runs is computed with the nominal volume, not V_a: not comparable, not shown)")
 const WIN = [(0.0, 0.05), (0.05, 0.2), (0.2, 1.0), (1.0, 5.0), (5.0, 20.0), (20.0, 100.0)]
 fig, axs = subplots(length(SAS), 3, figsize = (14, 4.2 * length(SAS)), squeeze = false)
-for (si, sa) in enumerate(SAS), (ci, (sch, lab)) in enumerate(SCH)
-    fs = files("hl$(sa)_$(sch)_v0");  isempty(fs) && (println("  s_a = $sa $lab: no hl runs");  continue)
+for (si, sa) in enumerate(SAS), (ci, (pre, sch, lab)) in enumerate(SCH)
+    fs = files("$(pre)hl$(sa)_$(sch)_v0");  isempty(fs) && (println("  s_a = $sa $lab: no hl runs");  continue)
     rs = [read_equilibrium(f) for f in fs]
-    ref = set_spectra("hq$(sa)_$(sch)_v0", true);  ref === nothing && continue
-    rq = [read_equilibrium(f) for f in files("hq$(sa)_$(sch)_v0")]
+    ref = set_spectra("$(pre)hq$(sa)_$(sch)_v0", true);  ref === nothing && continue
+    rq = [read_equilibrium(f) for f in files("$(pre)hq$(sa)_$(sch)_v0")]
     psq = mean(mean(r.part.psi6[min(HBURN, end - 1):end]) for r in rq)
     np_ = minimum(length(r.part.psi6) for r in rs);  tp = rs[1].part.t[1:np_]
     ps = [mean(r.part.psi6[i] for r in rs) for i in 1:np_]

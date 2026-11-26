@@ -79,6 +79,12 @@ const SETS = GROUP == "L24" ?
              GROUP == "SP54" ?                    # the same at s_a = 54
     [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
      ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+             GROUP in ("CMP16", "CMP54") ?        # campaign hastings_compare (sscheme_plan.tex, G and K): split, split+ω, the measure form, the measure form+ω;
+    (sa = GROUP[4:5];                     # DIR = $SCRATCH/sph/hastings_compare
+     [("split v=0", ["hs$(sa)_sp_v0"], 0.0, "C0"), ("split+ω v=0", ["hs$(sa)_spw_v0"], 0.0, "C1"),
+      ("S-scheme v=0", ["hs$(sa)_ssm_v0"], 0.0, "C2"), ("S-scheme+ω v=0", ["hs$(sa)_ssmw_v0"], 0.0, "C3"),
+      ("split v=0.8", ["hs$(sa)_sp_v0.8"], 0.8, "C0"), ("split+ω v=0.8", ["hs$(sa)_spw_v0.8"], 0.8, "C1"),
+      ("S-scheme v=0.8", ["hs$(sa)_ssm_v0.8"], 0.8, "C2"), ("S-scheme+ω v=0.8", ["hs$(sa)_ssmw_v0.8"], 0.8, "C3")]) :
              GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
     (sa = GROUP[3:4];
      [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
@@ -336,7 +342,7 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54", "CMP16", "CMP54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].vreq for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
