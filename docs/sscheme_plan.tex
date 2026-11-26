@@ -838,6 +838,11 @@ split takes $\bar V$), $\bar S_{\rm t}=\bar s_{\rm rel}\bar V$.  At $\beta=D/2+1
 $\bar V$, and $\Delta^H$ is split's $\mathcal N\ln(\gamma V/\bar V)+\tfrac12\ln(a/q)$; for the conformal fluid at $\beta=D/2+1$ neither enters.  The
 g-regulator of E2 is not on this branch (it stays on \texttt{sscheme-reg}, not merged).
 
+\paragraph{Decision (owner, 2026-11-25).}  The reference $T_0$ is kept.  The entropy density is $s=C\,(T/\hbar c)^d\,(T/T_{\rm scale})^{q-d}$; the
+constant $\Delta^H$ is $-\ln C-(q-d)\ln(T/T_{\rm ref})$ plus the constants of the count, and the reference temperature is either the fluid's
+$T_{\rm scale}$ (absolute) or the run's $T_0$.  For the conformal fluid, $q=d$, the two coincide.  The work continues with the conformal fluid
+($c_s^2=1/2$) first; $c_s^2=1/4$ follows.
+
 \paragraph{Why a reference.}  With $T_{\rm scale}=1$ the code is in natural units and $T_{\rm rel}^{\,d}/s$ is a number, so the constant of
 $\Delta^H$ is defined once the cell of the label measure is fixed.  With the cell $(2\pi)^2$ the absolute $\Delta^H$ at rest is $+0.02$ for
 $c_s^2=1/2$ (the convention $s=S_{\rm t}$ at rest, to 0.02), but $-4.5$ ($s_a=16$) and $-5.1$ ($s_a=54$) for $c_s^2=1/4$, where it is a
