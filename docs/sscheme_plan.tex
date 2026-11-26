@@ -775,6 +775,37 @@ Carlo each (128 tasks, all complete).  Analysis with the run sets side by side (
   (split $3.9$).  The excess over hydrodynamics is the fluctuation correction of \nolinkurl{split_dynamics.tex}, not the scheme.
 \end{itemize}
 
+\subsection*{F and G at $s_a=16$ rerun with the fix $S_{\rm t}>b$ (debug 62005217, interactive 62005221; commit 3c1e0ad)}
+
+\paragraph{The fix changed almost nothing.}  At $c_s^2=1/2$ the equilibrium is unchanged to the digits shown and the dynamics records are
+bit-identical in the Fourier modes: the spurious states below $b$ were not visited.  At $c_s^2=1/4$ the numbers move within their errors
+($E/e-1$ at $h/a=2$, rest: $9.23\pm0.09$ against $9.17\pm0.08$ percent).  The results above therefore stand, with the rerun's values:
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+$c_s^2=1/4$, $s_a=16$ & $E/e-1$ & $P/p-1$ or $T^{yy}/p-1$ & $M/M_{\rm t}-1$ & $\chi_{MM}/\text{target}-1$ \\
+\midrule
+$h/a=2$, rest: split $|$ S-scheme & $7.35\,|\,9.23$ & $5.69\,|\,6.44$ & & $4.7\pm3.0\,|\,13.5\pm3.9$ \\
+$h/a=3$, rest & $8.87\,|\,10.41$ & $9.31\,|\,9.68$ & & $1.7\pm4.1\,|\,12.7\pm3.3$ \\
+$h/a=2$, $v=0.8$ & $-1.21\,|\,-0.62$ & $-3.87\,|\,-3.66$ & $-1.12\,|\,-0.60$ & \\
+$h/a=3$, $v=0.8$ & $0.21\,|\,0.84$ & $-0.47\,|\,-0.33$ & $0.28\,|\,0.87$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\paragraph{The gap at $c_s^2=1/4$ at rest is real} ($1.5$--$1.9$ percent in $E$, the errors $0.1$), and the single particle explains only $0.3$ of it (the
+regularized particle against split: $E$ $+8.7$ against $+8.5$ percent).  The likely cause: $g$ on the volume part is not small at $s_a=16$ in practice,
+$1-g\approx3(b/S_{\rm t})^2\approx5$ percent at $S_{\rm t}=16$ (formally $1/S_{\rm t}^2$, with the coefficient $3b^2=12$), which changes the volume dependence
+of the label and so the distribution of the positions, beyond the single particle.  Not yet shown; the tests (planned): one loop
+(\texttt{SPH\_SSCHEME\_REG=0}) at $c_s^2=1/4$, $s_a=16$, and a steeper $g$.  At $c_s^2=1/2$ the regularized S-scheme agrees with split.
+
+\paragraph{New: rare moments without a state in the dynamics at $s_a=16$.}  Records of the energy that are NaN (a particle without a state at the time of
+the record): S-scheme $s_a=16$, rest, 2 of 56\,560 records in 2 of 16 runs; $v_0=0.8$, 17 of 95\,316 in 9 runs; $s_a=54$ none; split at $s_a=16$ none.
+The runs continue and the next records are finite.  At $c_s^2=1/2$ every label above the limit has a state at every $\bm m$ and $V$, so the cause is
+likely one of the conditions that are not regularized: $|v_a|<1$ or the target's $\gamma\le\gamma_{\max}=100$.  To be diagnosed.
+
+\paragraph{Running} (2026-11-25): \texttt{eos\_sscheme\_reg}, the lines of \texttt{eos\_sscheme} ($s_a=54,541$) with the regulator, debug 62006858, to
+measure its cost where the fold region has no weight (expected of order $(b/S_{\rm t})^2$, ten times smaller than at $s_a=16$).
+
 \subsection*{E2. The regularization near the boundary: a family of cutoff functions (planned, 2026-11-25)}
 
 The owner: ``we will need different cutoff functions and play with the sensitivity of our results to it.''  The one-loop S-scheme is to be completed
