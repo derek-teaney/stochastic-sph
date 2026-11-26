@@ -75,10 +75,12 @@ const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN,
                     γ = NaN, Trel = NaN, T = NaN, v = NaN, erest = NaN)
 
 # Everything about the particle at a target state: T_rel, uγ = γv ≥ 0 (along m) and V.
-@inline function sscheme_state(Tr::Float64, uγ::Float64, V::Float64, c::SSchemeConsts)
+# cap = true: no state above the Lorentz factor γ_max (SPH_GAMMA_MAX), the map from the energy only (the votes, the heat bath), as at the tree level
+# and split; the map from the label (the ideal step) has no cap, so that a particle the ideal step carries above γ_max keeps its state.
+@inline function sscheme_state(Tr::Float64, uγ::Float64, V::Float64, c::SSchemeConsts; cap::Bool = true)
     (; q, n, A) = c
     γ = sqrt(1 + uγ * uγ);  v = uγ / γ;  v2 = v * v
-    (isfinite(Tr) && Tr > 0 && γ <= GAMMA_MAX) || return SS_NOSTATE
+    (isfinite(Tr) && Tr > 0 && (!cap || γ <= GAMMA_MAX)) || return SS_NOSTATE
     a = q - v2
     p = A * Tr^n;  w = n * p;  St = γ * (w / Tr) * V
     Dχ = (SS_D / 2) * log(2π * V * γ * w * Tr) + 0.5 * log(a)
@@ -161,7 +163,7 @@ end
 function sscheme_from_label(s::Float64, m::SVector{2,Float64}, V::Float64, c::SSchemeConsts, St0::Float64)
     sscnt!(1)
     mmag = norm(m)
-    st_at(St) = (r = sscheme_target_entropy(St, mmag, V, c);  isfinite(r[1]) ? sscheme_state(r[1], r[2], V, c) : SS_NOSTATE)
+    st_at(St) = (r = sscheme_target_entropy(St, mmag, V, c);  isfinite(r[1]) ? sscheme_state(r[1], r[2], V, c; cap = false) : SS_NOSTATE)
     St = (isfinite(St0) && St0 > 0) ? St0 : max(s, 1.0) + 10.0
     st = st_at(St)
     for _ in 1:SS_MAXIT
