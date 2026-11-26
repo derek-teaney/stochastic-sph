@@ -14,7 +14,9 @@
 # particle that lies outside the S-scheme's domain (plan, item A: "Ask" if more than a few percent at s_a = 16), the weight of the
 # S-scheme within 3 of its boundary in S_t, and its largest |v_a|.
 # Models sscheme-m and sscheme-mf (N1 of "Level 1, amended"): the measure form, plain (F = 1) and with the factor F; T_0 is the bath's
-# T_rel; reported also: the tree-level weight below the wall, the weight within 1 of the wall, the weight with P_a < 0.
+# T_rel; reported also: the tree-level weight below the wall, the weight within 1 of the wall, the weight with P_a < 0.  General names
+# sscheme-m[f][1|2pi][@β]: the factor, the absolute normalization of Δ^H (label cell 1 or (2π)²; no reference), the exponent β (default D/2 + 1),
+# e.g. sscheme-m@2 (β = b at c_s^2 = 1/4), sscheme-m2pi.
 #   python3 examples/renorm_quadrature_sscheme.py [c_s^2 ...]   (default 0.5 0.25; SR_SA=16,54,541  SR_V=0,0.8  SR_MODELS=tree,step5-du0,sscheme)
 # SR_CSV=<file>: one row per model and state, c2,s,v,model,E,M,p,R,mu (docs/figs/sscheme_quadrature.csv).
 import os, sys
@@ -51,24 +53,47 @@ class SScheme(Split):
         e = V * (w * g * g - p);  Mv = V * w * g * g
         return s, Ta, va, den, St, e, Mv
 
-    def smstate(self, T, v, V, factor=False):
-        """the measure form (sscheme_plan.tex, "Level 1, amended"; examples/sscheme_ref.py, state_m): s = S_t − F Δ^H,
-        Δ^H = −(q − d) ln(T_rel/T_0) + ½ ln(a/q), measure ρ(s) = e^s s^(−β)(1 − β/s) on s > β = D/2 + 1; T_0 = self.T0 (the bath's T_rel).
-        factor = False: F = 1 (model sscheme-m); True: F = (S_t + 2β)/(S_t + β) (model sscheme-mf).  Returns as sstate, and ln ρ(s)."""
-        n, A, q, d, beta = self.n, self.A, 1 / self.c2, D - 1, D / 2 + 1
+    @staticmethod
+    def mparse(name):
+        """a measure-form model name, sscheme-m[f][1|2pi][@β]: (factor, normalization, β).  normalization: "T0" (Δ^H = 0 at the bath's T_rel at
+        rest and V = V_ref), "1" or "2pi" (the absolute Δ^H, label cell 1 or (2π)²); β default D/2 + 1."""
+        base, _, b = name.partition("@")
+        if not base.startswith("sscheme-m"):
+            return None
+        rest = base[len("sscheme-m"):];  factor = rest.startswith("f");  rest = rest[1:] if factor else rest
+        if rest not in ("", "1", "2pi"):
+            return None
+        return factor, (rest or "T0"), (float(b) if b else D / 2 + 1)
+
+    def smstate(self, T, v, V, factor=False, beta=D / 2 + 1, norm="T0"):
+        """the measure form (sscheme_plan.tex, "Level 1, amended"; examples/sscheme_ref.py, state_m; src/sscheme.jl): s = S_t − F Δ^H,
+        Δ^H = Δ − β ln S_t − K (Δ = Δ_χ + Δ_ℓ the full one-loop counterterm), measure ρ(s) = e^s s^(−β)(1 − β/s) on s > β.
+        K: norm "T0": Δ^H = 0 at rest at T_rel = T_0 = self.T0 and V = self.Vref (for β = D/2 + 1: Δ^H = −(q − d) ln(T_rel/T_0) + ½ ln(a/q));
+        "1": K = 0 (label cell 1); "2pi": K = d ln 2π (cell (2π)^d).  factor: F = (S_t + 2β)/(S_t + β), κ = 1 + βΔ^H/(S_t + β)²; else F = κ = 1.
+        Slopes: Δ_p^H = Δ_p − β(q − v²), Δ_θ^H = Δ_θ − βv.  Returns as sstate, and ln ρ(s)."""
+        n, A, q, d = self.n, self.A, 1 / self.c2, D - 1
         g = 1 / np.sqrt(1 - v * v);  Tr = g * T;  a = q - v * v
         p = A * Tr**n;  w = n * p;  St = g * (w / Tr) * V
-        DH = -(q - d) * np.log(Tr / self.T0) + 0.5 * np.log(a / q)
+        Dfull = D / 2 * np.log(2 * np.pi * V * g * w * Tr) + 0.5 * np.log(a) + 1 + np.log(V) + np.log(g) - np.log(Tr)
+        if norm == "T0":
+            T0, V0 = self.T0, self.Vref;  w0 = n * A * T0**n;  S0 = (w0 / T0) * V0
+            K = D / 2 * np.log(2 * np.pi * V0 * w0 * T0) + 0.5 * np.log(q) + 1 + np.log(V0) - np.log(T0) - beta * np.log(S0)
+        else:
+            K = 0.0 if norm == "1" else d * np.log(2 * np.pi)
+        DH = Dfull - beta * np.log(St) - K
         F = (St + 2 * beta) / (St + beta) if factor else 1.0
         kap = 1 + beta * DH / (St + beta)**2 if factor else 1.0
         s = St - F * DH
-        Dp, Dth = -(q - d) + v * v * (1 - v * v) / a, -v * (1 - v * v) / a
+        Dp = D / 2 * (2 + q - v * v) + v * v * (1 - v * v) / a - (1 + v * v) - beta * (q - v * v)
+        Dth = D / 2 * v - v * (1 - v * v) / a + v - beta * v
         ep, epar = F * Dp / (St * a), F * Dth / St
         den = kap - (1 + v * v) * ep + v * epar
         Ta = T / den;  va = (v * (kap - 2 * ep) + epar) / den
         e = V * (w * g * g - p);  Mv = V * w * g * g
         sp = np.where(s > beta, s, beta + 1.0)
         lnrho = np.where(s > beta, sp - beta * np.log(sp) + np.log1p(-beta / sp), -np.inf)
+        Pc = ((D / 2) * (2 + q) - 1) / n - (D / 2 + 1) + beta * (1 - q / n)       # P_a V/T_a = κ S_t/n + F Pc (constant c_s²)
+        self._PaV_Ta = kap * St / n + F * Pc
         return s, Ta, va, den, St, e, Mv, lnrho
 
     def label_limit(self):
@@ -95,13 +120,15 @@ class SScheme(Split):
         return np.abs(eT * Mvv - ev * MT)
 
     def logweight(self, name, T, vx, vy, Tb, vb, V):
-        if name not in ("sscheme", "sscheme-g", "sscheme-cut", "sscheme-m", "sscheme-mf"):
+        if name not in ("sscheme", "sscheme-g", "sscheme-cut") and self.mparse(name) is None:
             return super().logweight(name, T, vx, vy, Tb, vb, V)
         v = np.hypot(vx, vy)
         ok = (T > 0) & (v < 1 - 1e-9)
         T = np.where(ok, T, 1.0);  v = np.where(ok, v, 0.0)
-        if name in ("sscheme-m", "sscheme-mf"):
-            s, Ta, va, den, St, e, Mv, lnrho = self.smstate(T, v, V, factor=(name == "sscheme-mf"))
+        mp_ = self.mparse(name)
+        if mp_ is not None:
+            factor, nrm, beta = mp_
+            s, Ta, va, den, St, e, Mv, lnrho = self.smstate(T, v, V, factor=factor, beta=beta, norm=nrm)
             ok = ok & (den > 0) & (np.abs(va) < 1) & np.isfinite(lnrho)
             Ta = np.where(ok, Ta, 1.0)
             mx = Mv * vx
@@ -133,6 +160,7 @@ class SScheme(Split):
         nn, A = self.n, self.A
         g = 1 / np.sqrt(1 - vb * vb)
         Tr = (s_a / (g * nn * A * V))**(1 / (nn - 1));  Tb = Tr / g
+        self.Vref = V                         # the measure form: the reference volume (held fixed in the derivative in V)
         self.T0 = Tr                          # the measure form: T_0 = the bath's rest-frame temperature (the nominal state of the run)
         f = lambda x: -float(self.logweight_r(name, np.array([x[0]]), np.array([x[1]]), np.array([x[2]]), Tb, vb, V)[0][0])
         r = minimize(f, np.array([np.log(Tb), np.arctanh(vb), 0.0]), method="Nelder-Mead",
@@ -166,24 +194,20 @@ class SScheme(Split):
 
 
 
-def extras_m(mdl, tree_grid, m_grid, factor, V=1.0):
+def extras_m(mdl, tree_grid, m_grid, name, V=1.0):
     """the measure form: the tree-level weight whose label is at or below the wall (or outside the domain); the model's weight within 1 of
     the wall in the label; the fraction of the model's weight with P_a < 0; its largest |v_a|"""
-    out = {}
+    factor, nrm, beta = mdl.mparse(name);  out = {}
     for key, (P, wt) in (("tree", tree_grid), ("m", m_grid)):
         th = np.hypot(P[1], P[2]);  T = np.exp(P[0]);  v = np.tanh(th)
         okg = v < 1 - 1e-12
-        s, Ta, va, den, St, e, Mv, lnrho = mdl.smstate(np.where(okg, T, 1.0), np.where(okg, v, 0.0), V, factor)
+        s, Ta, va, den, St, e, Mv, lnrho = mdl.smstate(np.where(okg, T, 1.0), np.where(okg, v, 0.0), V, factor, beta, nrm)
         inside = okg & (den > 0) & (np.abs(va) < 1) & np.isfinite(lnrho)
         if key == "tree":
             out["outside"] = wt[~inside].sum()
         else:
-            beta = D / 2 + 1;  q, d = 1 / mdl.c2, D - 1
-            F = (St + 2 * beta) / (St + beta) if factor else 1.0
-            kap = 1 + beta * (St - s) / F / (St + beta)**2 if factor else 1.0
-            PaV_Ta = (kap * St - F * (q - d)) / (q + 1)
             out["near"] = wt[inside & (s < beta + 1)].sum()
-            out["neg"] = wt[inside & (PaV_Ta < 0)].sum()
+            out["neg"] = wt[inside & (mdl._PaV_Ta < 0)].sum()
             out["vamax"] = np.abs(va[(wt > 1e-12 * wt.max()) & inside]).max()
     return out
 
@@ -231,8 +255,8 @@ if __name__ == "__main__":
                         with open(csv, "a") as f:
                             f.write(f"{c2},{s_a},{vb},{name},{o['E']},{o['M']},{o['p']},{o['R']},{o['mu']}\n")
                     extra = ""
-                    if name in ("sscheme-m", "sscheme-mf") and "tree" in grids:
-                        x = extras_m(mdl, grids["tree"], grids[name], name == "sscheme-mf")
+                    if SScheme.mparse(name) is not None and "tree" in grids:
+                        x = extras_m(mdl, grids["tree"], grids[name], name)
                         extra = f"  tree weight below the wall {x['outside']:.1e}  w(s<beta+1) {x['near']:.1e}  w(P_a<0) {x['neg']:.1e}  max|v_a| {x['vamax']:.4f}"
                     if name == "sscheme" and "tree" in grids:
                         x = extras(mdl, grids["tree"], grids["sscheme"])
