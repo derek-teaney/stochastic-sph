@@ -1152,4 +1152,122 @@ reduce it; a better count of the states at small $S_{\rm t}$ (the exact series o
 renorm2.tex in closed form, each term a Riesz kernel on the cone; $\delta=s_{\rm exact}-S_{\rm 1loop}\to c(a)/S_{\rm t}$ checked) is kept as a check
 of the single particle at small $S_{\rm t}$ and is not put into the code.
 
+%-----------------------------------------------------------------------------
+\subsection*{Level 2: the positional counterterm in the Hamiltonian (2026-11-25, items H, I, J, K)}
+
+\paragraph{The code} (commits cc86cf4, 4dda501).  \nolinkurl{src/positional.jl}: $\omega(\bar\sigma,V)=a_1\nu_*+a_2\nu_*^2$ of \Eq{omega} from the table
+of $I_0$ (\nolinkurl{src/tables/i0_table_wc2.csv}, $\sigma=10^{-8}$ to $10^5$, a cubic Hermite spline in $\ln\sigma$ whose own derivative is $I_0'$),
+\texttt{SPH\_POSITIONAL=1}, $a_2$ = \texttt{SPH\_POSITIONAL\_A2} (default 0).  Split: $E_{\rm dyn}=T\,(\Delta s_{\rm dyn}-\omega(u/n,V))$, the derivatives
+through $T(u,|\bm m|,V)$ of the target.  The measure form: $s\to s+\omega(S_{\rm t}/n,V)$, with the slopes \Eq{slopes2}.  Off, the code is that of
+level 1 bit for bit.  Tests (\nolinkurl{test/testpositional.jl}, \nolinkurl{test/testpositional_steps.jl}; both schemes, $a_2=0$, $0.091$, $0.3$): the
+fields are the derivatives of $H$ to $4\times10^{-9}$, the inverse to $10^{-14}$, the label of the measure form increases with $S_{\rm t}$ (smallest
+$\mathcal D$ 0.91), the Jacobian determinant of the ideal step is one to $7\times10^{-8}$, hybrid Monte Carlo at $s_a=16$ accepts 18--20 of 20 and no
+trajectory leaves the domain.  At $\bar\sigma<1$, $I_0>0$ and $\omega$ is slightly negative.  Split's votes try labels $u\to0$ in their Newton
+steps; the first table ($\sigma\ge0.02$) stopped four tasks there, and the table now starts at $10^{-8}$, constant below.
+
+\paragraph{The equilibrium with $\omega$} (campaign \texttt{eos\_positional}; \Tab{tab:eoserrsw}, \Tab{tab:eoserrmw}).
+\begin{table}[h]
+\caption{Split with the positional counterterm in the Hamiltonian, $E_{\rm dyn}=T(\Delta s_{\rm dyn}-\omega)$ (\texttt{SPH\_RENORM=split SPH\_POSITIONAL=1}, $a_2=0$).  Campaign \texttt{eos\_positional} (interactive 62017396, commit 67471dc; the two tasks that stopped on the table of $I_0$ rerun at 4dda501), at rest, $L=0.45$, 8 seeds of 300 updates.  Columns: (0) the error of hybrid Monte Carlo, $X_{\rm HMC}/x-1$, with $\omega$ in the Hamiltonian; (1) after the exact
+single-particle error of the scheme is subtracted; (p) the prediction for (1), column (2) of \Tab{tab:eoserr} (split without $\omega$, less the one-loop
+correction of the positions); (3) column (1) after the term beyond one loop, $a_2\nu_*^2$ with $a_2=0.091$, is also subtracted; $\pm$ the
+statistical error.  Percent.}
+\label{tab:eoserrsw}
+\begin{center}\small
+\begin{tabular}{lrrr|rrrrr|rrrrr}
+\toprule
+ & & & & \multicolumn{5}{c|}{$P/p-1$ (\%)} & \multicolumn{5}{c}{$E/e-1$ (\%)} \\
+$c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (p) & (3) & $\pm$ & (0) & (1) & (p) & (3) & $\pm$ \\
+\midrule
+1/2 & 16 & 2 & 0.088 & $+4.36$ & $+0.45$ & $+0.86$ & $+0.51$ & 0.04 & $+5.58$ & $+1.66$ & $+1.41$ & $+1.70$ & 0.05 \\
+ & 16 & 3 & 0.040 & $+4.54$ & $+0.63$ & $+0.67$ & $+0.65$ & 0.04 & $+5.03$ & $+1.11$ & $+0.88$ & $+1.12$ & 0.03 \\
+ & 54 & 2 & 0.251 & $-0.17$ & $-0.19$ & $-0.11$ & $-0.08$ & 0.03 & $+0.10$ & $+0.08$ & $-0.01$ & $+0.12$ & 0.04 \\
+ & 54 & 3 & 0.112 & $-0.07$ & $-0.10$ & $-0.05$ & $-0.08$ & 0.02 & $+0.01$ & $-0.01$ & $-0.03$ & $-0.00$ & 0.03 \\
+ & 541 & 2 & 0.875 & $-0.13$ & $-0.13$ & $-0.11$ & $-0.01$ & 0.02 & $-0.04$ & $-0.04$ & $-0.04$ & $-0.00$ & 0.02 \\
+ & 541 & 3 & 0.389 & $-0.02$ & $-0.02$ & $-0.01$ & $+0.00$ & 0.01 & $-0.00$ & $-0.00$ & $-0.00$ & $+0.01$ & 0.01 \\
+\midrule
+1/4 & 16 & 2 & 0.038 & $+12.49$ & $+2.12$ & $+2.12$ & $+2.15$ & 0.09 & $+12.31$ & $+3.85$ & $+3.37$ & $+3.87$ & 0.07 \\
+ & 16 & 3 & 0.018 & $+12.80$ & $+2.43$ & $+1.96$ & $+2.44$ & 0.05 & $+11.43$ & $+2.97$ & $+2.40$ & $+2.97$ & 0.05 \\
+ & 54 & 2 & 0.175 & $-0.10$ & $-0.34$ & $-0.17$ & $-0.25$ & 0.03 & $+0.09$ & $+0.04$ & $-0.06$ & $+0.08$ & 0.04 \\
+ & 54 & 3 & 0.078 & $+0.11$ & $-0.13$ & $-0.03$ & $-0.11$ & 0.02 & $+0.06$ & $+0.00$ & $-0.00$ & $+0.01$ & 0.02 \\
+ & 541 & 2 & 0.683 & $-0.14$ & $-0.14$ & $-0.12$ & $-0.02$ & 0.02 & $-0.04$ & $-0.04$ & $-0.04$ & $-0.00$ & 0.02 \\
+ & 541 & 3 & 0.304 & $-0.02$ & $-0.02$ & $-0.01$ & $+0.00$ & 0.01 & $-0.00$ & $-0.00$ & $+0.00$ & $+0.01$ & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+\begin{table}[h]
+\caption{As \Tab{tab:eoserrsw} for the measure form with $\omega$ in the label ($\beta=D/2+1$ at $c_s^2=1/2$, $\beta=b$ at $c_s^2=1/4$).  Columns: (0) the error of hybrid Monte Carlo, $X_{\rm HMC}/x-1$, with $\omega$ in the Hamiltonian; (1) after the exact
+single-particle error of the scheme is subtracted; (p) the prediction for (1), column (2) of \Tab{tab:eoserr} (split without $\omega$, less the one-loop
+correction of the positions); (3) column (1) after the term beyond one loop, $a_2\nu_*^2$ with $a_2=0.091$, is also subtracted; $\pm$ the
+statistical error.  Percent.}
+\label{tab:eoserrmw}
+\begin{center}\small
+\begin{tabular}{lrrr|rrrrr|rrrrr}
+\toprule
+ & & & & \multicolumn{5}{c|}{$P/p-1$ (\%)} & \multicolumn{5}{c}{$E/e-1$ (\%)} \\
+$c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (p) & (3) & $\pm$ & (0) & (1) & (p) & (3) & $\pm$ \\
+\midrule
+1/2 & 16 & 2 & 0.090 & $+3.84$ & $-0.10$ & $+0.86$ & $-0.04$ & 0.04 & $+5.10$ & $+1.14$ & $+1.41$ & $+1.17$ & 0.04 \\
+ & 16 & 3 & 0.040 & $+4.15$ & $+0.21$ & $+0.67$ & $+0.23$ & 0.04 & $+4.64$ & $+0.68$ & $+0.88$ & $+0.68$ & 0.04 \\
+ & 54 & 2 & 0.253 & $-0.28$ & $-0.30$ & $-0.11$ & $-0.20$ & 0.05 & $+0.04$ & $+0.02$ & $-0.01$ & $+0.06$ & 0.05 \\
+ & 54 & 3 & 0.113 & $-0.07$ & $-0.09$ & $-0.05$ & $-0.07$ & 0.03 & $+0.03$ & $+0.00$ & $-0.03$ & $+0.01$ & 0.03 \\
+ & 541 & 2 & 0.876 & $-0.13$ & $-0.13$ & $-0.11$ & $-0.01$ & 0.02 & $-0.04$ & $-0.04$ & $-0.04$ & $-0.00$ & 0.02 \\
+ & 541 & 3 & 0.389 & $-0.02$ & $-0.02$ & $-0.01$ & $+0.00$ & 0.01 & $-0.00$ & $-0.00$ & $-0.00$ & $+0.01$ & 0.01 \\
+\midrule
+1/4 & 16 & 2 & 0.038 & $+12.41$ & $+2.02$ & $+2.12$ & $+2.05$ & 0.08 & $+12.05$ & $+3.64$ & $+3.37$ & $+3.66$ & 0.06 \\
+ & 16 & 3 & 0.018 & $+12.36$ & $+1.98$ & $+1.96$ & $+1.98$ & 0.05 & $+10.92$ & $+2.51$ & $+2.40$ & $+2.52$ & 0.05 \\
+ & 54 & 2 & 0.176 & $-0.19$ & $-0.43$ & $-0.17$ & $-0.34$ & 0.06 & $+0.01$ & $-0.04$ & $-0.06$ & $-0.00$ & 0.04 \\
+ & 54 & 3 & 0.079 & $+0.15$ & $-0.09$ & $-0.03$ & $-0.07$ & 0.04 & $+0.08$ & $+0.03$ & $-0.00$ & $+0.03$ & 0.03 \\
+ & 541 & 2 & 0.684 & $-0.14$ & $-0.15$ & $-0.12$ & $-0.03$ & 0.02 & $-0.04$ & $-0.04$ & $-0.04$ & $-0.01$ & 0.02 \\
+ & 541 & 3 & 0.304 & $-0.01$ & $-0.01$ & $-0.01$ & $+0.01$ & 0.01 & $+0.01$ & $+0.01$ & $+0.00$ & $+0.01$ & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+\begin{itemize}
+\item At $s_a\ge54$ the correction of the positions is gone: the error after the single particle, column (1), is at most $0.34\%$ in $P$ and $0.08\%$ in
+  $E$, against 0.5--5\% without $\omega$, and it is what the tables without $\omega$ predict (column (p)) within one to two statistical errors.  What
+  remains is the term beyond one loop: with $a_2=0.091$, column (3), at most $0.24\%$ in $P$ and $0.04\%$ in $E$ (the largest at $c_s^2=1/4$,
+  $s_a=54$, $h/a=2$).
+\item At $s_a=16$ the raw error (0) grows: at $c_s^2=1/2$ it is $P$ $+4.4\%$, $E$ $+5.6\%$ ($h/a=2$), against $-1.4\%$ and $+2.1\%$ without $\omega$.
+  Without $\omega$ the error of the positions ($-5.3\%$ in $P$) and that of the single particle ($+3.9\%$) cancelled; with the positions corrected the
+  single particle at small $S_{\rm t}$ is what is left (the next order of the series does not reduce it, \Sect{sec:results}, ``The next order'').
+  At $c_s^2=1/4$ the raw error at $s_a=16$ is $+11$ to $+12.5\%$.
+\item Split and the measure form agree within the errors at every line.
+\end{itemize}
+
+\paragraph{The dynamics with $\omega$} (campaign \texttt{hastings\_positional}, interactive 62017421, commit 67471dc; $c_s^2=1/2$, $L=0.6$, $h/a=2$,
+$\eta/s=0.2$, at rest; \nolinkurl{examples/positional_dyn.jl}; \Fig{fig:posdyn}, \Fig{fig:posapp}).  For split+$\omega$ and the measure form+$\omega$ at
+$s_a=16$ and 54: the full dynamics from the hybrid Monte Carlo start to $t=100$ (16 runs; one per split set stopped on the table and is rerun), hybrid
+Monte Carlo chains of the same Hamiltonian (16), and the dynamics from the hexagonal lattice without the HMC start (8 runs).
+\begin{itemize}
+\item The dynamics holds the equilibrium of its own Hamiltonian: the equal-time spectra of $M_L$, $M_T$ and $E$ are those of hybrid Monte Carlo within
+  2--3\% (errors 1--3\%) at $kh\le1.6$, for both schemes and both $s_a$; the largest departures are $0.94\pm0.02$ ($M_L$, $kh=0.78$, split, $s_a=16$) and
+  $1.08\pm0.04$ ($M_L$, $kh=0.78$, split, $s_a=54$).  KE/eq is $1.028\pm0.006$ and $1.030\pm0.008$ at $s_a=16$, $0.996$ and $1.005$ at $s_a=54$.
+\item The energy: $\Delta H/H$ at $t=100$ is $+2.0\times10^{-4}$ (split) and $+1.7\times10^{-4}$ (measure form) at $s_a=16$, the largest run $5\times10^{-4}$;
+  $3$--$5\times10^{-5}$ at $s_a=54$.
+\item From the lattice the positions are at equilibrium almost at once: the bond order $|\psi_6|$ falls from 1 to $0.35$ by $t=0.03$ and to its HMC value
+  (0.018) by $t\approx0.06$, about one sound crossing of a lattice spacing.  The energy fluctuations, zero at the start, reach 0.9 of HMC by $t\approx0.5$.
+  At $s_a=54$ every spectrum is that of HMC from $t\approx5$ on (0.97--1.0).  At $s_a=16$ they level off below it, at 0.91--0.93 (split) and 0.94--0.95
+  (measure form) for $M_L$, $M_T$ and $E$ alike from $t\approx1$ to 100.  All three spectra scale as $T^4$ for the conformal fluid, so this is what a
+  temperature lower by about 2\% gives: a run from the lattice keeps the energy drawn at the lattice positions, and at $s_a=16$ the positions carry
+  enough energy that the microcanonical temperature differs from the bath's.  Not yet checked: the driver does not record the mean temperature.
+\end{itemize}
+\begin{figure}[h]
+\begin{center}\includegraphics[width=\textwidth]{figs/positional_dyn_spectra.png}\end{center}
+\caption{Campaign \texttt{hastings\_positional}: the equal-time spectra $|M_{L,k}|^2/N$, $|M_{T,k}|^2/N$ and $|E_k-\langle E_k\rangle|^2/N$ of the dynamics
+from the hybrid Monte Carlo start (records after 20\% of $t=100$), divided by those of hybrid Monte Carlo chains of the same Hamiltonian (after 20
+updates), in bands of $kh$ of width 0.26; split with $\omega$ in the energy (circles) and the measure form with $\omega$ in the label (squares);
+$c_s^2=1/2$, $s_a=16$ (top) and 54 (bottom).  Errors from the spread between runs.}
+\label{fig:posdyn}
+\end{figure}
+\begin{figure}[h]
+\begin{center}\includegraphics[width=\textwidth]{figs/positional_dyn_approach.png}\end{center}
+\caption{Campaign \texttt{hastings\_positional}: the approach to equilibrium from the hexagonal lattice (8 runs each, no hybrid Monte Carlo start).
+Left: the global bond order $|\psi_6|$ (1 on the lattice at $t=0$), dotted its value in hybrid Monte Carlo.  Middle and right: the spectra of $M_L$, $M_T$
+and $E$ averaged over $kh\le1.6$ in windows of $t$ ($[0,0.05]$, $[0.05,0.2]$, $[0.2,1]$, $[1,5]$, $[5,20]$, $[20,100]$, plotted at the geometric centre),
+divided by hybrid Monte Carlo of the same Hamiltonian; errors from the spread between runs.}
+\label{fig:posapp}
+\end{figure}
+
 \end{document}

@@ -96,20 +96,21 @@ for (si, sa) in enumerate(SAS), (ci, (sch, lab)) in enumerate(SCH)
     tw = [sqrt(max(ta, 0.01) * tb) for (ta, tb) in WIN]
     rows = Dict{String,Vector{Float64}}()
     for (vi, var) in enumerate(("M_L", "M_T", "E"))
-        low = Float64[];  avg = Float64[]
+        low = Float64[];  avg = Float64[];  err = Float64[]
         for (ta, tb) in WIN
             sps = [spectra(r, first(idx), last(idx)) for r in rs for idx in (findall(x -> ta <= x < tb, r.rec.t),) if !isempty(idx)]
             push!(low, mean(sp[b0][vi] for sp in sps) / ref.m[b0][vi])
-            push!(avg, mean(mean(sp[b][vi] for sp in sps) / ref.m[b][vi] for b in bands))
+            per = [mean(sp[b][vi] / ref.m[b][vi] for b in bands) for sp in sps]        # each run's band average / HMC
+            push!(avg, mean(per));  push!(err, std(per) / sqrt(length(per)))
         end
         rows[var * " kh=" * @sprintf("%.2f", b0)] = low;  rows[var * " kh≤1.6"] = avg
-        ax = axs[si, vi == 1 ? 2 : 3]
-        vi == 3 && continue
-        ax.plot(tw, low, ci == 1 ? "o-" : "s--", color = "C$(2(ci-1) + vi - 1)", label = "$lab, $var, kh = $(round(b0, digits = 2))")
+        ax = axs[si, vi == 3 ? 3 : 2]
+        ax.errorbar(tw .* (1 + 0.04 * (ci - 1.5)), avg, err, fmt = ci == 1 ? "o-" : "s--", ms = 4, color = "C$(2(ci-1) + (vi == 2 ? 1 : 0))",
+                    label = "$lab, $var")
     end
-    ax = axs[si, 3];  ax.plot(tw, rows["E kh≤1.6"], ci == 1 ? "o-" : "s--", label = "$lab, E, kh ≤ 1.6")
     for k in (2, 3);  axs[si, k].axhline(1, color = "k", lw = 0.5);  axs[si, k].set_xscale("log");  axs[si, k].set_xlabel("t (window centre)");  end
-    axs[si, 2].set_title("s_a = $sa: momentum spectra / HMC, smallest kh", fontsize = 9);  axs[si, 3].set_title("s_a = $sa: energy spectrum / HMC", fontsize = 9)
+    axs[si, 2].set_title("s_a = $sa: momentum spectra / HMC, mean over kh ≤ 1.6", fontsize = 9)
+    axs[si, 3].set_title("s_a = $sa: energy spectrum / HMC, mean over kh ≤ 1.6", fontsize = 9)
     @printf("  s_a = %d, %s: %d runs; |ψ6| at t = 0.03, 0.06, 0.2, 1, 100: %s (HMC %.3f)\n", sa, lab, length(rs),
             join([@sprintf("%.3f", ps[argmin(abs.(tp .- tt))]) for tt in (0.03, 0.06, 0.2, 1.0, 100.0)], " "), psq)
     println("     windows ", join(["[$(a),$(b)]" for (a, b) in WIN], " "))
