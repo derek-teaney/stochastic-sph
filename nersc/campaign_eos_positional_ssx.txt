@@ -1,0 +1,10 @@
+# Campaign eos_positional, exact-form lines (eosP_ssx; docs/sscheme_plan.tex, "The exact form", X5): the exact count as the label with omega in it
+# (SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1, a_2 = 0), c_s^2 = 1/2 only, at the states and settings of the measure-form lines of
+# campaign_eos_positional.txt (L = 0.45, 8 seeds of 300 HMC updates, at rest); output into $SCRATCH/sph/eos_positional.  Single particle: the
+# quadrature model `exact` (examples/renorm_quadrature_sscheme.py).
+eosP_ssx_c05_s16_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosP_ssx_c05_s16_ha2_v0
+eosP_ssx_c05_s16_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosP_ssx_c05_s16_ha3_v0
+eosP_ssx_c05_s54_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosP_ssx_c05_s54_ha2_v0
+eosP_ssx_c05_s54_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosP_ssx_c05_s54_ha3_v0
+eosP_ssx_c05_s541_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosP_ssx_c05_s541_ha2_v0
+eosP_ssx_c05_s541_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_FORM=exact SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosP_ssx_c05_s541_ha3_v0
