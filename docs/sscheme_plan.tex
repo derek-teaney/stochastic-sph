@@ -1011,4 +1011,54 @@ $\chi^2/{\rm dof}=0.73$).  Error bars: the statistical error of the HMC mean, sc
 \label{fig:nu2}
 \end{figure}
 
+%-----------------------------------------------------------------------------
+\subsection*{Level 1, amended: N4, the smoke runs (2026-11-25, interactive 62013554, worktree at 0c00611)}
+
+\nolinkurl{examples/equilibrium.jl}, $L=0.6$ ($N=672$), $h/a=2$, $t=20$, 2 seeds (offsets 900, 901), the hybrid Monte Carlo start of 200 updates;
+split, the measure form with $\beta=D/2+1$ (\texttt{sscheme}) and, at $c_s^2=1/4$, the measure form with $\beta=b=2$ (\texttt{sschemeb},
+\texttt{SPH\_SSCHEME\_BETA=2}, the S-scheme coding of split).  Script \texttt{\$SCRATCH/sph/ssM/smoke\_n4\_all.sh}.  Columns: the acceptance of the
+hybrid Monte Carlo start; the acceptances of the stress and residual moves of the stochastic step; KE/eq (in motion it includes the mean flow, about
+15--20 for every scheme); $\Delta H/H$ at $t=20$ for the two seeds; the guard rejections per step; and for the measure form the largest fraction of
+solves with $P_a<0$, the largest fraction of the proposals from the energy refused at the wall, and the smallest label at the end.
+\begin{center}\scriptsize
+\begin{tabular}{llll|ccc|r|r|lll}
+\toprule
+$c_s^2$ & $s_a$ & $v_0$ & scheme & HMC & acc.\ (stress, resid.) & KE/eq & $\Delta H/H$ & guards/step & $P_a<0$ & wall & $\min s$ \\
+\midrule
+1/2 & 16 & 0 & split & 0.975 & 0.927, 0.514 & 1.044 & $+7.8\,\mathrm e{-5}$, $+1.4\,\mathrm e{-5}$ & 2870 & & & \\
+ & & & measure & 0.985 & 0.930, 0.506 & 1.034 & $-9.8\,\mathrm e{-5}$, $+6.5\,\mathrm e{-6}$ & 2836 & 0 & $1.1\,\mathrm e{-4}$ & 2.633 \\
+ & & 0.8 & split & 0.995 & 0.962, 0.587 & 14.36 & $-1.1\,\mathrm e{-6}$, $+1.3\,\mathrm e{-7}$ & 957 & & & \\
+ & & & measure & 0.995 & 0.967, 0.595 & 14.46 & $+3.3\,\mathrm e{-7}$, $-4.3\,\mathrm e{-7}$ & 782 & 0 & $7.7\,\mathrm e{-6}$ & 4.028 \\
+ & 54 & 0 & split & 0.985 & 0.984, 0.854 & 0.987 & $+2.9\,\mathrm e{-5}$, $+9.7\,\mathrm e{-6}$ & 0.6 & & & \\
+ & & & measure & 0.980 & 0.984, 0.852 & 0.972 & $-1.4\,\mathrm e{-5}$, $+2.3\,\mathrm e{-5}$ & 2.0 & 0 & 0 & 19.59 \\
+ & & 0.8 & split & 0.990 & 0.989, 0.828 & 14.55 & $+4.9\,\mathrm e{-7}$, $-6.8\,\mathrm e{-9}$ & 0 & & & \\
+ & & & measure & 0.990 & 0.989, 0.829 & 14.90 & $+1.5\,\mathrm e{-7}$, $-5.3\,\mathrm e{-7}$ & 0 & 0 & 0 & 42.74 \\
+\midrule
+1/4 & 16 & 0 & split & 0.970 & 0.928, 0.327 & 1.096 & $-7.6\,\mathrm e{-6}$, $+9.4\,\mathrm e{-6}$ & 2119 & & & \\
+ & & & measure & 0.980 & 0.929, 0.329 & 1.060 & $+2.3\,\mathrm e{-7}$, $-1.1\,\mathrm e{-5}$ & 1927 & 0 & $8.4\,\mathrm e{-4}$ & 2.567 \\
+ & & & measure, $\beta=b$ & 0.985 & 0.931, 0.355 & 1.037 & $-1.4\,\mathrm e{-5}$, $+9.1\,\mathrm e{-6}$ & 2203 & $2.2\,\mathrm e{-3}$ & $7.0\,\mathrm e{-4}$ & 2.301 \\
+ & & 0.8 & split & 0.995 & 0.961, 0.445 & 18.99 & $-8.5\,\mathrm e{-8}$, $+2.1\,\mathrm e{-7}$ & 494 & & & \\
+ & & & measure & 0.990 & 0.962, 0.457 & 20.76 & $+2.1\,\mathrm e{-7}$, $+8.6\,\mathrm e{-8}$ & 489 & 0 & $2.2\,\mathrm e{-4}$ & 3.222 \\
+ & & & measure, $\beta=b$ & 0.985 & 0.961, 0.454 & 19.44 & $-1.4\,\mathrm e{-7}$, $-1.8\,\mathrm e{-7}$ & 526 & $1.2\,\mathrm e{-4}$ & $1.6\,\mathrm e{-4}$ & 2.423 \\
+ & 54 & 0 & split & 0.970 & 0.950, 0.567 & 0.984 & $+1.1\,\mathrm e{-6}$, $+9.3\,\mathrm e{-6}$ & 20 & & & \\
+ & & & measure & 0.985 & 0.949, 0.565 & 0.960 & $+7.0\,\mathrm e{-6}$, $+6.5\,\mathrm e{-6}$ & 54 & 0 & $2.1\,\mathrm e{-5}$ & 4.060 \\
+ & & & measure, $\beta=b$ & 0.990 & 0.948, 0.561 & 0.972 & $+9.8\,\mathrm e{-6}$, $-1.3\,\mathrm e{-6}$ & 21 & $2.2\,\mathrm e{-6}$ & $5.0\,\mathrm e{-6}$ & 2.449 \\
+ & & 0.8 & split & 1.000 & 0.969, 0.597 & 20.26 & $-1.4\,\mathrm e{-7}$, $+2.5\,\mathrm e{-8}$ & 0 & & & \\
+ & & & measure & 0.995 & 0.967, 0.584 & 20.14 & $-2.0\,\mathrm e{-7}$, $-1.1\,\mathrm e{-7}$ & 0.1 & 0 & $2\,\mathrm e{-9}$ & 29.34 \\
+ & & & measure, $\beta=b$ & 1.000 & 0.968, 0.591 & 19.77 & $+2.7\,\mathrm e{-7}$, $+9.6\,\mathrm e{-8}$ & 0.1 & 0 & $5\,\mathrm e{-9}$ & 27.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item No solve without a state in any run (about $10^9$ solves from the label in all), and no record without a state: the fold of item E is gone.
+  The hybrid Monte Carlo start accepts 0.97--1.00 for every scheme, including $s_a=16$, where the full form accepted 0.11 (item E).
+\item The measure form and split agree in every column within the scatter of two seeds: the acceptances of the stochastic step, KE/eq, the drift of
+  $H$ ($10^{-5}$ at $s_a=16$ at rest, $10^{-7}$ in motion, for both), and the guard rejections.
+\item The wall refuses at most $8\times10^{-4}$ of the proposals from the energy ($s_a=16$, $c_s^2=1/4$, at rest), $10^{-4}$ for the conformal fluid at
+  $s_a=16$, and none at $s_a=54$ for the conformal fluid.  The smallest label reached is 2.57--2.63 at $s_a=16$ at rest ($\beta=2.5$).
+\item $P_a<0$: never with $\beta=D/2+1$.  With $\beta=b$ at $c_s^2=1/4$, up to $2.2\times10^{-3}$ of the solves at $s_a=16$ (the window
+  $2<S_{\rm t}<2.5$ of renorm3, \Tab{tab:bounds}), $2\times10^{-6}$ at $s_a=54$.
+\end{itemize}
+\textbf{Ask} (N4): the owner reads N1 and N4 before the campaigns.
+
 \end{document}
