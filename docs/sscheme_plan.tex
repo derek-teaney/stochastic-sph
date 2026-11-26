@@ -731,6 +731,9 @@ against $-4.71\pm0.05$ percent at $h/a=2$ and $-2.10\pm0.03$ against $-1.92\pm0.
 ($p$: split $+0.24$, S-scheme $+0.06$ percent).
 
 \subsection*{F at $s_a=16$ (campaign \texttt{eos\_sscheme16}, debug 62003678, 1 node, 21 min; regularized, commit f628ad0)}
+\textbf{Superseded (2026-11-25, 3c1e0ad):} the regularization of f628ad0 lacked the condition $S_{\rm t}>b$; below $b$, $h=1-g\approx-2u^3$ is large and $hX$
+admitted spurious states with $S_{\rm t}\ll b$ (found in the single-particle quadrature).  This campaign and the $s_a=16$ half of G are rerun with the
+fix (\texttt{eos\_sscheme16b}, \texttt{hastings\_sscheme\_b}); the numbers below are kept as the record.
 
 The $s_a=16$ lines of \texttt{eos\_split} with \texttt{SPH\_SSCHEME\_REG=1} (64 tasks, all complete; $1.5\times10^{10}$ solves from the label,
 $1.5\times10^5$ bisection fallbacks, 44 without a state; acceptance 0.98--0.99).  Percent, split $|$ S-scheme:
