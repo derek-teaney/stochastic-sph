@@ -596,7 +596,12 @@ All on interactive nodes with nersc/node.sh (salloc ... bash node.sh <campaign> 
 - `eos_positional` (62017396, 67471dc, 192 tasks; tasks 107, 114 rerun at 4dda501): equilibrium with omega (SPH_POSITIONAL=1).  The positional error is gone at s_a >= 54.
 - `hastings_positional` (62017421, 67471dc, 160 tasks, 4 nodes; tasks 8, 45 rerun at 4dda501): dynamics with omega at rest, and the approach from the lattice.
 - `hastings_compare` (62019278, d3aacca, 384 tasks, 4 nodes, 35 min) + `hastings_compare_sp` (62020908, d7d26ad, 128 tasks, 15 min): split, split+omega, S-scheme,
-  S-scheme+omega with the seeds of hastings_bath.  The split reference was rerun at the present code, because hastings_bath's split (3262b00) drifts 10-300x more in H.
+  S-scheme+omega with the seeds of hastings_bath.  The split reference was rerun at the present code, because hastings_bath's split (3262b00) records 10-300x more change in H.
+  CORRECTION (2026-11-26, debug 62046403, \$SCRATCH/sph/bisect_drift): that was the record, not the dynamics. One seed (hs16_sp_v0.8 r601) at
+  every commit 3262b00..d7d26ad (worktrees ~/bisect/<commit>) reproduces both recorded dH/H (+1.99e-4, -1.48e-6) and changes at 3fa7a3e only, with
+  the trajectory bit-identical. Before 3fa7a3e the full-step record of H was sum s_a (H/S)_a with the labels after the stochastic step and H/S
+  from before it (no solve in between); since then sum H_a. KE/eq likewise (V = s/S). Full-step dH/H and KE records before 3fa7a3e are
+  wrong at the 1e-4..1e-3 level; runs with SR_NOVISC or SR_NOHAM resmooth before the record and are not affected.
 - Lessons:
   - srun --overlap steps from the login node into one allocation all bind to the same few cores (32 runs at 25% of a CPU each).  Start many runs in ONE step
     (srun -c 256 --cpu-bind=none bash script-that-backgrounds-them), or use node.sh.

@@ -261,7 +261,8 @@ at $kh=0.52$ against hydrodynamics (dashed).  \texttt{BOOST\_GROUP=DS16}, \textt
 \label{fig:dscan}
 \end{figure}
 
-\paragraph{The energy against time} (\Fig{fig:energy}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
+\paragraph{The energy against time} (\Fig{fig:energy}; recorded at \texttt{3262b00}, before the record of $H$ was corrected: the values below
+overstate the change of $H$, see \Sect{sec:cmp}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
 $+6\times10^{-4}$ (tree) and $+9\times10^{-4}$ (split) at $s_a=16$ at rest, $4$--$8\times10^{-5}$ at $s_a=54$, smaller than the
 fluctuations of single runs ($\pm3\times10^{-3}$ at $s_a=16$).  The momentum fluctuations over their tree-level equilibrium value
 $2(N-1)VwT$ are $1.40$ (tree) and $1.01$ (split) at $s_a=16$, $1.11$ and $0.99$ at $s_a=54$, flat from $t=0$; the c$_s^2=1/3$ runs of
@@ -272,7 +273,8 @@ heating or cooling of the fluid.
 \centering
 \includegraphics[width=\textwidth]{figs/energy_time_hastings_bath.png}
 \caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets, left to right, \texttt{hs16\_\{tr,sp\}\_v0},
-\texttt{hs54\_\{tr,sp\}\_v0}, \texttt{hs16\_\{tr,sp\}\_v0.8}, \texttt{hs54\_\{tr,sp\}\_v0.8}; tree blue, split orange.  Top: $\Delta H/H$
+\texttt{hs54\_\{tr,sp\}\_v0}, \texttt{hs16\_\{tr,sp\}\_v0.8}, \texttt{hs54\_\{tr,sp\}\_v0.8}; tree blue, split orange.  (The record of $H$ and of the momentum fluctuations at this commit takes the new labels with the
+old state of each particle; the trajectories are right, the records overstate $|\Delta H/H|$ by 10--300 times; \Sect{sec:cmp}.)  Top: $\Delta H/H$
 against $t$; bottom: the momentum fluctuations $\mathrm{KE}/2(N-1)VwT$ ($w$, $T$ of the set-up state).  Each run thin, the mean thick.
 \texttt{examples/energy\_time.jl}.}
 \label{fig:energy}
@@ -368,9 +370,15 @@ For the conformal fluid split and the S-scheme divide the one-loop counterterm i
 the sound term $\tfrac12\ln(1-c_s^2v^2)$ in $H$ (split) or in the label (the S-scheme, which conserves $s=S_{\rm t}-\tfrac12\ln(1-c_s^2v^2)$ in the ideal
 step instead of $u=S_{\rm t}$).  $\omega(\bar\sigma,V)=a_1\nu_*$ is the one-loop correction of the positions ($a_2=0$; \texttt{src/positional.jl}),
 which removes the offset of the positions from the equation of state of hybrid Monte Carlo at $s_a\ge54$ (\texttt{sscheme\_plan.tex}, the tables of
-level 2).  The split lines ran again at the present code (\texttt{d7d26ad}), with the seeds of \texttt{hastings\_bath}: the split runs of
-\texttt{hastings\_bath} (\texttt{3262b00}) drift 10--300 times more in $H$ than every line here, including split, so their differences from the
-present runs belong to the code, not to the Hamiltonian.  384 + 128 runs, 4 interactive nodes for 35 and 15 minutes.
+level 2).  The split lines ran again at the present code (\texttt{d7d26ad}), with the seeds of \texttt{hastings\_bath}, so that all four lines
+share one code and one record of the energy.  The recorded $\Delta H/H$ of \texttt{hastings\_bath} (\texttt{3262b00}) is 10--300 times that of the
+lines here, and the difference is in the record, not in the dynamics.  A bisection (one seed, \texttt{hs16\_sp\_v0.8} r601, at every commit from
+\texttt{3262b00} to \texttt{d7d26ad} that touches the code; debug job 62046403) reproduces both recorded values exactly and puts the change at one
+commit, \texttt{3fa7a3e}, with the trajectory bit-identical before and after (every acceptance and rejection count the same).  The stochastic step
+ends with new labels $s_a$ and momenta and no new solve of the particles.  Before \texttt{3fa7a3e} the record took $H=\sum_a s_a(H/S)_a$, the
+new label times the ratio $H/S$ of the old state, which is wrong by $(H/S)_a\Delta s_a$ per particle; since then it takes $\sum_aH_a$, the energies
+that the stochastic step conserves exactly.  The same applies to the momentum fluctuations, through $V_a=s_a/S_a$ (KE/eq $14.30$ against
+$14.10$ in that run).  384 + 128 runs, 4 interactive nodes for 35 and 15 minutes.
 
 \paragraph{Results.}
 \begin{itemize}
