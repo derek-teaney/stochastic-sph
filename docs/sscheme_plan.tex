@@ -803,8 +803,18 @@ the record): S-scheme $s_a=16$, rest, 2 of 56\,560 records in 2 of 16 runs; $v_0
 The runs continue and the next records are finite.  At $c_s^2=1/2$ every label above the limit has a state at every $\bm m$ and $V$, so the cause is
 likely one of the conditions that are not regularized: $|v_a|<1$ or the target's $\gamma\le\gamma_{\max}=100$.  To be diagnosed.
 
-\paragraph{Running} (2026-11-25): \texttt{eos\_sscheme\_reg}, the lines of \texttt{eos\_sscheme} ($s_a=54,541$) with the regulator, debug 62006858, to
-measure its cost where the fold region has no weight (expected of order $(b/S_{\rm t})^2$, ten times smaller than at $s_a=16$).
+\paragraph{The NaN records: diagnosed and fixed (3c1e0ad $\to$ the cap fix).}  The reruns of three affected seeds with a log of the solves without a
+state (debug 62006902) reproduce them (seed 611 at $t=16.09$), and every logged particle is the same case: a particle with $S_{\rm t}\approx3$ that the
+ideal step carries just above the Lorentz factor $\gamma_{\max}=100$ (\texttt{SPH\_GAMMA\_MAX}; target $\gamma=100.04$--$101$), with $\mathcal D>0$,
+$|v_a|<1$, $S_{\rm t}>b$ and $s>s_b$ all satisfied.  The tree level and split apply the cap only in the map from the energy (the votes and the heat
+bath reject $\gamma>\gamma_{\max}$), and their ideal step has no cap; the S-scheme applied it in both maps.  It now applies it in the map from the
+energy only, and the logged particles have their states ($\gamma\approx100.0$--$100.3$, $v_a=0.99995$).  Unrelated to the fold and the regulator.
+
+\paragraph{The cost of the regulator at $s_a=54$, $541$} (campaign \texttt{eos\_sscheme\_reg}, debug 62006858, 2 nodes, 21 min; the lines of
+\texttt{eos\_sscheme} with \texttt{SPH\_SSCHEME\_REG=1}).  Line by line against one loop and split: at $s_a=541$ all lines agree to $0.01$--$0.02$
+percent; at $s_a=54$ the differences are at most $0.1$ percent ($E$ at $c_s^2=1/2$, $v=0.8$, $h/a=2$: $-1.08\pm0.02$ against $-1.16$ for one loop;
+$P$ at $c_s^2=1/4$, rest, $h/a=2$: $-4.79\pm0.05$ against $-4.92$ for one loop and $-4.71$ for split).  The regulator costs nothing where the fold region has
+no weight; its cost at $c_s^2=1/4$ is confined to $s_a=16$.
 
 \subsection*{E2. The regularization near the boundary: a family of cutoff functions (planned, 2026-11-25)}
 
