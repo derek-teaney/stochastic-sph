@@ -211,9 +211,13 @@ end
 # pa.S_smooth = S_t/V, pa.M_smooth = m/V the target's densities.  H_over_S, F_over_S are not used (the energy Hamiltonian, the number volume).
 
 # The state of the particle at its label, momentum and volume; NaN fields outside the domain (hybrid Monte Carlo rejects the trajectory).
+# The first 200 solves without a state: (s, m, V, S_t of the warm start), for diagnosis (sscheme_faillog())
+const SS_FAILLOG = Any[];  const SS_FAILLOCK = ReentrantLock()
+sscheme_faillog() = SS_FAILLOG
 function sscheme_solve!(pa::Particle, eos::AbstractEOS)
     c = SSchemeConsts(eos)
     st = sscheme_from_label(pa.s, pa.m, pa.V, c, pa.St)
+    !st.ok && lock(() -> length(SS_FAILLOG) < 200 && push!(SS_FAILLOG, (s = pa.s, m = pa.m, V = pa.V, St0 = pa.St, x = pa.x)), SS_FAILLOCK)
     if !st.ok
         pa.e = NaN;  pa.p = NaN;  pa.T = NaN;  pa.γ = NaN;  pa.H = NaN;  pa.v = SVector(NaN, NaN)
         pa.v_over_S = SVector(NaN, NaN);  pa.H_over_S = NaN;  pa.F_over_S = NaN
