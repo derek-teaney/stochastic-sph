@@ -1,0 +1,19 @@
+# Campaign `eos_sscheme_reg` (branch sscheme-reg): the lines of eos_sscheme (s_a = 54, 541) with the regulator, SPH_SSCHEME_REG=1 (g on the parts of
+# the counterterm that raise the smallest label, the hard limit; the domain S_t > b, 3c1e0ad), to compare line by line with eos_sscheme (one loop)
+# and eos_split: the cost of the regulator where the fold region has no weight.  128 tasks on 2 threads.
+eosS_ssreg_c05_s54_ha2_v0        8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssreg_c05_s54_ha2_v0
+eosS_ssreg_c05_s54_ha3_v0        8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssreg_c05_s54_ha3_v0
+eosS_ssreg_c05_s541_ha2_v0       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssreg_c05_s541_ha2_v0
+eosS_ssreg_c05_s541_ha3_v0       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssreg_c05_s541_ha3_v0
+eosS_ssreg_c05_s54_ha2_v08       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssreg_c05_s54_ha2_v08
+eosS_ssreg_c05_s54_ha3_v08       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssreg_c05_s54_ha3_v08
+eosS_ssreg_c05_s541_ha2_v08      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssreg_c05_s541_ha2_v08
+eosS_ssreg_c05_s541_ha3_v08      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssreg_c05_s541_ha3_v08
+eosS_ssreg_c025_s54_ha2_v0       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssreg_c025_s54_ha2_v0
+eosS_ssreg_c025_s54_ha3_v0       8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssreg_c025_s54_ha3_v0
+eosS_ssreg_c025_s541_ha2_v0      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssreg_c025_s541_ha2_v0
+eosS_ssreg_c025_s541_ha3_v0      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssreg_c025_s541_ha3_v0
+eosS_ssreg_c025_s54_ha2_v08      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssreg_c025_s54_ha2_v08
+eosS_ssreg_c025_s54_ha3_v08      8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssreg_c025_s54_ha3_v08
+eosS_ssreg_c025_s541_ha2_v08     8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssreg_c025_s541_ha2_v08
+eosS_ssreg_c025_s541_ha3_v08     8  SPH_RENORM=sscheme SPH_SSCHEME_REG=1 SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssreg_c025_s541_ha3_v08

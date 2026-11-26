@@ -10,7 +10,7 @@ import os, glob, re, math
 SCR = os.environ.get("SCRATCH", "")
 SETS = [("split", os.path.join(SCR, "sph", "eos_split"), "eosS_split_"),
         ("sscheme", os.path.join(SCR, "sph", "eos_sscheme"), "eosS_ss_"),
-        ("sscheme-reg", os.path.join(SCR, "sph", "eos_sscheme16"), "eosS_ssr_")]
+        ("sscheme-reg", os.path.join(SCR, "sph", os.environ.get("SR_SS16", "eos_sscheme16b")), "eosS_ssr_")]   # eos_sscheme16b: with the S_t > b fix (3c1e0ad)
 KEYS = ["E_over_e_minus1", "P_over_p_minus1", "Tyy_over_p_minus1", "chi_dMdv_over_target_minus1", "M_over_target_minus1", "R", "acceptance"]
 
 def read(f):
