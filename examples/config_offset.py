@@ -83,25 +83,34 @@ print("written", out)
 
 try:
     import matplotlib;  matplotlib.use("Agg");  import matplotlib.pyplot as plt
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
-    for ax, (y, dy, lab) in zip(axs, (("yP", "dyP", r"$r_P/(1+I_0'/I_0)$"), ("yE", "dyE", r"$r_E/(q\,I_0'/I_0)$"))):
+    a2 = float(os.environ.get("SR_A2", "0.091"))            # the fit of the s_a ≥ 54 points (P and E; docs/sscheme_plan.tex)
+    fig, axs = plt.subplots(1, 2, figsize=(11, 4.4), sharey=True)
+    panels = (("yP", "dyP", "pressure",
+               r"$y_P=[\sigma\,\delta P-\frac{I_0+I_0'}{2N_h}]/(1+I_0'/I_0)$"),
+              ("yE", "dyE", "energy",
+               r"$y_E=[q\sigma\,\delta E-\frac{q\,I_0'}{2N_h}]/(q\,I_0'/I_0)$"))
+    for ax, (y, dy, name, lab) in zip(axs, panels):
         for c2, mk in ((0.5, "o"), (0.25, "s")):
             for ha, col in ((2.0, "C0"), (3.0, "C1")):
-                rr = [r for r in rows if r["c2"] == c2 and r["ha"] == ha and r["scheme"] == "split"]
+                for sc, fill in (("split", True), ("sscheme-full", False)):
+                    rr = [r for r in rows if r["c2"] == c2 and r["ha"] == ha and r["scheme"] == sc and r["s_a"] >= 54]
+                    if rr:
+                        ax.errorbar([r["nu"]**2 for r in rr], [r[y] for r in rr], [r[dy] for r in rr], fmt=mk, color=col,
+                                    mfc=(col if fill else "none"), ms=6,
+                                    label=f"{'split' if fill else 'S-scheme, full one loop'}: $c_s^2$={c2}, $h/a$={ha:g}")
+                rr = [r for r in rows if r["c2"] == c2 and r["ha"] == ha and r["scheme"] == "split" and r["s_a"] < 54]
                 if rr:
-                    ax.errorbar([r["nu"]**2 for r in rr], [r[y] for r in rr], [r[dy] for r in rr], fmt=mk, color=col,
-                                label=f"split, $c_s^2$={c2}, h/a={ha:g}")
-                rr = [r for r in rows if r["c2"] == c2 and r["ha"] == ha and r["scheme"] != "split"]
-                if rr:
-                    ax.errorbar([r["nu"]**2 for r in rr], [r[y] for r in rr], [r[dy] for r in rr], fmt=mk, mfc="none", color=col,
-                                label=f"S-scheme (full), $c_s^2$={c2}, h/a={ha:g}")
-        a2 = float(os.environ.get("SR_A2", "0.091"))        # the fit of the s_a ≥ 54 points (P and E; docs/sscheme_plan.tex)
-        xx = np.linspace(0, 0.8, 50);  ax.plot(xx, -2 * a2 * xx, "k--", lw=0.8, label=f"$-2a_2\\nu_*^2$, $a_2$ = {a2:g}")
-        ax.axhline(0, color="k", lw=0.5);  ax.set_xlabel(r"$\nu_*^2$ (the points at $\nu_*^2<0.01$ above zero: $s_a=16$)")
-        ax.set_title(lab + r" $=-2a_2\nu_*^2$ ?")
-    axs[0].legend(fontsize=7)
-    fig.suptitle("config_offset.py: what remains of the correction of the positions beyond one loop (eos_split, eos_sscheme; rest)", fontsize=9)
-    fig.tight_layout();  fig.savefig(os.path.join(FIGS, "config_offset_nu2.png"), dpi=120)
+                    ax.errorbar([r["nu"]**2 for r in rr], [r[y] for r in rr], [r[dy] for r in rr], fmt=mk, color="0.55", mfc="0.55", ms=5,
+                                label=("$s_a=16$ (not in the fit)" if (c2, ha) == (0.5, 2.0) else None))
+        xx = np.linspace(0, 0.8, 50);  ax.plot(xx, -2 * a2 * xx, "k--", lw=0.9, label=f"$-2a_2\\nu_*^2$, fitted $a_2$ = {a2:g}")
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xlabel(r"$\nu_*^2$, $\nu_*=-I_0(\sigma)/(2a_1N_h)$ (stiff modes per particle)")
+        ax.set_ylabel(lab);  ax.yaxis.set_tick_params(labelleft=True)
+        ax.set_title(f"{name}: offset of the positions beyond one loop", fontsize=10)
+    axs[0].legend(fontsize=6.5, loc="lower left")
+    fig.suptitle("eos_split and eos_sscheme at rest, 8 seeds (examples/config_offset.py): "
+                 r"$\delta X = X_{\rm HMC}/x-1-(X_{\rm quad}/x-1)$; if beyond one loop is $a_2\nu_*^2$, $y_P=y_E=-2a_2\nu_*^2$", fontsize=8.5)
+    fig.tight_layout();  fig.savefig(os.path.join(FIGS, "config_offset_nu2.png"), dpi=130)
     print("written", os.path.join(FIGS, "config_offset_nu2.png"))
 except Exception as ex:
     print("no figure:", ex)
