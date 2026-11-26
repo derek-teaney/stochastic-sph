@@ -1147,6 +1147,18 @@ $s_a\lesssim30$ the error of the single particle is not the truncation of the se
 small $S_{\rm t}$, where the saddle point has no meaning, and it is common to every member of the family (split $3.9\%$).  A higher loop does not
 reduce it; a better count of the states at small $S_{\rm t}$ (the exact series of renorm2.tex, matched to the loops above $S_{\rm t}\approx50$) might.
 
+
+\paragraph{The exact count in the quadrature: why $s_a=16$ is hard} (model \texttt{exact}: one loop plus the tabulated
+$\delta(S_{\rm t},\theta)=s_{\rm exact}-S_{\rm 1loop}$ of \nolinkurl{examples/exact_count.py}, \texttt{docs/figs/exact\_delta\_c*.csv}).  $E/E_{\rm t}-1$ at rest,
+exact count against one loop: $c_s^2=1/2$: $3.0\%$ / $4.2\%$ ($s_a=16$), $7.5\times10^{-4}$ / $1.9\times10^{-3}$ (30), $1.7\times10^{-6}$ /
+$1.8\times10^{-4}$ (54); $c_s^2=1/4$: $4.6\%$ / $8.0\%$, $3.4\times10^{-3}$ / $7.7\times10^{-3}$, $5.7\times10^{-5}$ / $5.8\times10^{-4}$.  Even the exact
+count leaves 3--5\% at $s_a=16$.  The exact particle is a Poisson cloud of quanta with the mean number $\bar N=S_{\rm t}/n$, which is only 5.3
+($c_s^2=1/2$) and 3.2 ($c_s^2=1/4$) at $s_a=16$.  A particle cannot be empty, so the $N=0$ state is dropped (renorm2.tex), which changes $E$ and $p$ by
+$1/(e^{\bar N}-1)$; for the massless gas the states of one quantum lie on the light cone at $T=0$, where no state with a temperature represents them,
+with the weight $\bar Ne^{-\bar N}$.  These give $4.3\%$ for $c_s^2=1/4$ (measured $4.6\%$) and $0.5\%+2.6\%=3.1\%$ for $c_s^2=1/2$ (measured $3.0\%$).  So
+the error of the single particle at $s_a=16$ is not perturbative in $1/S_{\rm t}$: it is of order $e^{-s_a/n}$, the probability that the cell holds
+no quantum or one, and no order of the loop expansion or table removes it.  It falls fast: $10^{-3}$ at $s_a=30$, $10^{-6}$--$10^{-5}$ at $s_a=54$.
+
 \paragraph{Decision (owner, 2026-11-25).}  The main line is split with the positional counterterm ($E_{\rm dyn}=T(\Delta s_{\rm dyn}-\omega)$,
 \texttt{SPH\_RENORM=split SPH\_POSITIONAL=1}).  The exact count of the single particle (\nolinkurl{examples/exact_count.py}: the Poisson cloud of
 renorm2.tex in closed form, each term a Riesz kernel on the cone; $\delta=s_{\rm exact}-S_{\rm 1loop}\to c(a)/S_{\rm t}$ checked) is kept as a check
