@@ -16,7 +16,8 @@
 # Models sscheme-m and sscheme-mf (N1 of "Level 1, amended"): the measure form, plain (F = 1) and with the factor F; T_0 is the bath's
 # T_rel; reported also: the tree-level weight below the wall, the weight within 1 of the wall, the weight with P_a < 0.  General names
 # sscheme-m[f][1|2pi][@β]: the factor, the absolute normalization of Δ^H (label cell 1 or (2π)²; no reference), the exponent β (default D/2 + 1),
-# e.g. sscheme-m@2 (β = b at c_s^2 = 1/4), sscheme-m2pi.
+# e.g. sscheme-m@2 (β = b at c_s^2 = 1/4), sscheme-m2pi; a suffix -2 adds the next order of the label, s → s + c(a)/S_t (renorm3.tex,
+# appendix, eq. c): sscheme-m-2, sscheme-mf-2.  Model sscheme-2: the full form with it.
 #   python3 examples/renorm_quadrature_sscheme.py [c_s^2 ...]   (default 0.5 0.25; SR_SA=16,54,541  SR_V=0,0.8  SR_MODELS=tree,step5-du0,sscheme)
 # SR_CSV=<file>: one row per model and state, c2,s,v,model,E,M,p,R,mu (docs/figs/sscheme_quadrature.csv).
 import os, sys
@@ -27,8 +28,25 @@ from renorm_quadrature_split import Split
 D = 3   # d + 1
 
 
+def c2loop(q, a, d=D - 1):
+    """the coefficient of the next order of the label, s_exact = s_1loop + c/S_t (renorm3.tex, eq. c; constant c_s²: q̇ = q̈ = 0);
+    returns c(a) and dc/da"""
+    l3 = 2 * q * (q - 1);  l4 = 2 * q * (q - 1) * (3 * q + 4 * d - 7)
+    c = -(d * d - 1) / 8 - (d - 2) * (q + d - 1) / (2 * a) + l4 / (8 * a**2) - 5 * l3**2 / (24 * a**3)
+    dc = (d - 2) * (q + d - 1) / (2 * a**2) - l4 / (4 * a**3) + 5 * l3**2 / (8 * a**4)
+    return c, dc
+
+def add2loop(s, Dp, Dth, St, v, q, a, F=1.0):
+    """s → s + F c(a)/S_t, as Δ → Δ + M with M = −F c/S_t: ∂M/∂τ = F c q/S_t, ∂M/∂θ = F [c v + 2v(1 − v²) c']/S_t
+    (∂ln S_t/∂(τ, θ) = (q, v), ∂a/∂θ = −2v(1 − v²)); Δ_p += M_τ − v M_θ, Δ_θ += M_θ.  (F constant: the factor's own slope is dropped,
+    a term of order 1/S_t³.)"""
+    c, dc = c2loop(q, a)
+    Mt = F * c * q / St;  Mth = F * (c * v + 2 * v * (1 - v * v) * dc) / St
+    return s + F * c / St, Dp + Mt - v * Mth, Dth + Mth
+
+
 class SScheme(Split):
-    def sstate(self, T, v, V, reshape=False):
+    def sstate(self, T, v, V, reshape=False, loop2=False):
         """the S-scheme at the target state (bare T, |v|): label s, T_a, v_a, 𝒟, S_t, and the target energy and M/v.
         reshape = True: the momentum part X = ½ ln(1 − c_s² v²) of the counterterm multiplied by g(S_t) = 1 − h, h = 3u² − 2u³, u = b/S_t
         (c_s² = 1/2; the minimum label at S_t = b for every v; a change of order 1/S_t²)"""
@@ -40,6 +58,8 @@ class SScheme(Split):
         s = St - Dchi - Dell
         Dp = D / 2 * (2 + q - v * v) + v * v * (1 - v * v) / a - (1 + v * v)
         Dth = D / 2 * v - v * (1 - v * v) / a + v
+        if loop2:
+            s, Dp, Dth = add2loop(s, Dp, Dth, St, v, q, a)
         if reshape:
             b = D / 2 + 1 - (1 - 2 * self.c2);  u = b / St
             h = 3 * u**2 - 2 * u**3;  dh = -6 * u**2 * (1 - u)
@@ -61,11 +81,12 @@ class SScheme(Split):
         if not base.startswith("sscheme-m"):
             return None
         rest = base[len("sscheme-m"):];  factor = rest.startswith("f");  rest = rest[1:] if factor else rest
+        loop2 = rest.endswith("-2");  rest = rest[:-2] if loop2 else rest
         if rest not in ("", "1", "2pi"):
             return None
-        return factor, (rest or "T0"), (float(b) if b else D / 2 + 1)
+        return factor, (rest or "T0"), (float(b) if b else D / 2 + 1), loop2
 
-    def smstate(self, T, v, V, factor=False, beta=D / 2 + 1, norm="T0"):
+    def smstate(self, T, v, V, factor=False, beta=D / 2 + 1, norm="T0", loop2=False):
         """the measure form (sscheme_plan.tex, "Level 1, amended"; examples/sscheme_ref.py, state_m; src/sscheme.jl): s = S_t − F Δ^H,
         Δ^H = Δ − β ln S_t − K (Δ = Δ_χ + Δ_ℓ the full one-loop counterterm), measure ρ(s) = e^s s^(−β)(1 − β/s) on s > β.
         K: norm "T0": Δ^H = 0 at rest at T_rel = T_0 = self.T0 and V = self.Vref (for β = D/2 + 1: Δ^H = −(q − d) ln(T_rel/T_0) + ½ ln(a/q));
@@ -86,6 +107,9 @@ class SScheme(Split):
         s = St - F * DH
         Dp = D / 2 * (2 + q - v * v) + v * v * (1 - v * v) / a - (1 + v * v) - beta * (q - v * v)
         Dth = D / 2 * v - v * (1 - v * v) / a + v - beta * v
+        if loop2:                                   # the next order, s → s + c/S_t; its slopes are added unscaled (ε = F Δ/S_t: divide by F)
+            s2, Dp2, Dth2 = add2loop(0.0, 0.0, 0.0, St, v, q, a)
+            s = s + s2;  Dp = Dp + Dp2 / F;  Dth = Dth + Dth2 / F
         ep, epar = F * Dp / (St * a), F * Dth / St
         den = kap - (1 + v * v) * ep + v * epar
         Ta = T / den;  va = (v * (kap - 2 * ep) + epar) / den
@@ -120,21 +144,21 @@ class SScheme(Split):
         return np.abs(eT * Mvv - ev * MT)
 
     def logweight(self, name, T, vx, vy, Tb, vb, V):
-        if name not in ("sscheme", "sscheme-g", "sscheme-cut") and self.mparse(name) is None:
+        if name not in ("sscheme", "sscheme-g", "sscheme-cut", "sscheme-2") and self.mparse(name) is None:
             return super().logweight(name, T, vx, vy, Tb, vb, V)
         v = np.hypot(vx, vy)
         ok = (T > 0) & (v < 1 - 1e-9)
         T = np.where(ok, T, 1.0);  v = np.where(ok, v, 0.0)
         mp_ = self.mparse(name)
         if mp_ is not None:
-            factor, nrm, beta = mp_
-            s, Ta, va, den, St, e, Mv, lnrho = self.smstate(T, v, V, factor=factor, beta=beta, norm=nrm)
+            factor, nrm, beta, loop2 = mp_
+            s, Ta, va, den, St, e, Mv, lnrho = self.smstate(T, v, V, factor=factor, beta=beta, norm=nrm, loop2=loop2)
             ok = ok & (den > 0) & (np.abs(va) < 1) & np.isfinite(lnrho)
             Ta = np.where(ok, Ta, 1.0)
             mx = Mv * vx
             lw = np.where(ok, lnrho, 0.0) - np.log(Ta) - (e - vb * mx) / Tb + np.log(np.where(ok, self.jac_e(T, v, V) * Mv, 1.0))
             return np.where(ok, lw, -np.inf), np.where(ok, e, 0.0), np.where(ok, mx, 0.0)
-        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V, reshape=(name == "sscheme-g"))
+        s, Ta, va, den, St, e, Mv = self.sstate(T, v, V, reshape=(name == "sscheme-g"), loop2=(name == "sscheme-2"))
         ok = ok & (den > 0) & (np.abs(va) < 1)
         if name == "sscheme-cut":
             ok = ok & (s > self.label_limit())
@@ -197,11 +221,11 @@ class SScheme(Split):
 def extras_m(mdl, tree_grid, m_grid, name, V=1.0):
     """the measure form: the tree-level weight whose label is at or below the wall (or outside the domain); the model's weight within 1 of
     the wall in the label; the fraction of the model's weight with P_a < 0; its largest |v_a|"""
-    factor, nrm, beta = mdl.mparse(name);  out = {}
+    factor, nrm, beta, loop2 = mdl.mparse(name);  out = {}
     for key, (P, wt) in (("tree", tree_grid), ("m", m_grid)):
         th = np.hypot(P[1], P[2]);  T = np.exp(P[0]);  v = np.tanh(th)
         okg = v < 1 - 1e-12
-        s, Ta, va, den, St, e, Mv, lnrho = mdl.smstate(np.where(okg, T, 1.0), np.where(okg, v, 0.0), V, factor, beta, nrm)
+        s, Ta, va, den, St, e, Mv, lnrho = mdl.smstate(np.where(okg, T, 1.0), np.where(okg, v, 0.0), V, factor, beta, nrm, loop2)
         inside = okg & (den > 0) & (np.abs(va) < 1) & np.isfinite(lnrho)
         if key == "tree":
             out["outside"] = wt[~inside].sum()
