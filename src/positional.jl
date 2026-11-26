@@ -3,7 +3,7 @@
 # The one-loop correction of the positions per particle, at the particle's own target state and volume,
 #   ω(σ̄, V) = a₁ ν_* + a₂ ν_*²,   ν_* = −I₀(σ̄) V/(2 a₁ h²),   σ̄ = S_t/n = p γ V/T_rel,   a₁ = π/(2 sin(2π/n_W)),
 # with I₀(σ) = h² ∫ d²k/(2π)² ln S(k), 1/S = (1 − W̃)[1 + (2σ − 1) W̃] (W̃ the transform of the kernel), tabulated by
-# examples/i0_table.py (src/tables/i0_table_<kernel>.csv: σ = 0.02 to 1e5).  a₂ = SPH_POSITIONAL_A2 (default 0: one loop; the fit of the
+# examples/i0_table.py (src/tables/i0_table_<kernel>.csv: σ = 1e-8 to 1e5; constant below, linear in ln σ above).  a₂ = SPH_POSITIONAL_A2 (default 0: one loop; the fit of the
 # level-1 data is 0.091, sscheme_plan.tex, "The correction of the positions").  Its two slopes,
 #   ω_σ = ∂ω/∂ln σ̄|_V = ω′ ν_* I₀′/I₀,   ω_V = ∂ω/∂ln V|_σ̄ = ω′ ν_*,   ω′ = a₁ + 2a₂ν_*,
 # use I₀′ = the derivative of the interpolant (a cubic Hermite spline in ln σ through the tabulated I₀ and I₀′), so that the forces are exact
@@ -30,7 +30,8 @@ const I0_WC2 = load_i0_table(joinpath(@__DIR__, "tables", "i0_table_wc2.csv"))
 # I₀ and its derivative in ln σ, from the cubic Hermite interpolant (the derivative is the interpolant's own)
 @inline function i0_eval(σ::Float64, t::I0Table = I0_WC2)
     x = log(σ);  u = (x - t.x0) / t.dx;  n = length(t.I)
-    (u >= 0 && u <= n - 1) || error("positional.jl: σ̄ = $σ outside the table of I₀ (σ = $(exp(t.x0)) to $(exp(t.x0 + (n - 1) * t.dx)))")
+    u < 0 && return t.I[1], 0.0                 # below the table (σ < 1e-8; the trial labels of a vote's Newton steps): I₀ → const, I₀′ ~ σ ln σ → 0
+    u > n - 1 && return t.I[n] + t.Ip[n] * (x - t.x0 - (n - 1) * t.dx), t.Ip[n]     # above (σ > 1e5): linear in ln σ
     i = min(floor(Int, u), n - 2);  τ = u - i
     y0 = t.I[i+1];  y1 = t.I[i+2];  m0 = t.Ip[i+1] * t.dx;  m1 = t.Ip[i+2] * t.dx
     τ2 = τ * τ;  τ3 = τ2 * τ

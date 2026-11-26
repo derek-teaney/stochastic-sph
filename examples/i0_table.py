@@ -7,7 +7,7 @@
 # W̃ ≈ c_W x^(−n_W) (its mean; c_W measured on [X/2, X]).  Checks: the reference values of the plan (Wendland C2: I_0 = −0.979, −3.645,
 # −3.874, −7.743, −13.288 at σ = 3.89, 16.4, 18, 60, 179) and, with 1/S = 1 + 2ΠW̃ − (2Π − 𝒦)W̃², Π = σ + 3/2, 𝒦 = 3/2, the values of
 # partition.tex (−2.03, −4.14, −13.43 at σ = 3.89, 16.4, 179).  Also ν_* = −I_0/(2 a_1 N_h) per unit V/h² (N_h = h²/V̄), a_1 = π/(2 sin(2π/n_W)).
-#   python3 examples/i0_table.py [wc2|wc4|wc6]   → docs/figs/i0_table_<kernel>.csv: sigma, I0, I0p (σ = 0.02 to 1e5, 801 points in ln σ)
+#   python3 examples/i0_table.py [wc2|wc4|wc6]   → docs/figs/i0_table_<kernel>.csv: sigma, I0, I0p (σ = 1e-8 to 1e5, 1201 points in ln σ)
 import os, sys
 import numpy as np
 from scipy.special import j0
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         h = 1e-4
         fd = (t.I0(s * np.exp(h)) - t.I0(s * np.exp(-h))) / (2 * h)
         print(f"  σ = {s:7.2f}: I_0' = {t.I0p(s):+.8f}, central difference {fd:+.8f}")
-    sig = np.exp(np.linspace(np.log(0.02), np.log(1e5), 801))     # 1/S > 0 for every σ > 0 (W̃ ≤ 1)
+    sig = np.exp(np.linspace(np.log(1e-8), np.log(1e5), 1201))    # 1/S > 0 for every σ > 0 (W̃ ≤ 1); I₀ → const, I₀′ ~ σ ln σ as σ → 0
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "figs", f"i0_table_{name}.csv")
     with open(out, "w") as f:
         f.write("sigma,I0,I0p\n")
