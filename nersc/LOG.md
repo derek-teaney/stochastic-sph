@@ -1192,3 +1192,17 @@ Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
 examples/stochrep_correlators.jl L1.2` (and L2.4, in an interactive job), then a short
 note in `docs/` with the tables and figures.
+
+## 2026-11-26: the exact form of the S-scheme (SPH_SSCHEME_FORM=exact; docs/sscheme_plan.tex "The exact form", X1-X6)
+- Table of ln g (g = s_exact - s_min, A = V = 1) by examples/exact_count.py dyntable + checkpoints: debug 62047724 (1 node, ~10 min),
+  $SCRATCH/sph/exact_table; src/tables/exact_lng_c05.csv (c_s^2 = 1/2). A first table of delta = s_exact - S_1loop (62047454) was dropped:
+  at small S_t it cannot give D = ds/dS_t.  Step tests: debug 62048441 ($SCRATCH/sph/ssx_tests; run.sh all timed out at 30 min after
+  unit, physics, load and the step regression passed; the driver regression differs only in the known records of 3fa7a3e).
+- X4 smoke: debug 62049195, worktree ~/ssX at 14ce681, nersc/smoke_x4_sscheme_exact.sh, $SCRATCH/sph/ssX/x4.
+- X5: interactive 62049406 (2 nodes, 12 min), nersc/campaign_eos_positional_ssx.txt -> $SCRATCH/sph/eos_positional/eosP_ssx_*.
+- X6: interactive 62049405 (4 nodes, 23 min), nersc/campaign_hastings_compare_ssx.txt -> $SCRATCH/sph/hastings_compare/h{s,q}<sa>_ssxw_*;
+  ~/ssX at 93e01a2 (code of 14ce681). Analysis: BOOST_GROUP=XCMP16/54 boost_analysis.jl; PD_SCH=":spw:split+ω,:ssxw:exact+ω"
+  PD_TAG=hastings_compare_exact positional_dyn.jl; energy_time.jl ... hastings_compare_exact. Written up in docs/split_dynamics.tex sec:exact.
+- Also today: debug 62046403 bisection ($SCRATCH/sph/bisect_drift, worktrees ~/bisect/<commit>), see the correction above.
+- Node-hours today: ~0.3 (debug) + 1.5 (X6) + 0.4 (X5) + ~0.5 (tests, tables).
+

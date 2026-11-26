@@ -85,6 +85,10 @@ const SETS = GROUP == "L24" ?
       ("S-scheme v=0", ["hs$(sa)_ssm_v0"], 0.0, "C2"), ("S-scheme+ω v=0", ["hs$(sa)_ssmw_v0"], 0.0, "C3"),
       ("split v=0.8", ["hs$(sa)_sp_v0.8"], 0.8, "C0"), ("split+ω v=0.8", ["hs$(sa)_spw_v0.8"], 0.8, "C1"),
       ("S-scheme v=0.8", ["hs$(sa)_ssm_v0.8"], 0.8, "C2"), ("S-scheme+ω v=0.8", ["hs$(sa)_ssmw_v0.8"], 0.8, "C3")]) :
+             GROUP in ("XCMP16", "XCMP54") ?      # hastings_compare, the exact form (sscheme_plan.tex, X6): split+ω against the exact form+ω
+    (sa = GROUP[5:6];                     # DIR = $SCRATCH/sph/hastings_compare
+     [("split+ω v=0", ["hs$(sa)_spw_v0"], 0.0, "C1"), ("exact+ω v=0", ["hs$(sa)_ssxw_v0"], 0.0, "C4"),
+      ("split+ω v=0.8", ["hs$(sa)_spw_v0.8"], 0.8, "C1"), ("exact+ω v=0.8", ["hs$(sa)_ssxw_v0.8"], 0.8, "C4")]) :
              GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
     (sa = GROUP[3:4];
      [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
@@ -342,7 +346,7 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54", "CMP16", "CMP54")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54", "CMP16", "CMP54", "XCMP16", "XCMP54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].vreq for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key

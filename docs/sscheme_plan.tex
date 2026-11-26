@@ -1336,6 +1336,10 @@ split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, 
 \item[X4.] \emph{Smoke runs} at NERSC: the dynamics and hybrid Monte Carlo at $s_a=16$ and 54, at rest and $v_0=0.8$, with the counters (no state,
   the wall, bisections) and $\Delta H/H$.
 \item[X5.] \emph{The equation of state}: hybrid Monte Carlo with $\omega$ against the quadrature of the model \texttt{exact}, as in the tables of level 2.
+  The single particle is the model \texttt{exact} as computed before (one loop plus the table of $\delta$ for $S_{\rm t}\ge0.5$): its states below
+  $S_{\rm t}=0.5$ carry a negligible weight at $s_a\ge16$ (the dynamics at $s_a=16$ never goes below $S_{\rm t}\approx0.8$).  The model computed from the
+  table of the dynamics down to $S_{\rm t}\to0$ breaks the quadrature (its Gaussian grid in $(\ln T,\bm\eta)$ around one peak cannot hold the states of
+  one quantum on the light cone, $T\to0$, $v\to1$): not needed here, to be redone with a grid for that corner if wanted.
 \item[X6.] \emph{The dynamics}: the lines of \texttt{hastings\_compare} for the exact form$+\omega$, against split$+\omega$.
 \end{enumerate}
 
@@ -1347,6 +1351,40 @@ split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, 
   Newton steps each and no fallback and no solve without a state; with $\omega$: the derivatives of $H$ to $10^{-10}$, the inverse maps, the Jacobian
   ($8\times10^{-8}$) and hybrid Monte Carlo (19 of 20).  The smallest label in the HMC chains at $s_a=16$ is $-3.5$, near the floor
   ($s_{\rm min}+\ln A$).
+\item X4, smoke runs (debug 62049195, commit 14ce681, \nolinkurl{nersc/smoke_x4_sscheme_exact.sh}; $c_s^2=1/2$, $L=0.6$, $h/a=2$, $t=20$, 2 seeds; the exact
+  form without and with $\omega$, split$+\omega$ as the reference; hybrid Monte Carlo of the exact form$+\omega$, 60 updates).  No solve without a state
+  and one bisection in about $10^9$ solves from the label (2.1 Newton steps each); no state refused.  $|\Delta H/H|$ at $t=20$: $\le6\times10^{-5}$ at
+  $s_a=16$ at rest, $\le3\times10^{-5}$ at $s_a=54$ at rest, $\le2\times10^{-6}$ in motion, as split$+\omega$ ($2\times10^{-6}$--$2\times10^{-4}$ and
+  $\le7\times10^{-7}$).  Hybrid Monte Carlo accepts 0.97--1.0.  At $s_a=16$ at rest the particles go down to $S_{\rm t}\approx0.8$ (labels $-3.6$, near the
+  floor) without trouble: the cutoff works as intended.  Differences from split$+\omega$, at $s_a=16$ at rest only: the acceptances of the stochastic
+  step are lower, $(0.82$--$0.85,\ 0.40$--$0.42)$ for the stress and the residual move against $(0.93,\ 0.52$--$0.54)$, and with $\omega$ a fraction
+  $2.4\times10^{-3}$ of the solves have $P_a<0$ (none without $\omega$; $8\times10^{-5}$ in motion).  The smallest particles have $\mathcal D\to0$, a
+  large $T_a$, and a small or negative pressure where $\omega_V<0$ ($\nu_*<0$ at small $\bar\sigma$); presumably the votes that move entropy into or out of them are rejected more often (not yet checked).  At $s_a=54$
+  the two are indistinguishable (acceptances $(0.98,\ 0.85)$ both).
+\item X5, the equation of state (interactive 62049406, 12 minutes on 2 nodes, campaign \texttt{eos\_positional}, lines \texttt{eosP\_ssx},
+  \nolinkurl{nersc/campaign_eos_positional_ssx.txt}; \nolinkurl{examples/config_offset.py}).  Hybrid Monte Carlo of the exact form$+\omega$ at rest, $c_s^2=1/2$,
+  $L=0.45$, 8 seeds of 300 updates; the error $X_{\rm HMC}/x-1$ in percent, (0) raw, (1) less the single particle of the model \texttt{exact}:
+  \begin{center}
+  \begin{tabular}{rrcccccc}
+  \toprule
+  $s_a$ & $h/a$ & $P$ (0) & $P$ (1) & $E$ (0) & $E$ (1) & split$+\omega$: $P$ (0) & $E$ (0) \\
+  \midrule
+  16 & 2 & $+2.96$ & $-0.00$ & $+3.73$ & $+0.74$ & $+4.36$ & $+5.58$ \\
+  16 & 3 & $+3.02$ & $+0.05$ & $+3.30$ & $+0.30$ & $+4.54$ & $+5.03$ \\
+  54 & 2 & $-0.22$ & $-0.22$ & $-0.01$ & $-0.01$ & $-0.17$ & $+0.10$ \\
+  54 & 3 & $-0.07$ & $-0.07$ & $-0.02$ & $-0.02$ & $-0.07$ & $+0.01$ \\
+  541 & 2 & $-0.13$ & $-0.13$ & $-0.04$ & $-0.04$ & $-0.13$ & $-0.04$ \\
+  541 & 3 & $-0.02$ & $-0.02$ & $-0.00$ & $-0.00$ & $-0.02$ & $-0.00$ \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  Errors $\le0.09\%$.  At $s_a=16$ the exact form's raw error is 1.4--1.9 points smaller than split$+\omega$'s; what is left after its single particle
+  (the empty cell and the light cone, 3\%) is $\le0.74\%$.  At $s_a\ge54$ the two agree.
+\item X6, the dynamics (interactive 62049405, 23 minutes on 4 nodes; \nolinkurl{split_dynamics.tex}, ``The exact form of the S-scheme against split'').  The
+  exact form$+\omega$ samples its own equilibrium as split$+\omega$ does; the sound at $s_a=16$ at rest is in phase ($1.018\pm0.004$, where the measure
+  form$+\omega$ gave 1.36); $\Delta H/H$ rises slowly at $s_a=16$ at rest ($+1.9\times10^{-4}$ by $t=100$, four times split$+\omega$), and the shear mode at rest at
+  $s_a=16$ is more damped (6.1 against 4.4--5.1 times hydrodynamics); at $s_a=54$ the two cannot be told apart.  In the HMC chains at $s_a=16$ some trajectories
+  leave the domain and are rejected (9 of 16 chains at rest, 4 of 16 in motion have one; acceptance 0.98), none at $s_a=54$.
 \end{itemize}
 
 \end{document}

@@ -23,7 +23,8 @@ SETS = [("split", os.path.join(SCR, "sph", "eos_split"), "eosS_split_", "step5-d
         # with the positional counterterm in the Hamiltonian (SPH_POSITIONAL=1, a_2 = 0; campaign eos_positional): the offset is what one loop leaves
         ("split+omega", os.path.join(SCR, "sph", "eos_positional"), "eosP_split_", "step5-du0"),
         ("measure+omega", os.path.join(SCR, "sph", "eos_positional"), "eosP_ssm_c05_", "sscheme-m"),
-        ("measure+omega", os.path.join(SCR, "sph", "eos_positional"), "eosP_ssm_c025_", "sscheme-m@2.0")]
+        ("measure+omega", os.path.join(SCR, "sph", "eos_positional"), "eosP_ssm_c025_", "sscheme-m@2.0"),
+        ("exact+omega", os.path.join(SCR, "sph", "eos_positional"), "eosP_ssx_c05_", "exact")]          # the exact form (X5)
 for x in filter(None, os.environ.get("SR_SETS", "").split(",")):
     SETS.append(tuple(x.split(":")))
 
@@ -82,7 +83,7 @@ for r in sorted(rows, key=lambda r: (-r["c2"], r["s_a"], r["ha"], r["scheme"])):
 
 A2 = float(os.environ.get("SR_A2", "0.091"))
 print("\nthe EOS error after each correction, percent: (0) HMC, (1) − single particle, (2) − positions at one loop, (3) − a_2 term (a_2 = %g)" % A2)
-for sch in ("split", "measure", "measure-b", "sscheme-full", "split+omega", "measure+omega"):
+for sch in ("split", "measure", "measure-b", "sscheme-full", "split+omega", "measure+omega", "exact+omega"):
     rr = sorted([r for r in rows if r["scheme"] == sch], key=lambda r: (-r["c2"], r["s_a"], r["ha"]))
     if not rr: continue
     print(f"  {sch}:")
