@@ -102,13 +102,18 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
         s += c.β * log(St) - c.C
         Dp -= c.β * (q - v2);  Dθ -= c.β * v
     end
+    Pω = 0.0
+    if POS_ON                                                  # the positional counterterm, s → s + ω(S_t/n, V) (positional.jl)
+        o = positional_omega(St / n, V)
+        s += o.ω;  Dp -= a * o.ωσ;  Dθ -= v * o.ωσ;  Pω = o.ωσ / n + o.ωV
+    end
     εp = Dp / (St * a);  εpar = Dθ / St
     D = 1 - (1 + v2) * εp + v * εpar
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
     (D > 0 && abs(va) < 1) || return SS_NOSTATE
     SS_MEASURE && s <= c.β && return SS_WALL                 # measure: the wall s > β
-    Pa = (St / n + c.Pconst) * Ta / V
+    Pa = (St / n + c.Pconst + Pω) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = ss_lnrho(s, c) - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
 end
@@ -269,6 +274,7 @@ sscheme_vote_entropy(e, m, V, eos) = sscheme_from_energy(e, m, V, SSchemeConsts(
 # The schemes the S-scheme supports (as check_split).
 function check_sscheme(params)
     SSCHEME || return nothing
+    positional_set!(params)
     hint = "; set SPH_RENORM=split (the default) or SPH_RENORM=0"
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=sscheme needs hamiltonian = :energy and volume = :number" * hint)
