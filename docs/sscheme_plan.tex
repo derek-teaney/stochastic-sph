@@ -823,4 +823,85 @@ its spread over the family.
 \end{itemize}
 Not started: campaigns F and G at $s_a\ge54$ come first, since the regularization changes nothing there at the order kept.
 
+%-----------------------------------------------------------------------------
+\subsection*{Level 1, amended: N2, N3 (2026-11-25, branch \texttt{sscheme-measure} from \texttt{sscheme} at 2bdf1c4; commits b98983d, 0c00611)}
+
+\paragraph{The code.}  \texttt{SPH\_SSCHEME\_FORM=measure} (the default) or \texttt{full}; \texttt{SPH\_SSCHEME\_BETA} (default $D/2+1$).  As a term added
+to the full counterterm the change is $M=-\beta\ln S_{\rm t}+C$, whose slopes along $(\tau,\theta,\ln V)$ are $(-\beta q,-\beta v,-\beta)$; it shifts
+$\Delta_p$ by $-\beta(q-v^2)$, $\Delta_\theta$ by $-\beta v$ and $P_aV/T_a$ by $\beta(1-q/n)$, and everything else in \nolinkurl{src/sscheme.jl} is shared by
+the two forms.  The measure enters only through the weight, $\ln\rho(s)-\ln T_a$, and the wall is $s>\beta$.  For a general $\beta$,
+\st
+\Delta^H=\Big(\frac D2+1-\beta\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\frac aq ,
+\stp
+with the reference $(\bar s_{\rm rel},\bar V)$ taken from the initial condition (the mean rest-frame entropy density of the targets and $L^2/N$, as
+split takes $\bar V$), $\bar S_{\rm t}=\bar s_{\rm rel}\bar V$.  At $\beta=D/2+1$ only $\bar s_{\rm rel}$ enters ($T_0$ of \Eq{amend}); at $\beta=b$ only
+$\bar V$, and $\Delta^H$ is split's $\mathcal N\ln(\gamma V/\bar V)+\tfrac12\ln(a/q)$; for the conformal fluid at $\beta=D/2+1$ neither enters.  The
+g-regulator of E2 is not on this branch (it stays on \texttt{sscheme-reg}, not merged).
+
+\paragraph{Why a reference.}  With $T_{\rm scale}=1$ the code is in natural units and $T_{\rm rel}^{\,d}/s$ is a number, so the constant of
+$\Delta^H$ is defined once the cell of the label measure is fixed.  With the cell $(2\pi)^2$ the absolute $\Delta^H$ at rest is $+0.02$ for
+$c_s^2=1/2$ (the convention $s=S_{\rm t}$ at rest, to 0.02), but $-4.5$ ($s_a=16$) and $-5.1$ ($s_a=54$) for $c_s^2=1/4$, where it is a
+logarithm of $s/T^2\approx190$.  The measure form differs from one loop by $\beta\Delta^H/S_{\rm t}$ (renorm3, eq.~mismatch), which would then
+be $0.7$ at $s_a=16$.  The reference is therefore not needed for the dimensions; it makes $\Delta^H$ vanish where the particles are, which keeps
+the measure form closest to one loop.
+
+\paragraph{Tests} (\texttt{test/run.sh all} on an interactive node: every unit, physics and load test passes).
+\begin{itemize}
+\item \nolinkurl{test/testsscheme_measure.jl}: the derivatives of $H(s,\bm m,V)$ are $T_a$, $v_a$, $-P_a$ to $<3\times10^{-10}$; the two maps invert each
+  other to $10^{-15}$; $s$, $H$, $T_a$, $v_a$, $P_a$ and the weight agree with \texttt{state\_m} of \nolinkurl{examples/sscheme_ref.py} to $3\times10^{-15}$
+  (12 states, $S_{\rm t}=4$ to 541); $s-(S_{\rm t}-\Delta_\chi-\Delta_\ell+\beta\ln S_{\rm t})$ is one constant to $10^{-13}$.
+\item N3 (i): on 35 points $|\bm m|\le100$, $\tfrac14\le V\le4$, the domain in $S_{\rm t}$ is one interval, the label increases on it, and the label
+  $\beta+10^{-6}$ has a state.  The smallest $\mathcal D$ is $0.837$ ($c_s^2=1/2$) and $1.000$ ($c_s^2=1/4$).
+\item N3 (ii), \nolinkurl{test/testsscheme_jacobian.jl}: two steps of the generalized leapfrog, 168 particles at $s_a=16$ after the equilibrium draw,
+  Jacobian by central differences in all 672 coordinates: $\ln\det J=7.7\times10^{-8}$ ($c_s^2=1/2$) and $5.5\times10^{-8}$ ($c_s^2=1/4$).
+\item N3 (iii), \nolinkurl{test/testsscheme_hmc.jl} part 8, $s_a=16$, $N=672$, 20 updates of length $0.6/c_s$: 19 and 20 of 20 accepted, none leaves
+  the domain, no solve without a state; the smallest label after the updates is $2.91$ and $2.64$ ($\beta=2.5$).  The full form had 8 of 40.
+\item \nolinkurl{test/testsscheme.jl} (tests 1--6) pins the full form; \nolinkurl{test/testsscheme_hmc.jl} part 7 runs the measure form.
+\end{itemize}
+
+\subsection*{Level 1, amended: N1, the single particle (2026-11-25)}
+
+\nolinkurl{examples/renorm_quadrature_sscheme.py}, models \texttt{sscheme-m} ($F=1$) and \texttt{sscheme-mf} (the factor), $T_0$ the bath's $T_{\rm rel}$,
+$201^3$ points in $(\ln T,\text{rapidity})$, $\pm26\sigma$.  Relative errors of $E$ and $p$ (and $R$ in motion) against the target; split
+(\texttt{step5-du0}) and the full one-loop form (item A) from the same run.  \texttt{docs/figs/sscheme\_quadrature\_measure.csv}.
+\begin{center}\small
+\begin{tabular}{lrr|rrrr|rrrr}
+\toprule
+ & & & \multicolumn{4}{c|}{$E/E_{\rm t}-1$} & \multicolumn{4}{c}{$p/p_{\rm t}-1$} \\
+$c_s^2$ & $v$ & $s_a$ & split & one loop & $F=1$ & $F$ & split & one loop & $F=1$ & $F$ \\
+\midrule
+1/2 & 0 & 16 & $3.9\,\%$ & $4.2\,\%$ & $4.0\,\%$ & $3.9\,\%$ & $3.9\,\%$ & $4.2\,\%$ & $3.9\,\%$ & $3.8\,\%$ \\
+    &   & 30 & $2.2\,\mathrm e{-3}$ & $1.9\,\mathrm e{-3}$ & $2.2\,\mathrm e{-3}$ & $1.9\,\mathrm e{-3}$ & $2.2\,\mathrm e{-3}$ & $1.8\,\mathrm e{-3}$ & $2.2\,\mathrm e{-3}$ & $1.9\,\mathrm e{-3}$ \\
+    &   & 54 & $2.4\,\mathrm e{-4}$ & $1.8\,\mathrm e{-4}$ & $2.4\,\mathrm e{-4}$ & $1.9\,\mathrm e{-4}$ & $2.4\,\mathrm e{-4}$ & $1.8\,\mathrm e{-4}$ & $2.4\,\mathrm e{-4}$ & $1.9\,\mathrm e{-4}$ \\
+    &   & 541 & $9.7\,\mathrm e{-7}$ & $9.2\,\mathrm e{-7}$ & $9.7\,\mathrm e{-7}$ & $9.2\,\mathrm e{-7}$ & $9.7\,\mathrm e{-7}$ & $9.2\,\mathrm e{-7}$ & $9.7\,\mathrm e{-7}$ & $9.2\,\mathrm e{-7}$ \\
+    & 0.8 & 16 & $3.9\,\%$ & $4.0\,\%$ & $3.9\,\%$ & $3.7\,\%$ & $4.0\,\%$ & $3.9\,\%$ & $4.0\,\%$ & $3.7\,\%$ \\
+    &   & 30 & $3.1\,\mathrm e{-3}$ & $1.8\,\mathrm e{-3}$ & $3.0\,\mathrm e{-3}$ & $2.2\,\mathrm e{-3}$ & $3.4\,\mathrm e{-3}$ & $1.6\,\mathrm e{-3}$ & $3.4\,\mathrm e{-3}$ & $2.1\,\mathrm e{-3}$ \\
+    &   & 54 & $6.9\,\mathrm e{-4}$ & $2.8\,\mathrm e{-4}$ & $6.6\,\mathrm e{-4}$ & $3.7\,\mathrm e{-4}$ & $8.0\,\mathrm e{-4}$ & $2.4\,\mathrm e{-4}$ & $7.9\,\mathrm e{-4}$ & $3.5\,\mathrm e{-4}$ \\
+    &   & 541 & $6.1\,\mathrm e{-6}$ & $2.3\,\mathrm e{-6}$ & $5.6\,\mathrm e{-6}$ & $2.4\,\mathrm e{-6}$ & $7.2\,\mathrm e{-6}$ & $2.0\,\mathrm e{-6}$ & $7.0\,\mathrm e{-6}$ & $2.1\,\mathrm e{-6}$ \\
+\midrule
+1/4 & 0 & 16 & $8.5\,\%$ & $8.0\,\%$ & $8.5\,\%$ & $10.4\,\%$ & $10.4\,\%$ & $7.3\,\%$ & $10.8\,\%$ & $10.9\,\%$ \\
+    &   & 30 & $7.9\,\mathrm e{-3}$ & $7.7\,\mathrm e{-3}$ & $-1.6\,\mathrm e{-3}$ & $7.5\,\mathrm e{-3}$ & $1.4\,\%$ & $7.8\,\mathrm e{-3}$ & $6.6\,\mathrm e{-3}$ & $9.1\,\mathrm e{-3}$ \\
+    &   & 54 & $5.3\,\mathrm e{-4}$ & $5.8\,\mathrm e{-4}$ & $-2.7\,\mathrm e{-3}$ & $7.1\,\mathrm e{-5}$ & $2.4\,\mathrm e{-3}$ & $5.7\,\mathrm e{-4}$ & $-3.4\,\mathrm e{-4}$ & $3.3\,\mathrm e{-4}$ \\
+    &   & 541 & $3.3\,\mathrm e{-6}$ & $3.3\,\mathrm e{-6}$ & $-1.9\,\mathrm e{-5}$ & $3.1\,\mathrm e{-6}$ & $2.1\,\mathrm e{-5}$ & $3.3\,\mathrm e{-6}$ & $2.7\,\mathrm e{-6}$ & $3.3\,\mathrm e{-6}$ \\
+    & 0.8 & 16 & $8.0\,\%$ & $7.3\,\%$ & $8.6\,\%$ & $10.1\,\%$ & $9.6\,\%$ & $6.3\,\%$ & $10.6\,\%$ & $10.3\,\%$ \\
+    &   & 30 & $4.4\,\mathrm e{-3}$ & $5.2\,\mathrm e{-3}$ & $-1.1\,\mathrm e{-3}$ & $6.3\,\mathrm e{-3}$ & $9.5\,\mathrm e{-3}$ & $5.0\,\mathrm e{-3}$ & $5.7\,\mathrm e{-3}$ & $7.2\,\mathrm e{-3}$ \\
+    &   & 54 & $-4.4\,\mathrm e{-4}$ & $4.4\,\mathrm e{-5}$ & $-2.5\,\mathrm e{-3}$ & $-3.0\,\mathrm e{-4}$ & $1.0\,\mathrm e{-3}$ & $-1.0\,\mathrm e{-4}$ & $-5.2\,\mathrm e{-4}$ & $-2.2\,\mathrm e{-4}$ \\
+    &   & 541 & $-3.7\,\mathrm e{-6}$ & $-1.3\,\mathrm e{-7}$ & $-1.6\,\mathrm e{-5}$ & $-2.5\,\mathrm e{-7}$ & $9.5\,\mathrm e{-6}$ & $-1.5\,\mathrm e{-6}$ & $1.8\,\mathrm e{-6}$ & $-1.4\,\mathrm e{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item $c_s^2=1/2$: the plain form reproduces split (to a few percent of split's own error) and the form with the factor reproduces the full one-loop
+  form, at rest and in motion, as expected.  $R$: plain $-4.2\times10^{-4}$ to $-6.8\times10^{-7}$ ($s_a=16$ to 541), split $-3.1\times10^{-4}$ to
+  $-5.8\times10^{-7}$.
+\item $c_s^2=1/4$: at $s_a\ge54$ the form with the factor is again the one-loop form.  The plain form has the smaller $p$ error than split
+  ($-3.4\times10^{-4}$ against $2.4\times10^{-3}$ at $s_a=54$) but a larger $E$ error ($-2.7\times10^{-3}$ against $5.3\times10^{-4}$; at $s_a=541$
+  $-1.9\times10^{-5}$ against $3.3\times10^{-6}$).  $R$ is split's.
+\item $s_a=16$: all renormalized forms are at 4\% ($c_s^2=1/2$) and 8--11\% ($c_s^2=1/4$); the factor does not help there and is the worst at
+  $c_s^2=1/4$.
+\item The wall: the tree-level weight with a label at or below it is $1.5$--$2.7\times10^{-3}$ ($c_s^2=1/2$) and $4\times10^{-5}$--$1.2\times10^{-4}$
+  ($c_s^2=1/4$) at $s_a=16$, below $10^{-4}$ at $s_a=30$.  The model's weight within 1 of the wall is 1.1--1.2\% and 0.3--0.4\% at $s_a=16$.  No
+  weight has $P_a<0$ anywhere.  Item A's ``Ask'' threshold (a few percent) is not reached.
+\end{itemize}
+
 \end{document}
