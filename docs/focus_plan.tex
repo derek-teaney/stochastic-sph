@@ -69,7 +69,7 @@ representation & the particle variables only & the change of representation, the
 stochastic step & single vote, $\lambda=1$; Hastings on or off & votes \texttt{:bonds}, \texttt{:even}; $\lambda=\infty$; \texttt{residual}, \texttt{shift} \\
 dimension & simulation in 2D; $d=2$ or 3 & the 1D path \\
 start & \texttt{cold}, \texttt{hot}, \texttt{hmc} & \texttt{thermal}, \texttt{SR\_BATH=totals}, Poisson positions \\
-renormalization & tree level, split, S-scheme & (unchanged here; split may stay the default) \\
+renormalization & tree level, split, S-scheme & (unchanged; split may stay the default) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -380,11 +380,31 @@ positions; \texttt{testneighbor} keeps its numbers with its own generator.
 
 \paragraph{Q11} (\texttt{504ea20}; tag \texttt{focus-q11}).  The owner's decision as written.  \nolinkurl{test/testleapfrog_fail.jl}: a
 step 1000 times the acoustic one fails at every depth: four retries, a \texttt{LeapfrogFailure} with the state at the start of the
-step, the driver exits 1 with the record marked failed and the state saved.  Gate 62104423 (the Q11 head against \texttt{pre-prune}).
+step, the driver exits 1 with the record marked failed and the state saved.  Gate 62104423 (the Q11 head against \texttt{pre-prune}): unit,
+physics, load pass; \texttt{step.jl} and the equilibrium driver (tree and default, hot and cold, rest and boost) bit-identical; the
+stability driver differs (its start, Q9); the unit-test output differs only in the tests changed or removed (as at Q8).
 
 \paragraph{Q12} (\texttt{9576776}).  The table \texttt{SETTING\_SPECS}; the batch and test variables are in it as \emph{infra} (not read
 through \texttt{setting}, not listed as unused).  Defaults that depend on the driver (\texttt{SR\_KHMAX}, \texttt{SR\_START},
 \texttt{SR\_SEED0}, \ldots) are marked so and given by the driver; every other call takes the table's.  The optional
-\nolinkurl{nersc/check_campaign.jl} is not written.  Gate 62104585 against \texttt{focus-q11}.
+\nolinkurl{nersc/check_campaign.jl} is not written.  Gate 62104585 against \texttt{focus-q11}: unit, physics, load pass; \texttt{step.jl} and the stability
+driver bit-identical, the unit-test output identical.  Its driver comparisons failed in the harness (the detection of a ref before Q9
+matched a comment of \nolinkurl{src/settings.jl}); fixed in \nolinkurl{test/run.sh}, and covered by the Q15 gate.
+
+\paragraph{Q13} (\texttt{3c28f88}).  The comments of the 18 files of \nolinkurl{src/} rewritten; \nolinkurl{test/regress/astcmp.jl}
+(the parsed code, line numbers stripped) identical to the Q12 head.
+
+\paragraph{Q14} (\texttt{6425dc8}).  \nolinkurl{src/run.jl} (\texttt{setup\_fluid}, \texttt{start\_run!}, \texttt{RunState},
+\texttt{resume\_run}, \texttt{strang\_loop!}); \nolinkurl{examples/equilibrium.jl} on \texttt{RunConfig} with a \texttt{[config]}
+section in the record (the owner waived the question of its layout).  A checkpoint is a \texttt{RunState}; one of the code before Q14
+stops with a message.  The driver bit-identical to \texttt{focus-q11} in 12 configurations; \texttt{testcheckpoint},
+\texttt{testleapfrog\_fail}, \texttt{testrunrecord}, \texttt{teststart} pass.
+
+\paragraph{Q15} (\texttt{40fad27}).  \nolinkurl{CLAUDE.md}, \nolinkurl{README.md}, \nolinkurl{GETTING_STARTED.md},
+\nolinkurl{nersc/README.md}, \nolinkurl{docs/codeplan.tex} rewritten for the one scheme.  Gate 62105280 against \texttt{focus-q11}:
+unit, physics, load pass; \texttt{step.jl}, the equilibrium driver (tree and default; hot, cold and hmc; rest and boost) and the
+stability driver bit-identical; the unit-test output differs only by the printed configuration (\texttt{testcheckpoint}) and the
+new file \nolinkurl{src/run.jl} in the load list (\texttt{testrunrecord}).  The plan is done; the merge into \texttt{main} waits for
+the owner.
 
 \end{document}
