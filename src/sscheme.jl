@@ -275,7 +275,7 @@ function sscheme_labels!(particles, params, cl, eos)
     return nothing
 end
 
-# The target's T_rel (the transport coefficients, the time step): pa.T γ at the tree level (and split, legendre, as before); with sscheme
+# The target's T_rel (the transport coefficients, the time step): pa.T γ at the tree level (and split, as before); with sscheme
 # pa.T is T_a and the target's T_rel follows from its rest-frame energy density.
 target_trel(pa, eos) = SSCHEME ? Trel(eos, pa.e) : pa.T * pa.γ
 # The target's velocity of a particle with sscheme (the comoving structures of the viscous step, as star_coef)

@@ -25,11 +25,13 @@ function target_um(T, v, V, eos)
     return c.n * c.A * V * γ^c.n * T^(c.n - 1), c.n * c.A * V * γ^(c.n + 2) * T^c.n * v
 end
 
+# the constants of the one-loop counterterm δln Z_1 of legendre_plan.tex (k = 2 + 3/(2c_s²), C; were LegendreConsts of src/renorm.jl)
+onel(eos) = (c2 = eos.cs2_val;  n = 1 + 1 / c2;  A = c2 * eos.T_scale^(-n);  (k = 2 + 1.5 / c2, C = 1.5 * log(2π * n * A) - 0.5 * log(c2) + 1))
 println("1. the split adds up to the counterterm")
 for c2 in (0.5, 0.25), (T, v, V) in ((3.0, 0.0, 4.0), (3.0, 0.8, 4.0), (1.7, 0.95, 0.5), (0.9, 0.3, 2.0))
-    eos = ConstantCs2EOS(cs2_val = c2);  lc = LegendreConsts(eos);  c = SplitConsts(eos);  γ = 1 / sqrt(1 - v^2);  q = 1 - c2 * v^2
+    eos = ConstantCs2EOS(cs2_val = c2);  lc = onel(eos);  c = SplitConsts(eos);  γ = 1 / sqrt(1 - v^2);  q = 1 - c2 * v^2
     u, _ = target_um(T, v, V, eos)
-    Δleg = 2.5 * log(V) + 2.5 * log(γ) + lc.k * log(γ * T) + 0.5 * log(q) + lc.C           # renorm.jl, Δ
+    Δleg = 2.5 * log(V) + 2.5 * log(γ) + lc.k * log(γ * T) + 0.5 * log(q) + lc.C           # δln Z_1 (legendre_plan.tex)
     Δlab = c.b * log(u) + lc.C - lc.k * c2 * log(c.n * c.A)
     Δdyn = c.N * log(γ * V) + 0.5 * log(q)
     err = abs(Δlab + Δdyn - Δleg) / abs(Δleg)

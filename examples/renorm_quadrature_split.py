@@ -8,7 +8,7 @@
 #   label    the label part only: measure e^{u - Δs_lab(u)} J_lab du d^2m, J_lab = 1 - (5/2 - N)/u, H = e_t  (= SPH_RENORM at c_s^2 = 1/2)
 #   step5    the label part in the measure, H = e_t + T_a [Δs_dyn + ∂Δs_dyn/∂u|_{m,V}]  (the last term is -ln J_dyn at lowest order)
 #   step5-du0  the same without the term ∂Δs_dyn/∂u (step5_plan.tex, A: keep it only if it changes the residual at s_a >= 54)
-#   legendre the Legendre Hamiltonian (examples/renorm_quadrature_legendre.py, imported unchanged)
+#   legendre the Legendre Hamiltonian (examples/legacy/renorm_quadrature_legendre.py, imported unchanged)
 # The quadrature for tree/label/step5 runs over the target's (T, v_x, v_y): du d^2m = |∂(u,M)/∂(T,v)| (M/v) dT d^2v.
 # Also reported for step5: the weight within 3 of the label boundary u = 5/2 - N, and the largest |dx/dt| = |∂H/∂m| on the grid
 # (and the weight beyond the light cone).
@@ -19,6 +19,7 @@ import os, sys
 import numpy as np
 from scipy.optimize import minimize
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "legacy"))   # the Legendre model (examples/legacy/)
 from renorm_quadrature_legendre import Model as LegendreModel
 
 

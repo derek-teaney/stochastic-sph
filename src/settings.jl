@@ -37,7 +37,7 @@ for (name, why) in RETIRED_SETTINGS
 end
 
 # The raw string of a setting, or nothing, not recorded: only to choose how a setting is then read with `setting`
-# (sph.jl: SPH_RENORM=legendre is read as a Symbol, any other value as a Bool, as before).
+# (sph.jl: SPH_RENORM=split or sscheme is read as a Symbol, 0 as a Bool, as before).
 setting_peek(name::AbstractString) = get(ENV, name, nothing)
 
 # every setting read so far, in the order first read: name => (value, default, set)

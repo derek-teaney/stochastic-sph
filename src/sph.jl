@@ -92,12 +92,9 @@ default_dissipation(sim_dim = 2) =
 # the equation of state loses accuracy as 1e-16 γ² (relative, in 1 − v², T, S), and the comoving metric and the residual coefficients
 # become singular; nothing in our flows needs γ ≳ 10.  Default 100 (|v|² ≤ 1 − 10⁻⁴).
 const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
-# SPH_RENORM=legendre (docs/legendre_plan.tex): the particle Hamiltonian is the Legendre transform of the wanted single-particle free
-# energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.
-const LEGENDRE = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "legendre";  end
 # SPH_RENORM=split (docs/step5_plan.tex, docs/renormalization_review.tex): Step 5, the label part of the counterterm in the measure, the
 # rest in H (renorm_split.jl).  The DEFAULT since 2026-11-23 (merge of branch split): with SPH_RENORM unset the run is renormalized.
-# SPH_RENORM=0 is the tree level (the default before), SPH_RENORM=legendre the alternative scheme.
+# SPH_RENORM=0 is the tree level (the default before).  SPH_RENORM=legendre (docs/legendre_plan.tex) was removed on 2026-11-26.
 # Split supports d = 2, the energy Hamiltonian with the number volume, the Liouville measure, not the grid step (check_split): any other
 # scheme stops with a message to set SPH_RENORM=0.
 const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(strip(r)) == "split";  end
@@ -105,13 +102,15 @@ const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(st
 # carries the label pa.s (which can be ≤ 0) and its target entropy pa.St; the volume, energy and velocity are stored (pa.V, pa.H, pa.v), not
 # derived from s.  Same requirements as split (check_sscheme).
 const SSCHEME = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "sscheme";  end
-# the Hamiltonian has a domain (legendre, split, sscheme): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
-const HAS_DOMAIN = LEGENDRE || SPLIT || SSCHEME
-# the values of SPH_RENORM; any other stops here (SPH_RENORM=1, the entropy shift of partition_v2.tex, was removed on 2026-11-26)
+# the Hamiltonian has a domain (split, sscheme): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
+const HAS_DOMAIN = SPLIT || SSCHEME
+# the values of SPH_RENORM; any other stops here.  Removed on 2026-11-26 (docs/sscheme_plan.tex, sec:prune): SPH_RENORM=1, the entropy
+# shift of partition_v2.tex, and SPH_RENORM=legendre (docs/legendre_plan.tex); the last commit with both is 9846a6c (branch sscheme-measure).
 let r = setting_peek("SPH_RENORM")
-    r === nothing || lowercase(strip(r)) in ("split", "sscheme", "legendre", "0", "false") ||
-        error("SPH_RENORM=$r: the values are split (the default), sscheme, legendre and 0 (the tree level).  SPH_RENORM=1, the entropy shift " *
-              "(the b ln S_t of the measure alone, not consistent with one loop), was removed on 2026-11-26 (docs/sscheme_plan.tex, sec:prune).")
+    r === nothing || lowercase(strip(r)) in ("split", "sscheme", "0", "false") ||
+        error("SPH_RENORM=$r: the values are split (the default), sscheme and 0 (the tree level).  SPH_RENORM=1 (the entropy shift, not " *
+              "consistent with one loop) and SPH_RENORM=legendre were removed on 2026-11-26; to rerun an old line use commit 9846a6c " *
+              "(docs/sscheme_plan.tex, sec:prune).")
 end
 const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
@@ -199,7 +198,6 @@ end
 
 # Stochastic runs (the stochastic step, hybrid Monte Carlo) are two-dimensional (dimension.tex).
 function check_stochastic_dims(params::SimParams)
-    check_legendre(params)                        # SPH_RENORM=legendre: the schemes it supports (renorm.jl)
     check_split(params)                           # SPH_RENORM=split (renorm_split.jl)
     check_sscheme(params)                         # SPH_RENORM=sscheme (sscheme.jl)
     sim_dim(params) == 2 || error("stochastic runs need sim_dim = 2; one-dimensional stochastic runs were removed (dimension.tex)")
@@ -234,7 +232,7 @@ struct ConstantCs2EOS <: AbstractEOS
     ζ_by_s  :: Float64   # specific bulk viscosity  ζ/s (constant)
 end
 
-# The physical entropy of a particle: the label at the tree level (and split, legendre, whose label is the target's entropy), the
+# The physical entropy of a particle: the label at the tree level (and split, whose label is the target's entropy), the
 # target entropy S_t with SPH_RENORM=sscheme, whose label s = S_t − Δ is not an entropy.
 entropy_of(pa) = SSCHEME ? pa.St : pa.s
 
@@ -461,9 +459,7 @@ function eos_newton(S_in::Float64, M_mag::Float64, e0::Float64, eos::AbstractEOS
     return e
 end
 
-# The state of a particle at its smoothed fields, through the forward map particle_forward (pointwise.jl; legendre_plan.tex, A):
-# with SPH_RENORM=legendre the Legendre Hamiltonian (renorm.jl), whose pa.e is the target's rest-frame energy density at T_rel
-# (the warm start, with pa.γ) and pa.p the particle's pressure −∂H/∂V.
+# The state of a particle at its smoothed fields, through the forward map particle_forward (pointwise.jl; legendre_plan.tex, A).
 function solve_eos!(pa::Particle, eos::AbstractEOS; tol=1e-12, maxiter=50, verbose=false)
     SSCHEME && return sscheme_solve!(pa, eos)
     S   = pa.S_smooth

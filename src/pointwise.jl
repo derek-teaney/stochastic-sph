@@ -81,7 +81,7 @@ end
 #            returns (e = rest-frame energy density, p = the particle's pressure, T = ∂H/∂s, γ, v, HS = H/s, FS)
 #   inverse  particle_inverse(e, m, V, eos; guess): (s, v, T) of the particle of energy e, momentum m and volume V; s = −Inf for a
 #            state no fluid can have (the inversion fails, |M| ≥ ε, or γ > γ_max; sph.jl, SPH_GAMMA_MAX)
-# The target's (default): the arithmetic of solve_eos! and eos_from_energy, unchanged.  SPH_RENORM=legendre: renorm.jl.
+# The target's (default): the arithmetic of solve_eos! and eos_from_energy, unchanged.  SPH_RENORM=split: renorm_split.jl; sscheme: sscheme.jl.
 @inline function target_forward(s, S_in, M_vec, e0, eos::AbstractEOS; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2),
                                 tol = 1e-12, maxiter = 50, verbose = false)
     e = eos_newton(S_in, M_mag, e0, eos; tol, maxiter, verbose)
@@ -111,12 +111,8 @@ end
     S, v, T = eos_from_energy(ε, M, eos)
     return ((isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf, v, T)
 end
-# the methods are chosen at load time, so that without SPH_RENORM=legendre the code is exactly that of before
-if LEGENDRE
-    particle_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), γ0 = 1.0, guess = nothing,
-                     tol = 1e-12, maxiter = 50, verbose = false) = legendre_forward(s, S_in, M_vec, e0, γ0, eos; guess)
-    particle_inverse(e, m, V, eos; guess = nothing) = legendre_inverse(e, m, V, eos; guess)
-elseif SSCHEME      # the S-scheme has no forward map in (s, S, M): solve_eos! and particle_energy call sscheme_from_label (sscheme.jl)
+# the methods are chosen at load time, so that at the tree level the code is exactly that of before
+if SSCHEME      # the S-scheme has no forward map in (s, S, M): solve_eos! and particle_energy call sscheme_from_label (sscheme.jl)
     particle_forward(s, S_in, M_vec, e0, eos; kw...) = error("SPH_RENORM=sscheme: particle_forward is not used (sscheme_from_label)")
     particle_inverse(e, m, V, eos; guess = nothing) = sscheme_inverse(e, m, V, eos)
 elseif SPLIT

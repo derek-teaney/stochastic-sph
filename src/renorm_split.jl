@@ -194,11 +194,11 @@ end
     return liouville ? s - log(TH / (1 - b / u)) : s
 end
 
-# The schemes Step 5 supports (as check_legendre), and V̄.
+# The schemes Step 5 supports, and V̄.
 function check_split(params)
     SPLIT || return nothing
     positional_set!(params)
-    hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level, or SPH_RENORM=legendre"
+    hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level"
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number" * hint)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2" * hint)

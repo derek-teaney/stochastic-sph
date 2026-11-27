@@ -2,13 +2,13 @@
 # from the hexagonal lattice, as examples/volume_fluctuations.jl, recording after every update the energy density and the mechanical
 # pressure (kinetic and virial parts, src/measure.jl energy_pressure), against the target e(T0), p(T0) at the bath temperature.
 #   julia -t 8 --project examples/eos_measure.jl L h/a s_a nupdates [tag]
-# s_a is the entropy per particle of the lattice start.  With SPH_RENORM=1 the renormalized Hamiltonian (docs/partition_v2.tex).
+# s_a is the entropy per particle of the lattice start.
 # Writes <outdir>/<tag>.txt (a summary, key = value) and <outdir>/<tag>.h5 (the format of examples/volume_fluctuations.jl: S(k), g(r),
 # the volume series, plus the E and P series), outdir = SR_OUTDIR (default data/eos).
 # Environment: SR_OUTDIR, SR_SEED0 (default 1), SR_HMC_DTFAC (default 0.35), SR_HMC_TAUJIT (default 0.5), SR_BURN (fraction discarded,
 # default 1/3), SR_KHMAX (default 3); SR_CS2 (the speed of sound squared of ConstantCs2EOS, default 1/2, the conformal fluid in d = 2)
-# and SR_V (the velocity of the fluid along x, default 0; docs/legendre_plan.tex, "The campaign").  SPH_RENORM=1, legendre or split
-# (split: the counters are reported under legendre_*, and V̄ as split_vbar).
+# and SR_V (the velocity of the fluid along x, default 0; docs/legendre_plan.tex, "The campaign").  SPH_RENORM=split, sscheme or 0
+# (the counters of the solves are reported under legendre_*, the names of the first campaign, and V̄ as split_vbar).
 # Recorded after every update besides E and P: the stress T^yy = P − (T^xx − T^yy)/2 and the total momentum Σ m_a; the summary has
 # the momentum density M, R = M/(v(E + T^yy)) − 1, and the susceptibility matrix from the canonical covariances of the totals
 # ℰ = L² E and 𝒫 = Σ m_a at the multipliers β⁰ = 1/T, β = v/T (legendre_plan.tex, eqs. chifluct, chitarget):
@@ -25,7 +25,7 @@ const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 const BURN   = setting("SR_BURN", 1 / 3)
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const OUTDIR = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data", "eos")))
-const SCHEME = SSCHEME ? "sscheme" : LEGENDRE ? "legendre" : SPLIT ? "split" : "tree"
+const SCHEME = SSCHEME ? "sscheme" : SPLIT ? "split" : "tree"
 const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V", 0.0)
 const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)") * "_seed$(SEED)"
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
@@ -51,7 +51,6 @@ st = state_from_beta(BATH.β0, BATH.β, eos)
 e_t = st.ε;  M_t = st.M[1];  nbar = params.N / prod(params.L);  σp = p_t / (Tr0 * nbar)
 @printf("eos: N = %d, h/a = %.3g, s_a = %.4g, %s, c_s² = %.3g, v = %.4g, T0 = %.6g, σ = %.4g, %d steps per trajectory, %d updates\n",
         params.N, HA, SA, SCHEME, CS2, vb, T0, σp, NSTEPS, NUPD)
-LEGENDRE && reset_legendre_counts!()
 SPLIT && reset_split_counts!()
 SSCHEME && reset_sscheme_counts!()
 
@@ -123,7 +122,7 @@ mM, dM = mean_err(Mx);  mTyy, dTyy = mean_err(Tyy)
 # R = M/(v(E + T^yy)) − 1, its error from the blocks of the ratio's pieces (jackknife)
 Rf(Ek, Mk, Tk) = (R = vb > 0 ? mean(Mk) / (vb * (mean(Ek) + mean(Tk))) - 1 : NaN,)
 Rv, Re = jackknife3(Rf, E, Mx, Tyy)
-lc = LEGENDRE ? legendre_counts() : SPLIT ? split_counts() :
+lc = SPLIT ? split_counts() :
      SSCHEME ? (sc = sscheme_counts();  (solves = sc.solves, iters = sc.iters, fails = sc.fallbacks, nostate = sc.nostate, cold = 0)) :
      (solves = 0, iters = 0, fails = 0, nostate = 0, cold = 0)
 summary = [

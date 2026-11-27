@@ -1224,3 +1224,14 @@ note in `docs/` with the tables and figures.
 - NOT yet redone, affected: hastings_bath s_a = 16 (3-5 of 16 runs per set; earlier sections of split_dynamics.tex) and campaign hastings
   (s_a = 4, 12, 16; nearly every run its own step; docs/inverse_moment.tex stage 2 and hastings_low). s_a >= 54 sets have one step.
 
+## renorm-main: P0, P1 (2026-11-26)
+- Branch renorm-main from sscheme-measure (9846a6c); P0: notes of legendre (b80deed), equilibrium/hbya (5152b98), sscheme-reg (5b61bc3:
+  sscheme_fold.tex, sscheme_plan sec:reg; the regulator code stays on sscheme-reg).
+- P1 baseline, interactive 62070496 (1 node, 52 min), worktree ~/rmP1 at 5b61bc3, $SCRATCH/sph/tests/renorm_main_P1: test/run.sh all.
+  Unit (all), physics (3), load (97): pass.  Regression against main (00064e7): step.jl and stability bit-identical; equilibrium driver
+  rest/boost differ only in the records H, KE, Vspr, hast_lq_* (trajectory datasets identical; the record of H since 3fa7a3e, the KE
+  normalization since 2bc03dd); unit-test output differs in testchangerep, testcommonkernel, testdissipative, testmoment (last digits of
+  round-off residues, 1e-16..1e-12: the stored V in place of s/S_smooth), testcheckpoint (the record of H; trajectory and acceptances
+  equal), testrunrecord (the new settings and src files), testlegendre (a path).  All expected.  First complete run of the suite here
+  (the debug runs timed out before the unit-output stage).
+

@@ -214,9 +214,8 @@ function particle_entropy_lnT(e, m, V, eos; guess = nothing)
     s, _, T = particle_inverse(e, m, V, eos; guess)
     return (isfinite(s) && T > 0) ? s - log(T) : -Inf
 end
-# SPH_RENORM is recorded here (sph.jl reads it: split, the default; sscheme; legendre; 0 the tree level).  SPH_RENORM=1, the entropy
-# shift of partition_v2.tex (the b ln S_t of the measure alone, not consistent with one loop), was removed on 2026-11-26 (sph.jl stops on it).
-(LEGENDRE || SPLIT || SSCHEME) ? setting("SPH_RENORM", :split) : setting("SPH_RENORM", false)
+# SPH_RENORM is recorded here (sph.jl reads it: split, the default; sscheme; 0 the tree level; sph.jl stops on the removed values).
+(SPLIT || SSCHEME) ? setting("SPH_RENORM", :split) : setting("SPH_RENORM", false)
 # the method is chosen at load time, so that at the tree level the code is exactly that of before (bit-identical regression)
 if SSCHEME
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)   # liouville (check_sscheme)
@@ -226,11 +225,11 @@ else
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) =
         liouville ? particle_entropy_lnT(e, m, V, eos; guess) : particle_entropy(e, m, V, eos; guess)
 end
-# SPH_RENORM=legendre: the state (T, v⃗) of each particle at the start of a stochastic step, the starting point of the inverse solves of
-# its votes and coefficients (renorm.jl; a guess changes the Newton iterations, not the result).  vg(a) is nothing otherwise, and the
-# target's inverse ignores it.
+# SPH_RENORM=split: the state of each particle at the start of a stochastic step (its label and the target's rest-frame energy density),
+# the starting point of the inverse solves of its votes and coefficients (a guess changes the Newton iterations, not the result).
+# vg(a) is nothing otherwise, and the target's inverse ignores it.
 const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
-@inline vg(a) = (LEGENDRE || SPLIT) ? @inbounds(VOTE_GUESS[a]) : nothing
+@inline vg(a) = SPLIT ? @inbounds(VOTE_GUESS[a]) : nothing
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
@@ -631,10 +630,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
     liouville = params.measure === :liouville
     liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
-    if LEGENDRE                                      # the starting points of the votes' inverse solves (renorm.jl)
-        resize!(VOTE_GUESS, N)
-        for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v);  end
-    elseif SPLIT                                     # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
+    if SPLIT                                           # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
     end

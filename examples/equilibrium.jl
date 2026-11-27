@@ -164,8 +164,8 @@ function one_realization(seed)
         _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                 L=LBOX, lattice=:hex, seed=1000seed + 4)
         # T_rel0: the temperature of the target fluid at s_rel,0, from the equation of state (not from a particle of the set-up, whose
-        # T = ∂H/∂s depends on the Hamiltonian: with SPH_RENORM=legendre the particle variable is the label, not the target entropy)
-        # w0 likewise from the EOS with the nominal bath (a Legendre set-up particle is hotter: w 1.8× at s_a = 54, 4× at s_a = 16)
+        # T = ∂H/∂s depends on the Hamiltonian: with a renormalized Hamiltonian the particle variable is the label, not the target entropy)
+        # w0 likewise from the EOS with the nominal bath (a set-up particle of the removed legendre scheme was hotter: w 1.8× at s_a = 54, 4× at s_a = 16)
         e0 = e_of_srel(eos, SREL0);  Trel0 = trel_of_srel(eos, SREL0)     # (Trel is a local variable below)
         w0 = BATH === :nominal ? e0 + pressure(eos, e0) : ps0[1].e + ps0[1].p
         Mx0 = w0 * GAMMA^2 * BOOST
