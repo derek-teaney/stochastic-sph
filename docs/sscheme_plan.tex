@@ -1291,6 +1291,157 @@ divided by hybrid Monte Carlo of the same Hamiltonian; errors from the spread be
 \end{figure}
 
 %-----------------------------------------------------------------------------
+\section{The regularized one loop (branch \texttt{sscheme-reg}, 2026-11-25; superseded)}
+\label{sec:reg}
+
+The results of the branch \texttt{sscheme-reg}, brought in as text when the program was merged into \texttt{main}.  That branch regularized the full
+form of the one loop near its boundary (item E2, \texttt{SPH\_SSCHEME\_REG}).  The measure form (\Sect{sec:amend}) and then the exact form
+(\Sect{sec:exact}) superseded it, and its code is not in \texttt{main}: it stays on the branch.  Items F and G below are the campaigns of that
+version; the commits and jobs they name are on that branch.
+
+\subsection*{F. The equilibrium at $s_a=54$ and $541$ (campaign \texttt{eos\_sscheme}, interactive 62002646, 2 nodes, 20 min; commit 17ec558)}
+
+The lines of \texttt{eos\_split} at $s_a=54,541$ with the S-scheme at one loop (128 tasks, all complete, no failed solve, acceptance 0.98--0.99);
+\nolinkurl{examples/eos_sscheme.py}, \nolinkurl{docs/figs/sscheme_eos.csv}.  As expected, the S-scheme and split agree within errors in $E$, $P$,
+$T^{yy}$, $M$, $R$ and $\chi_{MM}$, because both are dominated by the correction of the positions: $P/p-1=-3.9$ to $-4.9$ percent at $s_a=54$, $h/a=2$,
+$-1.7$ to $-2.1$ at $h/a=3$, $-0.5$ to $-1.7$ at $s_a=541$.  The one difference beyond the errors is $P$ at $c_s^2=1/4$, $s_a=54$, at rest: $-4.92\pm0.04$
+against $-4.71\pm0.05$ percent at $h/a=2$ and $-2.10\pm0.03$ against $-1.92\pm0.03$ at $h/a=3$, which is the single-particle difference of item A
+($p$: split $+0.24$, S-scheme $+0.06$ percent).
+
+\subsection*{F at $s_a=16$ (campaign \texttt{eos\_sscheme16}, debug 62003678, 1 node, 21 min; regularized, commit f628ad0)}
+\textbf{Superseded (2026-11-25, 3c1e0ad):} the regularization of f628ad0 lacked the condition $S_{\rm t}>b$; below $b$, $h=1-g\approx-2u^3$ is large and $hX$
+admitted spurious states with $S_{\rm t}\ll b$ (found in the single-particle quadrature).  This campaign and the $s_a=16$ half of G are rerun with the
+fix (\texttt{eos\_sscheme16b}, \texttt{hastings\_sscheme\_b}); the numbers below are kept as the record.
+
+The $s_a=16$ lines of \texttt{eos\_split} with \texttt{SPH\_SSCHEME\_REG=1} (64 tasks, all complete; $1.5\times10^{10}$ solves from the label,
+$1.5\times10^5$ bisection fallbacks, 44 without a state; acceptance 0.98--0.99).  Percent, split $|$ S-scheme:
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+ & $E/e-1$ & $P/p-1$ or $T^{yy}/p-1$ & $M/M_{\rm t}-1$ & $R$ \\
+\midrule
+$c_s^2=1/2$, $h/a=2$, rest & $2.09\,|\,2.11$ & $-1.40\,|\,-1.38$ & & \\
+$c_s^2=1/2$, $h/a=2$, $v=0.8$ & $-1.75\,|\,-1.64$ & $-4.65\,|\,-4.65$ & $-1.77\,|\,-1.64$ & $0.33\,|\,0.37$ \\
+$c_s^2=1/4$, $h/a=2$, rest & $7.35\,|\,9.17$ & $5.69\,|\,6.39$ & & \\
+$c_s^2=1/4$, $h/a=3$, rest & $8.87\,|\,10.44$ & $9.31\,|\,9.71$ & & \\
+$c_s^2=1/4$, $h/a=2$, $v=0.8$ & $-1.21\,|\,-0.64$ & $-3.87\,|\,-3.69$ & $-1.12\,|\,-0.62$ & $0.28\,|\,0.24$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+At $c_s^2=1/2$ the two agree within errors.  At $c_s^2=1/4$ at rest the S-scheme is worse by $1.5$--$1.8$ percent in $E$ (the errors are $0.1$), more
+than the single-particle difference of one loop (item A: $8.0$ against $8.5$ percent), so the regularization at $c_s^2=1/4$ ($g$ on the volume part) is
+the likely contributor; in motion it is better.  A first data point for the sensitivity study E2.
+
+\subsection*{G. The dynamics against hybrid Monte Carlo (campaign \texttt{hastings\_sscheme}, interactive 62003679, 4 nodes, 16 min; commit f628ad0)}
+
+The split lines of \texttt{hastings\_bath} with the regularized S-scheme, $s_a=16,54$, $v_0=0,0.8$, 16 runs to $t=100$ and 16 chains of hybrid Monte
+Carlo each (128 tasks, all complete).  Analysis with the run sets side by side ($\$$SCRATCH/sph/ss\_cmp, links):
+\texttt{HA\_SPLIT=1 HA\_SS=1} \nolinkurl{examples/hastings_analysis.jl}, \texttt{BOOST\_GROUP=SS16, SS54} \nolinkurl{examples/boost_analysis.jl},
+\nolinkurl{examples/energy_time.jl}; figures \nolinkurl{docs/figs/hastings_sscheme_spectra.png}, \nolinkurl{boost_*_SS16.png}, \nolinkurl{boost_*_SS54.png},
+\nolinkurl{energy_time_sscheme.png}.
+\begin{itemize}
+\item \emph{Dynamics against its own hybrid Monte Carlo}: $\langle|M_{L,T}|^2\rangle$ at $kh=0.52$--$1.56$, $0.99$--$1.05$ at $s_a=16$ at rest (split $0.99$--$1.04$),
+  consistent with one in motion and at $s_a=54$.  The S-scheme's own equilibrium is split's: its chains over the tree-level chains are $0.72$ against
+  $0.72$--$0.73$ at $s_a=16$ at rest, $0.86$--$0.90$ against $0.87$--$0.90$ at $s_a=54$.
+\item \emph{Equal-time spectra against the equation of state}, $C_{AA}(k,0)/\chi_{AA}$ at the smallest $k$: S-scheme $0.99$--$1.06$ at $s_a=16$ at rest (split
+  $1.03$--$1.07$, tree $1.26$--$1.42$).
+\item \emph{Energy}, $\Delta H/H$ at $t=100$ (mean; range over the 16 runs): $s_a=16$ at rest, S-scheme $+1.9\times10^{-4}$ ($-4\times10^{-5}$ to $+5\times10^{-4}$),
+  split $+9.2\times10^{-4}$ ($-1.7\times10^{-3}$ to $+3.2\times10^{-3}$), tree $+6.0\times10^{-4}$; $s_a=16$, $v_0=0.8$, S-scheme $+1.2\times10^{-5}$, split
+  $+3.7\times10^{-4}$; $s_a=54$ at rest, S-scheme $+2.2\times10^{-5}$, split $+7.5\times10^{-5}$.  The S-scheme conserves the energy best, and its runs
+  scatter five to twenty times less.
+\item \emph{Shear damping}, $\Gamma$/hydrodynamics at the smallest $k$: $5.7$--$5.9$ at $s_a=16$ at rest, as split ($5.3$--$5.9$); $3.5$--$3.6$ at $s_a=54$
+  (split $3.9$).  The excess over hydrodynamics is the fluctuation correction of \nolinkurl{split_dynamics.tex}, not the scheme.
+\end{itemize}
+
+\subsection*{F and G at $s_a=16$ rerun with the fix $S_{\rm t}>b$ (debug 62005217, interactive 62005221; commit 3c1e0ad)}
+
+\paragraph{The fix changed almost nothing.}  At $c_s^2=1/2$ the equilibrium is unchanged to the digits shown and the dynamics records are
+bit-identical in the Fourier modes: the spurious states below $b$ were not visited.  At $c_s^2=1/4$ the numbers move within their errors
+($E/e-1$ at $h/a=2$, rest: $9.23\pm0.09$ against $9.17\pm0.08$ percent).  The results above therefore stand, with the rerun's values:
+\begin{center}\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+$c_s^2=1/4$, $s_a=16$ & $E/e-1$ & $P/p-1$, $T^{yy}/p-1$ & $M/M_{\rm t}-1$ & $\chi_{MM}/\text{targ.}-1$ \\
+\midrule
+$h/a=2$, rest: split $|$ S-scheme & $7.35\,|\,9.23$ & $5.69\,|\,6.44$ & & $4.7\pm3.0\,|\,13.5\pm3.9$ \\
+$h/a=3$, rest & $8.87\,|\,10.41$ & $9.31\,|\,9.68$ & & $1.7\pm4.1\,|\,12.7\pm3.3$ \\
+$h/a=2$, $v=0.8$ & $-1.21\,|\,-0.62$ & $-3.87\,|\,-3.66$ & $-1.12\,|\,-0.60$ & \\
+$h/a=3$, $v=0.8$ & $0.21\,|\,0.84$ & $-0.47\,|\,-0.33$ & $0.28\,|\,0.87$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\paragraph{The gap at $c_s^2=1/4$ at rest is real} ($1.5$--$1.9$ percent in $E$, the errors $0.1$), and the single particle explains only $0.3$ of it (the
+regularized particle against split: $E$ $+8.7$ against $+8.5$ percent).  The likely cause: $g$ on the volume part is not small at $s_a=16$ in practice,
+$1-g\approx3(b/S_{\rm t})^2\approx5$ percent at $S_{\rm t}=16$ (formally $1/S_{\rm t}^2$, with the coefficient $3b^2=12$), which changes the volume dependence
+of the label and so the distribution of the positions, beyond the single particle.  Not yet shown; the tests (planned): one loop
+(\texttt{SPH\_SSCHEME\_REG=0}) at $c_s^2=1/4$, $s_a=16$, and a steeper $g$.  At $c_s^2=1/2$ the regularized S-scheme agrees with split.
+
+\paragraph{New: rare moments without a state in the dynamics at $s_a=16$.}  Records of the energy that are NaN (a particle without a state at the time of
+the record): S-scheme $s_a=16$, rest, 2 of 56\,560 records in 2 of 16 runs; $v_0=0.8$, 17 of 95\,316 in 9 runs; $s_a=54$ none; split at $s_a=16$ none.
+The runs continue and the next records are finite.  At $c_s^2=1/2$ every label above the limit has a state at every $\bm m$ and $V$, so the cause is
+likely one of the conditions that are not regularized: $|v_a|<1$ or the target's $\gamma\le\gamma_{\max}=100$.  To be diagnosed.
+
+\paragraph{The NaN records: diagnosed and fixed (3c1e0ad $\to$ the cap fix).}  The reruns of three affected seeds with a log of the solves without a
+state (debug 62006902) reproduce them (seed 611 at $t=16.09$), and every logged particle is the same case: a particle with $S_{\rm t}\approx3$ that the
+ideal step carries just above the Lorentz factor $\gamma_{\max}=100$ (\texttt{SPH\_GAMMA\_MAX}; target $\gamma=100.04$--$101$), with $\mathcal D>0$,
+$|v_a|<1$, $S_{\rm t}>b$ and $s>s_b$ all satisfied.  The tree level and split apply the cap only in the map from the energy (the votes and the heat
+bath reject $\gamma>\gamma_{\max}$), and their ideal step has no cap; the S-scheme applied it in both maps.  It now applies it in the map from the
+energy only, and the logged particles have their states ($\gamma\approx100.0$--$100.3$, $v_a=0.99995$).  Unrelated to the fold and the regulator.
+
+\paragraph{The cost of the regulator at $s_a=54$, $541$} (campaign \texttt{eos\_sscheme\_reg}, debug 62006858, 2 nodes, 21 min; the lines of
+\texttt{eos\_sscheme} with \texttt{SPH\_SSCHEME\_REG=1}).  Line by line against one loop and split: at $s_a=541$ all lines agree to $0.01$--$0.02$
+percent; at $s_a=54$ the differences are at most $0.1$ percent ($E$ at $c_s^2=1/2$, $v=0.8$, $h/a=2$: $-1.08\pm0.02$ against $-1.16$ for one loop;
+$P$ at $c_s^2=1/4$, rest, $h/a=2$: $-4.79\pm0.05$ against $-4.92$ for one loop and $-4.71$ for split).  The regulator costs nothing where the fold region has
+no weight; its cost at $c_s^2=1/4$ is confined to $s_a=16$.
+
+
+\paragraph{The rule chosen (owner, 2026-11-25).}  Multiply by $g(S_{\rm t})$ only the parts of $X$ that raise the smallest label, and leave the others
+as they are; the smallest label is then its value at rest for every $\bm m$ and $V$, and the hard limit sits there ($\delta=0$), as split's $u>b$.  Which
+parts raise it (\nolinkurl{examples/renorm_quadrature_sscheme.py}, the smallest label over $S_{\rm t}$ on a grid of $v$ and $V$):
+\begin{itemize}
+\item the velocity part $\mathcal N\ln\gamma+\tfrac12\ln(1-c_s^2v^2)$ raises it for $c_s^2>1/3$ (to first order as $(3c_s^2-1)/2$ in $v^2$) and
+  lowers it for $c_s^2<1/3$: at $c_s^2=1/2$ by up to $+\tfrac12\ln2$, at $c_s^2=1/4$ by $-0.17$ at $v=0.8$ and $-0.84$ at $v=0.99$;
+\item the volume part $\mathcal N\ln(V/\bar V)$ raises it for $V<\bar V$ whenever $\mathcal N>0$ ($c_s^2<1/2$): $+\tfrac12\ln2$ at $V=\bar V/2$ for $c_s^2=1/4$.
+\end{itemize}
+So $g$ multiplies the velocity part at $c_s^2=1/2$ and the volume part at $c_s^2=1/4$.  The alternative, $g$ on every term, needs
+$g'X<1-b/S_{\rm t}$ above $b$, which the velocity part at $c_s^2=1/4$ violates for $v\gtrsim0.92$ near the boundary ($\tfrac12\ln\gamma$ up to 2.3 at
+$\gamma_{\max}=100$) unless $g$ is made steeper or wider; not pursued.  The volume part with $g$ needs $\tfrac12\ln(V/\bar V)<S_{\rm t}^3/6b^2\approx0.33$
+near the boundary, $V<1.9\bar V$ (5$\sigma$ in the measured spread, $\langle(V/\bar V-1)^2\rangle^{1/2}=0.18$ at $s_a=16$, $h/a=2$, \texttt{eos\_split}).
+\emph{Tested}: $c_s^2=1/2$ (hybrid Monte Carlo 39--40 of 40, no exit; the dynamics at $s_a=16$, 5 time units, debug 62001399: $\Delta H/H=-9.8\times10^{-6}$,
+KE/eq 0.996, against one loop $+1.9\times10^{-3}$ and split $-3.4\times10^{-6}$).  \emph{Not yet}: $c_s^2=1/4$.
+
+\paragraph{The sign of the particle pressure (owner's question, 2026-11-25).}  The fold is the statement $T_a=T/\mathcal D>0$, with $T_a\to\infty$ at the
+fold and $T_a<0$ beyond it.  The pressure is a separate condition.  At one loop, for a constant speed of sound,
+\st
+\frac{P_aV}{T_a}=\frac{S_{\rm t}}n+\frac{\tfrac D2(2+q)-1}{n}-\Big(\frac D2+1\Big),
+\stp
+the same at every $v$ and $V$, and the constant is negative: $-0.83$ at $c_s^2=1/2$, $-0.90$ at $c_s^2=1/4$.  At $c_s^2=1/2$ the pressure is positive
+exactly above the boundary, $S_{\rm t}>5/2=b$.  At $c_s^2=1/4$ it is negative for $b=2<S_{\rm t}<4.5$: particles just above the boundary pull their
+neighbours in.  With the regularization the factor $g$ on the volume part adds $\partial(hX_{\rm vol})/\partial\ln V$ terms; at $V=\bar V$ the
+addition is $h\mathcal N$, $+\tfrac12$ at the boundary, which cancels the deficit there.  $P_aV/T_a$ on a grid ($A=1$ units;
+\texttt{SPH\_SSCHEME\_REG}$=0/1$; -- outside the domain):
+\begin{center}\small
+\begin{tabular}{lcrrrrrr}
+\toprule
+ & & \multicolumn{6}{c}{$S_{\rm t}$} \\
+ & $v$, $V/\bar V$ & $b{+}0.1$ & $b{+}0.5$ & 3.5 & 4.5 & 6 & 10 \\
+\midrule
+$c_s^2=1/2$, one loop and regularized & $0$, any & $+0.033$ & $+0.167$ & $+0.333$ & $+0.667$ & $+1.167$ & $+2.500$ \\
+\quad regularized & $0.8$, any & $+0.047$ & $+0.211$ & $+0.390$ & $+0.720$ & $+1.206$ & $+2.518$ \\
+$c_s^2=1/4$, one loop & any & $-0.480$ & $-0.400$ & $-0.200$ & $0.000$ & $+0.300$ & $+1.100$ \\
+\quad regularized & $0$, $0.5$ & $+0.035$ & $+0.101$ & $+0.161$ & $+0.254$ & $+0.460$ & $+1.165$ \\
+ & $0$, $1$ & $+0.017$ & $+0.048$ & $+0.103$ & $+0.209$ & $+0.430$ & $+1.152$ \\
+ & $0$, $1.5$ & $+0.006$ & $+0.017$ & $+0.069$ & $+0.182$ & $+0.412$ & $+1.144$ \\
+ & $0.8$, $1$ & -- & -- & $+0.103$ & $+0.209$ & $+0.430$ & $+1.152$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+So the regularization chosen also makes the particle pressure positive above the boundary on this grid, at both speeds of sound.  At large $V$ the
+margin shrinks ($+0.006$ at $S_{\rm t}=b+0.1$, $V=1.5\bar V$), because the term $\partial h/\partial\ln S_{\rm t}\,X_{\rm vol}/n$ is negative for $V>\bar V$;
+whether it turns negative for still larger volumes is to be checked with the cutoff family (E2).
+
+
+%-----------------------------------------------------------------------------
 \section{The exact form: all of the renormalization in the label (2026-11-26, branch \texttt{sscheme-measure})}
 \label{sec:exact}
 
@@ -1605,7 +1756,7 @@ merged only on the owner's word (P8).
 \item[P4.] \emph{Remove the full form}: \texttt{SS\_FORM} $\in\{$\texttt{measure}, \texttt{exact}$\}$, the \texttt{!SS\_MEASURE} branches; tests 1--6
   of \nolinkurl{test/testsscheme.jl} retargeted to the measure form against \texttt{state\_m} of \nolinkurl{examples/sscheme_ref.py}.
 \item[P4b.] \emph{Rename $\beta$ of the measure form} to $b_\rho$, ``the $b$ of the measure $\rho$'' ($\beta$ is $u^\mu/T$ in the notes): $\rho(s)=e^s
-  s^{-b_\rho}(1-b_\rho/s)$, with the choices $b_\rho=b$, $D/2+1$, $b_{\rho*}$ (\Sect{sec:beta}).  Code: \texttt{bᵨ} in the formulas, \texttt{SS\_BRHO},
+  s^{-b_\rho}(1-b_\rho/s)$, with the choices $b_\rho=b$, $D/2+1$, $b_{\rho*}$ (\Sect{sec:beta}).  Code: the identifier $b_\rho$ in the formulas (Unicode subscript, typed \texttt{b\textbackslash\_rho} and Tab), \texttt{SS\_BRHO},
   the setting \texttt{SPH\_SSCHEME\_BRHO}; \texttt{SPH\_SSCHEME\_BETA} becomes a hard stop that names the new setting.  The notes in use
   (\nolinkurl{renorm3.tex}, this plan, \nolinkurl{split_dynamics.tex}) change only where $\beta$ is the exponent of the measure.
 \item[P4c.] \emph{The positional counterterm on by default}, \texttt{SPH\_POSITIONAL=1}, for split and both forms of the S-scheme (owner).  It
