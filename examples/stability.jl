@@ -25,7 +25,7 @@ const NREAL = length(ARGS) > 2 ? parse(Int, ARGS[3]) : 1          # realizations
 const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))       # full: λ = 1; det: λ = ∞; stress: no residual
 const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star (single vote) or :bonds
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
-const SPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split
+const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
 setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=grid is not supported yet (equilibrium.jl only)")
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
@@ -102,23 +102,23 @@ function run(kind, seed=1)
     cH = zeros(2);  cE = zeros(2);  split_t = Float64[];  split = NTuple{4,Float64}[]
     t0 = time()
     for n in 1:nsteps
-        if SPLIT
+        if RECSPLIT
             H1 = Hof(ps, params, cl, eos);  E1 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
         a1 = stochastic_step!(ps, params, cl, dt / 2, eos, opts; rng, rngs, flip=isodd(n), cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
-        if SPLIT
+        if RECSPLIT
             H2 = Hof(ps, params, cl, eos);  E2 = Eof(ps)
         end
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        if SPLIT
+        if RECSPLIT
             H3 = Hof(ps, params, cl, eos);  E3 = Eof(ps)
         end
         Hpre = HFIX ? Hof(ps, params, cl, eos) : 0.0
         a2 = stochastic_step!(ps, params, cl, dt / 2, eos, opts; rng, rngs, flip=!isodd(n), cache)
         HFIX && restore_H!(ps, params, cl, eos, Hpre)
-        if SPLIT
+        if RECSPLIT
             H4 = Hof(ps, params, cl, eos);  E4 = Eof(ps)
             cH .+= ((H2 - H1) + (H4 - H3), H3 - H2) ./ H0;  cE .+= ((E2 - E1) + (E4 - E3), E3 - E2) ./ E0
             n % 5 == 0 && (push!(split_t, n * dt);  push!(split, (cH[1], cH[2], cE[1], cE[2])))
@@ -155,7 +155,7 @@ function record(complete, wall)
         params = get(r, :params, nothing), eos = get(r, :eos, nothing),
         opts = length(KINDS) == 1 ? get(get(r, :opts, Dict()), KINDS[1], nothing) : nothing,
         driver = (h_over_a = HA, t_end = TEND, nreal = NREAL, kinds = collect(KINDS), vote = VOTE, dt_factor = 0.5 * DTF,
-                  dt_mode = "viscous", record_split = SPLIT, gradient = GRAD, S0 = SREL0,   # record key S0 = s_rel,0 (kept: the regression compares records)
+                  dt_mode = "viscous", record_split = RECSPLIT, gradient = GRAD, S0 = SREL0,   # record key S0 = s_rel,0 (kept: the regression compares records)
                   stochastic_by_kind = Dict(string(k) => o for (k, o) in get(r, :opts, Dict()))),
         start = (type = string(START),), outcome = (complete = complete, wall_s = wall))
 end

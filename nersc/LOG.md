@@ -1246,4 +1246,9 @@ note in `docs/` with the tables and figures.
   damping_scan eta/s = 1.0, s_a = 16: 1.09-1.16 -> 0.97-1.04 (the mode-coupling estimate 1.12 is now 1.5-3 sigma high there; s_a = 54 unchanged).
   cs13/hastings at c_s^2 = 1/3: 0.93-0.98 / 1.17-1.23 -> 0.95-1.01 / 1.04-1.10.  Not redone (no lag-time analysis or not in the notes):
   dt_scan (steps differ by design), hastings_positional (equal-time spectra), pairs_low, the smoke sets, hastings_sscheme(_b) (superseded, sec:reg).
+- BUG (found in P7, 2026-11-26): examples/stability.jl defined `const SPLIT` (record the energy split), the name of the library's flag of
+  SPH_RENORM=split; Julia 1.12 lets a script redefine a constant, so code compiled after it saw SPLIT = false (check_split returned early).
+  Harmless until omega was on by default (then omega ran with h unset: NaN).  Renamed RECSPLIT.  Affected since split became the default
+  (2026-11-23): stability.jl runs at the default, i.e. only the smoke timings and dH/H of 'split' in the entries of 2026-11-23 above
+  (stability.jl t = 20); no campaign, no note; the regression runs the tree level.  No other script redefines a library constant (checked).
 
