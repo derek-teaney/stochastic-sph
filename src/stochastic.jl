@@ -214,30 +214,11 @@ function particle_entropy_lnT(e, m, V, eos; guess = nothing)
     s, _, T = particle_inverse(e, m, V, eos; guess)
     return (isfinite(s) && T > 0) ? s - log(T) : -Inf
 end
-# SPH_RENORM (default off; docs/partition_v2.tex, "A Hamiltonian that does it"): the renormalized Hamiltonian, whose single-particle
-# free energy is the target one, F_1/T = −pV/T + ln V + const (bulk modulus of the labels B = 0).  The energy of a particle is that of
-# the target fluid at the entropy u_a, and the code's variable is s_a = u_a − Δs(u_a), Δs = (α/2) ln u, α = 1 + d + 2d c_s² (the
-# logarithm of the particle's own phase-space volume; conformal fluid with d c_s² = 1, so Δs does not depend on V).  For any other c_s²
-# it is the label part of the counterterm alone, α/2 = 5/2 − 𝒩 (𝒩 = 1 − 2c_s², d = 2; docs/step5_plan.tex): the rest, 𝒩 ln(γV) and the
-# sound term, is not removed (SPH_RENORM=split puts it into H).  Before branch split it refused c_s² ≠ 1/d.  pa.s keeps the
-# target entropy u_a, so the energy, the forces, the smoothing and the noise are unchanged; only the weight changes: with the
-# Liouville measure (flat in the code's s_a) the votes, the heat bath and the quadrature use s_a(u) − ln T_a, with
-# T_a = ∂e_a/∂s_a = T_eos/(1 − α/2u).  With liouville = false it returns s_a(u) (used only for the shape of proposals, e.g. in
-# HMCTarget); the stochastic step and hybrid Monte Carlo with SPH_RENORM need the Liouville measure (checked there).
-const RENORM = (LEGENDRE || SPLIT || SSCHEME) ? (setting("SPH_RENORM", :split); false) : setting("SPH_RENORM", false)   # LEGENDRE, SPLIT: sph.jl
-@noinline function renorm_vote_entropy(e, m, V, eos, liouville::Bool)
-    u, _, T = particle_inverse(e, m, V, eos)
-    (isfinite(u) && T > 0) || return -Inf
-    d = 2;  c2 = cs2(eos, e / V)
-    α = 1 + d + 2d * c2
-    u > α / 2 || return -Inf                                   # the shift is monotonic only for u > α/2
-    s = u - (α / 2) * log(u)
-    return liouville ? s - log(T / (1 - α / (2u))) : s
-end
-# the method is chosen at load time, so that with SPH_RENORM off the code is exactly that of before (bit-identical regression)
-if RENORM
-    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = renorm_vote_entropy(e, m, V, eos, liouville)
-elseif SSCHEME
+# SPH_RENORM is recorded here (sph.jl reads it: split, the default; sscheme; legendre; 0 the tree level).  SPH_RENORM=1, the entropy
+# shift of partition_v2.tex (the b ln S_t of the measure alone, not consistent with one loop), was removed on 2026-11-26 (sph.jl stops on it).
+(LEGENDRE || SPLIT || SSCHEME) ? setting("SPH_RENORM", :split) : setting("SPH_RENORM", false)
+# the method is chosen at load time, so that at the tree level the code is exactly that of before (bit-identical regression)
+if SSCHEME
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)   # liouville (check_sscheme)
 elseif SPLIT
     vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville; guess)
@@ -650,7 +631,6 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
     liouville = params.measure === :liouville
     liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
-    RENORM && !liouville && error("SPH_RENORM needs the Liouville measure (SPH_MEASURE=liouville)")
     if LEGENDRE                                      # the starting points of the votes' inverse solves (renorm.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.T, pa.v);  end

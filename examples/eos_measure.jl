@@ -25,7 +25,7 @@ const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
 const BURN   = setting("SR_BURN", 1 / 3)
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const OUTDIR = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data", "eos")))
-const SCHEME = SSCHEME ? "sscheme" : LEGENDRE ? "legendre" : SPLIT ? "split" : RENORM ? "shift" : "tree"
+const SCHEME = SSCHEME ? "sscheme" : LEGENDRE ? "legendre" : SPLIT ? "split" : "tree"
 const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V", 0.0)
 const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)") * "_seed$(SEED)"
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
@@ -127,7 +127,7 @@ lc = LEGENDRE ? legendre_counts() : SPLIT ? split_counts() :
      SSCHEME ? (sc = sscheme_counts();  (solves = sc.solves, iters = sc.iters, fails = sc.fallbacks, nostate = sc.nostate, cold = 0)) :
      (solves = 0, iters = 0, fails = 0, nostate = 0, cold = 0)
 summary = [
-    "tag" => TAG, "renorm" => RENORM, "scheme" => SCHEME, "cs2" => CS2, "v" => vb, "gamma" => γb, "w_target" => w_t, "M_target" => M_t, "L" => LBOX, "ha" => HA, "nbar_h2" => nbar * H^2, "N" => params.N, "s_a_start" => SA,
+    "tag" => TAG, "renorm" => SCHEME != "tree", "scheme" => SCHEME, "cs2" => CS2, "v" => vb, "gamma" => γb, "w_target" => w_t, "M_target" => M_t, "L" => LBOX, "ha" => HA, "nbar_h2" => nbar * H^2, "N" => params.N, "s_a_start" => SA,
     "T0" => T0, "sigma" => σp, "e_target" => e_t, "p_target" => p_t, "nupdates" => NUPD, "acceptance" => mean(acc),
     "E_over_e_minus1" => mE / e_t - 1, "dE_over_e" => dE / e_t,
     "P_over_p_minus1" => mP / p_t - 1, "dP_over_p" => dP / p_t,
@@ -150,7 +150,7 @@ summary = [
     "split_vbar" => SPLIT ? SPLIT_VBAR[] : NaN,
 ]
 mkpath(OUTDIR)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = SA, T0 = T0, sigma = σp, renorm = RENORM,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = SA, T0 = T0, sigma = σp, renorm = SCHEME != "tree",
         scheme = SCHEME, v = vb, gamma = γb, w_target = w_t, M_target = M_t,
         eos_meta(params, eos)..., sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt,
         acceptance = mean(acc), seed = SEED, measure = string(params.measure), e_target = e_t, p_target = p_t)

@@ -75,13 +75,14 @@ for c2 in (0.5, 0.25)
           @sprintf("c_s² = %.2f: Δ − [b ln S_t + 𝒩 ln(γV) + ½ ln(1 − c_s² v²)] = %.12f, spread %.0e", c2, vals[1], maximum(vals) - minimum(vals)))
 end
 
-println("5. conformal at rest: the weight against SPH_RENORM=1")
+println("5. conformal at rest: the weight against the entropy shift u − (5/2) ln u (the old SPH_RENORM=1)")
 let c2 = 0.5, eos = eos_A1(0.5), c = SSchemeConsts(eos_A1(0.5)), d = Float64[]
     for (St, V) in ((16.0, 1.0), (54.0, 0.8), (541.0, 1.1), (30.0, 2.5))
         st = state_St(St, 0.0, V, c)
-        push!(d, st.weight - renorm_vote_entropy(st.H, SVector(0.0, 0.0), V, eos, true))
+        u = st.St;  w1 = u - 2.5 * log(u) - log(st.T / (1 - 2.5 / u))         # at rest the target's entropy is S_t and its temperature T
+        push!(d, st.weight - w1)
     end
-    check(maximum(d) - minimum(d) < 1e-11 * maximum(abs, d), @sprintf("weight − weight(SPH_RENORM=1) = %.12f, spread %.0e", d[1], maximum(d) - minimum(d)))
+    check(maximum(d) - minimum(d) < 1e-11 * maximum(abs, d), @sprintf("weight − weight(entropy shift) = %.12f, spread %.0e", d[1], maximum(d) - minimum(d)))
 end
 
 println("6. outside the domain")

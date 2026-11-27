@@ -93,12 +93,11 @@ default_dissipation(sim_dim = 2) =
 # become singular; nothing in our flows needs γ ≳ 10.  Default 100 (|v|² ≤ 1 − 10⁻⁴).
 const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
 # SPH_RENORM=legendre (docs/legendre_plan.tex): the particle Hamiltonian is the Legendre transform of the wanted single-particle free
-# energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.  SPH_RENORM=1 (the entropy shift,
-# stochastic.jl) is read as before; without SPH_RENORM=legendre the setting is read exactly as before (as a Bool).
+# energy (renorm.jl); the two particle-level maps (pointwise.jl) are chosen at load time.
 const LEGENDRE = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "legendre";  end
 # SPH_RENORM=split (docs/step5_plan.tex, docs/renormalization_review.tex): Step 5, the label part of the counterterm in the measure, the
 # rest in H (renorm_split.jl).  The DEFAULT since 2026-11-23 (merge of branch split): with SPH_RENORM unset the run is renormalized.
-# SPH_RENORM=0 is the tree level (the default before), SPH_RENORM=legendre the alternative scheme, SPH_RENORM=1 the old entropy shift.
+# SPH_RENORM=0 is the tree level (the default before), SPH_RENORM=legendre the alternative scheme.
 # Split supports d = 2, the energy Hamiltonian with the number volume, the Liouville measure, not the grid step (check_split): any other
 # scheme stops with a message to set SPH_RENORM=0.
 const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(strip(r)) == "split";  end
@@ -108,6 +107,12 @@ const SPLIT = let r = setting_peek("SPH_RENORM");  r === nothing || lowercase(st
 const SSCHEME = let r = setting_peek("SPH_RENORM");  r !== nothing && lowercase(strip(r)) == "sscheme";  end
 # the Hamiltonian has a domain (legendre, split, sscheme): a state outside it has NaN fields, and hybrid Monte Carlo rejects the trajectory
 const HAS_DOMAIN = LEGENDRE || SPLIT || SSCHEME
+# the values of SPH_RENORM; any other stops here (SPH_RENORM=1, the entropy shift of partition_v2.tex, was removed on 2026-11-26)
+let r = setting_peek("SPH_RENORM")
+    r === nothing || lowercase(strip(r)) in ("split", "sscheme", "legendre", "0", "false") ||
+        error("SPH_RENORM=$r: the values are split (the default), sscheme, legendre and 0 (the tree level).  SPH_RENORM=1, the entropy shift " *
+              "(the b ln S_t of the measure alone, not consistent with one loop), was removed on 2026-11-26 (docs/sscheme_plan.tex, sec:prune).")
+end
 const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
