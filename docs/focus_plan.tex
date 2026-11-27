@@ -365,7 +365,11 @@ differences: all hold to roundoff), \nolinkurl{test/testcommonkernel.jl}, \nolin
 \texttt{SR\_POSITIONS=lattice SR\_START=eq} and \texttt{=cold}, at the tree level and with split, at rest and $v_0=0.8$.  Check (iv):
 \texttt{SR\_HMC\_SHIFT\_TOTALS} reproduces the cold totals to $10^{-15}$ (\nolinkurl{test/teststart.jl}, at $s_a\approx540$; at $s_a\approx16$
 in motion the uniform shift can push a particle past the light cone, and \texttt{shift\_to\_totals!} stops).  Check (iii): campaign
-\texttt{q9\_start} (62104058, 62104059; \nolinkurl{nersc/campaign_q9_start.txt}).  The stability driver now starts \texttt{hot} at the
+\texttt{q9\_start} (62104058, 62104059; \nolinkurl{nersc/campaign_q9_start.txt}; 16 seeds per state, $t=100$, split with $\omega$),
+compared by \nolinkurl{examples/q9_start_compare.jl}: KE/eq, $\langle H\rangle$, the static spectra of $M_L$, $M_T$, $S$ at the five
+smallest $k$, and $C_{T,L}(\tau)/C_{T,L}(0)$ at $\tau=0.5,1,2$, at $s_a=16$, 54, $v_0=0$, 0.8: 92 comparisons, the rms of
+(new$-$old)$/\sigma$ is 1.00, 26 beyond $1\sigma$, 7 beyond $2\sigma$, none beyond $3\sigma$ (largest 2.56).  KE/eq: $1.040(5)\to1.039(5)$,
+$1.008(3)\to1.008(3)$ at rest.  The new start is statistically equivalent: check (iii) passes.  The stability driver now starts \texttt{hot} at the
 target (before: the totals solve), so its regression against \texttt{pre-prune} differs from Q9 on.
 
 \paragraph{Q10} (\texttt{5aa40c9}).  \texttt{testmoment}, \texttt{testhastings}, \texttt{testdissipative} pass with the new jittered
