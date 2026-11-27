@@ -112,7 +112,7 @@ function one_run(r, ps0, params, cl, eos, dt, nsteps, m0, t, e, V)
 end
 
 let P = setup_moving(54, 0.0)[1]
-    println("dissipation = ", P.dissipation, ", measure = liouville, frozen coefficients = ", FROZEN,
+    println("dissipation = moment, measure = liouville, frozen coefficients = ", FROZEN,
             ", Hastings = ", setting("SPH_HASTINGS", false))
 end
 for sa in SAS, v0 in V0S

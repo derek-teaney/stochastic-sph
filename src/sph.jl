@@ -24,31 +24,17 @@ mutable struct SimParams{K<:AbstractKernel}
     phys_dim :: Int                # physical dimension d of the fluid (2 or 3): ζ_eff and the conformal cs² = 1/d (dimension.tex)
     lattice :: Symbol              # :square or :hex
     kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL)
-    dissipation :: Symbol          # :particle (default), :bond or :two_level — see viscous_step!
-    bond_h      :: Float64         # smoothing length h_ψ of the bond weight −W′(ρ; h_ψ)/ρ for :bond (support 2h_ψ ≤ 2h)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
     ideal       :: Symbol          # :generalized (default in 2D), :particle or :grid — see below
 end
 
-# dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
-#   distance, ψ_ab = −W′(r_ab)/r_ab (bond moment n_a 𝟙), and the comoving metric put in by hand
-#   (commonkernel.tex; 2D, hamiltonian = :energy); its residual bonds carry the factor (r̂·ℓ r̂)².  It was the
-#   default from 2026-11-14 to 2026-11-15.  :moment (inverse_moment.tex; 2D, hamiltonian = :energy) is :common without the
-#   correction Λ_a of the weights: the faces carry the inverse bond moment, A_ab = V_a w_ab 𝓜_a⁻¹ r_ab, the residual is the
-#   least-squares residual with the weights c_ab, and the residual move is conditioned on zero virial.  It is the default since
-#   2026-11-15 wherever it applies (2D with the energy Hamiltonian), together with the Hastings correction of the stochastic
-#   step (SPH_HASTINGS, StochOptions).  :particle (the default in 1D
-#   and with SPH_HAMILTONIAN=smoothed; formerly :changerep, still accepted) is the bond form in the particle
-#   representation with the gradient-corrected conversion map (changerep.tex); :bond is
-#   the bond form on the smoothed b (bond_dissipation.tex); :two_level the SPH strain form
-#   (sph2.tex), superseded: it and its stochastic sweep (particle_sweep!, which never
-#   worked) are in src/legacy/, loaded by src/legacy/load.jl after src/load.jl.
-#   Default from the environment variable SPH_DISSIPATION, else default_dissipation().
+# The viscous step is the inverse-moment step (inverse_moment.tex; viscous.jl, stochastic.jl), with the Hastings correction of the
+#   stochastic step (SPH_HASTINGS, StochOptions); it needs hamiltonian = :energy.  The other dissipations (:particle, :common,
+#   :bond, :two_level; SPH_DISSIPATION) and the bond length bond_h were removed on 2026-11-27 (docs/focus_plan.tex, Q5; tag pre-prune).
 # Default scheme (2026-11-10): hamiltonian = :energy with volume = :number, the n-scheme
 #   (volume_n.tex, number_tests.tex).  The old schemes are kept: SPH_HAMILTONIAN=smoothed,
-#   SPH_VOLUME=entropy.  With SPH_DISSIPATION=two_level the default Hamiltonian is :smoothed
-#   (:energy needs the bond viscous step).
+#   SPH_VOLUME=entropy.
 # hamiltonian: the ideal step.  :smoothed is H = Σ s_a ℰ(S_a, M_a/S_a) with the
 #   smoothed momentum (sph2.tex).  :energy (default) is H = Σ_a e_a, the particle energies at the
 #   particle's own momentum density m_a/V_a, V_a = s_a/S_a (energystep.tex): ẋ_a = v_a,
@@ -76,10 +62,6 @@ end
 # The simulation is two-dimensional (the one-dimensional path was removed on 2026-11-27: docs/focus_plan.tex, Q4; tag pre-prune).
 # The Hamiltonian when none is given: SPH_HAMILTONIAN, else :energy (:smoothed with the
 # two-level form, which needs it).  Drivers that need the scheme before SimParams use this too.
-# The viscous step when none is given (2026-11-15): the inverse-moment step :moment where it applies (2D, energy
-# Hamiltonian; inverse_moment.tex), else :particle.  SPH_DISSIPATION=common SPH_HASTINGS=0 gives the default of
-# 2026-11-14/15 back, SPH_DISSIPATION=particle the one before.
-default_dissipation() = setting("SPH_HAMILTONIAN", :energy) === :energy ? :moment : :particle
 # The largest Lorentz factor a fluid particle may have (2026-11-15; docs/inverse_moment.tex, Stage 2 results): a state with
 # γ > SPH_GAMMA_MAX has no weight (the stochastic votes, the equilibrium start and hybrid Monte Carlo reject it, through
 # particle_entropy), and the comoving structures are built with the velocity capped there.  Near the light cone the inversion of
@@ -112,15 +94,12 @@ cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sq
 
 # The ideal step when none is given (2026-11-15): the generalized leapfrog where it applies (2D, the n-scheme), else :particle.
 default_ideal(hamiltonian, volume) = hamiltonian === :energy && volume === :number ? :generalized : :particle
-default_hamiltonian(dissipation = setting("SPH_DISSIPATION", default_dissipation())) =
-    setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
+default_hamiltonian() = setting("SPH_HAMILTONIAN", :energy)
 
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=default_phys_dim(), lattice=:square,
-                   dissipation=setting("SPH_DISSIPATION", default_dissipation()), bond_h=nothing,
-                   hamiltonian=default_hamiltonian(dissipation),
+                   hamiltonian=default_hamiltonian(),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
                    ideal=setting("SPH_IDEAL", default_ideal(hamiltonian, volume)))
-    dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if lattice == :hex
         dy = a * sqrt(3) / 2
@@ -141,27 +120,17 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=defaul
     L = SVector(Lx, Ly)
     dim_str = kernel isa WendlandC4_2D ? "2D (Wendland C4)" : kernel isa WendlandC6_2D ? "2D (Wendland C6)" : "2D"
     @printf("SimParams: Lx=%-6g  Ly=%-6g  a=%-8g  h=%-8g  N=%-6d  h/a=%.3g  vol=%.4g  lattice=%s  sim=%s  dissipation=%s\n",
-            Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, dissipation)
+            Lx, Ly, a, h, N, h/a, vol, lattice, dim_str, "moment")
     h/a < 0.5 && @warn "h/a = $(h/a) < 0.5: particles barely overlap, shot noise will dominate"
     h/a > 10  && @warn "h/a = $(h/a) > 10: very diffuse smoothing, resolution is poor"
-    dissipation === :common_lab && error("dissipation = :common_lab was removed (commonkernel.tex: the residual must carry the comoving metric); use :common")
-    dissipation in (:particle, :bond, :two_level, :common, :moment) ||
-        error("dissipation must be :particle, :bond, :two_level, :common or :moment, got $dissipation")
-    dissipation in (:common, :moment) && (hamiltonian === :energy ||
-        error("dissipation = :$dissipation needs a 2D simulation and hamiltonian = :energy (commonkernel.tex)"))
-    dissipation === :moment && @printf("SimParams: dissipation = moment, inverse-moment faces and the conditioned residual (inverse_moment.tex)\n")
-    dissipation === :common && @printf("SimParams: dissipation = common, one kernel for the ideal and the viscous step (commonkernel.tex)\n")
+    hamiltonian === :energy && @printf("SimParams: dissipation = moment, inverse-moment faces and the conditioned residual (inverse_moment.tex)\n")
     hamiltonian in (:smoothed, :energy) ||
         error("hamiltonian must be :smoothed or :energy, got $hamiltonian")
-    hamiltonian === :energy && dissipation === :two_level &&
-        error("hamiltonian = :energy needs the bond viscous step (dissipation = :particle or :bond)")
     hamiltonian === :energy && @printf("SimParams: hamiltonian = energy (energystep.tex)\n")
     volume in (:entropy, :number) || error("volume must be :entropy or :number, got $volume")
     volume === :number && hamiltonian !== :energy &&
         error("volume = :number needs hamiltonian = :energy (volume_n.tex)")
     volume === :number && @printf("SimParams: volume = number, V_a = 1/n_a (volume_n.tex)\n")
-    hψ = bond_h === nothing ? Float64(h) : Float64(bond_h)
-    0 < hψ <= h || error("bond_h = $hψ must satisfy 0 < bond_h ≤ h (bond support 2·bond_h ≤ 2h stencil)")
     ideal in (:particle, :grid, :generalized) || error("ideal must be :particle, :grid or :generalized, got $ideal")
     ideal === :generalized && (hamiltonian === :energy && volume === :number ||
         error("ideal = :generalized needs hamiltonian = :energy and volume = :number (hmc.jl)"))
@@ -170,7 +139,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=defaul
         error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
     ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
     hamiltonian === :energy && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
-    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal)
+    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, hamiltonian, volume, ideal)
     check_split(sp)                               # SPH_RENORM=split: the schemes it supports and V̄, before any map is used (renorm_split.jl)
     check_sscheme(sp)                             # SPH_RENORM=sscheme: the schemes it supports (sscheme.jl)
     sp

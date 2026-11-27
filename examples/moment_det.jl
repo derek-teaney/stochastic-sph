@@ -1,5 +1,5 @@
-# moment_det.jl — deterministic tests of the viscous step with inverse-moment faces (SPH_DISSIPATION=moment) against the common
-# scheme (docs/inverse_moment.tex, "Stage 1"), side by side.  Three sets, each for both schemes:
+# moment_det.jl — deterministic tests of the viscous step with inverse-moment faces (docs/inverse_moment.tex, "Stage 1").  Until
+# 2026-11-27 side by side with the common scheme, removed with the other dissipations (docs/focus_plan.tex, Q5; tag pre-prune).  Three sets:
 #   A. the viscous step alone (positions fixed, no ideal step; as examples/commonkernel_waves.jl) on the lattice moving with
 #      v0 = 0.8: shear and longitudinal modes along and across the flow, kh = 0.26, 0.52, 1.05;
 #   B. the viscous step alone on disordered positions at rest (jittered lattice, 0.3a, and random positions, jitter 3a, where the
@@ -16,13 +16,12 @@ include(joinpath(@__DIR__, "..", "test", "physics", "lib", "waves.jl"))
 const OUT  = get(ENV, "MD_OUT", joinpath(@__DIR__, "..", "data", "moment_det"));  mkpath(OUT)
 const SETS = split(get(ENV, "MD_SETS", "A,B,C"), ",")
 const SMOKE = get(ENV, "SR_SMOKE", "0") == "1"
-const SCHEMES = (:common, :moment)
+const SCHEMES = (:moment,)
 quiet(f) = redirect_stdout(f, devnull)
 
 # One mode on a fixed configuration, the viscous step alone (cf. commonkernel_waves.jl).  jitter: setup_ic jitter (seed fixed,
 # so both schemes see the same positions); the background momentum is uniform (v0 along x) and zero at rest.
 function alone_case(diss, v0, jitter, kind, dir, nk)
-    @assert ENV["SPH_DISSIPATION"] == string(diss)
     eos = conformal_eos(default_phys_dim(); η_by_s = 0.2);  γ = 1 / sqrt(1 - v0^2)
     _, q, _, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 1.2, lattice = :hex))
     w0 = q[1].e + q[1].p
@@ -68,7 +67,6 @@ alone = Tuple[]
 SMOKE && (alone = alone[1:min(3, end)])
 for diss in SCHEMES
     isempty(alone) && break
-    ENV["SPH_DISSIPATION"] = string(diss)                  # one scheme at a time (ENV is shared by the threads)
     out = Vector{Any}(undef, length(alone));  t0 = time()
     Threads.@threads :dynamic for i in eachindex(alone)
         out[i] = alone_case(diss, alone[i]...)
@@ -78,7 +76,7 @@ end
 if "C" in SETS
     khs = SMOKE ? (1.4,) : (1.4, 0.7, 0.35)
     for diss in SCHEMES
-        ENV["SPH_DISSIPATION"] = string(diss);  t0 = time()
+        t0 = time()
         jobs = [(kind, kh) for kind in (:shear, :sound) for kh in khs]
         out = Vector{Any}(undef, length(jobs))
         Threads.@threads :dynamic for i in eachindex(jobs)
@@ -96,27 +94,25 @@ open(joinpath(OUT, "moment_det.toml"), "w") do io;  TOML.print(io, Dict("case" =
 # ── table ──
 key(r) = (r["set"], get(r, "jitter", 0.0), r["kind"], get(r, "dir", ""), round(r["kh"], digits = 2))
 for k in sort(unique(key.(res)))
-    c = [r for r in res if key(r) == k && r["scheme"] == "common"];  m = [r for r in res if key(r) == k && r["scheme"] == "moment"]
-    (isempty(c) || isempty(m)) && continue
-    c = c[1];  m = m[1]
+    m = [r for r in res if key(r) == k && r["scheme"] == "moment"]
+    isempty(m) && continue
+    m = m[1]
     if k[1] == "C"
-        @printf("C  %-6s kh %.2f   Γ/Γ_hyd common %.4f moment %.4f   ω/ω_hyd common %.4f moment %.4f\n", k[3], k[5],
-                c["Gamma_over_hydro"], m["Gamma_over_hydro"], c["omega_over_hydro"], m["omega_over_hydro"])
+        @printf("C  %-6s kh %.2f   Γ/Γ_hyd %.4f   ω/ω_hyd %.4f\n", k[3], k[5], m["Gamma_over_hydro"], m["omega_over_hydro"])
     else
-        @printf("%s  jitter %.1f %-5s k∥%s kh %.2f   Γ/Γ_hyd common %.4f moment %.4f   Γ/Γ_scheme %.4f %.4f   ΔS/2∫K %.4f %.4f   ΔH/H %+.0e %+.0e\n",
-                k[1], k[2], k[3], k[4], k[5], c["Gamma_over_hydro"], m["Gamma_over_hydro"], c["Gamma_over_scheme"], m["Gamma_over_scheme"],
-                c["dS_over_2Kdt"], m["dS_over_2Kdt"], c["dH_over_H"], m["dH_over_H"])
+        @printf("%s  jitter %.1f %-5s k∥%s kh %.2f   Γ/Γ_hyd %.4f   Γ/Γ_scheme %.4f   ΔS/2∫K %.4f   ΔH/H %+.0e\n",
+                k[1], k[2], k[3], k[4], k[5], m["Gamma_over_hydro"], m["Gamma_over_scheme"], m["dS_over_2Kdt"], m["dH_over_H"])
     end
 end
 
-# ── figure: one row per set, common | moment side by side, shared y in a row ──
+# ── figure: one row per set ──
 include(joinpath(@__DIR__, "plotsetup.jl"))
 COL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]           # categorical, fixed order (dataviz reference palette)
 rows = [s for s in ("A", "B", "C") if any(r["set"] == s for r in res)]
-fig, axs = subplots(length(rows), 2, figsize = (11, 3.4 * length(rows)), sharey = "row", squeeze = false)
+fig, axs = subplots(length(rows), 1, figsize = (5.5, 3.4 * length(rows)), squeeze = false)
 titles = Dict("A" => "viscous step alone, lattice, v₀ = 0.8", "B" => "viscous step alone, disordered positions, at rest",
               "C" => "full deterministic step, lattice, at rest (η/s = 0.02)")
-for (i, s) in enumerate(rows), (j, diss) in enumerate(("common", "moment"))
+for (i, s) in enumerate(rows), (j, diss) in enumerate(("moment",))
     ax = axs[i, j];  rr = [r for r in res if r["set"] == s && r["scheme"] == diss]
     curves = s == "A" ? [("shear", "x", "shear, k ∥ v"), ("long", "x", "long., k ∥ v"), ("shear", "y", "shear, k ⊥ v"), ("long", "y", "long., k ⊥ v")] :
              s == "B" ? [("shear", 0.3, "shear, jitter 0.3a"), ("long", 0.3, "long., jitter 0.3a"), ("shear", 3.0, "shear, random"), ("long", 3.0, "long., random")] :

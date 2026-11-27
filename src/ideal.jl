@@ -200,19 +200,16 @@ function compute_dt(particles, params, eos;
     Γ_s          = visc / Trel_min
     dt_diffusive = CFL * params.h^2 / Γ_s
     dt = min(dt_acoustic, dt_diffusive)
-    if params.dissipation in (:particle, :common, :moment)
-        # The particle representation damps the shortest modes at up to Γ_max
-        # (changerep.tex, "The time step").  generic_step! applies two viscous half
-        # steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.
-        dt = min(dt, 2 / viscous_rate_bound(params, eos, Trel_min))
-    end
+    # The bond step damps the shortest modes at up to Γ_max (changerep.tex, "The time step").  generic_step! applies two
+    # viscous half steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.
+    dt = min(dt, 2 / viscous_rate_bound(params, eos, Trel_min))
     return dt
 end
 
 # Upper bound on the damping rate of the particle-representation viscous step.
 # Gershgorin on the bond coefficients: Γ_max ≤ 4 (κ_b/w) max_a Σ_b w_ab, and for the
-# Wendland bond weight ψ ∝ (1 − ρ/2h_ψ)³ in two dimensions
-#   Σ_b w_ab ≤ 2 ∫ψ / ∫ψ ρ² = c_2 / h_ψ²,   c_2 = 7/2
+# Wendland bond weight ψ ∝ (1 − ρ/2h)³ in two dimensions
+#   Σ_b w_ab ≤ 2 ∫ψ / ∫ψ ρ² = c_2 / h²,   c_2 = 7/2
 # (the continuum integral includes ρ → 0, which the bond sum omits, so it bounds the
 # lattice sum).  κ_b is the largest viscosity carried by the bonds: 2η + ζ_eff.  κ_b/w = (κ_b/s)/T_rel.
 function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
@@ -220,7 +217,7 @@ function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
     κb_s = 2η_s + zeta_eff_by_s(eos, d)
     c_d  = 7 / 2
-    return 4 * (κb_s / Trel) * c_d / params.bond_h^2
+    return 4 * (κb_s / Trel) * c_d / params.h^2       # (the bond length h_ψ was h; bond_h removed, focus_plan.tex Q5)
 end
 
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
@@ -289,5 +286,3 @@ function smooth_to_grid(particles::Vector{Particle}, params::SimParams,
     end
     return S, xs, ys
 end
-
-# The viscous step in the particle representation (params.dissipation = :particle).

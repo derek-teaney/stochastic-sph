@@ -33,6 +33,7 @@ const RETIRED_SETTINGS = Dict(
     "SR_S0" => "renamed SR_SREL0 on 2026-11-23: the rest-frame entropy density s_rel,0 of the run (docs/inputs.tex)",
     "SPH_SSCHEME_BETA" => "renamed SPH_SSCHEME_BRHO on 2026-11-26: b_ρ, the exponent of the measure of the labels (β is u^μ/T in the notes; docs/sscheme_plan.tex, P4b)",
     "SPH_MEASURE" => "removed on 2026-11-27 (docs/focus_plan.tex, Q2): the Liouville measure is the only one; SPH_MEASURE=einstein is in the tag pre-prune",
+    "SPH_DISSIPATION" => "removed on 2026-11-27 (docs/focus_plan.tex, Q5): the inverse-moment step (moment) is the only viscous step; the others are in the tag pre-prune",
     "SR_LAMBDA" => "removed on 2026-11-27 (docs/focus_plan.tex, Q1): the residual move always has λ = 1; λ ≠ 1 is in the tag pre-prune",
 )
 for (name, why) in RETIRED_SETTINGS

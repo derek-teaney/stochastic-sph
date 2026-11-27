@@ -49,7 +49,7 @@ struct Star
     ℓ  :: SMatrix{2,2,Float64,4}        # comoving metric ℓ_a = 𝟙 − v vᵀ
     ℓh :: SMatrix{2,2,Float64,4}        # ℓ_a^{1/2}
     ℓi :: SMatrix{2,2,Float64,4}        # ℓ_a⁻¹
-    U  :: Vector{SVector{2,Float64}}    # :moment only (else empty): the conditioning vectors u_ab = c_ab R_a⁻¹ r_ab,
+    U  :: Vector{SVector{2,Float64}}    # the conditioning vectors u_ab = c_ab R_a⁻¹ r_ab,
                                         # R_a = Σ_b c_ab r rᵀ (inverse_moment.tex, eq. condition)
 end
 
@@ -65,13 +65,13 @@ StochCache() = StochCache(Star[])
 function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                      eos::AbstractEOS, V::Vector{Float64}; cache = nothing)
     N    = length(particles)
-    h    = params.h;  L = params.L;  hψ = params.bond_h;  d = params.phys_dim
+    h    = params.h;  L = params.L;  d = params.phys_dim
     check_stochastic_dims(params)
     e1 = SMatrix{2,2,Float64}(1, 0, 0, -1) / sqrt(2);  e2 = SMatrix{2,2,Float64}(0, 1, 1, 0) / sqrt(2)
     stars = cache === nothing ? Vector{Star}(undef, N) : resize!(cache.stars, N)
     nl = neighbor_list!(cl, particles, h)
     threaded_chunks(N) do range
-    nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[];  ψb = Float64[]
+    nb = Tuple{Int,SVector{2,Float64},Float64}[];  ψ0b = Float64[];  Vbb = Float64[]
     for a in range
         pa = particles[a]
         empty!(nb)
@@ -85,12 +85,8 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         # comoving forms at the particle's velocity (docs/stochastic.tex, "A moving fluid")
         va = SSCHEME ? sscheme_target_velocity(pa, eos) : pa.dotx   # coarse-grained ẋ_a (sscheme: the target's velocity, as star_coef)
         ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2(eos), 2)
-        common = lab_weights(params)                     # one kernel (commonkernel.tex): lab weights
-        moment = is_moment(params)                       # no Λ_a, inverse-moment faces (inverse_moment.tex)
-        ψs, n_a = moment ? bond_weights_lab(nb, particles, common_bond_weight(params); ψ0 = ψ0b, Vb = Vbb) :
-                  common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb,
-                                                 ψfun = common_bond_weight(params)) :
-                         bond_weights_comoving(nb, particles, ℓ, ℓi, hψ; ψ0 = ψ0b, Vb = Vbb, ψ = ψb)
+        # the bond weights of the SPH kernel at the lab distance, no Λ_a, inverse-moment faces (inverse_moment.tex)
+        ψs, n_a = bond_weights_lab(nb, particles, common_bond_weight(params); ψ0 = ψ0b, Vb = Vbb)
         Ta = target_trel(pa, eos);  sr = srel(eos, pa.e)   # T_rel = γ (e+p)/S;  pa.T = T_rel/γ = ∂H/∂s (sscheme: the target's T_rel)
         κs, κb = eta_by_s(eos) * sr, zeta_eff_by_s(eos, d) * sr   # ζ_eff with the floor ε η (sph.jl, dimension.tex)
         ℓh = sqrt_comoving(va)
@@ -101,21 +97,21 @@ function build_stars(particles::Vector{Particle}, params::SimParams, cl::CellLis
         if cache !== nothing && isassigned(stars, a)
             o = stars[a]
             bs = resize!(o.nb, nk);  rs = resize!(o.r, nk);  ws = resize!(o.w, nk)
-            cs = resize!(o.c, nk);  As = resize!(o.A, nk);  Us = resize!(o.U, moment ? nk : 0)
+            cs = resize!(o.c, nk);  As = resize!(o.A, nk);  Us = resize!(o.U, nk)
         else
             bs = Vector{Int}(undef, nk);  rs = Vector{SVector{2,Float64}}(undef, nk)
             ws = Vector{Float64}(undef, nk);  cs = Vector{Float64}(undef, nk)
-            As = Vector{SVector{2,Float64}}(undef, nk);  Us = Vector{SVector{2,Float64}}(undef, moment ? nk : 0)
+            As = Vector{SVector{2,Float64}}(undef, nk);  Us = Vector{SVector{2,Float64}}(undef, nk)
         end
         j = 0
         for (k, (b, r, rr)) in enumerate(nb)
             (ψs[k] > 0 && n_a > 0) || continue
             wab = V[b] * ψs[k] / n_a;  j += 1
             bs[j] = b;  rs[j] = r;  ws[j] = wab
-            cs[j] = 2κs * Ta * V[a] * wab * (common ? resid_factor(params, ℓ, r) : 1.0)
-            As[j] = common ? V[a] * wab * r : V[a] * wab * (ℓi * r)     # faces: Σ_b A_ab r_abᵀ = V_a 𝟙 either way
+            cs[j] = 2κs * Ta * V[a] * wab * resid_factor(params, ℓ, r)
+            As[j] = V[a] * wab * r
         end
-        moment && moment_faces!(As, Us, ws, cs, rs)      # faces V_a w_ab 𝓜_a⁻¹ r_ab;  u_ab = c_ab R_a⁻¹ r_ab
+        moment_faces!(As, Us, ws, cs, rs)                # faces V_a w_ab 𝓜_a⁻¹ r_ab (Σ_b A_ab r_abᵀ = V_a 𝟙);  u_ab = c_ab R_a⁻¹ r_ab
         stars[a] = Star(bs, rs, ws, cs, V[a], Ta, κs, κb, As, B, ℓ, ℓh, ℓi, Us)
     end
     end
@@ -174,8 +170,8 @@ function propose_stress!(δ, st::Star, dt, rng)
     end
 end
 
-# :moment (inverse_moment.tex): the draws conditioned on zero virial, y − Y_a u_ab, u_ab = c_ab R_a⁻¹ r_ab.  A separate function, so
-# that the code of the other schemes is unchanged (bit-identical: the compiler's fusion of muladd depends on the surrounding code).
+# The residual move (inverse_moment.tex): the draws conditioned on zero virial, y − Y_a u_ab, u_ab = c_ab R_a⁻¹ r_ab.  A separate
+# @noinline function (bit-identical with the earlier code: the compiler's fusion of muladd depends on the surrounding code).
 @noinline function propose_resid_moment!(δ, st::Star, dt, rng)
     Y = zero(SMatrix{2,2,Float64})
     for k in eachindex(st.nb)
@@ -187,17 +183,7 @@ end
     end
 end
 
-function propose_resid!(δ, st::Star, dt, rng)
-    isempty(st.U) || return propose_resid_moment!(δ, st, dt, rng)
-    Y = zero(SMatrix{2,2,Float64})
-    for k in eachindex(st.nb)
-        y = sqrt(2dt * st.c[k]) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
-        δ[k] = y;  Y += y * st.r[k]'
-    end
-    for k in eachindex(st.nb)
-        δ[k] -= (Y * st.A[k]) / st.V              # y − (Y/V_a) A_ab
-    end
-end
+propose_resid!(δ, st::Star, dt, rng) = propose_resid_moment!(δ, st, dt, rng)
 
 # Particle entropy S_a(e, m) at volume V; −Inf for a state no fluid can have (the
 # inversion fails, or γ > γ_max, i.e. |v|² > 1 − 1/γ_max²; sph.jl, SPH_GAMMA_MAX).  Such states have zero weight under e^𝕊: a move that
@@ -294,7 +280,7 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rn
     return nacc[]
 end
 
-# ── The Hastings correction (dissipation = :moment, SPH_HASTINGS=1; inverse_moment.tex, stage 2) ──────────────
+# ── The Hastings correction (SPH_HASTINGS=1; inverse_moment.tex, stage 2) ──────────────
 # The coefficients of star a are computed from the present state (e_a, m_a, V_a) of particle a, as build_stars does from the
 # particle fields after solve_eos! (energy Hamiltonian, number volume: the particle's own state; ẋ_a = v_a), at each proposal
 # and again at the proposed state.  The geometry of the star (bonds, w_ab, faces) stays that of build_stars.
@@ -451,18 +437,13 @@ end
 # The settings of the stochastic step:
 #   hastings  the Hastings correction (inverse_moment.tex, stage 2): the coefficients of each star from the present state of its
 #             particle at every proposal, and the ratio of the reverse and forward proposal densities in the vote.  Needs
-#             dissipation = :moment and 2D.  Default from SPH_HASTINGS, else on wherever it applies
-#             (since 2026-11-15, with :moment the default viscous step); SPH_HASTINGS=0 turns it off.
+#             Default from SPH_HASTINGS, else on (since 2026-11-15); SPH_HASTINGS=0 turns it off.
 # (The gradient-corrected back map of the change of representation, changerep.tex, was removed on 2026-11-27: docs/focus_plan.tex,
 # Q3; the tag pre-prune has it.)
 struct StochOptions
     hastings :: Bool
 end
-function StochOptions(params::SimParams; hastings::Bool = setting("SPH_HASTINGS", is_moment(params)))
-    hastings && !is_moment(params) &&
-        error("SPH_HASTINGS=1 needs dissipation = :moment and 2D (inverse_moment.tex, stage 2)")
-    return StochOptions(hastings)
-end
+StochOptions(params::SimParams; hastings::Bool = setting("SPH_HASTINGS", true)) = StochOptions(hastings)
 
 # The step with the settings as keywords (tests, examples): builds the StochOptions.
 stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D, dt::Float64, eos::AbstractEOS; kw...) =

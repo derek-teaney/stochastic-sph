@@ -36,8 +36,7 @@ function moment_stats(ps, params, cl)
             Q += w * (r * r' - rm^2 / 2 * I);  s += w^2 * rm^4 / 2
         end
         trQ2[a] = tr(Q * Q);  self[a] = s
-        ψ0b = Float64[];  ψout, _ = bond_weights_comoving(nb, ps, FLAT2, FLAT2, params.bond_h; ψ0 = ψ0b, ψfun)
-        fb[a] = ψout === ψ0b                                              # Λ_a fell back to 0
+        # (the fraction of stars where the correction Λ_a of :common fell back went with :common, docs/focus_plan.tex Q5: reported 0)
     end
     return mean(trQ2), mean(self), mean(fb)
 end

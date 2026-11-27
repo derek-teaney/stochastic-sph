@@ -14,7 +14,8 @@ function run_diffusion_test_ic(params, particles, cl, eos, k, M_amp)
     η_by_s = eta_by_s(eos)
 
     dotm = zeros(SVector{2,Float64}, params.N)
-    dissipative_force!(dotm, particles, params, cl, eos)
+    smooth_to_particles!(particles, params, cl);  update_thermodynamics!(particles, eos);  update_velocities!(particles, params, cl)
+    bond_dissipative_force!(dotm, particles, params, cl, eos)     # (was dissipative_force!, removed with the other dissipations, Q5)
 
     # SPH kernel estimate of ∂_t M^y on a 1D grid at y = L[2]/2
     Ng = 400
