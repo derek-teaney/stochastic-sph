@@ -12,8 +12,8 @@
 #   SPH_RENORM=sscheme  the label, s = S_t − Δ^H + ω (sscheme.jl: Δ_p → Δ_p − a ω_σ, Δ_θ → Δ_θ − v ω_σ, P_a V/T_a → + ω_V + ω_σ/n);
 #   SPH_RENORM=split    the energy, E_dyn = T (Δs_dyn − ω(u/n, V)) (renorm_split.jl).
 # h and the kernel are those of the run (positional_set!, called by check_split / check_sscheme when SimParams is built).
-const POS_ON = setting("SPH_POSITIONAL", 1) != 0
-const POS_A2 = setting("SPH_POSITIONAL_A2", 0.0)
+const POS_ON = setting("SPH_POSITIONAL") != 0
+const POS_A2 = setting("SPH_POSITIONAL_A2")
 const POS_H = Ref(NaN)                      # the smoothing length of the run
 const POS_A1 = π / (2 * sin(2π / 5))        # Wendland C2 (n_W = 5)
 

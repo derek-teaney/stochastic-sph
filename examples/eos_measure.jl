@@ -22,11 +22,11 @@ const NUPD = parse(Int, ARGS[4])
 const SEED   = setting("SR_SEED0", 1)
 const DTFAC  = setting("SR_HMC_DTFAC", 0.35)
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
-const BURN   = setting("SR_BURN", 1 / 3)
+const BURN   = setting("SR_BURN")
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const OUTDIR = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data", "eos")))
 const SCHEME = SSCHEME ? "sscheme" : SPLIT ? "split" : "tree"
-const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V", 0.0)
+const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V")
 const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)") * "_seed$(SEED)"
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
 

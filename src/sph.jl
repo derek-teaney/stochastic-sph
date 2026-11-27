@@ -43,7 +43,7 @@ end
 # particle_entropy), and the comoving structures are built with the velocity capped there.  Near the light cone the inversion of
 # the equation of state loses accuracy as 1e-16 γ² (relative, in 1 − v², T, S), and the comoving metric and the residual coefficients
 # become singular; nothing in our flows needs γ ≳ 10.  Default 100 (|v|² ≤ 1 − 10⁻⁴).
-const GAMMA_MAX = setting("SPH_GAMMA_MAX", 100.0)
+const GAMMA_MAX = setting("SPH_GAMMA_MAX")
 # SPH_RENORM=split (docs/step5_plan.tex, docs/renormalization_review.tex): Step 5, the label part of the counterterm in the measure, the
 # rest in H (renorm_split.jl).  The DEFAULT since 2026-11-23 (merge of branch split): with SPH_RENORM unset the run is renormalized.
 # SPH_RENORM=0 is the tree level (the default before).  SPH_RENORM=legendre (docs/legendre_plan.tex) was removed on 2026-11-26.
@@ -79,7 +79,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=defaul
         Lx = Nx * a;  Ly = Ny * dy
         N  = Nx * Ny
         vol = a^2 * sqrt(3) / 2
-        kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[setting("SPH_KERNEL", "wc2")]
+        kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[setting("SPH_KERNEL")]
     end
     L = SVector(Lx, Ly)
     dim_str = kernel isa WendlandC4_2D ? "2D (Wendland C4)" : kernel isa WendlandC6_2D ? "2D (Wendland C6)" : "2D"
@@ -176,7 +176,7 @@ zeta_by_s(eos::ConstantCs2EOS) = eos.ζ_by_s
 # unresolved directions in the bulk channel, ζ_eff = ζ + 2η(1/2 − 1/d) (= ζ at d = d_s = 2), and it is floored at ε η: the
 # Hastings-corrected stress move needs a full-rank noise (shear and bulk), and with ζ_eff = 0 its Jacobian is singular
 # (acceptance 0).  ζ_eff/s = max(ζ/s + 2(η/s)(1/2 − 1/d), ε η/s), ε = SPH_ZETA_FLOOR (default 0.01; 0 removes the floor).
-const ZETA_FLOOR = setting("SPH_ZETA_FLOOR", 0.01)
+const ZETA_FLOOR = setting("SPH_ZETA_FLOOR")
 zeta_eff_by_s(eos::AbstractEOS, d::Integer) =
     max(zeta_by_s(eos) + 2eta_by_s(eos) * (1 / 2 - 1 / d), ZETA_FLOOR * eta_by_s(eos))
 

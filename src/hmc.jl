@@ -168,7 +168,7 @@ hmc_equilibrate!(callback::Function, ps, params, cl, eos, tg::HMCTarget, rng; kw
 # guards()).  If it still fails at Δt/16 the particles are put back at the start of the step and a LeapfrogFailure is thrown, with
 # that state and the particles without a finite force or velocity: a run never continues from a state without a Hamiltonian.
 # When no step fails the arithmetic is that of a plain generalized_leapfrog! call.
-const GLF_TOL = setting("SPH_GLF_TOL", 1e-10)
+const GLF_TOL = setting("SPH_GLF_TOL")
 const GLF_MAXDEPTH = 4                                    # Δt/2⁴ = Δt/16
 
 struct LeapfrogFailure <: Exception

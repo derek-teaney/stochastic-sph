@@ -13,16 +13,16 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const LBOX = parse(Float64, ARGS[1]);  const HA = parse(Float64, ARGS[2])
 const NUPD = parse(Int, ARGS[3]);  const NSTEPS_ARG = parse(Int, ARGS[4])
 const TAG  = length(ARGS) > 4 ? ARGS[5] : "hmc_L$(LBOX)_ha$(HA)"
-const SREL0  = setting("SR_SREL0", 1e6)          # s_rel,0, the rest-frame entropy density (was SR_S0)
+const SREL0  = setting("SR_SREL0")          # s_rel,0, the rest-frame entropy density (was SR_S0)
 const SEED   = setting("SR_SEED0", 1)
 const DTFAC  = setting("SR_HMC_DTFAC", 0.5)
 const OUTDIR = setting("SR_OUTDIR", joinpath(@__DIR__, "..", "data", "hmc"))
 const KHMAX  = setting("SR_KHMAX", 1.5)                 # as examples/equilibrium.jl
-const BOOST  = setting("SR_BOOST", 0.0);  const GAMMA = 1 / sqrt(1 - BOOST^2)
+const BOOST  = setting("SR_BOOST");  const GAMMA = 1 / sqrt(1 - BOOST^2)
 # SR_HMC_TAUJIT=j: each trajectory has a random length, uniform in [(1−j)τ, τ] (as in examples/equilibrium.jl; default 0, a fixed τ, which
 # resonates with a box sound mode when τ = L/c_s).  nsteps = 0 on the command line: τ = L/c_s, as in examples/equilibrium.jl.
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
-const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0            # the energy modes E_k too
+const RECORD_E = setting("SR_RECORD_E") || BOOST != 0            # the energy modes E_k too
 
 eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 const TGT = target_state(SREL0, BOOST, eos);  const TREL0 = TGT.Trel0      # the target state (src/measure.jl; as equilibrium.jl)

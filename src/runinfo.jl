@@ -7,6 +7,7 @@
 #   [eos]         every field of the equation of state
 #   [stochastic]  every field of StochOptions (absent if the run has no stochastic step)
 #   [settings]    every setting read through `setting` (settings.jl): value, default, set
+#   [unused]      the settings set in the environment but never read so far (settings.jl, unused_settings), with their values
 #   [driver]      quantities the driver derives (time step, steps, entropy per particle, ...)
 #   [start]       how the initial state was made
 #   [provenance]  commit (+dirty and a hash of the diff), Julia, threads, host, Slurm, date
@@ -54,7 +55,7 @@ end
 function write_record(base::AbstractString; run = NamedTuple(), params = nothing, eos = nothing,
                       opts = nothing, driver = NamedTuple(), start = NamedTuple(), outcome = NamedTuple())
     rec = Dict{String,Any}("run" => tomlval(run), "sim" => fields_table(params), "eos" => fields_table(eos),
-                           "settings" => settings_table(), "driver" => tomlval(driver),
+                           "settings" => settings_table(), "unused" => unused_settings(), "driver" => tomlval(driver),
                            "start" => tomlval(start), "provenance" => provenance(), "outcome" => tomlval(outcome))
     opts === nothing || (rec["stochastic"] = fields_table(opts))
     open(io -> TOML.print(io, rec; sorted = true), base * ".toml.tmp", "w")

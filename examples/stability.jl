@@ -29,9 +29,9 @@ VOTE === :star || error("stability.jl: the bond vote was removed (docs/focus_pla
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
 const ENERGYH = true                                              # H = Σ e_a (energystep.tex), the only Hamiltonian (the suffix _energy)
-const ETAS  = setting("SR_ETAS", 0.2)                # η/s
-const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
-const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
+const ETAS  = setting("SR_ETAS")                # η/s
+const SREL0 = setting("SR_SREL0")               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
+const HFIX  = setting("SR_HFIX")                           # restore H after each stochastic step
 const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
 const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL
 const START = setting("SR_START", :hot)                      # hot | cold (initial_state!)

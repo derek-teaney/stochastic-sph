@@ -19,18 +19,18 @@ const LBOX  = parse(Float64, ARGS[1])
 const HA    = parse(Float64, ARGS[2])
 # SR_H: the kernel scale h (default 0.05).  The spacing is a = h/HA, so h/a can be raised at fixed a (and fixed N in the box L)
 # by raising SR_H with HA (docs/hbya.tex); with SR_SREL0 fixed the entropy per particle s_a = s_rel,0·a²·√3/2 is then fixed too.
-const HKER  = setting("SR_H", 0.05)
+const HKER  = setting("SR_H")
 const TEND  = parse(Float64, ARGS[3])
 const NREAL = parse(Int, ARGS[4])
 const RECN  = length(ARGS) > 4 ? parse(Int, ARGS[5]) : 2          # record every RECN steps
 const TAG   = length(ARGS) > 5 ? ARGS[6] : "L$(LBOX)_ha$(HA)"
-const ETAS  = setting("SR_ETAS", 0.2)
+const ETAS  = setting("SR_ETAS")
 # SR_CS2: the speed of sound of the constant-c_s² EOS (default 0: the conformal fluid in d = 2, c_s² = 1/2).  SR_CS2=1/3 with
 # SR_ZETAS = (η/s)/3 reproduces the stochastic step of the runs before the dimension fix (8d50d04: c_s² = 1/3, ζ_eff = η/3) at d = 2:
 # the dimension enters the tree-level step only through ζ_eff = max(ζ + 2η(1/2 − 1/d), 0.01 η).  SR_ZETAS: ζ/s (default 0).
 const CS2V  = setting("SR_CS2", 0.0)
-const ZETAS = setting("SR_ZETAS", 0.0)
-const SREL0 = setting("SR_SREL0", 1e6)        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
+const ZETAS = setting("SR_ZETAS")
+const SREL0 = setting("SR_SREL0")        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
 const KHMAX = setting("SR_KHMAX", 1.5)
 # SR_START: the start of a run (docs/focus_plan.tex, Q9; src/measure.jl initial_state!, src/hmc.jl hmc_equilibrate!), at the target
 # state of target_state(s_rel,0, SR_BOOST) — the multipliers β⁰ = γ/T_rel,0, β = γv/T_rel,0 from the equation of state:
@@ -53,18 +53,18 @@ catch
     "unknown"
 end
 const SEED0 = setting("SR_SEED0", 0)                  # seeds SEED0·STRIDE+1 … +NREAL
-const STRIDE = setting("SR_SEEDSTRIDE", 1)             # = NREAL when an array task runs NREAL seeds
-const SEEDOFF = setting("SR_SEEDOFFSET", 0)           # added to every seed (new realizations of a set)
+const STRIDE = setting("SR_SEEDSTRIDE")             # = NREAL when an array task runs NREAL seeds
+const SEEDOFF = setting("SR_SEEDOFFSET")           # added to every seed (new realizations of a set)
 # Controls for the rigidity tests: SR_NOVISC=1 skips the stochastic step (ideal SPH only),
 # SR_NOHAM=1 skips the leapfrog (positions frozen, stochastic step only).  SPH_KERNEL=wc4
 # selects the Wendland C4 kernel (src/sph.jl).  Displacements from the initial sites are
 # recorded (UL, UT) in every run.
-const NOVISC = setting("SR_NOVISC", false)
-const NOHAM  = setting("SR_NOHAM", false)
-const KERNEL = setting("SPH_KERNEL", "wc2")
+const NOVISC = setting("SR_NOVISC")
+const NOHAM  = setting("SR_NOHAM")
+const KERNEL = setting("SPH_KERNEL")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
-const JITTER = setting("SR_JITTER", 0.0)
+const JITTER = setting("SR_JITTER")
 # The hybrid Monte Carlo of SR_START=hmc (src/hmc.jl, docs/equilibrium_positions.tex) at the β^μ of the run: SR_HMC_N updates
 # (default 200) with trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and
 # δt = SR_HMC_DTFAC (default 0.35) times the acoustic step.  The defaults are those of campaign hbya (2026-11-15).
@@ -72,18 +72,18 @@ const JITTER = setting("SR_JITTER", 0.0)
 # to a period of a box sound mode leaves that mode where it started: τ = L/c_s freezes kh = 2πh/L (S(k) stays near its lattice
 # value), τ = L/2c_s the next one (campaign hmc_tau_test, 2026-11-14).  Random lengths remove these resonances.
 # The SR_HMC_* settings are read only with SR_START=hmc.
-const HMC = START === :hmc ? (n = setting("SR_HMC_N", 200), tau = setting("SR_HMC_TAU", 0.0), dtfac = setting("SR_HMC_DTFAC", 0.35),
-                              taujit = setting("SR_HMC_TAUJIT", 0.5), shift_totals = setting("SR_HMC_SHIFT_TOTALS", false)) : nothing
+const HMC = START === :hmc ? (n = setting("SR_HMC_N"), tau = setting("SR_HMC_TAU"), dtfac = setting("SR_HMC_DTFAC", 0.35),
+                              taujit = setting("SR_HMC_TAUJIT", 0.5), shift_totals = setting("SR_HMC_SHIFT_TOTALS")) : nothing
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is s_rel,0 as before; in the lab (density frame) S = γ s_rel,0 and M = (w0 γ² v, 0), w0 the rest-frame
 # enthalpy at s_rel,0 (target_state).  The start draws at the moving β^μ of the target.  With a
 # boost the energy Fourier modes E_k are recorded too (SR_RECORD_E=1 forces them at rest).
-const BOOST  = setting("SR_BOOST", 0.0)
+const BOOST  = setting("SR_BOOST")
 const GAMMA  = 1 / sqrt(1 - BOOST^2)
-const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
+const RECORD_E = setting("SR_RECORD_E") || BOOST != 0
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
 stoch_opts(params) = StochOptions(params)
-const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
+const DTFAC  = setting("SR_DTFAC")             # Δt / default (time-step tests)
 
 # With SPH_HASTINGS (inverse_moment.tex, stage 2): the log ratios of the proposals, recorded as hast_lq_{stress,resid}_{mean,rms}.
 # Without it nothing is written, so the output of the other runs is unchanged.
@@ -94,8 +94,8 @@ hastings_series(st, on) = on ? (hast_lq_stress_mean = st.lqs_mean, hast_lq_stres
 # the series so far to <base>.h5 (attribute complete = false).  If <base>.chk exists at
 # start, the run resumes from it (bit-identically), so a task that hit its time limit is
 # simply resubmitted.  SR_STOP_AFTER (tests only) stops after that step, after a checkpoint.
-const CHKMIN    = setting("SR_CHECKPOINT_MIN", 20.0)
-const STOPAFTER = setting("SR_STOP_AFTER", 0)
+const CHKMIN    = setting("SR_CHECKPOINT_MIN")
+const STOPAFTER = setting("SR_STOP_AFTER")
 
 function run_meta(params, st, n, wall, complete, eos)
     (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, dt = st.dt, nsteps = st.nsteps,

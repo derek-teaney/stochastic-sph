@@ -44,7 +44,7 @@ const SS_D = 3                # D = d + 1 (d = 2)
 #   The reference (s̄_rel, V̄) is set from the initial condition (sscheme_reference!, called by sscheme_labels!): s̄_rel the mean rest-frame
 #   entropy density of the targets, V̄ = L²/N, as split sets its V̄.  measure-f (the factor F of eq. schemeF) is reserved.
 #   exact    s = S_1loop + δ(ln S_t, θ), the exact count of states of the particle, flat measure (sscheme_exact.jl; c_s² = 1/2 only).
-const SS_FORM = setting("SPH_SSCHEME_FORM", :measure)
+const SS_FORM = setting("SPH_SSCHEME_FORM")
 SS_FORM in (:measure, :exact) || error("SPH_SSCHEME_FORM = $SS_FORM: measure (the default) or exact.  The full form (flat measure, the one-loop label) " *
     "was removed on 2026-11-26: the exact form is the full form with the exact count (docs/sscheme_plan.tex, sec:prune; last commit with it 9846a6c)")
 const SS_MEASURE = SS_FORM === :measure
