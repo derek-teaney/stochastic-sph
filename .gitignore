@@ -30,3 +30,7 @@ docs/private/
 # run output
 data/
 slurm/
+
+# Python bytecode
+__pycache__/
+*.pyc
