@@ -152,7 +152,7 @@ mkpath(OUTDIR)
 meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = SA, T0 = T0, sigma = σp, renorm = SCHEME != "tree",
         scheme = SCHEME, v = vb, gamma = γb, w_target = w_t, M_target = M_t,
         eos_meta(params, eos)..., sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt,
-        acceptance = mean(acc), seed = SEED, measure = string(params.measure), e_target = e_t, p_target = p_t)
+        acceptance = mean(acc), seed = SEED, measure = "liouville", e_target = e_t, p_target = p_t)
 write_equilibrium_h5(joinpath(OUTDIR, "$(TAG).h5"), meta, rec, vmean, zeros(NUPD); prec,
                      extra = (E = E, P = P, Pkin = Pk, Pvir = Pv, Tyy = Tyy, Px = Px, Py = Py, vol_mean = vmean, vol_var = vvar, hmc_acc = acc))
 open(joinpath(OUTDIR, "$(TAG).txt"), "w") do io

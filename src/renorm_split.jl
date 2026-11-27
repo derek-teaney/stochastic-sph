@@ -184,14 +184,15 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
     return (u, vt > 0 ? r.v * (r.xd / vt) : r.v, r.TH)
 end
 
-# The weight of a state in the votes: s_a(u) = u − b ln u, and with the Liouville measure − ln(∂H/∂u / (1 − b/u)) (∂H/∂s_a).
-@noinline function split_vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing, sound::Bool = true)
+# The weight of a state in the votes: s_a(u) = u − b ln u − ln(∂H/∂u / (1 − b/u)) (the Liouville measure; ∂H/∂s_a).  With
+# lnT = false the label s_a(u) alone, the weight flat in (e, m) (flat_weight, stochastic.jl: the proposal of the HMC heat bath).
+@noinline function split_vote_entropy(e, m, V, eos, lnT::Bool; guess = nothing, sound::Bool = true)
     u, _, TH = split_inverse(e, m, V, eos; guess, sound)
     (isfinite(u) && TH > 0) || return -Inf
     b = 2.5 - (1 - 2 * eos.cs2_val)
     u > b || return -Inf                                       # the label boundary
     s = u - b * log(u)
-    return liouville ? s - log(TH / (1 - b / u)) : s
+    return lnT ? s - log(TH / (1 - b / u)) : s
 end
 
 # The schemes Step 5 supports, and V̄.
@@ -202,7 +203,6 @@ function check_split(params)
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number" * hint)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2" * hint)
-    params.measure === :liouville || error("SPH_RENORM=split needs the Liouville measure (SPH_MEASURE=liouville)" * hint)
     params.ideal === :grid && error("SPH_RENORM=split is not available with the grid step (SPH_IDEAL=grid)" * hint)
     isfinite(SPLIT_VBAR[]) || (SPLIT_VBAR[] = SPLIT_VBAR_SETTING > 0 ? SPLIT_VBAR_SETTING : prod(params.L) / params.N)
     return nothing

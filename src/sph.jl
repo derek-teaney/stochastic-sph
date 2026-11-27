@@ -30,7 +30,6 @@ mutable struct SimParams{K<:AbstractKernel}
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
     ideal       :: Symbol          # :generalized (default in 2D), :particle or :grid — see below
-    measure     :: Symbol          # :liouville (default in 2D) or :einstein — see below
 end
 
 # dissipation: the viscous step.  :common is :particle with the bond weights of the SPH kernel at the lab
@@ -69,13 +68,10 @@ end
 #   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else
 #   default_ideal: :generalized where it applies (2D, hamiltonian = :energy, volume = :number; since 2026-11-15), else :particle.
 #   SPH_IDEAL=particle gives the earlier default (needed to reproduce runs before that date).
-# measure: the integration measure of the stochastic step and of hybrid Monte Carlo (equilibrium_positions.tex, Appendix A).
-#   :einstein is flat in the conserved energy and momentum (the Einstein formula; the particle entropy read as
-#   the Boltzmann entropy).  :liouville is flat in the entropy, the measure the Hamiltonian ideal step preserves (s_a the
-#   adiabatic invariant, the Gibbs entropy): the votes, the heat bath and the equilibrium start use S_a − ln T_a; the hybrid
-#   Monte Carlo acceptance drops Σ ln T_a.  Needs hamiltonian = :energy.  Default from SPH_MEASURE, else default_measure:
-#   :liouville in 2D with hamiltonian = :energy (since 2026-11-15), else :einstein.  SPH_MEASURE=einstein gives the earlier
-#   default.  :liouville cannot be used with the gradient back map.
+# The measure of the stochastic step and of hybrid Monte Carlo is the Liouville measure (equilibrium_positions.tex, Appendix A):
+#   flat in the entropy, the measure the Hamiltonian ideal step preserves (s_a the adiabatic invariant): the votes, the heat bath
+#   and the equilibrium start weight a state by S_a − ln T_a.  It needs hamiltonian = :energy (check_stochastic_dims).  The
+#   Einstein measure (flat in e_a, m_a; SPH_MEASURE=einstein) was removed on 2026-11-27 (docs/focus_plan.tex, Q2; tag pre-prune).
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().
@@ -116,11 +112,9 @@ const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
 
-# The ideal step and the measure when none is given (2026-11-15): the generalized leapfrog and the Liouville measure where
-# they apply (2D, energy Hamiltonian, and for the leapfrog the n-scheme), else :particle and :einstein.
+# The ideal step when none is given (2026-11-15): the generalized leapfrog where it applies (2D, the n-scheme), else :particle.
 default_ideal(sim_dim, hamiltonian, volume) =
     sim_dim == 2 && hamiltonian === :energy && volume === :number ? :generalized : :particle
-default_measure(sim_dim, hamiltonian) = sim_dim == 2 && hamiltonian === :energy ? :liouville : :einstein
 default_hamiltonian(dissipation = setting("SPH_DISSIPATION", default_dissipation())) =
     setting("SPH_HAMILTONIAN", dissipation === :two_level ? :smoothed : :energy)
 
@@ -128,8 +122,7 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, sim_dim=2, phys
                    dissipation=setting("SPH_DISSIPATION", default_dissipation(sim_dim)), bond_h=nothing,
                    hamiltonian=default_hamiltonian(dissipation),
                    volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
-                   ideal=setting("SPH_IDEAL", default_ideal(sim_dim, hamiltonian, volume)),
-                   measure=setting("SPH_MEASURE", default_measure(sim_dim, hamiltonian)))
+                   ideal=setting("SPH_IDEAL", default_ideal(sim_dim, hamiltonian, volume)))
     dissipation === :changerep && (dissipation = :particle)    # the old name of :particle
     a = h / ha_ratio
     if sim_dim == 1
@@ -186,11 +179,8 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, sim_dim=2, phys
     ideal === :grid && (lattice === :hex && sim_dim == 2 && hamiltonian === :energy && volume === :number ||
         error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
     ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
-    measure in (:einstein, :liouville) || error("measure must be :einstein or :liouville, got $measure")
-    measure === :liouville && (hamiltonian === :energy ||
-        error("measure = :liouville needs hamiltonian = :energy (equilibrium_positions.tex, Appendix A)"))
-    measure === :liouville && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
-    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal, measure)
+    sim_dim == 2 && hamiltonian === :energy && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
+    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, dissipation, hψ, hamiltonian, volume, ideal)
     check_split(sp)                               # SPH_RENORM=split: the schemes it supports and V̄, before any map is used (renorm_split.jl)
     check_sscheme(sp)                             # SPH_RENORM=sscheme: the schemes it supports (sscheme.jl)
     sp
@@ -201,6 +191,8 @@ function check_stochastic_dims(params::SimParams)
     check_split(params)                           # SPH_RENORM=split (renorm_split.jl)
     check_sscheme(params)                         # SPH_RENORM=sscheme (sscheme.jl)
     sim_dim(params) == 2 || error("stochastic runs need sim_dim = 2; one-dimensional stochastic runs were removed (dimension.tex)")
+    params.hamiltonian === :energy || error("stochastic runs need hamiltonian = :energy: the Liouville measure is the only one, and the " *
+        "smoothed Hamiltonian had the Einstein measure (removed on 2026-11-27, docs/focus_plan.tex Q2; tag pre-prune)")
     params.phys_dim == sim_dim(params) ||
         error("stochastic runs need phys_dim = sim_dim (= 2), got phys_dim = $(params.phys_dim): with fluctuations the fluid is the " *
               "one the particles span (dimension.tex); phys_dim ≠ sim_dim is for deterministic runs only")

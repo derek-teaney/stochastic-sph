@@ -45,14 +45,12 @@ lnT(e, m, V, eos) = (r = try eos_from_energy(e / V, m / V, eos) catch; nothing e
                      r === nothing || !isfinite(r[3]) || r[3] <= 0 ? NaN : log(r[3]))
 
 # The tilted single-particle distribution on a grid: weights, mean, covariance, ⟨ln T⟩.
-# The exact target of the stochastic step: e^{S_a} (Einstein) or e^{S_a − ln T_a} (Liouville, the default since 2026-11-15),
-# with the measure of the run (SimParams.measure, SPH_MEASURE).
-const LIOUVILLE = setting("SPH_MEASURE", :liouville) === :liouville
+# The exact target of the stochastic step: e^{S_a − ln T_a} (the Liouville measure, the only one since 2026-11-27).
 function tilted(e, m0, V, eos, σ, μ; n = 301)
-    xs = range(-8σ, 8σ, length = n);  S0 = vote_entropy(e, m0, V, eos, LIOUVILLE)
+    xs = range(-8σ, 8σ, length = n);  S0 = vote_entropy(e, m0, V, eos)
     W = zeros(n, n);  LT = fill(NaN, n, n)
     for (i, x) in enumerate(xs), (j, y) in enumerate(xs)
-        Sm = vote_entropy(e, m0 + SVector(x, y), V, eos, LIOUVILLE)      # the weight of the run's measure
+        Sm = vote_entropy(e, m0 + SVector(x, y), V, eos)      # the weight of the run's measure
         isfinite(Sm) || continue
         W[i, j] = exp(Sm - S0 + μ[1] * x + μ[2] * y);  LT[i, j] = lnT(e, m0 + SVector(x, y), V, eos)
     end
@@ -114,8 +112,7 @@ function one_run(r, ps0, params, cl, eos, dt, nsteps, m0, t, e, V)
 end
 
 let P = setup_moving(54, 0.0)[1]
-    P.measure === (LIOUVILLE ? :liouville : :einstein) || error("the measure of the reference and of the run differ")
-    println("dissipation = ", P.dissipation, ", measure = ", P.measure, ", frozen coefficients = ", FROZEN,
+    println("dissipation = ", P.dissipation, ", measure = liouville, frozen coefficients = ", FROZEN,
             ", Hastings = ", setting("SPH_HASTINGS", false))
 end
 for sa in SAS, v0 in V0S

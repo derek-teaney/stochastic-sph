@@ -1,18 +1,19 @@
 # hmc.jl — hybrid Monte Carlo on the positions and momenta (docs/equilibrium_positions.tex, Sects. V and VIII).
-# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the Einstein measure (default)
-#   π_E ∝ Π_a T_a · exp[Σ_a s_a − β⁰ H + β·P]   (flat in the particle energies and momenta),
-# or, with params.measure = :liouville, π_L ∝ exp[Σ_a s_a − β⁰ H + β·P] (flat in the entropies; Appendix A of the note),
-# whose position marginal is Π_a V_a^{3/2} exp[(p/T) Σ_a V_a] to leading order.  One update:
+# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the Liouville measure
+#   π_L ∝ exp[Σ_a s_a − β⁰ H + β·P]   (flat in the entropies; Appendix A of the note).
+# (The Einstein measure, flat in the particle energies and momenta, was removed on 2026-11-27: docs/focus_plan.tex, Q2.)
+# One update:
 #   1. heat bath at fixed positions: per particle, an independence Metropolis chain for (e_a, m_a), continued from the
 #      current values (so the conditional distribution is preserved exactly), then s_a = S_a(e_a, m_a);
 #   2. a Hamiltonian trajectory at fixed s_a with the generalized leapfrog (symplectic and reversible for the
-#      non-separable H), accepted with min(1, exp[−β⁰ΔH + β·ΔP + Δ Σ_a ln T_a]).
+#      non-separable H), accepted with min(1, exp[−β⁰ΔH + β·ΔP]).
 # Only the number-volume energy Hamiltonian (hamiltonian = :energy, volume = :number), where ∂H/∂m_a = v_a and
 # −∂H/∂x_a is hamiltonian_force!.
 
 # The multipliers and the proposal of the heat bath: the most probable densities (ε̄, M̄) at (β⁰, β) and the Gaussian
 # pieces of a particle of volume Vref (rescaled per particle: Hn ∝ 1/V, L ∝ √V).  The proposal only affects the
-# acceptance of the chain, not its target.
+# acceptance of the chain, not its target.  Its Gaussian is that of the weight flat in (e, m) (flat_weight, stochastic.jl),
+# kept so that the starts are bit-identical with the earlier code; docs/focus_plan.tex Q9 moves it to the Liouville weight.
 struct HMCTarget
     β0   :: Float64
     β    :: SVector{2,Float64}
@@ -24,24 +25,24 @@ struct HMCTarget
 end
 function HMCTarget(β0, β::SVector{2,Float64}, Vref::Float64, eos::AbstractEOS)
     st = state_from_beta(β0, β, eos)
-    pm = particle_moments(Vref, β0, β, eos)
+    pm = particle_moments(Vref, β0, β, eos; weight = flat_weight)
     return HMCTarget(β0, β, st.ε, st.M, Vref, pm.L, pm.Hn)
 end
 
-# Smooth and solve; returns H, P and Σ ln T_a of the present state.
+# Smooth and solve; returns H and P of the present state.
 function hmc_measure!(ps, params, cl, eos)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
-    return sum(q.H for q in ps), sum(q.m for q in ps), sum(log(q.T) for q in ps)
+    return sum(q.H for q in ps), sum(q.m for q in ps)
 end
 
 # 1. Heat bath at fixed positions (the smoothed state must be current).  Returns the acceptance of the chains.
 function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, widen::Float64 = 2.0)
-    nacc = 0;  liouville = params.measure === :liouville       # the target S_a − ln T_a (sph.jl, measure)
+    nacc = 0                                              # the target S_a − ln T_a (the Liouville measure, sph.jl)
     for pa in ps
         V = pa.V;  r = V / tg.Vref
         ē = V * tg.ε̄;  m̄ = V * tg.M̄;  Lw = sqrt(widen * r) * tg.L;  Hn = tg.Hn / r
         g = SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
-        logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville; guess = g) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
+        logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos; guess = g) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
         x = SVector(e - ē, pa.m[1] - m̄[1], pa.m[2] - m̄[2]);  wx = logp(x) - logq(x)
@@ -124,16 +125,16 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     params.hamiltonian === :energy && params.volume === :number || error("hmc_update!: needs hamiltonian = :energy, volume = :number")
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     hb = hmc_heatbath!(ps, params, cl, eos, tg, rng; nmh)
-    H0, P0, lnT0 = hmc_measure!(ps, params, cl, eos)
+    H0, P0 = hmc_measure!(ps, params, cl, eos)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
     its = hmc_trajectory!(ps, params, cl, eos, dt, nsteps)
     if its < 0                                            # the trajectory left the domain of H (split, sscheme): rejected
         setm!(ps, m0);  setx!(ps, params, cl, x0);  hmc_measure!(ps, params, cl, eos)
         return (accepted = false, dH = NaN, dlnpi = -Inf, heatbath = hb, iters = NaN)
     end
-    H1, P1, lnT1 = hmc_measure!(ps, params, cl, eos)
-    # Einstein measure: the trajectory changes the T_a at fixed s_a, hence Δ Σ ln T_a; the Liouville measure is invariant
-    dlnπ = -tg.β0 * (H1 - H0) + dot(tg.β, P1 - P0) + (params.measure === :liouville ? 0.0 : lnT1 - lnT0)
+    H1, P1 = hmc_measure!(ps, params, cl, eos)
+    # the Liouville measure is invariant under the trajectory (fixed s_a)
+    dlnπ = -tg.β0 * (H1 - H0) + dot(tg.β, P1 - P0)
     acc = isfinite(dlnπ) && log(rand(rng)) < dlnπ
     if !acc
         setm!(ps, m0);  setx!(ps, params, cl, x0);  hmc_measure!(ps, params, cl, eos)

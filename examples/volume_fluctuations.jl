@@ -23,7 +23,7 @@ tg = HMCTarget(start.β0, start.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt))
 @printf("volume fluctuations: N = %d, h/a = %.3g, s_a = %.4g, %d steps per trajectory, %d updates, measure %s\n",
-        params.N, HA, S0 * params.vol, NSTEPS, NUPD, params.measure)
+        params.N, HA, S0 * params.vol, NSTEPS, NUPD, "liouville")
 
 ks = box_wavevectors(params, KHMAX)
 rec = Recorder(ks);  prec = ParticleRecorder(ps, params; ks, cl)
@@ -42,7 +42,7 @@ end
 outdir = joinpath(@__DIR__, "..", "data", "volfluct");  mkpath(outdir)
 meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = S0 * params.vol, T0 = start.T, eos_meta(params, eos)...,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt, acceptance = mean(acc), seed = SEED,
-        measure = string(params.measure))
+        measure = "liouville")
 write_equilibrium_h5(joinpath(outdir, "$(TAG).h5"), meta, rec, vmean, zeros(NUPD); prec,
                      extra = (vol_mean = vmean, vol_var = vvar, vol_skew = vskew, hmc_acc = acc))
 println("done")

@@ -11,11 +11,10 @@
 # tolerance tol (default 0: bit-identical).  Results must not depend on the number of
 # threads, so compare across -t 1 and -t 4 as well as across code versions.
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
-# The reference path is the smoothed Hamiltonian with the gradient-corrected map (the default
-# until 2026-11-10); set SPH_HAMILTONIAN=energy to check the n-scheme instead.
-ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "smoothed")
-# The measure is fixed to Einstein, as the saved references of this file had it (with the smoothed Hamiltonian it is Einstein anyway).
-ENV["SPH_MEASURE"] = get(ENV, "SPH_MEASURE", "einstein")
+# The n-scheme (energy Hamiltonian, number volume).
+ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "energy")
+# The measure is the Liouville measure, the only one since 2026-11-27 (docs/focus_plan.tex, Q2; the reference has it as the default of
+# the energy Hamiltonian).  The smoothed Hamiltonian, which had the Einstein measure, is no longer run here.
 const ROOT = joinpath(@__DIR__, "..", "..")
 include(joinpath(ROOT, "src", "load.jl"))
 

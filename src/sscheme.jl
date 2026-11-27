@@ -303,7 +303,6 @@ function check_sscheme(params)
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=sscheme needs hamiltonian = :energy and volume = :number" * hint)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=sscheme: implemented for d = 2" * hint)
-    params.measure === :liouville || error("SPH_RENORM=sscheme needs the Liouville measure (SPH_MEASURE=liouville)" * hint)
     params.ideal === :grid && error("SPH_RENORM=sscheme is not available with the grid step (SPH_IDEAL=grid)" * hint)
     return nothing
 end

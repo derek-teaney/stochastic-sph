@@ -207,9 +207,9 @@ end
 # (the inverse map, pointwise.jl)
 particle_entropy(e, m, V, eos; guess = nothing) = particle_inverse(e, m, V, eos; guess)[1]
 
-# The entropy that weights a state in the votes.  measure = :einstein: S_a itself (flat in e_a, m_a).  measure = :liouville
-# (equilibrium_positions.tex, Appendix A): the measure flat in s_a, which at fixed e_a and V_a induces e^{S_a}/T_a in m_a, so the
-# votes use S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (the third return of eos_from_energy).  −Inf as particle_entropy.
+# The entropy that weights a state in the votes (the Liouville measure, equilibrium_positions.tex, Appendix A): the measure flat in
+# s_a, which at fixed e_a and V_a induces e^{S_a}/T_a in m_a, so the votes use S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature
+# (the third return of eos_from_energy).  −Inf as particle_entropy.
 function particle_entropy_lnT(e, m, V, eos; guess = nothing)
     s, _, T = particle_inverse(e, m, V, eos; guess)
     return (isfinite(s) && T > 0) ? s - log(T) : -Inf
@@ -217,13 +217,17 @@ end
 # SPH_RENORM is recorded here (sph.jl reads it: split, the default; sscheme; 0 the tree level; sph.jl stops on the removed values).
 (SPLIT || SSCHEME) ? setting("SPH_RENORM", :split) : setting("SPH_RENORM", false)
 # the method is chosen at load time, so that at the tree level the code is exactly that of before (bit-identical regression)
+# flat_weight is the weight flat in (e_a, m_a) (the Einstein measure, removed on 2026-11-27, docs/focus_plan.tex Q2): it only shapes
+# the Gaussian proposal of the heat bath of hybrid Monte Carlo (HMCTarget, hmc.jl), whose target is vote_entropy; Q9 replaces it.
 if SSCHEME
-    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)   # liouville (check_sscheme)
+    vote_entropy(e, m, V, eos; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)
+    flat_weight(e, m, V, eos; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)
 elseif SPLIT
-    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) = split_vote_entropy(e, m, V, eos, liouville; guess)
+    vote_entropy(e, m, V, eos; guess = nothing) = split_vote_entropy(e, m, V, eos, true; guess)
+    flat_weight(e, m, V, eos; guess = nothing) = split_vote_entropy(e, m, V, eos, false; guess)
 else
-    vote_entropy(e, m, V, eos, liouville::Bool; guess = nothing) =
-        liouville ? particle_entropy_lnT(e, m, V, eos; guess) : particle_entropy(e, m, V, eos; guess)
+    vote_entropy(e, m, V, eos; guess = nothing) = particle_entropy_lnT(e, m, V, eos; guess)
+    flat_weight(e, m, V, eos; guess = nothing) = particle_entropy(e, m, V, eos; guess)
 end
 # SPH_RENORM=split: the state of each particle at the start of a stochastic step (its label and the target's rest-frame energy density),
 # the starting point of the inverse solves of its votes and coefficients (a guess changes the Newton iterations, not the result).
@@ -241,18 +245,18 @@ restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_BACKMAP[] = g.backma
 
 # The single vote of the star: accept the move with min(1, exp ΔS), ΔS = Σ_c ΔS_c over the
 # particle and its bonds, all or nothing.
-function ask_star!(m, Sc, e, V, a, st::Star, δ, eos, rng, Snew, liouville::Bool = false)
+function ask_star!(m, Sc, e, V, a, st::Star, δ, eos, rng, Snew)
     n  = length(st.nb)
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
-    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville; guess = vg(a))
+    Sa = vote_entropy(e[a], ma′, V[a], eos; guess = vg(a))
     if !isfinite(Sa)
         Threads.atomic_add!(GUARD_REJECTED, 1);  return false
     end
     ΔStot = Sa - Sc[a]
     for k in 1:n
         b = st.nb[k]
-        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville; guess = vg(b))
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos; guess = vg(b))
         if !isfinite(Snew[k])
             Threads.atomic_add!(GUARD_REJECTED, 1);  return false
         end
@@ -270,7 +274,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, eos, rng, Snew, liouville::Bool
 end
 
 # One checkerboard sweep of the given kind (:stress or :resid).  Returns the number accepted.
-function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool = false)
+function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng)
     nacc = Threads.Atomic{Int}(0)
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]
@@ -285,7 +289,7 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rn
                 else
                     propose_resid!(δ, st, dt, rngs[a])
                 end
-                ok = ask_star!(m, Sc, e, V, a, st, δ, eos, rngs[a], Snew, liouville)
+                ok = ask_star!(m, Sc, e, V, a, st, δ, eos, rngs[a], Snew)
                 ok && Threads.atomic_add!(nacc, 1)
             end
         end
@@ -378,16 +382,16 @@ function propose_resid_hastings!(δ, st::Star, c::StarCoef, e, ma, V, dt, eos, d
 end
 
 # The single vote with the Hastings factor: accept with min(1, e^{ΔS + lq}).
-function ask_star_hastings!(m, Sc, e, V, a, st::Star, δ, lq, eos, rng, Snew, liouville::Bool)
+function ask_star_hastings!(m, Sc, e, V, a, st::Star, δ, lq, eos, rng, Snew)
     n  = length(st.nb)
     isfinite(lq) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
     ma′ = m[a] - sum(@view δ[1:n])
-    Sa = vote_entropy(e[a], ma′, V[a], eos, liouville; guess = vg(a))
+    Sa = vote_entropy(e[a], ma′, V[a], eos; guess = vg(a))
     isfinite(Sa) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
     ΔStot = Sa - Sc[a]
     for k in 1:n
         b = st.nb[k]
-        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville; guess = vg(b))
+        Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos; guess = vg(b))
         isfinite(Snew[k]) || (Threads.atomic_add!(GUARD_REJECTED, 1);  return false)
         ΔStot += Snew[k] - Sc[b]
     end
@@ -403,7 +407,7 @@ function ask_star_hastings!(m, Sc, e, V, a, st::Star, δ, lq, eos, rng, Snew, li
 end
 
 # One checkerboard sweep with the Hastings correction (as color_sweep!).
-function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool, params)
+function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, params)
     nacc = Threads.Atomic{Int}(0);  d = params.phys_dim
     lsum = Threads.Atomic{Float64}(0.0);  lsq = Threads.Atomic{Float64}(0.0);  lnum = Threads.Atomic{Int}(0)   # ln q′/q of the proposals
     for g in shuffle(rng, collect(eachindex(groups)))
@@ -420,7 +424,7 @@ function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos,
                 if isfinite(lq)
                     Threads.atomic_add!(lsum, lq);  Threads.atomic_add!(lsq, lq^2);  Threads.atomic_add!(lnum, 1)
                 end
-                ask_star_hastings!(m, Sc, e, V, a, st, δ, lq, eos, rngs[a], Snew, liouville) && Threads.atomic_add!(nacc, 1)
+                ask_star_hastings!(m, Sc, e, V, a, st, δ, lq, eos, rngs[a], Snew) && Threads.atomic_add!(nacc, 1)
             end
         end
     end
@@ -537,17 +541,16 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     V, e, stars = fz.V, fz.e, fz.stars
     N  = length(particles)
     m  = [pa.m for pa in particles]
-    # measure = :liouville: Sc holds the vote entropy S_a − ln T_a during the sweeps; the particle entropies are the true S_a,
-    # recomputed at the end.  Not with the gradient back map, which writes true S_a into Sc.
-    liouville = params.measure === :liouville
-    liouville && gradient && error("measure = :liouville is not available with the gradient back map")
+    # Sc holds the vote entropy S_a − ln T_a during the sweeps; the particle entropies are the true S_a, recomputed at the end.
+    # (The gradient back map wrote true S_a into Sc: it belongs to the smoothed Hamiltonian, which check_stochastic_dims refuses.)
+    gradient && error("stochastic_step!: the gradient back map needs the Einstein measure, removed on 2026-11-27 (docs/focus_plan.tex, Q2)")
     if SPLIT                                           # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
     end
     Sc = Vector{Float64}(undef, N)
     Threads.@threads for a in 1:N
-        Sc[a] = vote_entropy(e[a], m[a], V[a], eos, liouville; guess = vg(a))
+        Sc[a] = vote_entropy(e[a], m[a], V[a], eos; guess = vg(a))
     end
     # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
@@ -563,17 +566,17 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
         cells = shifted_cells(particles, cl, u)
         g0 = GUARD_REJECTED[]
         if hastings
-            nh, ls, lq2, ln = color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params)
+            nh, ls, lq2, ln = color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, params)
             acc[kind] = nh / N
             ln > 0 && (lqs[kind] = (ls / ln, sqrt(lq2 / ln)))
         else
-            acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville) / N
+            acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng) / N
         end
         grj[kind] = (GUARD_REJECTED[] - g0) / N
     end
     gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
-        pa.m = m[a];  pa.s = liouville ? particle_entropy(e[a], m[a], V[a], eos; guess = vg(a)) : Sc[a]
+        pa.m = m[a];  pa.s = particle_entropy(e[a], m[a], V[a], eos; guess = vg(a))
     end
     # acceptances, and the fractions of proposals rejected by the guard (a state no fluid can
     # have; for the conformal EOS exactly |v| ≥ 1), for the stress and the residual sweep
