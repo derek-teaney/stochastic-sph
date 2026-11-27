@@ -87,7 +87,8 @@ fi
 if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     # The regression is of the tree level and the start of before (since 2026-11-23 the defaults are SPH_RENORM=split and
     # SR_BATH=nominal): both sides run with SPH_RENORM=0 SR_BATH=totals, so that the default path of <ref> must be reproduced
-    # bit-identically.  The renormalized runs are tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit run above.
+    # bit-identically; the equilibrium and stability drivers run at the defaults as well (focus_plan.tex, Q0).
+    # The renormalized runs are also tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit run above.
     export SPH_RENORM=0 SR_BATH=totals
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"
@@ -102,22 +103,27 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         done
         record "step.jl, $H" regress $ok $(( $(date +%s) - t0 ))
     done
-    for c in rest boost; do
-        t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
-        for side in ref here; do
-            d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_$c.log" 2>&1 ) &
-        done; wait
-        ok=fail
-        julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_$c.log" 2>&1 && ok=pass
-        record "equilibrium driver, $c" regress $ok $(( $(date +%s) - t0 ))
+    # the equilibrium driver at the tree level (the environment above) and at the defaults (split, the nominal bath, the HMC start:
+    # what production runs use; "env -u" drops the two settings for these runs only)
+    for cfg in tree default; do
+        u="";  [ $cfg = default ] && u="-u SPH_RENORM -u SR_BATH"
+        for c in rest boost; do
+            t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
+            for side in ref here; do
+                d=$R; [ $side = ref ] && d=$W
+                ( cd "$d" && env $u SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$cfg/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_${cfg}_$c.log" 2>&1 ) &
+            done; wait
+            ok=fail
+            julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$cfg/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$cfg/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_${cfg}_$c.log" 2>&1 && ok=pass
+            record "equilibrium driver, $cfg, $c" regress $ok $(( $(date +%s) - t0 ))
+        done
     done
     sdrv() { [ -f "$1/examples/stability.jl" ] && echo "$1/examples/stability.jl" || echo "$1/examples/stochrep_hamiltonian.jl"; }
-    for H in smoothed energy; do
-        t0=$(date +%s)
+    for H in smoothed energy default; do               # default: the energy Hamiltonian at the default renormalization (split)
+        t0=$(date +%s);  u="";  [ $H = default ] && u="-u SPH_RENORM -u SR_BATH"
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SPH_HAMILTONIAN=$H SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
+            ( cd "$d" && env $u SPH_HAMILTONIAN=${H/default/energy} SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
         done; wait
         ok=fail;  f=$(ls "$OUT/stab_ref/$H" 2>/dev/null | head -1)
         [ -n "$f" ] && julia --project="$PROJ" test/regress/jlscmp.jl "$OUT/stab_ref/$H/$f" "$OUT/stab_here/$H/$f" > "$OUT/stab_cmp_$H.log" 2>&1 && ok=pass
