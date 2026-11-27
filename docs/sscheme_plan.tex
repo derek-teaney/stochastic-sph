@@ -1477,8 +1477,43 @@ $1/4$ & $2$ & $5/2$ & $9/2$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-The cost of $\beta_*$ is a larger exponent and a higher bound of the measure, $s>\beta_*$.  Whether the positive pressure of N5 (\Sect{sec:amend},
-``The bounds to expect'') holds above that bound has not been checked.
+The cost of $\beta_*$ is a larger exponent and a higher bound of the measure, $s>\beta_*$.  In exchange the pressure cannot go negative: by \Eq{pastar} below, $P_a=p/\mathcal D>0$ wherever $\mathcal D>0$
+(compare \Sect{sec:amend}, ``The bounds to expect'').  Whether $\mathcal D>0$ (no fold) holds everywhere above the bound has not been checked.
+
+\paragraph{What $T$, $p$, $T_a$ and $P_a$ are.}  The target of a particle is the uniform fluid cell, at tree level, with the particle's energy
+$e=H$, momentum $\bm m$ and volume $V$:
+\st
+e=V\big(w\gamma^2-p\big),\qquad \bm m=w\gamma^2\bm v\,V,\qquad w=e_{\rm rel}+p=T_{\rm rel}s_{\rm rel},\qquad S_{\rm t}=\gamma s_{\rm rel}(T_{\rm rel})V ,
+\stp
+which gives the rest-frame temperature $T_{\rm rel}$ and the velocity $\bm v$ of the target (\texttt{sscheme\_target\_entropy}).  $T=T_{\rm rel}/\gamma$
+is its lab-frame temperature and $p=p(T_{\rm rel})=AT_{\rm rel}^{\,n}$ its pressure; since $p=s_{\rm rel}T_{\rm rel}/n$, $pV/T=S_{\rm t}/n$.  $T_a$
+and $P_a$ belong to the dynamics: they are the derivatives of the Hamiltonian $H(s,\bm m,V)$ at fixed label,
+\st
+T_a=\frac{\partial H}{\partial s}=\frac T{\mathcal D},\qquad P_a=-\frac{\partial H}{\partial V},\qquad \mathcal D=\frac{\partial s}{\partial S_{\rm t}} .
+\stp
+With \Eq{betapressure}, for any $\beta=b+\lambda\mathcal N$ (plain form),
+\st
+P_a=\frac1{\mathcal D}\Big[p-\Big(1-\frac\lambda n\Big)\mathcal N\,\frac TV\Big],
+\qquad\text{and at }\beta_*:\qquad P_a=\frac p{\mathcal D},\quad T_a=\frac T{\mathcal D} .
+\label{pastar}
+\stp
+At $\beta_*$ the pressure and the temperature of the dynamics are those of the target, both divided by the same $\mathcal D$, at every velocity.
+\begin{itemize}
+\item For the conformal fluid $\mathcal N=0$, so $P_a=p/\mathcal D$ holds for every $\beta$: all S-scheme runs so far without $\omega$ have it.
+\item The positional counterterm adds $\omega_V T_a/V$ to $P_a$ (level 2), so with $\omega$ it holds at no $\beta$.
+\item The velocity is not that of the target: $v_a=(v(\kappa-2\epsilon_p)+\epsilon_\parallel)/\mathcal D$ (\Eq{amendstate}) carries the slope of
+  $\Delta^H$ in the rapidity, from $\tfrac12\ln(1-c_s^2v^2)$ and from $\gamma$ in $\gamma pV$.
+\end{itemize}
+
+\paragraph{What $\beta_*$ does not say.}  It does not make the single particle the infinite-volume one.  That is the condition that fixes the
+counterterm $\Delta$, at one loop, and it holds for every $\beta$, since $\beta$ only moves pressure between $H$ and the label gas.  $\beta_*$ says
+something narrower: the equation of state holds particle by particle in the mechanics, $P_a/T_a=p/T$ at the target, and the one-loop correction
+of the pressure lives entirely in the statistics of the labels, the factor $s^{-\beta_*}$.  The conformal runs show that this is not the whole
+story: they have $P_a=p/\mathcal D$, yet at $s_a=16$, $h/a=2$ the measure form without $\omega$ is off by $P$ $-1.4\%$, $E$ $+2.1\%$ against hybrid
+Monte Carlo (Results, ``Level 2: the positional counterterm in the Hamiltonian''), from the positions, the light cone and beyond one loop.  Off conformal there are already data at
+$c_s^2=1/4$ (Results, ``The correction of the positions: one loop and $\nu_*$''): $\beta=b$ gives split's numbers at every $s_a$, and $\beta=D/2+1$ is worse at $s_a=16$ ($E$ raw $+8.2\%$
+against $+7.4\%$).  On \Eq{betafamily}, $\beta_*$ lies beyond $\beta=D/2+1$ from $\beta=b$ ($\lambda=n$ against 1 and 0), so that trend is a warning
+for $\beta_*$, to be tested.
 
 \paragraph{Check.}  \Eq{betapressure} against the maps of \nolinkurl{src/sscheme.jl} (measure form, \texttt{SPH\_SSCHEME\_BETA} set to each
 value, an arbitrary reference $\bar s_{\rm rel}=3$, $\bar V=4$): $P_aV/T_a-S_{\rm t}/n$ at $S_{\rm t}=16$, 54 and 541, at rest:
