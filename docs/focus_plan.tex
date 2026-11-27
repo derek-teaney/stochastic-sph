@@ -112,6 +112,20 @@ The rules of \nolinkurl{CLAUDE.md} apply.  In addition:
   the commit, the gate's result).
 \end{enumerate}
 
+\paragraph{Decisions of the owner for this session (2026-11-27).}  They replace the \ask{} points they name.
+\begin{enumerate}
+\item \emph{Budget:} up to 150 node-hours for this plan without asking; estimates and job IDs in \nolinkurl{nersc/LOG.md}.
+\item \emph{Q11:} as written in Q11 below.
+\item \emph{Q9:} no stop for the cost; the HMC comparison campaign runs within the budget.  Stop only if a check fails (\texttt{hot} or
+  \texttt{cold} not bit-identical to \texttt{pre-prune}, or the HMC statistics disagree).
+\item \emph{Q0:} if the only regression differences are the known ones of the regression's comment (the record of $H$ since
+  \texttt{3fa7a3e}, the nominal-bath start since \texttt{2bc03dd}), record them in \Sect{sec:results} and continue to Q1.  Stop if anything
+  else differs.
+\item \emph{S-scheme work in parallel:} none; \texttt{focus} has the files to itself.
+\item \emph{Still asked:} the new record layout in Q14 before committing it, the final merge of \texttt{focus} into \texttt{main} (Q15), and
+  whenever a gate fails.
+\end{enumerate}
+
 %=============================================================================
 \section{The stages}
 \label{sec:stages}
