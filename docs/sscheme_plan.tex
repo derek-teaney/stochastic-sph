@@ -1579,7 +1579,9 @@ The owner merges \texttt{sscheme-measure} into \texttt{main} and prunes the code
   legendre-era scripts \nolinkurl{examples/eos_legendre.py} and \nolinkurl{examples/eos_compare.py}.  \texttt{SPH\_RENORM=1} becomes a hard stop;
   \texttt{SPH\_RENORM=0} (the tree level) stays for the tests of the tree-level machinery and the regression.
 \end{itemize}
-After the pruning, \texttt{test/run.sh all} runs without the time limit, and
+What remains, each with the positional counterterm optional (\texttt{SPH\_POSITIONAL=1}): split, with $\omega$ in the energy; the S-scheme in the
+measure form, any $c_s^2$, $\beta$ to be chosen (\Sect{sec:beta}), with $\omega$ in the label; the S-scheme in the exact form, $c_s^2=1/2$, with
+$\omega$ in the label; and the tree level, \texttt{SPH\_RENORM=0}.  After the pruning, \texttt{test/run.sh all} runs without the time limit, and
 the regression against \texttt{main} at \texttt{SPH\_RENORM=0} and at split should be bit-identical apart from the record of $H$ and the start of
 the nominal bath (\Sect{sec:results}, C; \nolinkurl{split_dynamics.tex}).
 
