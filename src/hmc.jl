@@ -74,34 +74,37 @@ setm!(ps, m) = (for (a, q) in enumerate(ps);  q.m = m[a];  end)
 
 # One step of the generalized leapfrog (implicit half steps iterated to tol).  Returns the iterations used, or −1 if the step reached
 # a state with no Hamiltonian (a force or a velocity not finite: with a renormalized Hamiltonian a particle whose label is below the edge
-# of the single-particle domain at its new volume): H = +∞ there, and the trajectory is rejected (hmc_update!).
-function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, maxit = 60)
+# of the single-particle domain at its new volume): H = +∞ there, and the trajectory is rejected (hmc_update!).  strict = true (the ideal
+# step, generalized_step!): the finiteness is checked at the tree level too, and an implicit iteration that does not converge returns −2
+# instead of a warning.
+function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, maxit = 60, strict::Bool = false)
+    chk = HAS_DOMAIN || strict
     N = length(ps);  m0 = [q.m for q in ps];  x0 = [q.x for q in ps];  mh = copy(m0)
     msc = maximum(norm, m0) + eps();  its = 0
     for it in 1:maxit                                     # m½ = m − δt/2 ∂H/∂x(x, m½)
         setm!(ps, mh);  hmc_force!(F, ps, params, cl, eos)
-        HAS_DOMAIN && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
+        chk && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
         d = 0.0
         for a in 1:N;  mn = m0[a] + (dt / 2) * F[a];  d = max(d, norm(mn - mh[a]));  mh[a] = mn;  end
         its += 1;  d <= tol * msc && break
-        it == maxit && @warn "generalized_leapfrog!: momentum half step not converged" d / msc
+        it == maxit && (strict ? (return -2) : @warn "generalized_leapfrog!: momentum half step not converged" d / msc)
     end
     setm!(ps, mh);  hmc_velocity!(v0, ps, params, cl, eos)
-    HAS_DOMAIN && !all(v -> isfinite(v[1]) && isfinite(v[2]), v0) && return -1
+    chk && !all(v -> isfinite(v[1]) && isfinite(v[2]), v0) && return -1
     xn = [x0[a] + dt * v0[a] for a in 1:N]                # x′ = x + δt/2 [v(x, m½) + v(x′, m½)]
     for it in 1:maxit
         setx!(ps, params, cl, xn);  hmc_velocity!(v1, ps, params, cl, eos)
-        HAS_DOMAIN && !all(v -> isfinite(v[1]) && isfinite(v[2]), v1) && return -1
+        chk && !all(v -> isfinite(v[1]) && isfinite(v[2]), v1) && return -1
         d = 0.0
         for a in 1:N
             xa = x0[a] + (dt / 2) * (v0[a] + v1[a])
             d = max(d, norm(minimum_image(xa - ps[a].x, params.L)));  xn[a] = xa
         end
         its += 1;  d <= tol * params.a && break
-        it == maxit && @warn "generalized_leapfrog!: position step not converged" d / params.a
+        it == maxit && (strict ? (return -2) : @warn "generalized_leapfrog!: position step not converged" d / params.a)
     end
     setx!(ps, params, cl, xn);  hmc_force!(F, ps, params, cl, eos)
-    HAS_DOMAIN && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
+    chk && !all(f -> isfinite(f[1]) && isfinite(f[2]), F) && return -1
     setm!(ps, [mh[a] + (dt / 2) * F[a] for a in 1:N])     # m′ = m½ − δt/2 ∂H/∂x(x′, m½)
     return its
 end
@@ -160,10 +163,51 @@ hmc_equilibrate!(callback::Function, ps, params, cl, eos, tg::HMCTarget, rng; kw
 # The ideal step with the generalized leapfrog (the only ideal step, ideal.jl leapfrog_step!): one step of
 # generalized_leapfrog!, the implicit half steps iterated to GLF_TOL (SPH_GLF_TOL, default 1e-10: second order and
 # reversible to that accuracy).  Called by leapfrog_step!; dotm is the force buffer.
+# A failed step (docs/focus_plan.tex Q11: a state without a Hamiltonian, or implicit iterations that do not converge) is redone
+# from its start as two half steps, recursively, down to Δt/16; each retry adds one to the guard GUARD_LEAPFROG (stochastic.jl,
+# guards()).  If it still fails at Δt/16 the particles are put back at the start of the step and a LeapfrogFailure is thrown, with
+# that state and the particles without a finite force or velocity: a run never continues from a state without a Hamiltonian.
+# When no step fails the arithmetic is that of a plain generalized_leapfrog! call.
 const GLF_TOL = setting("SPH_GLF_TOL", 1e-10)
+const GLF_MAXDEPTH = 4                                    # Δt/2⁴ = Δt/16
+
+struct LeapfrogFailure <: Exception
+    reason :: String
+    dt     :: Float64                                     # the step that failed (the full Δt)
+    x      :: Vector{SVector{2,Float64}}                  # the state at the start of the step
+    m      :: Vector{SVector{2,Float64}}
+    s      :: Vector{Float64}
+    bad    :: Vector{Int}                                 # particles without a finite force or velocity where the last try failed
+end
+Base.showerror(io::IO, e::LeapfrogFailure) =
+    print(io, "LeapfrogFailure: ", e.reason, " at Δt/", 2^GLF_MAXDEPTH, " (Δt = ", e.dt, "); particles ", first(e.bad, 12),
+          length(e.bad) > 12 ? " …" : "")
+
+# one try of step dt, and on failure two half steps; returns 0 on success, else the code of the last failure (−1, −2)
+function glf_retry!(ps, params, cl, eos, dt, F, v0, v1, depth)
+    x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
+    its = generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = GLF_TOL, strict = true)
+    its >= 0 && return 0
+    depth >= GLF_MAXDEPTH && return its
+    Threads.atomic_add!(GUARD_LEAPFROG, 1)
+    setm!(ps, m0);  setx!(ps, params, cl, x0)
+    r = glf_retry!(ps, params, cl, eos, dt / 2, F, v0, v1, depth + 1)
+    r == 0 || return r
+    return glf_retry!(ps, params, cl, eos, dt / 2, F, v0, v1, depth + 1)
+end
+
 function generalized_step!(ps, params, cl, dt, eos, dotm)
     v0 = similar(dotm);  v1 = similar(dotm)
-    generalized_leapfrog!(ps, params, cl, eos, dt, dotm, v0, v1; tol = GLF_TOL)
+    x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
+    r = glf_retry!(ps, params, cl, eos, dt, dotm, v0, v1, 0)
+    if r != 0
+        finite(u) = isfinite(u[1]) && isfinite(u[2])
+        bad = [a for a in eachindex(ps) if !(finite(dotm[a]) && finite(v0[a]) && finite(v1[a]))]
+        setm!(ps, m0);  setx!(ps, params, cl, x0)
+        smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos);  update_velocities!(ps, params, cl)
+        throw(LeapfrogFailure(r == -1 ? "a state without a Hamiltonian (a force or a velocity not finite)" :
+                                        "the implicit iterations did not converge", dt, x0, m0, [q.s for q in ps], bad))
+    end
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos);  update_velocities!(ps, params, cl)
     return nothing
 end

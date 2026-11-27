@@ -216,10 +216,12 @@ const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
-reset_guards!() = (GUARD_REJECTED[] = 0)
-guards() = (rejected = GUARD_REJECTED[],)
-# restore the counters from a checkpoint (the NamedTuple returned by guards(); older checkpoints also hold evensplit, backmap, subdiv)
-restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  g)
+const GUARD_LEAPFROG = Threads.Atomic{Int}(0)    # retries of a failed step of the generalized leapfrog as two half steps (hmc.jl)
+reset_guards!() = (GUARD_REJECTED[] = 0;  GUARD_LEAPFROG[] = 0)
+guards() = (rejected = GUARD_REJECTED[], leapfrog_retries = GUARD_LEAPFROG[])
+# restore the counters from a checkpoint (the NamedTuple returned by guards(); older checkpoints hold evensplit, backmap, subdiv and no
+# leapfrog_retries)
+restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_LEAPFROG[] = get(g, :leapfrog_retries, 0);  g)
 
 # The single vote of the star: accept the move with min(1, exp ΔS), ΔS = Σ_c ΔS_c over the
 # particle and its bonds, all or nothing.

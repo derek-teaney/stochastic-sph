@@ -48,8 +48,9 @@ end
 # one log line: the window since the last report, then the totals
 function report(mon::StepMonitor, t; io = stdout, label = "")
     w = mon.win ./ max(mon.nwin, 1);  T = mon.tot ./ max(mon.nsteps, 1)
-    @printf(io, "%s t=%-8.3g steps=%-7d wall=%-7.0fs | window: acc stress %.4f resid %.4f  |v|≥1 rejected: stress %.2e resid %.2e  vmax %.3f | total: %.4f %.4f %.2e %.2e  vmax %.3f  |v|>0.9: %.2e\n",
-            label, t, mon.nsteps, time() - mon.wall0, w..., mon.vmaxwin, T..., mon.vmax, mon.nfast[1] / max(mon.nsamp, 1))
+    @printf(io, "%s t=%-8.3g steps=%-7d wall=%-7.0fs | window: acc stress %.4f resid %.4f  |v|≥1 rejected: stress %.2e resid %.2e  vmax %.3f | total: %.4f %.4f %.2e %.2e  vmax %.3f  |v|>0.9: %.2e%s\n",
+            label, t, mon.nsteps, time() - mon.wall0, w..., mon.vmaxwin, T..., mon.vmax, mon.nfast[1] / max(mon.nsamp, 1),
+            GUARD_LEAPFROG[] > 0 ? @sprintf("  leapfrog retries %d", GUARD_LEAPFROG[]) : "")   # (docs/focus_plan.tex Q11)
     flush(io)
     mon.win .= 0;  mon.nwin = 0;  mon.vmaxwin = 0.0
     return mon
@@ -68,6 +69,7 @@ function print_summary(mon::StepMonitor; io = stdout, label = "")
     @printf(io, "  rejected for |v| ≥ 1:    stress %.3e   residual %.3e   (fraction of proposals)\n", s.vrej_stress, s.vrej_resid)
     @printf(io, "  particle speeds:         max %.4f   |v| > 0.9: %.3e   |v| > 0.99: %.3e   (fraction of samples)\n",
             s.vmax, s.frac_v09, s.frac_v099)
+    @printf(io, "  leapfrog retries:        %d   (failed steps of the generalized leapfrog redone as half steps)\n", GUARD_LEAPFROG[])
     flush(io)
     return s
 end

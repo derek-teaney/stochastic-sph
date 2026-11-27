@@ -109,9 +109,23 @@ end
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
+# A step of the generalized leapfrog failed down to Δt/16 (src/hmc.jl, LeapfrogFailure; docs/focus_plan.tex Q11): the state at the
+# start of the step and the failing particles go to <base>_leapfrog_fail.jls, the record is marked failed with the reason, and the
+# run stops with a nonzero exit.  (The .chk of the last checkpoint is kept.)
+function leapfrog_failed(base, err, params, eos, st, n, wall, seed)
+    f = base * "_leapfrog_fail.jls"
+    serialize(f, (step = n, t = (n - 1) * st.dt, dt = err.dt, reason = err.reason, x = err.x, m = err.m, s = err.s, bad = err.bad,
+                  seed = seed, params = params, guards = guards()))
+    runinfo(base, params, eos, merge(st, (wall = wall,)), n - 1, false;
+            failure = (failed = true, reason = "step $n: " * err.reason, diagnosis = basename(f)))
+    @printf("seed %d: %s\nseed %d: the state at the start of step %d and the failing particles are in %s; stopping\n",
+            seed, sprint(showerror, err), seed, n, f)
+    flush(stdout);  exit(1)
+end
+
 # The run record <base>.toml (src/runinfo.jl): every setting as used, written at the start,
 # at each checkpoint and at the end (when [outcome] changes).
-function runinfo(base, params, eos, st, n, complete)
+function runinfo(base, params, eos, st, n, complete; failure = NamedTuple())
     nk = length(st.KE);  h2 = nk ÷ 2 + 1
     res = nk == 0 ? NamedTuple() : (t_reached = n * st.dt, KE_over_eq = sum(st.KE[h2:nk]) / (nk - h2 + 1), dH_over_H = st.Ht[end])
     write_record(base;
@@ -122,7 +136,7 @@ function runinfo(base, params, eos, st, n, complete)
                   dv = 1 / sqrt(SREL0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
                   nsteps = st.nsteps),
         start = haskey(st, :start) ? st.start : (type = string(START),),
-        outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), res,
+        outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), failure, res,
                         (monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), guards = guards())))
 end
 
@@ -212,7 +226,14 @@ function one_realization(seed)
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
-        NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
+        if !NOHAM
+            try
+                leapfrog_step!(ps, params, cl, dt, eos, dotm)
+            catch err
+                err isa LeapfrogFailure || rethrow()
+                leapfrog_failed(base, err, params, eos, st, n, st.wall + time() - t0, seed)    # saves, records, exits nonzero
+            end
+        end
         if !NOVISC
             a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos, opts; rng, rngs, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
