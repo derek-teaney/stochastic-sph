@@ -3,8 +3,7 @@
 # During the step the positions, the particle volumes V_a = s_a/S_a and the particle
 # energies e_a are fixed; only the momenta move.  The total particle entropy
 #     𝕊[m] = Σ_a S_a(e_a, m_a),      ∂S_a/∂m_a = −β_a ,
-# is a sum of single-particle terms.  With `gradient`, the gradient energy g_a of changerep.tex is
-# frozen during the sweeps and refit in the back map (the gradient-corrected change of rep).
+# is a sum of single-particle terms.
 #
 # Two sweeps, each over a checkerboard of cells:
 #   stress sweep    particle a draws a random symmetric stress ξ_a with
@@ -58,9 +57,8 @@ end
 # StochCache to every stochastic_step! of one simulation; one cache per simulation).
 mutable struct StochCache
     stars :: Vector{Star}
-    kst   :: Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}
 end
-StochCache() = StochCache(Star[], Vector{Tuple{Int,SVector{2,Float64},Float64}}[])
+StochCache() = StochCache(Star[])
 
 # With `cache`, the stars are written into cache.stars, reusing the arrays of the
 # previous step's stars.
@@ -237,11 +235,10 @@ const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
-const GUARD_BACKMAP = Threads.Atomic{Int}(0)     # gradient back map fell back to the plain map
-reset_guards!() = foreach(c -> (c[] = 0), (GUARD_REJECTED, GUARD_BACKMAP))
-guards() = (rejected = GUARD_REJECTED[], backmap = GUARD_BACKMAP[])
-# restore the counters from a checkpoint (the NamedTuple returned by guards(); older checkpoints also hold evensplit, subdiv)
-restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_BACKMAP[] = g.backmap;  g)
+reset_guards!() = (GUARD_REJECTED[] = 0)
+guards() = (rejected = GUARD_REJECTED[],)
+# restore the counters from a checkpoint (the NamedTuple returned by guards(); older checkpoints also hold evensplit, backmap, subdiv)
+restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  g)
 
 # The single vote of the star: accept the move with min(1, exp ΔS), ΔS = Σ_c ΔS_c over the
 # particle and its bonds, all or nothing.
@@ -431,52 +428,6 @@ function color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos,
     return nacc[], lsum[], lsq[], lnum[]
 end
 
-# ── Gradient-corrected change of representation ─────────────────────────────
-# (changerep.tex, Appendix A): the gradient energy g_a of the long-wavelength momentum
-# profile is frozen during the sweeps, so e_a = e′_a + g_a is fixed there; the back map
-# refits it, s′ = S_a(e′_a + g′_a, m′_a).  Separate functions, so that the threaded loops
-# see concretely typed arrays.
-function gradient_freeze(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                         eos::AbstractEOS, cache)
-    N   = length(particles)
-    kst = cache === nothing ? Vector{Vector{Tuple{Int,SVector{2,Float64},Float64}}}(undef, N) :
-                              resize!(cache.kst, N)
-    Cs  = Vector{SMatrix{2,2,Float64,4}}(undef, N)
-    s0  = [pa.s for pa in particles]
-    μ0  = [pa.m / pa.s for pa in particles]
-    g0  = Vector{Float64}(undef, N)
-    nl  = neighbor_list!(cl, particles, params.h)
-    reuse = cache !== nothing
-    threaded_chunks(N) do range
-        buf = Tuple{Int,SVector{2,Float64},Float64}[]
-        for a in range
-            kst[a] = reuse && isassigned(kst, a) ? kernel_star!(kst[a], a, particles, params, cl; nl) :
-                                                   copy(kernel_star!(buf, a, particles, params, cl; nl))
-            Cs[a]  = inverse_susceptibility(particles[a], eos)
-        end
-    end
-    Threads.@threads for a in 1:N
-        g0[a] = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ0)...)
-    end
-    return (kst = kst, Cs = Cs, s0 = s0, g0 = g0)
-end
-
-function gradient_backmap!(Sc::Vector{Float64}, gr, m::Vector{SVector{2,Float64}},
-                           e::Vector{Float64}, V::Vector{Float64}, eos::AbstractEOS)
-    kst, Cs, s0, g0 = gr.kst, gr.Cs, gr.s0, gr.g0
-    N  = length(Sc)
-    μ1 = [m[a] / s0[a] for a in 1:N]                       # s still old, as in the deterministic step
-    Threads.@threads for a in 1:N
-        g1 = gradient_energy(s0[a], Cs[a], star_fit(kst[a], μ1)...)
-        Sg = particle_entropy(e[a] - g0[a] + g1, m[a], V[a], eos)
-        if isfinite(Sg)
-            Sc[a] = Sg
-        else
-            Threads.atomic_add!(GUARD_BACKMAP, 1)          # keep the plain map
-        end
-    end
-end
-
 # ── The step ─────────────────────────────────────────────────────────────────
 # Frozen data of a step: particle volumes, particle energies, stars.
 function stochastic_frozen(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
@@ -498,43 +449,31 @@ end
 # current state.  Pass the same `cache = StochCache()` to every step of a simulation to reuse
 # its arrays (faster, same results).  The checkerboard grid is shifted at random for each sweep.
 # The settings of the stochastic step:
-#   gradient  gradient-corrected back map; default on, except with hamiltonian = :energy
-#             (H = Σ e_a exactly, no gradient energy to carry; energystep.tex) and on a
-#             frozen lattice
 #   hastings  the Hastings correction (inverse_moment.tex, stage 2): the coefficients of each star from the present state of its
 #             particle at every proposal, and the ratio of the reverse and forward proposal densities in the vote.  Needs
 #             dissipation = :moment and 2D.  Default from SPH_HASTINGS, else on wherever it applies
 #             (since 2026-11-15, with :moment the default viscous step); SPH_HASTINGS=0 turns it off.
-# The default of `gradient` is resolved here, so the struct holds the value used.
+# (The gradient-corrected back map of the change of representation, changerep.tex, was removed on 2026-11-27: docs/focus_plan.tex,
+# Q3; the tag pre-prune has it.)
 struct StochOptions
-    gradient :: Bool
     hastings :: Bool
 end
-function StochOptions(params::SimParams; frozen::Bool = false,
-                      gradient::Bool = !frozen && params.hamiltonian !== :energy,
-                      hastings::Bool = setting("SPH_HASTINGS", is_moment(params)))
-    gradient && params.hamiltonian === :energy &&
-        error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
+function StochOptions(params::SimParams; hastings::Bool = setting("SPH_HASTINGS", is_moment(params)))
     hastings && !is_moment(params) &&
         error("SPH_HASTINGS=1 needs dissipation = :moment and 2D (inverse_moment.tex, stage 2)")
-    return StochOptions(gradient, hastings)
+    return StochOptions(hastings)
 end
 
 # The step with the settings as keywords (tests, examples): builds the StochOptions.
-function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                          dt::Float64, eos::AbstractEOS; frozen = nothing,
-                          gradient::Bool = frozen === nothing && params.hamiltonian !== :energy,
-                          kw...)
-    opts = StochOptions(params; frozen = frozen !== nothing, gradient)
-    return stochastic_step!(particles, params, cl, dt, eos, opts; frozen, kw...)
-end
+stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D, dt::Float64, eos::AbstractEOS; kw...) =
+    stochastic_step!(particles, params, cl, dt, eos, StochOptions(params); kw...)
 
 function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                           dt::Float64, eos::AbstractEOS, opts::StochOptions;
                           flip::Bool = false, rng::AbstractRNG = Random.default_rng(),
                           rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                           frozen = nothing, cache = nothing)
-    (; gradient, hastings) = opts
+    (; hastings) = opts
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     check_stochastic_dims(params)
     fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen
@@ -542,8 +481,6 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     N  = length(particles)
     m  = [pa.m for pa in particles]
     # Sc holds the vote entropy S_a − ln T_a during the sweeps; the particle entropies are the true S_a, recomputed at the end.
-    # (The gradient back map wrote true S_a into Sc: it belongs to the smoothed Hamiltonian, which check_stochastic_dims refuses.)
-    gradient && error("stochastic_step!: the gradient back map needs the Einstein measure, removed on 2026-11-27 (docs/focus_plan.tex, Q2)")
     if SPLIT                                           # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
@@ -552,10 +489,6 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     Threads.@threads for a in 1:N
         Sc[a] = vote_entropy(e[a], m[a], V[a], eos; guess = vg(a))
     end
-    # Gradient-corrected change of representation (changerep.tex, Appendix A): the gradient
-    # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
-    # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
-    gr = gradient ? gradient_freeze(particles, params, cl, eos, cache) : nothing
     kinds = flip ? (:resid, :stress) : (:stress, :resid)
     acc = Dict(:stress => NaN, :resid => NaN)
     grj = Dict(:stress => 0.0, :resid => 0.0)          # fraction of proposals rejected by the guard
@@ -574,7 +507,6 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
         end
         grj[kind] = (GUARD_REJECTED[] - g0) / N
     end
-    gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
         pa.m = m[a];  pa.s = particle_entropy(e[a], m[a], V[a], eos; guess = vg(a))
     end

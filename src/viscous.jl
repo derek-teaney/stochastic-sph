@@ -1,5 +1,6 @@
-# viscous.jl — the deterministic viscous step: the bond dissipation (bond_dissipation.tex)
-# and the step in the particle representation with its three back maps (changerep.tex).
+# viscous.jl — the deterministic viscous step: the bond dissipation (bond_dissipation.tex) and the step on the particle
+# variables of the energy Hamiltonian.  (The step in the particle representation of the smoothed Hamiltonian, with its three
+# back maps, changerep.tex, was removed on 2026-11-27: docs/focus_plan.tex, Q3; the tag pre-prune has it.)
 # The two-level strain form (sph2.tex) is in src/legacy/two_level.jl.
 
 # ── Dissipative (GENERIC) functions ───────────────────────────────────────────
@@ -9,8 +10,7 @@
 #   :two_level  two-level SPH strain form (sph2.tex; src/legacy/two_level.jl)
 #   :bond       one-level bond form with mean-field rotation/dilation removed
 #               (bond_dissipation.tex)
-#   :particle  the bond form evaluated on the particle force β_a (changerep.tex);
-#               the full viscous step is viscous_step_grad!
+#   :particle  the bond form evaluated on the particle force β_a (changerep.tex)
 # Requires up-to-date dotx, Teff, S_smooth (from smooth_to_particles! +
 # update_thermodynamics! + update_velocities!).
 function dissipative_force!(dotm::Vector{SVector{2,Float64}},
@@ -341,10 +341,10 @@ function viscous_step!(particles::Vector{Particle}, params::SimParams,
         return
     end
     if params.dissipation === :particle
-        # no viscosity: nothing to do (the conversion maps would only round-trip s)
+        # no viscosity: nothing to do
         eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
-        viscous_step_grad!(particles, params, cl, dt, eos)
-        return
+        error("viscous_step!: dissipation = :particle with the smoothed Hamiltonian was the change of representation, removed on " *
+              "2026-11-27 (docs/focus_plan.tex, Q3; tag pre-prune).  Use the energy Hamiltonian (the default).")
     end
     N    = length(particles)
     dotm = zeros(SVector{2,Float64}, N)
@@ -393,104 +393,4 @@ function generic_step!(particles::Vector{Particle}, params::SimParams,
     viscous_step!(particles, params, cl, dt/2, eos)
     leapfrog_step!(particles, params, cl, dt, eos, dotm)
     viscous_step!(particles, params, cl, dt/2, eos)
-end
-
-# ── The step in the particle representation (docs/changerep.tex) ───────────────
-
-# One viscous step in the particle representation, at fixed positions.
-# Requires params.dissipation = :bond (the bond force takes an arbitrary b-field).
-# Returns (K, ΣΔs): K evaluated with the pointwise β, and the entropy produced.
-function viscous_step_first!(particles::Vector{Particle}, params::SimParams,
-                                     cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation in (:bond, :particle) ||
-        error("viscous_step_first! uses the bond force (params.dissipation = :particle or :bond)")
-    N    = length(particles)
-    dotm = zeros(SVector{2,Float64}, N)
-    β    = zeros(SVector{2,Float64}, N)
-
-    smooth_to_particles!(particles, params, cl)     # S_a, hence V_a = s_a/S_a
-    update_thermodynamics!(particles, eos)          # warm start for the pointwise solves
-    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    pointwise_beta!(β, particles, eos)
-    K = bond_dissipation(particles, params, cl, eos, β)
-    bond_dissipative_force!(dotm, particles, params, cl, eos, β)
-
-    ΣΔs = 0.0
-    for a in eachindex(particles)
-        Δm = dt .* dotm[a]
-        Δs = -dot(β[a], Δm)                             # Δs = −β·Δm, so ΣΔs = 2K Δt ≥ 0
-        particles[a].m += Δm
-        particles[a].s += Δs
-        ΣΔs += Δs
-    end
-    return K, ΣΔs
-end
-
-# One viscous step with the exact back map.  Returns (K, ΣΔs, Σe) with ΣΔs the exact
-# change of Σ_a S_a(e_a, m_a) and Σe the (conserved) total particle energy.
-function viscous_step_exact!(particles::Vector{Particle}, params::SimParams,
-                                           cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation in (:bond, :particle) ||
-        error("viscous_step_exact! uses the bond force (params.dissipation = :particle or :bond)")
-    N    = length(particles)
-    dotm = zeros(SVector{2,Float64}, N)
-    β    = zeros(SVector{2,Float64}, N)
-
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V = [pa.V for pa in particles]               # held fixed
-    e = [particle_energy(pa, eos) for pa in particles]         # held fixed
-    pointwise_beta!(β, particles, eos)
-    K = bond_dissipation(particles, params, cl, eos, β)
-    bond_dissipative_force!(dotm, particles, params, cl, eos, β)
-
-    ΣΔs = 0.0
-    for a in eachindex(particles)
-        pa = particles[a]
-        pa.m += dt .* dotm[a]
-        snew = particle_inverse(e[a], pa.m, V[a], eos)[1]
-        ΣΔs += snew - pa.s
-        pa.s = snew
-    end
-    return K, ΣΔs, sum(e)
-end
-
-# One viscous step with the gradient-corrected map.  Returns (K, ΣΔs, Σe′).
-function viscous_step_grad!(particles::Vector{Particle}, params::SimParams,
-                                          cl::CellList2D, dt::Float64, eos::AbstractEOS)
-    params.dissipation in (:bond, :particle) ||
-        error("viscous_step_grad! uses the bond force (params.dissipation = :particle or :bond)")
-    N    = length(particles)
-    dotm = zeros(SVector{2,Float64}, N)
-    β    = zeros(SVector{2,Float64}, N)
-
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V     = [pa.V for pa in particles]
-    stars = [kernel_star(a, particles, params, cl) for a in 1:N]
-    C     = [inverse_susceptibility(pa, eos) for pa in particles]
-    μ     = [pa.m / pa.s for pa in particles]
-    gQ    = [star_fit(stars[a], μ) for a in 1:N]
-    g     = [gradient_energy(particles[a].s, C[a], gQ[a][1], gQ[a][2]) for a in 1:N]
-    e′    = [particle_energy(particles[a], eos) - g[a] for a in 1:N]        # held fixed
-    pointwise_beta!(β, particles, eos)
-    K = bond_dissipation(particles, params, cl, eos, β)
-    bond_dissipative_force!(dotm, particles, params, cl, eos, β)
-
-    for a in 1:N
-        particles[a].m += dt .* dotm[a]
-    end
-    μ′ = [pa.m / pa.s for pa in particles]                                  # s still old
-    ΣΔs = 0.0
-    for a in 1:N
-        pa = particles[a]
-        G′, Q = star_fit(stars[a], μ′)
-        e_new = e′[a] + gradient_energy(pa.s, C[a], G′, Q)
-        snew = particle_inverse(e_new, pa.m, V[a], eos)[1]
-        ΣΔs += snew - pa.s
-        pa.s = snew
-    end
-    return K, ΣΔs, sum(e′)
 end

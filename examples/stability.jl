@@ -11,8 +11,9 @@
 #   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
 #   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
 #   SPH_HAMILTONIAN=energy (H = Σ e_a, docs/energystep.tex; plain back map, suffix _energy).
-# Defaults: gradient-corrected map (not with the energy Hamiltonian), start eq.
-# Run:  julia -t auto --project examples/stability.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
+# Default start: eq.  Stochastic runs need the energy Hamiltonian (docs/focus_plan.tex, Q2).
+
+# Run:  julia -t auto --project examples/stability.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split]
 #   → docs/figs/stochrep_hamiltonian.png
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
@@ -28,14 +29,13 @@ const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt /
 const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
 setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=grid is not supported yet (equilibrium.jl only)")
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
-const GRAD  = !(length(ARGS) > 7 && ARGS[8] == "nograd") && !ENERGYH    # gradient-corrected map (never with :energy)
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s
 const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
 const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
 const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
 const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL
 const START = setting("SR_START", :eq)                       # eq (hot) | cold | thermal (initial_state!)
-const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") * (GRAD ? "_grad" : "") *
+const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") *
               (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (SREL0 == 1e6 ? "" : "_S$(SREL0)") * (HFIX ? "_hfix" : "") *
               (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
 
@@ -88,7 +88,7 @@ function run(kind, seed=1)
     pairs = [(i, j, norm(minimum_image(ps[j].x - ps[i].x, params.L))) for i in 1:N for j in i+1:N
              if norm(minimum_image(ps[j].x - ps[i].x, params.L)) < 1.2 * params.a]
     dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()      # reused arrays of the stochastic step
-    opts = StochOptions(params; gradient = GRAD)
+    opts = StochOptions(params)
     lock(RECORD_LOCK) do
         r = RECORD[];  RECORD[] = (params = params, eos = eos, opts = merge(get(r, :opts, Dict{Symbol,Any}()), Dict(kind => opts)))
     end
@@ -154,7 +154,7 @@ function record(complete, wall)
         params = get(r, :params, nothing), eos = get(r, :eos, nothing),
         opts = length(KINDS) == 1 ? get(get(r, :opts, Dict()), KINDS[1], nothing) : nothing,
         driver = (h_over_a = HA, t_end = TEND, nreal = NREAL, kinds = collect(KINDS), vote = VOTE, dt_factor = 0.5 * DTF,
-                  dt_mode = "viscous", record_split = RECSPLIT, gradient = GRAD, S0 = SREL0,   # record key S0 = s_rel,0 (kept: the regression compares records)
+                  dt_mode = "viscous", record_split = RECSPLIT, gradient = false, S0 = SREL0,   # record key S0 = s_rel,0 (kept: the regression compares records)
                   stochastic_by_kind = Dict(string(k) => o for (k, o) in get(r, :opts, Dict()))),
         start = (type = string(START),), outcome = (complete = complete, wall_s = wall))
 end

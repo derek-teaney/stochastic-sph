@@ -20,11 +20,6 @@ for n in 1:nrep
     V = [pa.s / pa.S_smooth for pa in ps]
     add("  particle energies e_a (deepcopy+solve_eos)", @elapsed (e = [particle_energy(pa, eos) for pa in ps]))
     add("  build_stars (comoving weights, 4x4 solve)", @elapsed (stars = build_stars(ps, params, cl, eos, V)))
-    add("  gradient: kernel_star", @elapsed (kst = [kernel_star(a, ps, params, cl) for a in 1:N]))
-    add("  gradient: C, star_fit, g (x2)", @elapsed begin
-        Cs = [inverse_susceptibility(pa, eos) for pa in ps];  μ = [pa.m / pa.s for pa in ps]
-        g = [gradient_energy(ps[a].s, Cs[a], star_fit(kst[a], μ)...) for a in 1:N]
-        g = [gradient_energy(ps[a].s, Cs[a], star_fit(kst[a], μ)...) for a in 1:N] end)
     m = [pa.m for pa in ps];  Sc = [particle_entropy(e[a], m[a], V[a], eos) for a in 1:N]
     groups = color_groups(cl);  cells = shifted_cells(ps, cl, SVector(0.01, 0.02))
     add("  stress sweep", @elapsed color_sweep!(m, Sc, e, V, stars, groups, cells, :stress, dt/2, eos, rngs, rng))
