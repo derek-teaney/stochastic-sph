@@ -1387,4 +1387,124 @@ split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, 
   leave the domain and are rejected (9 of 16 chains at rest, 4 of 16 in motion have one; acceptance 0.98), none at $s_a=54$.
 \end{itemize}
 
+%=============================================================================
+\section{The choice of \texorpdfstring{$\beta$}{beta} off conformal: the pressure of the label gas (2026-11-26)}
+\label{sec:beta}
+
+\paragraph{The question (owner, 2026-11-26).}  For the conformal fluid the measure forms with $\beta=b$ and $\beta=D/2+1$ are the same.  Off
+conformal they differ, and they seem to make different choices: $\beta=b$ takes its reference from the volume ($\bar V$), $\beta=D/2+1$ from the
+temperature ($T_0$).  But there are many ways to name the reference; the $\beta=b$ case could as well be written with a reference temperature, like
+$\beta=D/2+1$ (owner).  And the code sets \texttt{T\_scale}$\,=1$ everywhere.  Can the choice be stated once, through the pressure of the gas of
+labels?  This section answers on paper, with one numerical check of the maps.  No campaign has been run.
+
+\paragraph{The one loop and its scale.}  With $D=d+1$, a constant speed of sound, $q=1/c_s^2$, $n=q+1$, and
+\st
+b=\frac D2+d\,c_s^2,\qquad \mathcal N=1-d\,c_s^2=\frac D2+1-b,
+\stp
+the one-loop counterterm of the particle is, with $S_{\rm t}=\gamma s_{\rm rel}V$,
+\st
+\Delta=\Big(\frac D2+1\Big)\ln S_{\rm t}-\mathcal N\ln\frac{s_{\rm rel}}{s_*}+\tfrac12\ln\big(1-c_s^2v^2\big)
+=b\ln S_{\rm t}+\mathcal N\ln\frac{\gamma V}{V_*}+\tfrac12\ln\big(1-c_s^2v^2\big) .
+\label{deltascale}
+\stp
+$S_{\rm t}$ is a number, but $s_{\rm rel}$ and $V$ are not, so off conformal the count carries a scale, $s_*=1/V_*$, set by $A$ (that is, by
+\texttt{T\_scale}, through $\hbar$).  For the conformal fluid $\mathcal N=0$ and the scale drops out.
+
+\paragraph{One family.}  The measure form puts $\beta\ln s$ into the measure of the labels, $\rho(s)=e^s s^{-\beta}(1-\beta/s)$, and keeps
+$\Delta^H=\Delta-\beta\ln S_{\rm t}-{\rm const}$ in the label, with the constant fixed by the reference state, $\Delta^H(\bar S_{\rm t})=0$.  Write
+\st
+\beta=b+\lambda\,\mathcal N:\qquad
+\Delta^H=(1-\lambda)\,\mathcal N\ln\frac{\gamma V}{\bar V}-\lambda\,\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\big(1-c_s^2v^2\big) .
+\label{betafamily}
+\stp
+$\lambda=0$ is $\beta=b$ (the volume only, reference $\bar V$), and $\lambda=1$ is $\beta=D/2+1$ (the temperature only, since
+$\mathcal N\ln s_{\rm rel}=(q-d)\ln T_{\rm rel}+{\rm const}$; reference $T_0$, \Eq{amend}).  The two choices are two points on one line.
+
+\paragraph{The reference is one state, whatever the $\beta$.}  The reference only fixes the constant of $\Delta^H$.  In the form the code uses,
+\st
+\Delta^H=\Big(\frac D2+1-\beta\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\qquad \bar S_{\rm t}=\bar s_{\rm rel}\bar V,
+\stp
+it is one state of the particle, $(\bar S_{\rm t},\bar s_{\rm rel})$, or equivalently $(\bar S_{\rm t},T_0)$ with $\bar s_{\rm rel}=s_{\rm rel}(T_0)$,
+for every $\beta$.  For $\beta=b$ the combination that appears is $\bar V=\bar S_{\rm t}/s_{\rm rel}(T_0)$, so the volume is not a separate choice: it
+can be named by a reference temperature and the nominal entropy per particle, as for $\beta=D/2+1$.  For $\beta=D/2+1$ the term in $\bar S_{\rm t}$
+drops and $T_0$ alone is left; for $\beta_*$ below it is $\bar p\bar V$.  One convention covers all of them: the reference is the nominal state of the
+run, $T_0=T_{\rm rel,0}$ from \texttt{SR\_SREL0} and $\bar S_{\rm t}=s_a$.  (The code takes $\bar s_{\rm rel}$ as the mean of the targets of the initial
+condition and $\bar V=L^2/N$, which is that state up to the fluctuations of the start.)  What distinguishes the members is not the reference but the
+function the remainder depends on: $\gamma V$, $T_{\rm rel}$, or, below, the energy.
+
+\paragraph{Who carries the pressure.}  At fixed energy, $\partial\ln S_{\rm t}/\partial\ln V=p/(e+p)=1/n$.  Moving $\beta\ln S_{\rm t}$ out of $\Delta$
+therefore adds $\beta/n$ to $P_aV/T_a$ from the Hamiltonian, and the label gas, through $s^{-\beta}$, carries
+\st
+\frac{P_{\rm label}V}{T_a}=-\frac\beta n\quad\text{per particle.}
+\stp
+The total does not depend on $\beta$; $\beta$ decides how it is shared.  What the Hamiltonian carries (plain form, $F=1$) is
+\st
+\frac{P_aV}{T_a}=\frac{S_{\rm t}}n-\mathcal N+\frac{\lambda\mathcal N}n ,
+\label{betapressure}
+\stp
+the tree level $S_{\rm t}/n$ plus the part of the remainder $\Delta^H$.  For $\lambda=1$ this is \Eq{amendstate}, $(S_{\rm t}-(q-d))/n$.
+
+\paragraph{The rule from the pressure.}  Ask that the remainder in the Hamiltonian carry no pressure, so that the label gas carries all of the
+one-loop pressure.  This is $\lambda=n$:
+\begin{keyeq}
+\st
+\beta_*=b+n\mathcal N=\frac D2+1+q-d,\qquad
+\Delta^H=-q\mathcal N\ln\frac{\gamma pV}{\bar p\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),\qquad \frac{P_a}{T_a}=\frac{P_{\rm tree}}{T_{\rm tree}} .
+\label{betastar}
+\stp
+\end{keyeq}
+At rest $\gamma pV=E/q$: the remainder is a function of the energy of the particle alone, and the reference is one energy, $\bar E$, in place of
+$\bar V$ or $T_0$.  The three values in $d=2$:
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+$c_s^2$ & $\beta=b$ & $\beta=D/2+1$ & $\beta_*$ \\
+\midrule
+$1/2$ & $5/2$ & $5/2$ & $5/2$ \\
+$1/3$ & $13/6$ & $5/2$ & $7/2$ \\
+$1/4$ & $2$ & $5/2$ & $9/2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The cost of $\beta_*$ is a larger exponent and a higher bound of the measure, $s>\beta_*$.  Whether the positive pressure of N5 (\Sect{sec:amend},
+``The bounds to expect'') holds above that bound has not been checked.
+
+\paragraph{Check.}  \Eq{betapressure} against the maps of \nolinkurl{src/sscheme.jl} (measure form, \texttt{SPH\_SSCHEME\_BETA} set to each
+value, an arbitrary reference $\bar s_{\rm rel}=3$, $\bar V=4$): $P_aV/T_a-S_{\rm t}/n$ at $S_{\rm t}=16$, 54 and 541, at rest:
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+$c_s^2$ & $\beta=b$ & $\beta=D/2+1$ & $\beta_*$ \\
+\midrule
+$1/4$, predicted $-\mathcal N+\lambda\mathcal N/n$ & $-0.5$ & $-0.4$ & $0$ \\
+$1/4$, the maps & $-0.500000$ & $-0.400000$ & $0.000000$ \\
+$1/3$, predicted & $-0.3333$ & $-0.25$ & $0$ \\
+$1/3$, the maps & $-0.333333$ & $-0.250000$ & $0.000000$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The same holds in motion: at $c_s^2=1/3$ with $|\bm m|=0.4\,S_{\rm t}$ ($v=0.38$, 0.21, 0.15 at the three $S_{\rm t}$) the maps give $-0.333333$,
+$-0.250000$ and $0.000000$, as predicted: the remainder at $\beta_*$ carries no pressure at any velocity, since $\tfrac12\ln(1-c_s^2v^2)$ has no
+slope along $\ln V$ or $\ln T_{\rm rel}$.  (A scratch script on the login node, seconds; not a test of the suite.)
+
+\paragraph{The scale and \texttt{T\_scale}$\,=1$.}
+\begin{itemize}
+\item At tree level \texttt{T\_scale} is a unit of energy.  At fixed $s_{\rm rel}$ and $V$, changing it scales $E$, $\bm m$ and $T$ together and
+  leaves the trajectories and the entropies unchanged.
+\item In the forms with the flat measure (full, exact) the scale enters only as a constant added to the label, through $\ln A$, and $e^s\,ds$ does
+  not see it.  For the conformal exact form this is the $\ln A$ of $s=s_{\rm min}+\ln A+g$.
+\item In the measure form $s^{-\beta}$ is not invariant under a shift of $s$, so the constant matters, at relative order
+  $\beta\mathcal N\ln(\text{ratio of scales})/S_{\rm t}^2$ in $T_a$ and $P_a$ (not computed).  The code fixes it with the reference state of the run
+  instead of $A$, which makes $s\approx S_{\rm t}$ where the particles are.
+\item The scale becomes physical only beyond one loop for a non-conformal exact count, where it sets the number of quanta per unit of entropy.
+\end{itemize}
+So \texttt{T\_scale}$\,=1$ is harmless for what has been run.  The weakness of the present choice is elsewhere: the reference is taken from the
+initial condition, which is right in equilibrium but goes stale in an expanding flow, with an error of order $\mathcal N\ln(V/\bar V)/S_{\rm t}$.
+
+\paragraph{For the owner.}  (i) Whether to keep $\beta=b$, $\beta=D/2+1$, $\beta_*$, or the whole family as one setting, when the code is pruned.
+(ii) The non-conformal run (split$+\omega$ against the measure form at $\beta=b$, $D/2+1$ and $\beta_*$, $s_a=16$ and 54, at rest and $v_0=0.8$),
+estimated at 5--7 node-hours, waits for that decision; before it, the tests of the S-scheme and of $\omega$ need a pass at $c_s^2=1/3$ (they cover
+$1/2$ and $1/4$).
+
 \end{document}
