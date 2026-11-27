@@ -1,7 +1,7 @@
 # testdims.jl — the physical dimension of a run and the constant-cs² equation of state (docs/dimension.tex):
 #   (1) thermodynamic consistency of ConstantCs2EOS at cs² = 1/2 and 1/3: ds/de = 1/T, dp/dT = s, p ∝ T^(1+1/cs²);
 #   (2) conformal_eos(d) has cs² = 1/d; the default physical dimension is the simulation dimension;
-#   (3) the guard: the stochastic step and hybrid Monte Carlo refuse phys_dim ≠ sim_dim and sim_dim = 1;
+#   (3) the guard: the stochastic step and hybrid Monte Carlo refuse phys_dim ≠ sim_dim (= 2; the 1D path was removed, focus_plan.tex Q4);
 #   (4) ζ_eff = ζ + 2η(1/2 − 1/d) is ζ at d = 2, floored at ε η (SPH_ZETA_FLOOR) in the stochastic step.
 using StaticArrays, LinearAlgebra, Printf, Random
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
@@ -32,7 +32,7 @@ println("  (1) ds/de = 1/T, dp/dT = s, p ∝ T^(1+1/cs²) at cs² = 1/2 and 1/3 
 
 # (2) conformal cs² = 1/d; default phys_dim = sim_dim
 @assert cs2(conformal_eos(2)) == 0.5 && cs2(conformal_eos(3)) == 1 / 3
-@assert default_phys_dim(2) == 2 && default_phys_dim(1) == 1
+@assert default_phys_dim() == 2
 quiet(f) = redirect_stdout(f, devnull)
 p2 = quiet(() -> SimParams(1.0, 0.1, 2.0; lattice = :hex))
 @assert p2.phys_dim == 2 && sim_dim(p2) == 2
@@ -49,9 +49,7 @@ seed_phys!(length(ps3), 1)
 dt = compute_dt(ps3, params3, eos; mode = :viscous)
 @assert refuses(() -> stochastic_step!(ps3, params3, cl3, dt, eos; rng = Xoshiro(1)))
 @assert refuses(() -> hmc_update!(ps3, params3, cl3, eos, HMCTarget(1.0, SVector(0.0, 0.0), params3.vol, eos), Xoshiro(1); dt = 1e-3))
-params1, ps1, cl1, _ = quiet(() -> setup_ic(0.05, 4.0, eos, (x, y) -> 1e3, (x, y) -> SVector(0.0, 0.0); Lx = 1.0, sim_dim = 1))
-@assert refuses(() -> check_stochastic_dims(params1))
-println("  (3) the stochastic step and hybrid Monte Carlo refuse phys_dim ≠ sim_dim and sim_dim = 1  ✓")
+println("  (3) the stochastic step and hybrid Monte Carlo refuse phys_dim ≠ sim_dim  ✓")
 
 # (4) ζ_eff at d = 2 and d = 3
 ζeff(η, ζ, d) = ζ + 2η * (1 / 2 - 1 / d)

@@ -143,12 +143,6 @@ end
 # the factor of the residual of bond r in the metric ℓ, (r̂·ℓ r̂)² (commonkernel.tex, eq. fab)
 resid_factor(params::SimParams, ℓ, r) = (dot(r, ℓ * r) / dot(r, r))^2
 
-function bond_weights_1d(nb, particles, ℓi, hψ)
-    ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
-    n  = sum((ψ0[k] * particles[b].V) * r[1]^2 for (k, (b, r, rr)) in enumerate(nb); init=0.0)
-    return ψ0, n
-end
-
 # Optional bv: force for a given b-field (default b = ẋ/Teff); used by the tests.
 # bond_dissipation(...) returns K itself (same arguments).  Kvec, if given, receives
 # each particle's share of K (its bonds plus its bulk term).
@@ -178,7 +172,6 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
     hψ     = params.bond_h
     d      = params.phys_dim
     cs2v   = cs2(eos)
-    oneD   = params.kernel isa WendlandC2_1D
 
     g  = zeros(SVector{2,Float64}, N)                     # g_a = ∂K/∂b_a
     K  = 0.0
@@ -207,41 +200,28 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         η    = eta_by_s(eos) * sr
         ζ    = zeta_by_s(eos) * sr
         va   = pa.dotx                 # coarse-grained particle velocity ẋ_a (update_velocities!)
-        # 1D: P with the physical d (it enters only κ^{xxxx}); 2D: P with d_s = 2
-        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, oneD ? d : 2)
+        ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, 2)          # P with d_s = 2
 
         # weights ψ_ab (moment-corrected) and n_a
         common = lab_weights(params);  moment = is_moment(params)
-        ψs, n_a = oneD ? bond_weights_1d(nb, particles, ℓi, hψ) :
-                  moment ? bond_weights_lab(nb, particles, common_bond_weight(params)) :
+        ψs, n_a = moment ? bond_weights_lab(nb, particles, common_bond_weight(params)) :
                   common ? bond_weights_comoving(nb, particles, FLAT2, FLAT2, hψ; ψfun = common_bond_weight(params)) :
                          bond_weights_comoving(nb, particles, ℓ, ℓi, hψ)
         n_a > 0 || continue
 
-        Mi = zero(SMatrix{2,2,Float64});  θa = 0.0
-        if oneD
-            # T κ^{xxxx}(v): the closed form with S = e_x e_x
-            θx   = ℓ[1,1] / Pℓ
-            Sx   = SMatrix{2,2,Float64}(1.0, 0.0, 0.0, 0.0) - θx * P
-            Tκxx = Ta * (2η * (tr(ℓ * Sx * ℓ * Sx) + (d - 2) * θx^2 / d^2) + ζ * θx^2)
-            cbond = Tκxx * Va / n_a                     # bond coefficient: c_ab = cbond V_b ψ_ab
-            Q    = zero(SMatrix{2,2,Float64})          # no mean-field subtraction in 1D
-            ℓm   = SMatrix{2,2,Float64}(1.0, 0.0, 0.0, 0.0)   # 1D: only the x component
-        else
-            # fit G_a = (Σ_b V_b ψ_ab Δb rᵀ) M_a⁻¹,  M_a = Σ_b V_b ψ_ab r rᵀ  (= n_a ℓ_a)
-            M = zero(SMatrix{2,2,Float64});  Gt = zero(SMatrix{2,2,Float64})
-            for (k, (b, r, rr)) in enumerate(nb)
-                cb  = ψs[k] * particles[b].V
-                M  += cb * (r * r')
-                Gt += cb * ((bv[b] - bv[a]) * r')
-            end
-            Mi    = inv(M)
-            G     = Gt * Mi                             # G[i,j] = ∂_j b_i
-            θa    = sum(ℓ .* G) / Pℓ                    # comoving dilation
-            Q     = (G - G') / 2 + θa * P               # D_ab = Δb_ab − Q r_ab
-            cbond = 2 * Ta * η * Va / n_a               # 2 V_a T_a η_a w_ab = cbond V_b ψ_ab
-            ℓm    = ℓ
+        # fit G_a = (Σ_b V_b ψ_ab Δb rᵀ) M_a⁻¹,  M_a = Σ_b V_b ψ_ab r rᵀ  (= n_a ℓ_a)
+        M = zero(SMatrix{2,2,Float64});  Gt = zero(SMatrix{2,2,Float64})
+        for (k, (b, r, rr)) in enumerate(nb)
+            cb  = ψs[k] * particles[b].V
+            M  += cb * (r * r')
+            Gt += cb * ((bv[b] - bv[a]) * r')
         end
+        Mi    = inv(M)
+        G     = Gt * Mi                             # G[i,j] = ∂_j b_i
+        θa    = sum(ℓ .* G) / Pℓ                    # comoving dilation
+        Q     = (G - G') / 2 + θa * P               # D_ab = Δb_ab − Q r_ab
+        cbond = 2 * Ta * η * Va / n_a               # 2 V_a T_a η_a w_ab = cbond V_b ψ_ab
+        ℓm    = ℓ
 
         if common
             # commonkernel.tex, eq. Knew: K_a = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ² + η Σ_b w_ab δ_ab·ℓ δ_ab],
@@ -301,21 +281,19 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
             g[a] += t
             VΠ   += t * r'
         end
-        if !oneD
-            # mean-field force through the fit: E_a = ∂K/∂G_a
-            ζeff = ζ + 2η * (1 / 2 - 1 / d)
-            Ka  += 0.5 * Va * Ta * ζeff * θa^2
-            e_a  = (Va * Ta * ζeff * θa + sum(VΠ .* P)) / Pℓ
-            E   = e_a * ℓ + (VΠ - VΠ') / 2
-            # q_ab = V_b ψ_ab E_a M_a⁻¹ r_ab:  ∂K/∂b_b += q_ab,  ∂K/∂b_a −= q_ab
-            qsum = zero(SVector{2,Float64})
-            for (k, (b, r, rr)) in enumerate(nb)
-                q = (ψs[k] * particles[b].V) * (E * (Mi * r))
-                g[b] += q
-                qsum += q
-            end
-            g[a] -= qsum
+        # mean-field force through the fit: E_a = ∂K/∂G_a
+        ζeff = ζ + 2η * (1 / 2 - 1 / d)
+        Ka  += 0.5 * Va * Ta * ζeff * θa^2
+        e_a  = (Va * Ta * ζeff * θa + sum(VΠ .* P)) / Pℓ
+        E   = e_a * ℓ + (VΠ - VΠ') / 2
+        # q_ab = V_b ψ_ab E_a M_a⁻¹ r_ab:  ∂K/∂b_b += q_ab,  ∂K/∂b_a −= q_ab
+        qsum = zero(SVector{2,Float64})
+        for (k, (b, r, rr)) in enumerate(nb)
+            q = (ψs[k] * particles[b].V) * (E * (Mi * r))
+            g[b] += q
+            qsum += q
         end
+        g[a] -= qsum
         K += Ka
         Kvec === nothing || (Kvec[a] = Ka)
     end

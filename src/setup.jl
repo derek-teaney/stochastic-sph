@@ -48,24 +48,6 @@ function make_hex_particles!(params::SimParams, s_density; jitter=0.0)
     return particles
 end
 
-# Single row of N particles along x, all at y = a/2 (centre of the single cell row).
-# vol = a (1D), so per-particle entropy = s_density * a.
-function make_1d_particles!(params::SimParams, s_density; jitter=0.0)
-    a = params.a
-    N = params.N
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
-    particles = Particle[]
-    for ix in 0:N-1
-        x0 = SVector((ix + 0.5) * a, 0.5 * a)
-        if jitter > 0.0
-            δx = jitter * a * (rand(RNG) - 0.5)
-            x0 = SVector(mod(x0[1] + δx, params.L[1]), x0[2])
-        end
-        push!(particles, Particle(x0, s_density * params.vol))
-    end
-    return particles
-end
-
 # Set initial conditions from continuous density fields.
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Per-particle quantities are S_func(x,y)*vol and M_func(x,y)*vol respectively.
@@ -130,14 +112,12 @@ end
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Lattice kwargs: jitter, lattice.  Returns (params, particles, cl, eos).
 function setup_ic(h, ha_ratio, eos, S_func, M_func;
-                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, phys_dim=default_phys_dim(sim_dim), seed=42)
+                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, phys_dim=default_phys_dim(), seed=42)
     if L !== nothing
         Lx = Float64(L); Ly = Float64(L)
     end
-    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, phys_dim, seed)
-    particles = if sim_dim == 1
-        make_1d_particles!(params, 1.0; jitter)
-    elseif lattice == :hex
+    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, phys_dim, seed)
+    particles = if lattice == :hex
         make_hex_particles!(params, 1.0; jitter)
     elseif lattice == :square
         make_uniform_particles(params, 1.0; jitter)
