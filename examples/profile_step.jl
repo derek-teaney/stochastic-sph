@@ -21,7 +21,7 @@ thermal_init!(ps, params, cl, eos; rng = Xoshiro(3))
 dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
 const CACHE = StochCache()
 step!(n) = (leapfrog_step!(ps, params, cl, dt, eos, dotm);
-            stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE))
+            stochastic_step!(ps, params, cl, dt, eos; rng, rngs, flip=isodd(n), cache=CACHE))
 for n in 1:5; step!(n); end                                  # compile and settle
 
 let                                                          # hard scope for the loops
@@ -29,7 +29,7 @@ if MODE == "time"
     tl = tg = 0.0;  bl = bs = 0;  gl = gs = 0.0;  ts = 0.0
     for n in 1:NST
         a = @timed leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        b = @timed stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:star, flip=isodd(n), cache=CACHE)
+        b = @timed stochastic_step!(ps, params, cl, dt, eos; rng, rngs, flip=isodd(n), cache=CACHE)
         tl += a.time;  bl += a.bytes;  gl += a.gctime
         ts += b.time;  bs += b.bytes;  gs += b.gctime
     end

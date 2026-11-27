@@ -75,7 +75,7 @@ end
 #   adiabatic invariant, the Gibbs entropy): the votes, the heat bath and the equilibrium start use S_a − ln T_a; the hybrid
 #   Monte Carlo acceptance drops Σ ln T_a.  Needs hamiltonian = :energy.  Default from SPH_MEASURE, else default_measure:
 #   :liouville in 2D with hamiltonian = :energy (since 2026-11-15), else :einstein.  SPH_MEASURE=einstein gives the earlier
-#   default.  :liouville cannot be used with the deterministic residual (λ = ∞) or the gradient back map.
+#   default.  :liouville cannot be used with the gradient back map.
 # Primary constructor: fixes a = h/ha_ratio, then snaps Lx and Ly to the nearest
 # integer multiple of the lattice row spacing (a for square, a√3/2 in y for hex).
 # sim_dim=1: single row of particles along x; Ly=a, vol=a, kernel=WendlandC2_1D().

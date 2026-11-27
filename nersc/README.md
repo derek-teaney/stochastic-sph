@@ -91,6 +91,7 @@ record of what was run at their commit, with a note at the top; to rerun a line 
 |---|---|---|---|
 | `SR_S0` | 2026-11-23 | `SR_SREL0` | s_rel,0, the rest-frame entropy density of the run (`docs/inputs.tex`) |
 | `SPH_SSCHEME_BETA` | 2026-11-26 | `SPH_SSCHEME_BRHO` | b_ρ, the exponent of the measure of the labels of the S-scheme (the campaign files were updated: a pure rename) |
+| `SR_LAMBDA` | 2026-11-27 | — | the residual move always has λ = 1 (`docs/focus_plan.tex`, Q1; λ ≠ 1 at the tag `pre-prune`) |
 
 Removed values (they stop with a message; the last commit with them is 9846a6c, branch `sscheme-measure`; `docs/sscheme_plan.tex`, sec:prune):
 `SPH_RENORM=legendre`, `SPH_RENORM=1` (the entropy shift), `SPH_SSCHEME_FORM=full`.

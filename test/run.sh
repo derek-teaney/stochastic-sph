@@ -92,7 +92,8 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     export SPH_RENORM=0 SR_BATH=totals
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"
-    refstep=$W/test/regress/step.jl;  [ -f "$refstep" ] || refstep=$W/test/testregress_step.jl
+    # step.jl: this version's script on both sides (with each side's library), so that it exercises only what both have
+    mkdir -p "$W/test/regress";  cp test/regress/step.jl "$W/test/regress/step.jl";  refstep=$W/test/regress/step.jl
     drv() { [ -f "$1/examples/equilibrium.jl" ] && echo "$1/examples/equilibrium.jl" || echo "$1/examples/stochrep_equilibrium.jl"; }
     for H in energy smoothed; do
         t0=$(date +%s)

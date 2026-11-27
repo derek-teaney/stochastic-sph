@@ -4,7 +4,7 @@
 #   → docs/figs/stochrep_thermalize_1d.png (or _2d.png)
 using PyPlot, Printf, Serialization, StaticArrays, LinearAlgebra
 const DIM  = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 1
-const LAMS = (1.0, 4.0, Inf)
+const LAMS = (1.0,)                  # λ = 1 only since 2026-11-27 (docs/focus_plan.tex, Q1)
 const COL  = Dict(1.0 => "C0", 4.0 => "C1", Inf => "C3")
 lab(λ) = λ == 1 ? "λ = 1 (detailed balance)" : isinf(λ) ? "λ = ∞ (deterministic residual)" : "λ = $(round(Int, λ)) (cold residual)"
 
