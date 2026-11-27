@@ -12,14 +12,14 @@ function make_hex_particles!(params::SimParams, s_density; jitter=0.0)
     N_x = round(Int, Lx / a_x)
     N_y = round(Int, params.N / N_x)
     a_y = Ly / N_y
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
+    rng = Xoshiro(params.seed)        # the jitter's own random numbers (docs/focus_plan.tex Q10; the global RNG until then)
     particles = Particle[]
     for iy in 0:N_y-1
         x_off = (iy % 2 == 0) ? 0.0 : 0.5 * a_x
         for ix in 0:N_x-1
             x0 = SVector(mod(ix * a_x + x_off, Lx), (iy + 0.5) * a_y)
             if jitter > 0.0
-                δ  = jitter * a_x * (SVector(rand(RNG), rand(RNG)) .- 0.5)
+                δ  = jitter * a_x * (SVector(rand(rng), rand(rng)) .- 0.5)
                 x0 = SVector(mod(x0[1] + δ[1], Lx), mod(x0[2] + δ[2], Ly))
             end
             push!(particles, Particle(x0, s_density * params.vol))

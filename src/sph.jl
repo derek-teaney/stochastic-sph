@@ -3,7 +3,6 @@ using Random
 using LinearAlgebra
 using Printf
 
-const RNG = MersenneTwister(0)
 
 abstract type AbstractKernel end
 struct WendlandC2_2D <: AbstractKernel end   # sim dimension = 2 (default)
