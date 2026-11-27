@@ -158,6 +158,10 @@ function one_realization(seed)
     if isfile(chk)
         st = load_checkpoint(chk)
         restore_guards!(st.guards)
+        # what building SimParams does and deserializing it does not: the scheme's constants (split's V̄; the smoothing length of ω,
+        # positional_set!), and the reference state of the S-scheme's measure form (set from the initial condition, saved with the state)
+        check_split(st.params);  check_sscheme(st.params)
+        haskey(st, :ssref) && all(isfinite, st.ssref) && sscheme_reference!(st.ssref...)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
         # rest-frame state at s_rel,0: its enthalpy w0 sets the momentum density of the boosted state
@@ -319,7 +323,7 @@ function one_realization(seed)
         stop = STOPAFTER > 0 && n == STOPAFTER
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
-            save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
+            save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards(), ssref = SS_REF[])))
             write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
