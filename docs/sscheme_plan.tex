@@ -1552,4 +1552,29 @@ initial condition, which is right in equilibrium but goes stale in an expanding 
 estimated at 5--7 node-hours, waits for that decision; before it, the tests of the S-scheme and of $\omega$ need a pass at $c_s^2=1/3$ (they cover
 $1/2$ and $1/4$).
 
+%=============================================================================
+\section{Decisions for the merge with \texttt{main} (owner, 2026-11-26)}
+\label{sec:prune}
+
+The owner merges \texttt{sscheme-measure} into \texttt{main} and prunes the code on the laptop.  Decided:
+\begin{itemize}
+\item \emph{Remove the full form} (\texttt{SPH\_SSCHEME\_FORM=full}).  The exact form is the full form with the exact count in place of the one
+  loop: the same flat measure, no wall and no reference, and a label that has no fold at small $S_{\rm t}$.  Keep the one-loop $\Delta$ and its
+  slopes in \nolinkurl{src/sscheme.jl}, since the measure form is built on them ($\Delta^H=\Delta-\beta\ln S_{\rm t}-C$), and the full label in
+  \nolinkurl{examples/sscheme_ref.py} and the quadrature as references.  Tests 1--6 of \nolinkurl{test/testsscheme.jl}, which set the full form,
+  move to the measure form or go where \nolinkurl{test/testsscheme_measure.jl} covers them.  Off conformal the exact form needs a table in a
+  third variable, the scale of \Eq{deltascale}; until then the measure form is the S-scheme there.
+\item \emph{Remove legendre} (\texttt{SPH\_RENORM=legendre}): \nolinkurl{src/renorm.jl}, \nolinkurl{test/testlegendre.jl}, the
+  \texttt{LEGENDRE} branches of \nolinkurl{src/sph.jl}, \nolinkurl{src/pointwise.jl}, \nolinkurl{src/stochastic.jl}, \nolinkurl{src/hmc.jl},
+  \nolinkurl{src/measure.jl}, \nolinkurl{src/settings.jl}, the legendre scripts in \nolinkurl{examples/} and their columns in the comparison
+  scripts.  The setting becomes a hard stop with a message, as \texttt{SR\_S0} (\texttt{RETIRED\_SETTINGS}).  \nolinkurl{legendre_plan.tex} and the
+  results stay as history.
+\end{itemize}
+Not decided: \texttt{SPH\_RENORM=1}, the first renormalized Hamiltonian (\nolinkurl{partition_v2.tex}).  Its energy is the tree level of the
+target at $u=S_{\rm t}$ and only the weight changes, through the label $s=u-b\ln u$; with the Liouville measure flat in $s$,
+$e^s\,ds=e^u u^{-b}(1-b/u)\,du$, so it is the measure form with $\beta=b$ and $\Delta^H=0$, without split's $\mathcal N\ln(\gamma V)$ and sound term.
+It is the cheap comparison column of the legendre and split studies.  After the pruning, \texttt{test/run.sh all} runs without the time limit, and
+the regression against \texttt{main} at \texttt{SPH\_RENORM=0} and at split should be bit-identical apart from the record of $H$ and the start of
+the nominal bath (\Sect{sec:results}, C; \nolinkurl{split_dynamics.tex}).
+
 \end{document}

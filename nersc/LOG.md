@@ -1207,3 +1207,8 @@ note in `docs/` with the tables and figures.
 - Also today: debug 62046403 bisection ($SCRATCH/sph/bisect_drift, worktrees ~/bisect/<commit>), see the correction above.
 - Node-hours today: ~0.3 (debug) + 1.5 (X6) + 0.4 (X5) + ~0.5 (tests, tables).
 
+## Decisions for the merge with main (owner, 2026-11-26)
+- Remove SPH_SSCHEME_FORM=full (the exact form is full with the exact count; keep the one-loop Delta in src/sscheme.jl for the measure form)
+  and SPH_RENORM=legendre (src/renorm.jl, test/testlegendre.jl, the LEGENDRE branches, the legendre scripts; the setting a hard stop like SR_S0).
+  The owner prunes on the laptop after merging sscheme-measure into main. Not decided: SPH_RENORM=1 (= measure form with beta = b, Delta^H = 0).
+  Details: docs/sscheme_plan.tex, sec:prune. No campaign pending; the non-conformal beta run (5-7 nh) waits for the choice of beta.
