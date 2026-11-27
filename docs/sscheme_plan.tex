@@ -1570,10 +1570,16 @@ The owner merges \texttt{sscheme-measure} into \texttt{main} and prunes the code
   scripts.  The setting becomes a hard stop with a message, as \texttt{SR\_S0} (\texttt{RETIRED\_SETTINGS}).  \nolinkurl{legendre_plan.tex} and the
   results stay as history.
 \end{itemize}
-Not decided: \texttt{SPH\_RENORM=1}, the first renormalized Hamiltonian (\nolinkurl{partition_v2.tex}).  Its energy is the tree level of the
-target at $u=S_{\rm t}$ and only the weight changes, through the label $s=u-b\ln u$; with the Liouville measure flat in $s$,
-$e^s\,ds=e^u u^{-b}(1-b/u)\,du$, so it is the measure form with $\beta=b$ and $\Delta^H=0$, without split's $\mathcal N\ln(\gamma V)$ and sound term.
-It is the cheap comparison column of the legendre and split studies.  After the pruning, \texttt{test/run.sh all} runs without the time limit, and
+\begin{itemize}
+\item \emph{Remove \texttt{SPH\_RENORM=1}}, the first renormalized Hamiltonian (\nolinkurl{partition_v2.tex}): it is not consistent with one loop.
+  Its energy is the tree level of the target at $u=S_{\rm t}$ and only the weight changes, through the label $s=u-b\ln u$; with the Liouville
+  measure flat in $s$, $e^s\,ds=e^u u^{-b}(1-b/u)\,du$, so it is the measure form with $\beta=b$ and $\Delta^H=0$: it drops split's
+  $\mathcal N\ln(\gamma V)$ and the sound term $\tfrac12\ln(1-c_s^2v^2)$ (for the conformal fluid the sound term alone).  Its code is
+  \texttt{renorm\_vote\_entropy} and the \texttt{RENORM} flag of \nolinkurl{src/stochastic.jl} and \nolinkurl{src/hmc.jl}; its only users are the
+  legendre-era scripts \nolinkurl{examples/eos_legendre.py} and \nolinkurl{examples/eos_compare.py}.  \texttt{SPH\_RENORM=1} becomes a hard stop;
+  \texttt{SPH\_RENORM=0} (the tree level) stays for the tests of the tree-level machinery and the regression.
+\end{itemize}
+After the pruning, \texttt{test/run.sh all} runs without the time limit, and
 the regression against \texttt{main} at \texttt{SPH\_RENORM=0} and at split should be bit-identical apart from the record of $H$ and the start of
 the nominal bath (\Sect{sec:results}, C; \nolinkurl{split_dynamics.tex}).
 
