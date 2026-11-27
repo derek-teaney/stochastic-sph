@@ -126,5 +126,5 @@ end
 for si in 1:length(SAS), k in 1:3;  axs[si, k].legend(fontsize = 7);  end
 fig.suptitle("hastings_positional: the approach to equilibrium from the hexagonal lattice (hl, 8 runs, no HMC start), against hybrid Monte Carlo " *
              "of the same Hamiltonian", fontsize = 9)
-fig.tight_layout();  fig.savefig(joinpath(FIGS, "positional_dyn_approach.png"), dpi = 120);  plt.close(fig)
+fig.tight_layout();  fig.savefig(joinpath(FIGS, TAG * "_approach.png"), dpi = 120);  plt.close(fig)
 println("\nwritten ", joinpath(FIGS, "positional_dyn_spectra.png"), ", ", joinpath(FIGS, "positional_dyn_approach.png"))
