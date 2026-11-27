@@ -22,7 +22,7 @@ mutable struct SimParams{K<:AbstractKernel}
     vol     :: Float64             # volume (area in 2D, length in 1D) per particle
     seed    :: Int
     phys_dim :: Int                # physical dimension d of the fluid (2 or 3): ζ_eff and the conformal cs² = 1/d (dimension.tex)
-    lattice :: Symbol              # :square or :hex
+    lattice :: Symbol              # :hex (the square lattice was removed, docs/focus_plan.tex Q8)
     kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL)
 end
 
@@ -69,9 +69,11 @@ const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
 
-function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=default_phys_dim(), lattice=:square)
+function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=default_phys_dim(), lattice=:hex)
     a = h / ha_ratio
-    if lattice == :hex
+    lattice === :hex || error("SimParams: lattice = :$lattice; the hexagonal lattice is the only one (the square lattice was removed on " *
+                              "2026-11-27, docs/focus_plan.tex Q8; tag pre-prune)")
+    begin
         dy = a * sqrt(3) / 2
         Nx = round(Int, Lx_t / a)
         Ny = 2 * round(Int, Ly_t / (2*dy))   # force even for periodic offset rows
@@ -79,13 +81,6 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=defaul
         N  = Nx * Ny
         vol = a^2 * sqrt(3) / 2
         kernel  = Dict("wc2" => WendlandC2_2D(), "wc4" => WendlandC4_2D(), "wc6" => WendlandC6_2D())[setting("SPH_KERNEL", "wc2")]
-    else
-        Nx = round(Int, Lx_t / a)
-        Ny = round(Int, Ly_t / a)
-        Lx = Nx * a;  Ly = Ny * a
-        N  = Nx * Ny
-        vol = a^2
-        kernel  = WendlandC2_2D()
     end
     L = SVector(Lx, Ly)
     dim_str = kernel isa WendlandC4_2D ? "2D (Wendland C4)" : kernel isa WendlandC6_2D ? "2D (Wendland C6)" : "2D"
@@ -372,4 +367,3 @@ function update_thermodynamics!(particles::Vector{Particle}, eos::AbstractEOS)
     end
 end
 
-# smooth_to_grid is defined in celllist.jl (depends on CellList2D)

@@ -1,27 +1,7 @@
 # Shared helpers for shear-wave test scripts.
 # Include after sph.jl and celllist.jl.
 
-# Regular NxN grid of particles with uniform s, zero M.
-# s_density is the entropy density; per-particle entropy = s_density * params.vol.
-# jitter ∈ [0,1]: each particle is displaced uniformly in [−jitter·a/2, jitter·a/2]² before
-# wrapping into [0,L).  jitter=0 (default) gives the exact lattice.
-function make_uniform_particles(params::SimParams, s_density; jitter=0.0)
-    Lx = params.L[1];  Ly = params.L[2]
-    Nx = round(Int, Lx / params.a)
-    Ny = round(Int, Ly / params.a)
-    vol    = params.vol
-    particles = Particle[]
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
-    for iy in 0:Ny-1, ix in 0:Nx-1
-        x0 = SVector((ix + 0.5) * params.a, (iy + 0.5) * params.a)
-        if jitter > 0.0
-            δ  = jitter * params.a * (SVector(rand(RNG), rand(RNG)) .- 0.5)
-            x0 = SVector(mod(x0[1] + δ[1], Lx), mod(x0[2] + δ[2], Ly))
-        end
-        push!(particles, Particle(x0, s_density * vol))
-    end
-    return particles
-end
+# (The square lattice, make_uniform_particles, was removed on 2026-11-27: docs/focus_plan.tex, Q8; tag pre-prune.)
 
 # Hexagonal close-packed lattice.  N_x columns (spacing a), N_y rows (spacing a√3/2).
 # Odd rows are offset by a/2 in x.  Geometry (N, vol, a) is already set by SimParams
@@ -117,13 +97,7 @@ function setup_ic(h, ha_ratio, eos, S_func, M_func;
         Lx = Float64(L); Ly = Float64(L)
     end
     params    = SimParams(Lx, Ly, h, ha_ratio; lattice, phys_dim, seed)
-    particles = if lattice == :hex
-        make_hex_particles!(params, 1.0; jitter)
-    elseif lattice == :square
-        make_uniform_particles(params, 1.0; jitter)
-    else
-        error("Unknown lattice type: $lattice")
-    end
+    particles = make_hex_particles!(params, 1.0; jitter)
     set_ic!(particles, params; S_func, M_func)
     cl = CellList2D(params.L, params.h, params.N)
     rebuild_cell_list!(cl, particles)

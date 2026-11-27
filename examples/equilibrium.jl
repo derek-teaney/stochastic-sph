@@ -55,16 +55,15 @@ const KERNEL = setting("SPH_KERNEL", "wc2")
 const JITTER = setting("SR_JITTER", 0.0)
 # SR_POSITIONS: where the particles start.  Default (since 2026-11-15) hmc.  SR_POSITIONS=lattice: on the hexagonal lattice (the default before 2026-11-15; for tests,
 # and at large s_a).
-# SR_POSITIONS=poisson: the particles start at N independent uniform positions in the box (a Poisson
-# arrangement) instead of on the hexagonal lattice; then, as for the jitter, the s_a and m_a
-# are rescaled so that the smoothed densities are uniform.
+# (SR_POSITIONS=poisson, a Poisson arrangement of the particles, was removed on 2026-11-27: docs/focus_plan.tex, Q8; tag pre-prune.)
 # SR_POSITIONS=hmc: the positions are first brought to equilibrium by hybrid Monte Carlo from the lattice (src/hmc.jl,
 # docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 200) with
 # trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC
 # (default 0.35) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.  The
 # defaults are those of campaign hbya (2026-11-15); before, 40 updates, δt factor 0.5 and a fixed τ.
 const POSITIONS = setting("SR_POSITIONS", :hmc)
-POSITIONS in (:lattice, :poisson, :hmc) || error("SR_POSITIONS must be lattice, poisson or hmc")
+POSITIONS === :poisson && error("SR_POSITIONS=poisson was removed on 2026-11-27 (docs/focus_plan.tex, Q8; tag pre-prune)")
+POSITIONS in (:lattice, :hmc) || error("SR_POSITIONS must be lattice or hmc")
 const HMC_N     = setting("SR_HMC_N", 200)
 const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
 const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.35)
@@ -156,13 +155,8 @@ function one_realization(seed)
         Mx0 = w0 * GAMMA^2 * BOOST
         params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
-        if POSITIONS === :poisson
-            prng = Xoshiro(1000seed + 5)
-            for q in ps;  q.x = SVector(rand(prng) * params.L[1], rand(prng) * params.L[2]);  end
-            rebuild_cell_list!(cl, ps);  thermalize!(ps, params, cl, eos)
-        end
-        SSCHEME && (JITTER > 0 || POSITIONS === :poisson) && error("SPH_RENORM=sscheme: SR_JITTER and SR_POSITIONS=poisson rescale the label as an entropy; not supported")
-        if JITTER > 0 || POSITIONS === :poisson  # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ s_rel,0), iterated;
+        SSCHEME && JITTER > 0 && error("SPH_RENORM=sscheme: SR_JITTER rescales the label as an entropy; not supported")
+        if JITTER > 0                            # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ s_rel,0), iterated;
             for _ in 1:30                        # m_a = V_a M0 (the momentum density of the boosted state)
                 for q in ps;  q.s *= GAMMA * SREL0 / q.S_smooth;  end
                 thermalize!(ps, params, cl, eos)
@@ -242,7 +236,7 @@ function one_realization(seed)
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes, direct sums (unwrapped u)
             push!(Ht, sum(q.H for q in ps) / H0 - 1)       # smoothed state is current
             SSCHEME && isnan(Ht[end]) && @printf("seed %d: a particle without a state at t = %.4f (sscheme_faillog: %d)\n", seed, n * dt, length(sscheme_faillog()))
-            if JITTER > 0 || POSITIONS in (:poisson, :hmc)                  # unequal volumes: the mean flow is V_a M̄,
+            if JITTER > 0 || POSITIONS === :hmc                              # unequal volumes: the mean flow is V_a M̄,
                 Md = sum(q.m for q in ps) / sum(q.V for q in ps)    # M̄ the mean momentum density
                 push!(KE, sum((d = q.m - q.V * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
             else

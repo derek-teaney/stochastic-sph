@@ -1,5 +1,5 @@
 # ideal.jl — the ideal (Hamiltonian) step: smoothing, velocities, the Hamiltonian force,
-# the time step and the leapfrog; smooth_to_grid for pictures.
+# the time step and the leapfrog.
 
 # The n-scheme (volume_n.tex, energystep.tex): H = Σ_a e_a(s_a, m_a, V_a) with the number volume V_a = 1/n_a, n_a = Σ_b W_ab.
 # The smoothed Hamiltonian and the entropy volume (SPH_HAMILTONIAN, SPH_VOLUME) were removed on 2026-11-27 (docs/focus_plan.tex, Q7;
@@ -125,32 +125,4 @@ function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
                          cl::CellList2D, dt::Float64, eos::AbstractEOS,
                          dotm::Vector{SVector{2,Float64}})
     return generalized_step!(particles, params, cl, dt, eos, dotm)   # hmc.jl
-end
-
-# ── Visualization ─────────────────────────────────────────────────────────────
-
-function smooth_to_grid(particles::Vector{Particle}, params::SimParams,
-                        cl::CellList2D, field)
-    ncx       = cl.ncx;  ncy = cl.ncy
-    cell_size = cl.cell_size
-    L         = params.L
-    h         = params.h
-    S  = zeros(ncx, ncy)
-    xs = LinRange(0.5 * cell_size[1], L[1] - 0.5 * cell_size[1], ncx)
-    ys = LinRange(0.5 * cell_size[2], L[2] - 0.5 * cell_size[2], ncy)
-    for iy in 1:ncy, ix in 1:ncx
-        xg_vec = SVector((ix - 0.5) * cell_size[1], (iy - 0.5) * cell_size[2])
-        acc = 0.0
-        for dy in neighbor_range(ncy), dx in -1:1
-            jx = mod(ix + dx - 1, ncx) + 1
-            jy = mod(iy + dy - 1, ncy) + 1
-            for b in particles_in_cell(cl, jx, jy)
-                r_mic = minimum_image(xg_vec - particles[b].x, L)
-                r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
-                acc  += field(particles[b]) * kernel_W(r_mag, h, params.kernel)
-            end
-        end
-        S[ix, iy] = acc
-    end
-    return S, xs, ys
 end
