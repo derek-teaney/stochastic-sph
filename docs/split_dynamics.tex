@@ -356,13 +356,14 @@ conformal fluid in $d=2$ ($c_s^2=1/2$), $\eta/s=0.2$, $L=0.6$ ($N=672$), $h/a=2$
 $s_a=16$ ($T_{\rm rel}=140.4$) and $54$ ($258.0$), at rest and at $v_0=0.8$, 16 runs to $t=100$ and 16 chains of hybrid Monte Carlo of the same
 Hamiltonian (300 updates) per set.  The four Hamiltonians (\texttt{docs/sscheme\_plan.tex}, ``Level 1, amended'' and level 2):
 \begin{center}
+\footnotesize
 \begin{tabular}{lll}
 \toprule
-run sets & Hamiltonian & settings \\ \midrule
-\texttt{h<s,q><sa>\_sp\_v<v>} & split & \texttt{SPH\_RENORM=split} \\
-\texttt{h<s,q><sa>\_spw\_v<v>} & split $+\,\omega$: $E_{\rm dyn}=T\,(\Delta s_{\rm dyn}-\omega)$ & \texttt{SPH\_RENORM=split SPH\_POSITIONAL=1} \\
-\texttt{h<s,q><sa>\_ssm\_v<v>} & S-scheme, measure form, $\beta=D/2+1$, $F=1$ & \texttt{SPH\_RENORM=sscheme} \\
-\texttt{h<s,q><sa>\_ssmw\_v<v>} & S-scheme $+\,\omega$: $s=S_{\rm t}-\Delta^H+\omega$ & \texttt{SPH\_RENORM=sscheme SPH\_POSITIONAL=1} \\
+run sets & Hamiltonian & settings (\texttt{SPH\_}) \\ \midrule
+\texttt{h<s,q><sa>\_sp\_v<v>} & split & \texttt{RENORM=split} \\
+\texttt{h<s,q><sa>\_spw\_v<v>} & split $+\,\omega$: $E_{\rm dyn}=T\,(\Delta s_{\rm dyn}-\omega)$ & \texttt{RENORM=split POSITIONAL=1} \\
+\texttt{h<s,q><sa>\_ssm\_v<v>} & S-scheme, measure form, $\beta=D/2+1$, $F=1$ & \texttt{RENORM=sscheme} \\
+\texttt{h<s,q><sa>\_ssmw\_v<v>} & S-scheme $+\,\omega$: $s=S_{\rm t}-\Delta^H+\omega$ & \texttt{RENORM=sscheme POSITIONAL=1} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -558,6 +559,7 @@ $v_0=0.8$ with $\bm k$ across the flow: the sound $\mathrm{Re}\,C_{yy}(k\hat y)$
 \end{figure}
 
 
+\clearpage
 \section{The exact form of the S-scheme against split, both with the positional counterterm: campaign \texttt{hastings\_compare}, lines \texttt{ssxw}}
 \label{sec:exact}
 
@@ -573,15 +575,16 @@ $e$ everywhere (no fold), and as $S_{\rm t}\to0$ the label approaches its floor 
 grows without bound.  The positional counterterm is in the label, $s\to s+\omega$, as for the S-scheme above.  The comparison is split$+\omega$
 (\texttt{spw}, \Sect{sec:cmp}), at the same seeds, lengths and settings:
 \begin{center}
-\begin{tabular}{lll}
+\begin{tabular}{ll}
 \toprule
-run sets & Hamiltonian & settings \\
+run sets & Hamiltonian \\
 \midrule
-\texttt{hs<sa>\_spw\_v<v>}  & split, $\omega$ in the energy & \texttt{SPH\_RENORM=split SPH\_POSITIONAL=1} \\
-\texttt{hs<sa>\_ssxw\_v<v>} & the exact form, $\omega$ in the label & \texttt{SPH\_RENORM=sscheme SPH\_SSCHEME\_FORM=exact SPH\_POSITIONAL=1} \\
+\texttt{hs<sa>\_spw\_v<v>}  & split, $\omega$ in the energy \\
+\texttt{hs<sa>\_ssxw\_v<v>} & the exact form, $\omega$ in the label \\
 \bottomrule
 \end{tabular}
 \end{center}
+with the settings \texttt{SPH\_RENORM=split SPH\_POSITIONAL=1} and \texttt{SPH\_RENORM=sscheme SPH\_SSCHEME\_FORM=exact SPH\_POSITIONAL=1}.
 Campaign file \texttt{nersc/campaign\_hastings\_compare\_ssx.txt} (commit \texttt{93e01a2}, code of \texttt{14ce681}), interactive job 62049405, 128 tasks
 on 4 nodes for 23 minutes: $s_a=16$ and 54, $v_0=0$ and 0.8, 16 runs to $t=100$ from the hybrid Monte Carlo start and 16 chains of 300 updates each.
 Before the campaign the exact form passed the unit tests (the derivatives of $H$, the inverse maps, no fold, the Jacobian of the ideal step, hybrid
@@ -713,5 +716,5 @@ $\mathrm{Re}\,C_{yy}(k\hat x)$ and the sound $\mathrm{Re}\,C_{xx}(k\hat x)$; at 
 $\mathrm{Re}\,C_{EE}$; across it the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ and the shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$.}
 \label{fig:xcorr54}
 \end{figure}
-
+\clearpage
 \end{document}
