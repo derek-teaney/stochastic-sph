@@ -534,23 +534,29 @@ $T_{\rm rel}$ and the bounded sound factor.  It has no explicit volume, it is al
 (\texttt{trel\_of\_srel} of \texttt{SR\_SREL0}),
 \begin{keyeq}
 \st
-s=S_{\rm t}-F\,\Delta^H,\qquad \Delta^H=-(q-d)\ln\frac{T_{\rm rel}}{T_0}+\tfrac12\ln\big(1-c_s^2v^2\big),\qquad
+\begin{gathered}
+s=S_{\rm t}-F\,\Delta^H,\qquad \Delta^H=-(q-d)\ln\frac{T_{\rm rel}}{T_0}+\tfrac12\ln\big(1-c_s^2v^2\big),\\
 \rho(s)=e^{\,s}s^{-\beta}\Big(1-\frac\beta s\Big)\quad(s>\beta) .
+\end{gathered}
 \label{amend}
 \stp
 \end{keyeq}
 There are two forms.  In the plain form $F=1$.  In the form with the factor, $F=(S_{\rm t}+2\beta)/(S_{\rm t}+\beta)$, which restores the agreement
 with \Eq{label} to order $1/S_{\rm t}^2$.  With
 \st
-\Delta_p^H=-(q-d)+\frac{v^2(1-v^2)}{a},\quad \Delta_\theta^H=-\frac{v(1-v^2)}{a},\quad
+\begin{gathered}
+\Delta_p^H=-(q-d)+\frac{v^2(1-v^2)}{a},\quad \Delta_\theta^H=-\frac{v(1-v^2)}{a},\\
 \epsilon_p=\frac{F\Delta_p^H}{S_{\rm t}a},\quad \epsilon_\parallel=\frac{F\Delta_\theta^H}{S_{\rm t}},\quad
 \kappa=1+\frac{\beta\,\Delta^H}{(S_{\rm t}+\beta)^2}
+\end{gathered}
 \stp
 (and $\kappa=1$ in the plain form), the state of the particle is
 \st
-T_a=\frac{T}{\mathcal D},\qquad \mathcal D=\kappa-(1+v^2)\epsilon_p+v\,\epsilon_\parallel,\qquad
+\begin{gathered}
+T_a=\frac{T}{\mathcal D},\qquad \mathcal D=\kappa-(1+v^2)\epsilon_p+v\,\epsilon_\parallel,\\
 v_a=\frac{v(\kappa-2\epsilon_p)+\epsilon_\parallel}{\mathcal D},\qquad
 \frac{P_aV}{T_a}=\frac{\kappa\,S_{\rm t}-F\,(q-d)}{q+1} .
+\end{gathered}
 \label{amendstate}
 \stp
 The weight of the votes, of the heat bath and of the equilibrium draw is
@@ -787,7 +793,7 @@ not committed).  Forty updates of hybrid Monte Carlo at $s_a=16$, $c_s^2=1/2$, a
 \begin{center}\small
 \begin{tabular}{lccc}
 \toprule
- & accepted & Metropolis rejections & left the domain \\
+ & accepted & Metropolis rej. & left the domain \\
 \midrule
 one loop & 8 / 9 & 0 / 0 & 32 / 31 \\
 one loop without the sound term (= \texttt{SPH\_RENORM=1}) & 37 / -- & 3 / -- & 0 / -- \\
@@ -929,9 +935,11 @@ against $\nu_*^2$ (item L), with the existing runs of \texttt{eos\_split} and \t
 
 \paragraph{Definitions.}  For a line at rest with the nominal state $(p,T)$, the mean volume $\bar V=1/\bar n$ and the smoothing length $h$,
 \st
+\begin{gathered}
 \sigma=\frac{p\,\bar V}T=\frac{S_{\rm t}}n,\qquad N_h=\bar n\,h^2,\qquad
-I_0(\sigma)=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\ln S(k),\qquad I_0'=\frac{dI_0}{d\ln\sigma},\qquad
+I_0(\sigma)=h^2\!\int\!\frac{d^2k}{(2\pi)^2}\ln S(k),\qquad I_0'=\frac{dI_0}{d\ln\sigma},\\
 \nu_*=-\frac{I_0(\sigma)}{2a_1N_h},\qquad a_1=\frac\pi{2\sin(2\pi/n_W)} ,
+\end{gathered}
 \stp
 with $S(k)$ of \Eq{I0}; $N_h=4.62$ and $10.39$ at $h/a=2$ and 3, and $a_1=1.6516$ for Wendland C2 ($n_W=5$).  $\nu_*$ is the number of stiff
 modes per particle (\Sect{sec:model2}).  The offset of a line is the HMC value less the single particle of the same scheme,
@@ -1323,8 +1331,10 @@ split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, 
   $\theta>6$ is clamped.  The state follows from the slopes $G_x=\partial s/\partial x$, $G_\theta=\partial s/\partial\theta|_x$ directly, with no one-loop
   parts to cancel:
   \st
-  y=\frac{aG_x-vG_\theta}{aS_{\rm t}}\,,\quad z=\frac{vG_x+G_\theta}{S_{\rm t}}\,,\quad\mathcal D=(1+v^2)y-vz\,,\quad T_a=\frac T{\mathcal D}\,,\quad
-  v_a=\frac{2vy-z}{\mathcal D}\,,\quad\frac{P_aV}{T_a}=\frac{G_x}n+\omega_V\,,
+  \begin{gathered}
+  y=\frac{aG_x-vG_\theta}{aS_{\rm t}}\,,\quad z=\frac{vG_x+G_\theta}{S_{\rm t}}\,,\quad\mathcal D=(1+v^2)y-vz\,,\\
+  T_a=\frac T{\mathcal D}\,,\quad v_a=\frac{2vy-z}{\mathcal D}\,,\quad\frac{P_aV}{T_a}=\frac{G_x}n+\omega_V\,,
+  \end{gathered}
   \stp
   the relations of the S-scheme with $\Delta=S_{\rm t}-s$ (at rest $\mathcal D=G_x/S_{\rm t}$, $P_aV/T_a=G_x/n$).  There is no wall: every $S_{\rm t}>0$
   has a state.  Checks (\texttt{test/testsscheme\_exact.jl}): the interpolant; the edges; $\partial H/\partial s=T_a$, $\partial H/\partial\bm m=\bm v_a$,
