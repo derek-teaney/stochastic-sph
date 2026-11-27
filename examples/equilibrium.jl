@@ -110,7 +110,7 @@ function run_meta(params, st, n, wall, complete, eos)
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
-     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = "energy", volume = "number", commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))

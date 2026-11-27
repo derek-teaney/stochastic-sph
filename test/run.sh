@@ -95,13 +95,13 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     # step.jl: this version's script on both sides (with each side's library), so that it exercises only what both have
     mkdir -p "$W/test/regress";  cp test/regress/step.jl "$W/test/regress/step.jl";  refstep=$W/test/regress/step.jl
     drv() { [ -f "$1/examples/equilibrium.jl" ] && echo "$1/examples/equilibrium.jl" || echo "$1/examples/stochrep_equilibrium.jl"; }
-    # (the smoothed Hamiltonian is no longer run stochastically: its Einstein measure was removed, docs/focus_plan.tex Q2)
+    # (the n-scheme, the only Hamiltonian since docs/focus_plan.tex Q7; the smoothed one was run here until Q2)
     for H in energy; do
         t0=$(date +%s)
-        ( cd "$W" && SPH_HAMILTONIAN=$H julia -t 1 --project="$PROJ" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
+        ( cd "$W" && julia -t 1 --project="$PROJ" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
         ok=pass
         for th in 1 4; do
-            SPH_HAMILTONIAN=$H julia -t $th --project="$PROJ" test/regress/step.jl compare "$OUT/ref_$H.jls" > "$OUT/step_${H}_t$th.log" 2>&1 || ok=fail
+            julia -t $th --project="$PROJ" test/regress/step.jl compare "$OUT/ref_$H.jls" > "$OUT/step_${H}_t$th.log" 2>&1 || ok=fail
         done
         record "step.jl, $H" regress $ok $(( $(date +%s) - t0 ))
     done
@@ -125,7 +125,7 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         t0=$(date +%s);  u="";  [ $H = default ] && u="-u SPH_RENORM -u SR_BATH"
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && env $u SPH_HAMILTONIAN=${H/default/energy} SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
+            ( cd "$d" && env $u SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
         done; wait
         ok=fail;  f=$(ls "$OUT/stab_ref/$H" 2>/dev/null | head -1)
         [ -n "$f" ] && julia --project="$PROJ" test/regress/jlscmp.jl "$OUT/stab_ref/$H/$f" "$OUT/stab_here/$H/$f" > "$OUT/stab_cmp_$H.log" 2>&1 && ok=pass

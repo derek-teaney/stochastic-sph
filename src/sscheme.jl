@@ -300,8 +300,6 @@ function check_sscheme(params)
     SSCHEME || return nothing
     positional_set!(params)
     hint = "; set SPH_RENORM=split (the default) or SPH_RENORM=0"
-    params.volume === :number && params.hamiltonian === :energy ||
-        error("SPH_RENORM=sscheme needs hamiltonian = :energy and volume = :number" * hint)
     params.phys_dim == 2 || error("SPH_RENORM=sscheme: implemented for d = 2" * hint)
     return nothing
 end

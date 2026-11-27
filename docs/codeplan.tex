@@ -104,7 +104,8 @@ exact and gradient-corrected back maps), and \file{dissipative\_step!} becomes
 campaign files use it) as an alias of the new name, \file{particle}.  \file{docs/changerep.tex}
 keeps its name: it is the record of that study.
 
-\paragraph{Superseded code} moves to \file{src/legacy/}: the old particle sweep with the
+\paragraph{Superseded code} moved to \file{src/legacy/}, which was deleted on 2026-11-27 (\file{docs/focus\_plan.tex}, Q7; the
+commit tagged \file{pre-prune} has it): the old particle sweep with the
 noise tensor (the present \file{src/stochastic.jl}, whose name the new step takes) and the
 two-level (strain) dissipation (\file{two\_level\_dissipative\_force!}, \file{compute\_strain},
 \file{kappa\_dot\_strain}, \file{SPH\_DISSIPATION=two\_level}).  The bond dissipation and
@@ -228,7 +229,7 @@ figure of the notes can be made again (\file{git checkout notes-2026-11}; one fi
 \begin{enumerate}
 \item \file{src/load.jl}, and the scripts use it.
 \item The library split by content (\file{ideal.jl}, \file{pointwise.jl}, \file{viscous.jl}), and the new names of the deterministic step.
-\item \file{src/legacy/}: the superseded code and its users.
+\item \file{src/legacy/}: the superseded code and its users (deleted on 2026-11-27; tag \file{pre-prune}).
 \item The rename to ``stochastic'' (code, drivers, notes).
 \item The kernel names.
 \item \file{test/run.sh} and the regression from a worktree (needed before the steps that

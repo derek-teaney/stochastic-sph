@@ -36,6 +36,8 @@ const RETIRED_SETTINGS = Dict(
     "SPH_DISSIPATION" => "removed on 2026-11-27 (docs/focus_plan.tex, Q5): the inverse-moment step (moment) is the only viscous step; the others are in the tag pre-prune",
     "SPH_IDEAL" => "removed on 2026-11-27 (docs/focus_plan.tex, Q6): the generalized leapfrog is the only ideal step; SPH_IDEAL=particle and grid are in the tag pre-prune",
     "SR_GRID" => "the grid step was removed on 2026-11-27 (docs/focus_plan.tex, Q6; tag pre-prune)",
+    "SPH_HAMILTONIAN" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the n-scheme (energy Hamiltonian, number volume) is the only one; SPH_HAMILTONIAN=smoothed is in the tag pre-prune",
+    "SPH_VOLUME" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the number volume V_a = 1/n_a is the only one; SPH_VOLUME=entropy is in the tag pre-prune",
     "SR_LAMBDA" => "removed on 2026-11-27 (docs/focus_plan.tex, Q1): the residual move always has λ = 1; λ ≠ 1 is in the tag pre-prune",
 )
 for (name, why) in RETIRED_SETTINGS

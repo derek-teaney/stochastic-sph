@@ -168,17 +168,15 @@ end
 
 # One dissipative half/full step at fixed positions (viscous_step_energy!).  compute_dt bounds the damping rate of the
 # shortest modes (viscous_rate_bound) so that each viscous half step of generic_step!, of length Δt/2, decays every mode
-# monotonically.  The energy Hamiltonian only: the viscous steps of the smoothed Hamiltonian were removed (focus_plan.tex, Q3, Q5).
+# monotonically.
 function viscous_step!(particles::Vector{Particle}, params::SimParams,
                             cl::CellList2D, dt::Float64, eos::AbstractEOS)
     eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
-    params.hamiltonian === :energy || error("viscous_step!: needs hamiltonian = :energy (the viscous steps of the smoothed Hamiltonian " *
-                                            "were removed on 2026-11-27, docs/focus_plan.tex Q3, Q5; tag pre-prune)")
     viscous_step_energy!(particles, params, cl, dt, eos)
     return
 end
 
-# hamiltonian = :energy (energystep.tex, eq. viscstep): the viscous step on the particle
+# The n-scheme (energystep.tex, eq. viscstep): the viscous step on the particle
 # variables, with no change of representation.  β_a = v_a/Teff_a, Teff_a = ∂H/∂s_a;
 #   Δm_a = −Δt ∂K/∂β_a  (bond form, changerep.tex),   Δs_a = −β_a·Δm_a ,
 # so ΔH = 0 to first order in Δt and ΣΔs_a = 2K Δt ≥ 0.  Returns (K, ΣΔs).

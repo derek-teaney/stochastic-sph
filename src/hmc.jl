@@ -7,8 +7,7 @@
 #      current values (so the conditional distribution is preserved exactly), then s_a = S_a(e_a, m_a);
 #   2. a Hamiltonian trajectory at fixed s_a with the generalized leapfrog (symplectic and reversible for the
 #      non-separable H), accepted with min(1, exp[−β⁰ΔH + β·ΔP]).
-# Only the number-volume energy Hamiltonian (hamiltonian = :energy, volume = :number), where ∂H/∂m_a = v_a and
-# −∂H/∂x_a is hamiltonian_force!.
+# The n-scheme, where ∂H/∂m_a = v_a and −∂H/∂x_a is hamiltonian_force!.
 
 # The multipliers and the proposal of the heat bath: the most probable densities (ε̄, M̄) at (β⁰, β) and the Gaussian
 # pieces of a particle of volume Vref (rescaled per particle: Hn ∝ 1/V, L ∝ √V).  The proposal only affects the
@@ -122,7 +121,6 @@ end
 # iterations per leapfrog step).  Leaves the smoothed state current.
 function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, dt::Float64, nmh::Int = 10)
     check_stochastic_dims(params)
-    params.hamiltonian === :energy && params.volume === :number || error("hmc_update!: needs hamiltonian = :energy, volume = :number")
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     hb = hmc_heatbath!(ps, params, cl, eos, tg, rng; nmh)
     H0, P0 = hmc_measure!(ps, params, cl, eos)

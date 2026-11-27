@@ -33,8 +33,6 @@ const CFL  = envf("SW_CFL", 0.2)
 const S0   = 2.0
 
 function run_shear(ham::Symbol, η_by_s::Float64)
-    ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)
-    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "entropy"
     eos = conformal_eos(default_phys_dim(); η_by_s = η_by_s)
     params, ps, cl, eos = setup_ic(H_, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L)
     k = 2π * NW / params.L[1]

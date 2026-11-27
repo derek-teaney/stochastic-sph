@@ -200,8 +200,6 @@ function check_split(params)
     SPLIT || return nothing
     positional_set!(params)
     hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level"
-    params.volume === :number && params.hamiltonian === :energy ||
-        error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number" * hint)
     params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2" * hint)
     isfinite(SPLIT_VBAR[]) || (SPLIT_VBAR[] = SPLIT_VBAR_SETTING > 0 ? SPLIT_VBAR_SETTING : prod(params.L) / params.N)
     return nothing

@@ -213,9 +213,7 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
     V = [pa.V for pa in particles]
     Etot = E === nothing ? sum(particle_energy(pa, eos) for pa in particles) : Float64(E)
     Mtot = M === nothing ? sum(pa.m for pa in particles) : SVector{2,Float64}(M)
-    # the draw weights a state by S_a − ln T_a (the Liouville measure, sph.jl), which needs the energy Hamiltonian
-    params.hamiltonian === :energy || error("equilibrium_init!: needs hamiltonian = :energy (the Liouville measure; the Einstein measure " *
-                                            "was removed on 2026-11-27, docs/focus_plan.tex Q2)")
+    # the draw weights a state by S_a − ln T_a (the Liouville measure, sph.jl)
     if bath === nothing
         β0, β, mom = beta_from_averages(V, Etot, Mtot, eos)
     else
@@ -633,12 +631,10 @@ end
 # ── Energy density and pressure of the model (docs/gravity.tex, "The energy density and the stress") ──────────
 # The responses of ln Z to the lapse and to the spatial metric: the energy density E = Σ_a e_a / L^d, and the stress
 #   S^{ij} = (1/L^d) Σ_a (v_a^i m_a^j + P_a V_a² Q_a^{ij}),   Q_a^{ij} = Σ_b r_ab^i D_ab^j,  D_ab = −W'(r_ab) r̂_ab,
-# whose trace over d is the mechanical pressure, the kinetic (label) part plus the virial part.  Needs hamiltonian = :energy,
-# volume = :number; smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the shear-stress
+# whose trace over d is the mechanical pressure, the kinetic (label) part plus the virial part (the n-scheme);
+# smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the shear-stress
 # components of the sum, (Sxy, (Sxx − Syy)/2), for the record.
 function energy_pressure(particles::Vector{Particle}, params::SimParams, cl::CellList2D, eos::AbstractEOS)
-    params.hamiltonian === :energy && params.volume === :number ||
-        error("energy_pressure: needs hamiltonian = :energy, volume = :number")
     smooth_to_particles!(particles, params, cl);  update_thermodynamics!(particles, eos)
     nl = neighbor_list!(cl, particles, params.h)
     n = length(particles)

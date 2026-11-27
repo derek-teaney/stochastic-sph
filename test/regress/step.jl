@@ -11,8 +11,7 @@
 # tolerance tol (default 0: bit-identical).  Results must not depend on the number of
 # threads, so compare across -t 1 and -t 4 as well as across code versions.
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
-# The n-scheme (energy Hamiltonian, number volume).
-ENV["SPH_HAMILTONIAN"] = get(ENV, "SPH_HAMILTONIAN", "energy")
+# The n-scheme (energy Hamiltonian, number volume: the default of the reference, the only scheme since docs/focus_plan.tex Q7).
 # The measure is the Liouville measure, the only one since 2026-11-27 (docs/focus_plan.tex, Q2; the reference has it as the default of
 # the energy Hamiltonian).  The smoothed Hamiltonian, which had the Einstein measure, is no longer run here.
 const ROOT = joinpath(@__DIR__, "..", "..")

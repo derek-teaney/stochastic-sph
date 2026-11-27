@@ -10,7 +10,7 @@
 #   SR_HFIX=1 (after each stochastic step, rescale all s_a by one factor to restore H),
 #   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
 #   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
-#   SPH_HAMILTONIAN=energy (H = Σ e_a, docs/energystep.tex; plain back map, suffix _energy).
+#   The n-scheme (H = Σ e_a, docs/energystep.tex; suffix _energy).
 # Default start: eq.  Stochastic runs need the energy Hamiltonian (docs/focus_plan.tex, Q2).
 
 # Run:  julia -t auto --project examples/stability.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split]
@@ -27,7 +27,7 @@ const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :sta
 VOTE === :star || error("stability.jl: the bond vote was removed (docs/focus_plan.tex, Q1; tag pre-prune); use star")
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
-const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
+const ENERGYH = true                                              # H = Σ e_a (energystep.tex), the only Hamiltonian (the suffix _energy)
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s
 const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)
 const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
