@@ -124,10 +124,10 @@ $T_{\rm rel}$ the tree fluid carries 8--10\% more energy than the target equatio
 Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).
 
 \paragraph{The damping is 3--6 times hydrodynamics, for both Hamiltonians and both $s_a$} (\Fig{fig:fit}, Figs.~\ref{fig:corr16},
-\ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.7$--$5.9$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
+\ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.9$--$6.1$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
 The sound modes are over-damped as well.  This is \emph{not} what the earlier campaigns found: in campaign \texttt{hastings}
 ($c_s^2=1/3$, the same $s_{\rm rel,0}$, the same step) the shear damping was $1.0$--$1.2$ times hydrodynamics (\texttt{inverse\_moment.tex},
-Stage 2), and the present analysis applied to those runs gives the same ($1.17$--$1.23$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
+Stage 2), and the present analysis applied to those runs gives the same ($1.04$--$1.10$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
 \texttt{BOOST\_GROUP=OLD16}, \texttt{OLD54}).  So the analysis is not the cause, and neither is the renormalization (tree and split are
 alike).  What differs: at the same $s_{\rm rel,0}$ the temperature is $T_{\rm rel}=140$ instead of $28$ ($s_a=16$), so
 \st
@@ -145,7 +145,7 @@ $\eta/s=0.2$:
 \toprule
  & $s_a=16$ & $s_a=54$ \\ \midrule
 $\eta/s=0.2$ (\texttt{hastings\_bath}) & $3.9$--$4.0$ & $3.3$ \\
-$\eta/s=1.0$, against its own hydrodynamics & $1.09$--$1.16$ & $1.18$--$1.20$ \\
+$\eta/s=1.0$, against its own hydrodynamics & $0.97$--$1.04$ & $1.18$--$1.20$ \\
 no viscous step (\texttt{SR\_NOVISC=1}) & $7.3$--$7.9$ & $5.8$--$6.2$ \\
 \bottomrule
 \end{tabular}
@@ -159,7 +159,8 @@ viscosity,
 \label{eq:loop}
 \stp
 with $\nu_0=(\eta/s)/T_{\rm rel}$ the bare value.  Fixing $A$ from $\eta/s=0.2$ ($\Gamma/\nu_0k^2=4.0$, $A=3\nu_0^2$) predicts
-$1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $1.09$--$1.16$) and $1.09$ at $s_a=54$ (measured $1.11$--$1.20$).  For the
+$1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $0.97$--$1.04$, so the estimate is 1.5--3$\sigma$ high there) and $1.09$ at $s_a=54$
+(measured $1.11$--$1.20$).  (The first version of this note had $1.09$--$1.16$ at $s_a=16$, from the analysis corrected in \Sect{sec:lagfix}.)  For the
 conformal fluid in $d=2$, $s\propto T^2$ and $\nu_0\propto1/T$, so the relative correction $A/\nu_0^2\propto1/(\eta/s)^2$ does not
 depend on $s_a$: $s_a=54$ is nearly as far from hydrodynamics as $s_a=16$.  At $c_s^2=1/3$ and the same $s_{\rm rel,0}$, $\nu_0$ was five times
 larger and the correction about 25 times smaller.  Campaign \texttt{cs13} (below) checks that the old agreement is reproduced by the present code.
@@ -173,15 +174,15 @@ fix; the same $s_{\rm rel,0}$, hence the old $T_{\rm rel}=28.1$ ($s_a=16$) and $
 \begin{tabular}{lcc}
 \toprule
 $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ / $1.05$ & \texttt{cs13} & \texttt{hastings} \\ \midrule
-$s_a=16$, rest & $0.93$--$0.98$ & $1.17$--$1.23$ \\
+$s_a=16$, rest & $0.95$--$1.01$ & $1.04$--$1.10$ \\
 $s_a=54$, rest & $0.98$--$1.10$ & $0.94$--$1.10$ \\
 $s_a=54$, $v_0=0.8$ & $1.01$--$1.26$ & $0.96$--$1.20$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 as the fluctuation estimate of \Eq{eq:loop} expects ($\approx1.1$).  So the over-damping at $c_s^2=1/2$, $\eta/s=0.2$ comes from the
-small bare viscosity, not from a change of the code.  (At $s_a=16$, $v_0=0.8$ along the flow both are high and noisy, $2.2$--$3.6$ against
-$1.6$--$2.3$.)
+small bare viscosity, not from a change of the code.  (At $s_a=16$, $v_0=0.8$ along the flow both are near hydrodynamics too, $1.10$--$1.18$ against $1.06$--$1.11$; the first version of this
+note had $2.2$--$3.6$ against $1.6$--$2.3$, from the analysis corrected in \Sect{sec:lagfix}.)
 
 The equal-time spectra of the two differ (\texttt{cs13} $C/\chi\approx1.5$ at $s_a=16$, \texttt{hastings} $0.85$) because of the start:
 \texttt{hastings} solved for the bath from the totals and so started at the right energy and a bath $14\%$ cooler ($T=24.3$ instead of
@@ -727,8 +728,12 @@ Hamiltonian.  Since this version every run is put on the grid of the most common
 interpolated (cubic, error $<10^{-4}$ for the sound at $kh=0.52$); sets whose runs share one step are unchanged.  The figures and tables of $s_a=16$ in
 \Sect{sec:cmp} and \Sect{sec:exact} are those of the corrected analysis.  Changes: the sound at rest of S-scheme$+\omega$ $1.360\to1.017$, of
 split$+\omega$ $1.010(22)\to1.018(2)$ (7 runs of 16 moved), of the exact form $1.018\to1.023$; the shear damping at $s_a=16$ at rest moves by up to
-$1.5$ (the range $4.0$--$7.6$ becomes $3.8$--$6.2$), and the over-damping at $s_a=16$ stays.  The earlier sections of this note (campaign
-\texttt{hastings\_bath}, 3 to 5 of 16 runs per set at $s_a=16$) and \nolinkurl{inverse_moment.tex} (campaign \texttt{hastings}, $s_a=4$, 12, 16, where
-nearly every run has its own step) used the old analysis and are not yet redone.
+$1.5$ (the range $4.0$--$7.6$ becomes $3.8$--$6.2$), and the over-damping at $s_a=16$ stays.  The earlier sections were redone the same way (groups \texttt{SP16} on \texttt{hastings\_bath}, \texttt{DS16}, \texttt{CS16}, \texttt{OLD16}; the old
+and the corrected script on the same runs; their figures are the corrected ones).  Unchanged: the tree level and the runs without the viscous step
+(one step per set) and every set at $s_a=54$.  Changed at $s_a=16$: split at rest $4.7$--$5.9\to4.9$--$6.1$, in motion along the flow $11\pm3\to6.2\pm0.7$
+and $6.9\to5.0$ (still over-damped); $\eta/s=1.0$ of \texttt{damping\_scan} $1.09$--$1.16\to0.97$--$1.04$ (now below the mode-coupling estimate $1.12$);
+the $c_s^2=1/3$ runs (\texttt{hastings}, \texttt{cs13}) at rest $1.17$--$1.23\to1.04$--$1.10$ and $0.93$--$0.98\to0.95$--$1.01$, and in motion along the flow
+$1.6$--$3.6\to1.06$--$1.18$.  The conclusions stand (the over-damping at $c_s^2=1/2$, $\eta/s=0.2$; the agreement at $c_s^2=1/3$), with the agreement at
+$c_s^2=1/3$ now closer.  \nolinkurl{inverse_moment.tex} (campaign \texttt{hastings}, $s_a=4$--16) has its own correction section.
 
 \end{document}

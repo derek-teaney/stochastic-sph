@@ -1239,4 +1239,11 @@ note in `docs/` with the tables and figures.
   message; campaign files renamed); P4c (ee9eea0) SPH_POSITIONAL=1 by default (C2 only), campaign lines since 2026-11-23 without omega get
   SPH_POSITIONAL=0; P5 (64fcc9b) positional_dyn approach figure tagged; P6 CLAUDE.md, nersc/README.md (retired settings, removed values,
   the new default).  Removed values stop with a message naming 9846a6c, the last commit with them.
+- P7b (2026-11-26, on interactive 62073121 with srun --overlap; $SCRATCH/sph/tests/p7b, old script = worktree ~/rmOLD at 1cc9d88): the groups
+  with mixed time steps redone, old and corrected analysis on the same runs.  hastings (c_s^2 = 1/3; inverse_moment.tex sec:lagfix): shear
+  damping in motion along the flow at kh = 0.52 was 2.3-2.5 (s_a = 16, 12) -> 1.0-1.2; at rest -0.1..-0.15 at s_a = 16, +0.25 at s_a = 8;
+  s_a = 4 at rest 2.5-2.7 (beyond the edge, as before).  hastings_bath split s_a = 16: rest 4.7-5.9 -> 4.9-6.1, v0 = 0.8 along 11+-3 -> 6.2+-0.7.
+  damping_scan eta/s = 1.0, s_a = 16: 1.09-1.16 -> 0.97-1.04 (the mode-coupling estimate 1.12 is now 1.5-3 sigma high there; s_a = 54 unchanged).
+  cs13/hastings at c_s^2 = 1/3: 0.93-0.98 / 1.17-1.23 -> 0.95-1.01 / 1.04-1.10.  Not redone (no lag-time analysis or not in the notes):
+  dt_scan (steps differ by design), hastings_positional (equal-time spectra), pairs_low, the smoke sets, hastings_sscheme(_b) (superseded, sec:reg).
 
