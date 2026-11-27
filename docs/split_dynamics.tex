@@ -373,8 +373,12 @@ which removes the offset of the positions from the equation of state of hybrid M
 level 2).  The split lines ran again at the present code (\texttt{d7d26ad}), with the seeds of \texttt{hastings\_bath}, so that all four lines
 share one code and one record of the energy.  The recorded $\Delta H/H$ of \texttt{hastings\_bath} (\texttt{3262b00}) is 10--300 times that of the
 lines here, and the difference is in the record, not in the dynamics.  A bisection (one seed, \texttt{hs16\_sp\_v0.8} r601, at every commit from
-\texttt{3262b00} to \texttt{d7d26ad} that touches the code; debug job 62046403) reproduces both recorded values exactly and puts the change at one
-commit, \texttt{3fa7a3e}, with the trajectory bit-identical before and after (every acceptance and rejection count the same).  The stochastic step
+\texttt{3262b00} to \texttt{d7d26ad} that touches the code; debug job 62046403) reproduces both recorded values exactly.  The
+recorded $\Delta H/H$ changes at three commits: $+1.99\times10^{-4}\to+1.14\times10^{-3}$ at \texttt{ab44bae} and $\to-2.07\times10^{-4}$ at
+\texttt{2bc03dd}, which both change the start (the temperature of the nominal bath from the equation of state, $T_{\rm rel}=139.69\to140.38$,
+and the normalization of the kinetic energy), so the trajectory and the counts of acceptances change too; and $\to-1.48\times10^{-6}$ at
+\texttt{3fa7a3e}, with the trajectory bit-identical before and after (every acceptance and rejection count the same).  The factor 100 is all
+at \texttt{3fa7a3e}.  The stochastic step
 ends with new labels $s_a$ and momenta and no new solve of the particles.  Before \texttt{3fa7a3e} the record took $H=\sum_a s_a(H/S)_a$, the
 new label times the ratio $H/S$ of the old state, which is wrong by $(H/S)_a\Delta s_a$ per particle; since then it takes $\sum_aH_a$, the energies
 that the stochastic step conserves exactly.  The same applies to the momentum fluctuations, through $V_a=s_a/S_a$ (KE/eq $14.30$ against
