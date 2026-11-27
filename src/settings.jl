@@ -38,6 +38,8 @@ const RETIRED_SETTINGS = Dict(
     "SR_GRID" => "the grid step was removed on 2026-11-27 (docs/focus_plan.tex, Q6; tag pre-prune)",
     "SPH_HAMILTONIAN" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the n-scheme (energy Hamiltonian, number volume) is the only one; SPH_HAMILTONIAN=smoothed is in the tag pre-prune",
     "SPH_VOLUME" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the number volume V_a = 1/n_a is the only one; SPH_VOLUME=entropy is in the tag pre-prune",
+    "SR_POSITIONS" => "removed on 2026-11-27 (docs/focus_plan.tex, Q9): SR_START = cold | hot | hmc says where and how a run starts (lattice = cold or hot); poisson is in the tag pre-prune",
+    "SR_BATH" => "removed on 2026-11-27 (docs/focus_plan.tex, Q9): the start is always at the requested state (the former nominal); totals is in the tag pre-prune",
     "SR_LAMBDA" => "removed on 2026-11-27 (docs/focus_plan.tex, Q1): the residual move always has λ = 1; λ ≠ 1 is in the tag pre-prune",
 )
 for (name, why) in RETIRED_SETTINGS

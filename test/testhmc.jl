@@ -11,7 +11,7 @@ check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 function thermal_state(L; seed = 1)
     params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L, lattice = :hex))
-    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(seed)))
+    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(seed), bath = target_state(1e6, 0.0, eos).bath))
     return params, ps, cl, r
 end
 H(ps, params, cl) = hmc_measure!(ps, params, cl, eos)[1]

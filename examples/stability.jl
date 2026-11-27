@@ -8,8 +8,9 @@
 #
 # Environment: SR_ETAS (η/s, default 0.2), SR_SREL0 (s_rel,0, the rest-frame entropy density, default 1e6),
 #   SR_HFIX=1 (after each stochastic step, rescale all s_a by one factor to restore H),
-#   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
-#   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
+#   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (hot | cold, default hot: the draw at the target state
+#   s_rel,0 at rest shifted to the totals of the lattice, docs/eqstart.tex, src/measure.jl initial_state!; cold: the uniform state
+#   at rest.  eq and thermal were removed on 2026-11-27, docs/focus_plan.tex Q9),
 #   The n-scheme (H = Σ e_a, docs/energystep.tex; suffix _energy).
 # Default start: eq.  Stochastic runs need the energy Hamiltonian (docs/focus_plan.tex, Q2).
 
@@ -33,10 +34,10 @@ const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame e
 const HFIX  = setting("SR_HFIX", false)                           # restore H after each stochastic step
 const OUTD  = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "docs", "figs")));  mkpath(OUTD)
 const SEED0 = setting("SR_SEED0", 0)                     # seeds SEED0+1 … SEED0+NREAL
-const START = setting("SR_START", :eq)                       # eq (hot) | cold | thermal (initial_state!)
+const START = setting("SR_START", :hot)                      # hot | cold (initial_state!)
 const SUF   = (VOTE === :bonds ? "" : "_$(VOTE)") * (DTF == 1 ? "" : "_dt$(DTF)") *
               (ETAS == 0.2 ? "" : "_eta$(ETAS)") * (SREL0 == 1e6 ? "" : "_S$(SREL0)") * (HFIX ? "_hfix" : "") *
-              (START === :eq ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
+              (START === :hot ? "" : "_$(START)") * (ENERGYH ? "_energy" : "")
 
 const RECORD = Ref{Any}(NamedTuple());  const RECORD_LOCK = ReentrantLock()   # for the run record
 
@@ -71,9 +72,12 @@ function run(kind, seed=1)
     params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                    L=0.6, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-    p = ps[1];  V = p.V;  w = p.e + p.p;  T = p.T;  eq = N * V * w * T
+    # the target state (src/measure.jl): the normalization of KE, 2(N−1) V w T, and the multipliers of the start
+    tgt = target_state(SREL0, 0.0, eos)
+    p = ps[1];  V = p.V;  w = tgt.w0;  T = tgt.Trel0;  eq = N * V * w * T
     seed == 1 && @printf("%-7s h/a=%.1f η/s=%.2f s_a=%.1f  thermal |δv| per component=%.3f\n", kind, HA, ETAS, p.s, sqrt(T / (V * w)))
-    initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3))   # SR_START (default eq)
+    initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3),   # SR_START (default hot), at the target state
+                   bath = tgt.bath, totals = cold_totals(ps, params, cl, eos))
     dt = DTF * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     nsteps = ceil(Int, TEND / dt)
     Lx, Ly = params.L;  nmx = round(Int, Lx / params.a / 2);  nmy = round(Int, Ly / params.a / 2)

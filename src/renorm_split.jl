@@ -185,7 +185,7 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
 end
 
 # The weight of a state in the votes: s_a(u) = u − b ln u − ln(∂H/∂u / (1 − b/u)) (the Liouville measure; ∂H/∂s_a).  With
-# lnT = false the label s_a(u) alone, the weight flat in (e, m) (flat_weight, stochastic.jl: the proposal of the HMC heat bath).
+# lnT = false the label s_a(u) alone (testsplit.jl).
 @noinline function split_vote_entropy(e, m, V, eos, lnT::Bool; guess = nothing, sound::Bool = true)
     u, _, TH = split_inverse(e, m, V, eos; guess, sound)
     (isfinite(u) && TH > 0) || return -Inf

@@ -11,8 +11,8 @@
 
 # The multipliers and the proposal of the heat bath: the most probable densities (ε̄, M̄) at (β⁰, β) and the Gaussian
 # pieces of a particle of volume Vref (rescaled per particle: Hn ∝ 1/V, L ∝ √V).  The proposal only affects the
-# acceptance of the chain, not its target.  Its Gaussian is that of the weight flat in (e, m) (flat_weight, stochastic.jl),
-# kept so that the starts are bit-identical with the earlier code; docs/focus_plan.tex Q9 moves it to the Liouville weight.
+# acceptance of the chain, not its target.  Its Gaussian is that of the target's own weight (the Liouville measure, vote_entropy;
+# until docs/focus_plan.tex Q9 that of the weight flat in (e, m), the former Einstein measure).
 struct HMCTarget
     β0   :: Float64
     β    :: SVector{2,Float64}
@@ -24,7 +24,7 @@ struct HMCTarget
 end
 function HMCTarget(β0, β::SVector{2,Float64}, Vref::Float64, eos::AbstractEOS)
     st = state_from_beta(β0, β, eos)
-    pm = particle_moments(Vref, β0, β, eos; weight = flat_weight)
+    pm = particle_moments(Vref, β0, β, eos)
     return HMCTarget(β0, β, st.ε, st.M, Vref, pm.L, pm.Hn)
 end
 
@@ -139,6 +139,23 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     end
     return (accepted = acc, dH = (H1 - H0) / H0, dlnpi = dlnπ, heatbath = hb, iters = its / nsteps)
 end
+
+# Hybrid Monte Carlo to equilibrium (the start of a run, docs/focus_plan.tex Q9; the drivers that sample equilibria): nupdates
+# updates at the target tg, trajectories of nsteps leapfrog steps of δt = dt, each of a random length, uniform in
+# [(1 − taujit) nsteps, nsteps], when taujit > 0.  callback(n, u) after each update n (u from hmc_update!).  Returns the
+# fraction of trajectories accepted.
+function hmc_equilibrate!(ps, params, cl, eos, tg::HMCTarget, rng; nupdates::Int, nsteps::Int, dt::Float64, taujit::Float64 = 0.0,
+                          callback = nothing)
+    nacc = 0
+    for n in 1:nupdates
+        nst = taujit > 0 ? max(1, round(Int, nsteps * (1 - taujit * rand(rng)))) : nsteps
+        u = hmc_update!(ps, params, cl, eos, tg, rng; nsteps = nst, dt);  nacc += u.accepted
+        callback === nothing || callback(n, u)
+    end
+    return nacc / nupdates
+end
+hmc_equilibrate!(callback::Function, ps, params, cl, eos, tg::HMCTarget, rng; kw...) =      # the do-block form
+    hmc_equilibrate!(ps, params, cl, eos, tg, rng; callback, kw...)
 
 # The ideal step with the generalized leapfrog (the only ideal step, ideal.jl leapfrog_step!): one step of
 # generalized_leapfrog!, the implicit half steps iterated to GLF_TOL (SPH_GLF_TOL, default 1e-10: second order and

@@ -19,7 +19,7 @@ params, ps, cl = let
     w0 = q[1].e + q[1].p
     P, p, c, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> γ * 3e4, (x, y) -> SVector(w0 * γ^2 * v0, 0.0); L = 0.6, lattice = :hex,
                                        jitter = 0.3, seed = 4))
-    quiet(() -> equilibrium_init!(p, P, c, eos; rng = Xoshiro(2)))           # thermal momenta (s_a ≈ 16)
+    quiet(() -> equilibrium_init!(p, P, c, eos; rng = Xoshiro(2), bath = target_state(3e4, v0, eos).bath))   # thermal momenta (s_a ≈ 16)
     smooth_to_particles!(p, P, c);  update_thermodynamics!(p, eos);  update_velocities!(p, P, c)
     (P, p, c)
 end

@@ -18,8 +18,9 @@ const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
 
 eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps, cl, _ = setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))
-tg = HMCTarget(start.β0, start.β, params.vol, eos)
+const TGT = target_state(S0, 0.0, eos)                     # the target state at s_rel,0 = S0 (src/measure.jl; docs/focus_plan.tex Q9)
+start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3), bath = TGT.bath)
+tg = HMCTarget(TGT.β0, TGT.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt))
 @printf("volume fluctuations: N = %d, h/a = %.3g, s_a = %.4g, %d steps per trajectory, %d updates, measure %s\n",
@@ -29,9 +30,8 @@ ks = box_wavevectors(params, KHMAX)
 rec = Recorder(ks);  prec = ParticleRecorder(ps, params; ks, cl)
 vmean = Float64[];  vvar = Float64[];  vskew = Float64[];  acc = Float64[]
 rng = Xoshiro(1000SEED + 7);  t0 = time();  nbar = params.N / prod(params.L)
-for n in 1:NUPD
-    nst = max(1, round(Int, NSTEPS * (1 - TAUJIT * rand(rng))))
-    u = hmc_update!(ps, params, cl, eos, tg, rng; nsteps = nst, dt);  push!(acc, u.accepted)
+hmc_equilibrate!(ps, params, cl, eos, tg, rng; nupdates = NUPD, nsteps = NSTEPS, dt, taujit = TAUJIT) do n, u
+    push!(acc, u.accepted)
     hmc_measure!(ps, params, cl, eos)
     V = [q.s / q.S_smooth for q in ps] .* nbar                     # V_a n̄
     μ = mean(V);  push!(vmean, μ);  push!(vvar, var(V) / μ^2);  push!(vskew, mean(((V .- μ) ./ std(V)) .^ 3))

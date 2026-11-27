@@ -1,6 +1,6 @@
 # equilibrium.jl — equilibrium runs of the full stochastic scheme for measuring
-# correlators (docs/plan.tex).  A uniform 2D fluid at rest, started in equilibrium
-# (SR_START, default eq: initial_state! in src/measure.jl), evolved with the Hamiltonian step and the stochastic step
+# correlators (docs/plan.tex).  A uniform 2D fluid at rest or moving, started in equilibrium
+# (SR_START, default hmc), evolved with the Hamiltonian step and the stochastic step
 # in the particle representation, recording the Fourier modes M_k, S_k (and E_k).
 #
 # Time stepping (Strang, merged): S(Δt/2) [L(Δt) S(Δt)]… L(Δt) S(Δt/2), i.e. one stochastic
@@ -11,7 +11,7 @@
 #     write_equilibrium_h5 in src/measure.jl for the layout, read_equilibrium to load it)
 # Restart: a run that stops early resumes from equilibrium_<tag>_r<seed>.chk (SR_CHECKPOINT_MIN).
 # Environment: SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_ETAS, SR_SREL0 (s_rel,0, the rest-frame entropy density), SR_KHMAX,
-#   SR_START (cold | eq | thermal; default eq; campaign `first` used thermal).
+#   SR_START (cold | hot | hmc; default hmc, below).
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 
@@ -32,7 +32,19 @@ const CS2V  = setting("SR_CS2", 0.0)
 const ZETAS = setting("SR_ZETAS", 0.0)
 const SREL0 = setting("SR_SREL0", 1e6)        # s_rel,0: the rest-frame entropy density of the run (docs/inputs.tex; was SR_S0)
 const KHMAX = setting("SR_KHMAX", 1.5)
-const START = setting("SR_START", :eq)
+# SR_START: the start of a run (docs/focus_plan.tex, Q9; src/measure.jl initial_state!, src/hmc.jl hmc_equilibrate!), at the target
+# state of target_state(s_rel,0, SR_BOOST) — the multipliers β⁰ = γ/T_rel,0, β = γv/T_rel,0 from the equation of state:
+#   cold  the lattice as set up, no fluctuations; the run thermalizes.  For demonstrations.
+#   hot   the lattice, (e_a, m_a) drawn at the target's β^μ, shifted so that the totals are those of the cold start (the
+#         totals of the lattice as set up, recorded as E_cold, P_cold): cold and hot are on the same shell.  For demonstrations.
+#   hmc   (default) the draw, then hybrid Monte Carlo at the target's β^μ (positions, and (e_a, m_a) through its heat bath).  No
+#         redraw after it, no shift.  For production.  SR_HMC_SHIFT_TOTALS=1 (debugging) shifts the final sample to the cold totals.
+# Until 2026-11-27 SR_START (cold | eq | thermal), SR_POSITIONS (lattice | poisson | hmc) and SR_BATH (nominal | totals) did this;
+# hot is the former SR_POSITIONS=lattice SR_START=eq, cold the former SR_POSITIONS=lattice SR_START=cold (tag pre-prune).
+const START = setting("SR_START", :hmc)
+START in (:eq, :thermal) && error("SR_START=$START was removed on 2026-11-27 (docs/focus_plan.tex, Q9): use cold, hot or hmc " *
+                                  "(hot is the former SR_POSITIONS=lattice SR_START=eq; tag pre-prune)")
+START in (:cold, :hot, :hmc) || error("SR_START must be cold, hot or hmc")
 const OUT   = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data")));  mkpath(OUT)
 const COMMIT = try
     c = readchomp(`git -C $(@__DIR__) rev-parse --short HEAD`)
@@ -53,39 +65,22 @@ const KERNEL = setting("SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = setting("SR_JITTER", 0.0)
-# SR_POSITIONS: where the particles start.  Default (since 2026-11-15) hmc.  SR_POSITIONS=lattice: on the hexagonal lattice (the default before 2026-11-15; for tests,
-# and at large s_a).
-# (SR_POSITIONS=poisson, a Poisson arrangement of the particles, was removed on 2026-11-27: docs/focus_plan.tex, Q8; tag pre-prune.)
-# SR_POSITIONS=hmc: the positions are first brought to equilibrium by hybrid Monte Carlo from the lattice (src/hmc.jl,
-# docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 200) with
-# trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC
-# (default 0.35) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.  The
-# defaults are those of campaign hbya (2026-11-15); before, 40 updates, δt factor 0.5 and a fixed τ.
-const POSITIONS = setting("SR_POSITIONS", :hmc)
-POSITIONS === :poisson && error("SR_POSITIONS=poisson was removed on 2026-11-27 (docs/focus_plan.tex, Q8; tag pre-prune)")
-POSITIONS in (:lattice, :hmc) || error("SR_POSITIONS must be lattice or hmc")
-const HMC_N     = setting("SR_HMC_N", 200)
-const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
-const HMC_DTFAC = setting("SR_HMC_DTFAC", 0.35)
+# The hybrid Monte Carlo of SR_START=hmc (src/hmc.jl, docs/equilibrium_positions.tex) at the β^μ of the run: SR_HMC_N updates
+# (default 200) with trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and
+# δt = SR_HMC_DTFAC (default 0.35) times the acoustic step.  The defaults are those of campaign hbya (2026-11-15).
 # SR_HMC_TAUJIT=j: each update's trajectory has a random length, uniform in [(1−j)τ, τ] (default 0.5; 0 is a fixed τ).  A fixed τ equal
 # to a period of a box sound mode leaves that mode where it started: τ = L/c_s freezes kh = 2πh/L (S(k) stays near its lattice
 # value), τ = L/2c_s the next one (campaign hmc_tau_test, 2026-11-14).  Random lengths remove these resonances.
-const HMC_TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
+# The SR_HMC_* settings are read only with SR_START=hmc.
+const HMC = START === :hmc ? (n = setting("SR_HMC_N", 200), tau = setting("SR_HMC_TAU", 0.0), dtfac = setting("SR_HMC_DTFAC", 0.35),
+                              taujit = setting("SR_HMC_TAUJIT", 0.5), shift_totals = setting("SR_HMC_SHIFT_TOTALS", false)) : nothing
 # SR_BOOST=v: the fluid moves with velocity v along x (boost.tex).  The rest-frame entropy density
 # is s_rel,0 as before; in the lab (density frame) S = γ s_rel,0 and M = (w0 γ² v, 0), w0 the rest-frame
-# enthalpy at s_rel,0.  The equilibrium start then draws at the moving β^μ of these totals.  With a
+# enthalpy at s_rel,0 (target_state).  The start draws at the moving β^μ of the target.  With a
 # boost the energy Fourier modes E_k are recorded too (SR_RECORD_E=1 forces them at rest).
 const BOOST  = setting("SR_BOOST", 0.0)
 const GAMMA  = 1 / sqrt(1 - BOOST^2)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
-# SR_BATH: the multipliers β^μ of the hybrid Monte Carlo start and of the equilibrium draw (SR_START=eq).
-#   nominal (default since 2026-11-23): the requested state, β⁰ = γ/T_rel0, β = γ v/T_rel0 x̂, with T_rel0 the temperature
-#           of the target fluid at s_rel,0 and v = SR_BOOST: the fluid of the run is at this (T_rel, v), exactly, for any Hamiltonian.
-#   totals: (before 2026-11-23) β^μ solved from the totals of the set-up state (beta_from_averages, a quadrature on a grid
-#           of single-particle states).  In a moving fluid at low s_a the solve can be far off: split, s_a = 16, v = 0.8 gave
-#           T_rel = 208, v = 0.66 (campaign hastings_split, nersc/LOG.md).
-const BATH = setting("SR_BATH", :nominal)
-BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
 stoch_opts(params) = StochOptions(params)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
@@ -144,51 +139,44 @@ function one_realization(seed)
         haskey(st, :ssref) && all(isfinite, st.ssref) && sscheme_reference!(st.ssref...)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
-        # rest-frame state at s_rel,0: its enthalpy w0 sets the momentum density of the boosted state
-        _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
-                                L=LBOX, lattice=:hex, seed=1000seed + 4)
-        # T_rel0: the temperature of the target fluid at s_rel,0, from the equation of state (not from a particle of the set-up, whose
-        # T = ∂H/∂s depends on the Hamiltonian: with a renormalized Hamiltonian the particle variable is the label, not the target entropy)
-        # w0 likewise from the EOS with the nominal bath (a set-up particle of the removed legendre scheme was hotter: w 1.8× at s_a = 54, 4× at s_a = 16)
-        e0 = e_of_srel(eos, SREL0);  Trel0 = trel_of_srel(eos, SREL0)     # (Trel is a local variable below)
-        w0 = BATH === :nominal ? e0 + pressure(eos, e0) : ps0[1].e + ps0[1].p
-        Mx0 = w0 * GAMMA^2 * BOOST
-        params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
+        # the target (src/measure.jl target_state): T_rel,0, w0 from the equation of state at s_rel,0 (not from a particle of the
+        # set-up, whose T = ∂H/∂s depends on the Hamiltonian), S = γ s_rel,0, M0 = w0 γ² v, the multipliers β⁰, β
+        tgt = target_state(SREL0, BOOST, eos);  Trel0 = tgt.Trel0;  w0 = tgt.w0;  Mx0 = tgt.M0[1]
+        params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> tgt.S, (x, y) -> tgt.M0;
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
         SSCHEME && JITTER > 0 && error("SPH_RENORM=sscheme: SR_JITTER rescales the label as an entropy; not supported")
         if JITTER > 0                            # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ s_rel,0), iterated;
             for _ in 1:30                        # m_a = V_a M0 (the momentum density of the boosted state)
-                for q in ps;  q.s *= GAMMA * SREL0 / q.S_smooth;  end
+                for q in ps;  q.s *= tgt.S / q.S_smooth;  end
                 thermalize!(ps, params, cl, eos)
             end
-            for q in ps;  q.m = (q.s / q.S_smooth) * SVector(Mx0, 0.0);  end
+            for q in ps;  q.m = (q.s / q.S_smooth) * tgt.M0;  end
             thermalize!(ps, params, cl, eos)
-            @printf("seed %d: %s, jitter %.2f a: smoothed S/(γS0) − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, POSITIONS, JITTER,
-                    sqrt(sum(abs2, [q.S_smooth / (GAMMA * SREL0) - 1 for q in ps]) / length(ps)),
+            @printf("seed %d: jitter %.2f a: smoothed S/(γS0) − 1 rms %.1e, s_a/s̄ − 1 rms %.3f\n", seed, JITTER,
+                    sqrt(sum(abs2, [q.S_smooth / tgt.S - 1 for q in ps]) / length(ps)),
                     (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
         end
+        cold = cold_totals(ps, params, cl, eos)          # the totals of the lattice as set up, before any draw
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-        p = ps[1];  V = p.V;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
-        # the normalization of KE (the momentum fluctuations, 2(N−1) V w T) and the record's w, T, Trel: the target state with the
-        # nominal bath (EOS at s_rel,0, T = T_rel,0/γ); the set-up particle with SR_BATH=totals (before)
-        BATH === :nominal && (w = w0;  T = Trel0 / GAMMA;  Trel = Trel0)
-        hmcinfo = NamedTuple()
-        bath = BATH === :nominal ? (GAMMA / Trel0, SVector(GAMMA * BOOST / Trel0, 0.0)) : nothing
-        if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run
-            r0 = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6), bath)
-            tg = HMCTarget(r0.β0, r0.β, params.vol, eos)
-            dtH = HMC_DTFAC * compute_dt(ps, params, eos; mode = :ideal)
-            nH = max(1, round(Int, (HMC_TAU > 0 ? HMC_TAU : LBOX * sqrt(3)) / dtH))
-            hrng = Xoshiro(1000seed + 7);  nacc = 0;  th = time()
-            for n in 1:HMC_N
-                nHn = HMC_TAUJIT > 0 ? max(1, round(Int, nH * (1 - HMC_TAUJIT * rand(hrng)))) : nH
-                u = hmc_update!(ps, params, cl, eos, tg, hrng; nsteps = nHn, dt = dtH);  nacc += u.accepted
-            end
+        # the normalization of KE (the momentum fluctuations, 2(N−1) V w T) and the record's w, T, Trel: the target state
+        V = ps[1].V;  w = w0;  T = Trel0 / tgt.γ;  Trel = Trel0
+        if START === :hmc                        # the draw, then hybrid Monte Carlo at the target's β^μ
+            equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6), bath = tgt.bath)
+            tg = HMCTarget(tgt.β0, tgt.β, params.vol, eos)
+            dtH = HMC.dtfac * compute_dt(ps, params, eos; mode = :ideal)
+            nH = max(1, round(Int, (HMC.tau > 0 ? HMC.tau : LBOX * sqrt(3)) / dtH))
+            th = time()
+            acch = hmc_equilibrate!(ps, params, cl, eos, tg, Xoshiro(1000seed + 7); nupdates = HMC.n, nsteps = nH, dt = dtH, taujit = HMC.taujit)
             @printf("seed %d: hybrid Monte Carlo, %d updates of %d steps (τ = %.3g), acceptance %.2f, %.0f s\n",
-                    seed, HMC_N, nH, nH * dtH, nacc / HMC_N, time() - th)
-            hmcinfo = (hmc_updates = HMC_N, hmc_steps = nH, hmc_taujit = HMC_TAUJIT, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = nacc / HMC_N)
+                    seed, HMC.n, nH, nH * dtH, acch, time() - th)
+            HMC.shift_totals && shift_to_totals!(ps, params, cl, eos, cold.E, cold.P)
+            start = (type = "hmc", what = "equilibrium draw, then hybrid Monte Carlo at the requested beta^mu" *
+                                          (HMC.shift_totals ? ", final sample shifted to the cold totals" : ""),
+                     hmc_updates = HMC.n, hmc_steps = nH, hmc_taujit = HMC.taujit, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = acch,
+                     hmc_shift_totals = HMC.shift_totals)
+        else
+            start = initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3), bath = tgt.bath, totals = cold)
         end
-        start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3), bath), hmcinfo, (bath = string(BATH),))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.H for q in ps))
@@ -201,9 +189,11 @@ function one_realization(seed)
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
-              start = merge((lattice = "hex", positions = string(POSITIONS), jitter = JITTER, srel0 = SREL0, boost = BOOST, gamma = GAMMA,
+              start = merge((lattice = "hex", positions = START === :hmc ? "hmc" : "lattice", bath = "nominal", jitter = JITTER,
+                             srel0 = SREL0, boost = BOOST, gamma = GAMMA,
                              S_lab = GAMMA * SREL0, M0 = [Mx0, 0.0], s_a = GAMMA * SREL0 * params.vol,
                              T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
+                             E_cold = cold.E, P_cold = collect(cold.P),
                              rng_seeds = "lattice $(1000seed + 4), start $(1000seed + 3), physics $(1000seed + 1), sweeps $(1000seed + 2)"),
                             start))
     end
@@ -236,7 +226,7 @@ function one_realization(seed)
             record!(rec, ps, n * dt, eos; u)                               # Fourier modes, direct sums (unwrapped u)
             push!(Ht, sum(q.H for q in ps) / H0 - 1)       # smoothed state is current
             SSCHEME && isnan(Ht[end]) && @printf("seed %d: a particle without a state at t = %.4f (sscheme_faillog: %d)\n", seed, n * dt, length(sscheme_faillog()))
-            if JITTER > 0 || POSITIONS === :hmc                              # unequal volumes: the mean flow is V_a M̄,
+            if JITTER > 0 || START === :hmc                                  # unequal volumes: the mean flow is V_a M̄,
                 Md = sum(q.m for q in ps) / sum(q.V for q in ps)    # M̄ the mean momentum density
                 push!(KE, sum((d = q.m - q.V * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
             else

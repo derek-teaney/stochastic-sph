@@ -201,17 +201,12 @@ end
 # SPH_RENORM is recorded here (sph.jl reads it: split, the default; sscheme; 0 the tree level; sph.jl stops on the removed values).
 (SPLIT || SSCHEME) ? setting("SPH_RENORM", :split) : setting("SPH_RENORM", false)
 # the method is chosen at load time, so that at the tree level the code is exactly that of before (bit-identical regression)
-# flat_weight is the weight flat in (e_a, m_a) (the Einstein measure, removed on 2026-11-27, docs/focus_plan.tex Q2): it only shapes
-# the Gaussian proposal of the heat bath of hybrid Monte Carlo (HMCTarget, hmc.jl), whose target is vote_entropy; Q9 replaces it.
 if SSCHEME
     vote_entropy(e, m, V, eos; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)
-    flat_weight(e, m, V, eos; guess = nothing) = sscheme_vote_entropy(e, m, V, eos)
 elseif SPLIT
     vote_entropy(e, m, V, eos; guess = nothing) = split_vote_entropy(e, m, V, eos, true; guess)
-    flat_weight(e, m, V, eos; guess = nothing) = split_vote_entropy(e, m, V, eos, false; guess)
 else
     vote_entropy(e, m, V, eos; guess = nothing) = particle_entropy_lnT(e, m, V, eos; guess)
-    flat_weight(e, m, V, eos; guess = nothing) = particle_entropy(e, m, V, eos; guess)
 end
 # SPH_RENORM=split: the state of each particle at the start of a stochastic step (its label and the target's rest-frame energy density),
 # the starting point of the inverse solves of its votes and coefficients (a guess changes the Newton iterations, not the result).

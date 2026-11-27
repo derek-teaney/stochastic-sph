@@ -17,7 +17,7 @@ const OUT   = get(ENV, "SR_OUTDIR", ".");  mkpath(OUT)
 eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
 params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L=LBOX, lattice=:hex)
 N = params.N;  rngs = make_phys_rng(N, 1);  rng = Xoshiro(2);  dotm = zeros(SVector{2,Float64}, N)
-thermal_init!(ps, params, cl, eos; rng = Xoshiro(3))
+equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(3), exact_totals = true, bath = target_state(1e6, 0.0, eos).bath)   # the hot start
 dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
 const CACHE = StochCache()
 step!(n) = (leapfrog_step!(ps, params, cl, dt, eos, dotm);

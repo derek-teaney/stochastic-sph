@@ -95,6 +95,8 @@ record of what was run at their commit, with a note at the top; to rerun a line 
 | `SPH_MEASURE` | 2026-11-27 | — | the Liouville measure is the only one (Q2) |
 | `SPH_DISSIPATION` | 2026-11-27 | — | the inverse-moment step is the only viscous step (Q5) |
 | `SPH_IDEAL`, `SR_GRID` | 2026-11-27 | — | the generalized leapfrog is the only ideal step; the grid step is gone (Q6) |
+| `SPH_HAMILTONIAN`, `SPH_VOLUME` | 2026-11-27 | — | the n-scheme is the only scheme (Q7) |
+| `SR_POSITIONS`, `SR_BATH` | 2026-11-27 | `SR_START` | `SR_START = cold \| hot \| hmc` (default hmc); hot = the former `SR_POSITIONS=lattice SR_START=eq`; the start is always at the requested state (Q9).  `SR_START=eq`, `thermal` stop |
 
 Removed values (they stop with a message; the last commit with them is 9846a6c, branch `sscheme-measure`; `docs/sscheme_plan.tex`, sec:prune):
 `SPH_RENORM=legendre`, `SPH_RENORM=1` (the entropy shift), `SPH_SSCHEME_FORM=full`.

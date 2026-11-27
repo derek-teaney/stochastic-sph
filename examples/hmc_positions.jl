@@ -23,17 +23,12 @@ const BOOST  = setting("SR_BOOST", 0.0);  const GAMMA = 1 / sqrt(1 - BOOST^2)
 # resonates with a box sound mode when τ = L/c_s).  nsteps = 0 on the command line: τ = L/c_s, as in examples/equilibrium.jl.
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.0)
 const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0            # the energy modes E_k too
-const BATH = setting("SR_BATH", :nominal)            # as examples/equilibrium.jl: nominal (the requested state) or totals (before 2026-11-23)
-BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
 
 eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
-_, ps0, _, _ = setup_ic(0.05, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-const MX0 = (ps0[1].e + ps0[1].p) * GAMMA^2 * BOOST            # the momentum density of the boosted state
-const TREL0 = trel_of_srel(eos, SREL0)                             # the temperature of the target fluid at s_rel,0 (the EOS; as equilibrium.jl)
-params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(MX0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3),       # the present start, at the lattice
-                          bath = BATH === :nominal ? (GAMMA / TREL0, SVector(GAMMA * BOOST / TREL0, 0.0)) : nothing)
-tg = HMCTarget(start.β0, start.β, params.vol, eos)
+const TGT = target_state(SREL0, BOOST, eos);  const TREL0 = TGT.Trel0      # the target state (src/measure.jl; as equilibrium.jl)
+params, ps, cl, _ = setup_ic(0.05, HA, eos, (x, y) -> TGT.S, (x, y) -> TGT.M0; L = LBOX, lattice = :hex, seed = 1000SEED + 4)
+start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3), bath = TGT.bath)   # the draw at the lattice
+tg = HMCTarget(TGT.β0, TGT.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = NSTEPS_ARG > 0 ? NSTEPS_ARG : max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt));  τ = NSTEPS * dt
 @printf("HMC: N = %d, s_a = %.4g, T = %.5g, v = %.3g, δt = %.3e, %d steps per trajectory (τ = %.3g), %d updates\n",
@@ -43,9 +38,7 @@ ks = box_wavevectors(params, KHMAX)
 rec = Recorder(ks; energies = RECORD_E);  prec = ParticleRecorder(ps, params; ks, cl)
 Ht = Float64[];  acc = Float64[];  hb = Float64[];  dH = Float64[];  its = Float64[]
 rng = Xoshiro(1000SEED + 7);  H0 = hmc_measure!(ps, params, cl, eos)[1];  t0 = time()
-for n in 1:NUPD
-    nst = TAUJIT > 0 ? max(1, round(Int, NSTEPS * (1 - TAUJIT * rand(rng)))) : NSTEPS
-    u = hmc_update!(ps, params, cl, eos, tg, rng; nsteps = nst, dt)
+hmc_equilibrate!(ps, params, cl, eos, tg, rng; nupdates = NUPD, nsteps = NSTEPS, dt, taujit = TAUJIT) do n, u
     push!(acc, u.accepted);  push!(hb, u.heatbath);  push!(dH, u.dH);  push!(its, u.iters)
     record!(prec, ps, n * τ; cl);  record!(rec, ps, n * τ, eos)
     push!(Ht, hmc_measure!(ps, params, cl, eos)[1] / H0 - 1)
@@ -54,7 +47,7 @@ for n in 1:NUPD
                 n, sum(acc) / n, sum(hb) / n, sum(abs, dH) / n, sum(its) / n, prec.psi6[end], prec.psi6loc[end], Ht[end], time() - t0)
 end
 mkpath(OUTDIR)
-meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, srel0 = SREL0, s_a = GAMMA * SREL0 * params.vol, T0 = start.T, Trel0 = TREL0, bath = string(BATH), eos_meta(params, eos)..., boost = BOOST,
+meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, srel0 = SREL0, s_a = GAMMA * SREL0 * params.vol, T0 = start.T, Trel0 = TREL0, bath = "nominal", eos_meta(params, eos)..., boost = BOOST,
         sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt, tau = τ, acceptance = sum(acc) / NUPD,
         heatbath = sum(hb) / NUPD, seed = SEED)
 write_equilibrium_h5(joinpath(OUTDIR, "equilibrium_$(TAG)_r$(SEED).h5"), meta, rec, Ht, zeros(length(Ht)); prec,

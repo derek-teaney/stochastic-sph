@@ -5,10 +5,11 @@
 #      measure; exp[S_a − β⁰e + β·m] until the Einstein measure was removed, docs/focus_plan.tex Q2),
 #      at rest and moving, at small and large entropy per particle; the most probable
 #      state is stationary.
-#   B. A lattice with exact_totals = true: totals E, M exact; T and v recovered; spread over
-#      particles = the exact single-particle covariance.
-#   E. Canonical: over many configurations the totals (E, P) fluctuate about the target
+#   B. A lattice at the target state (target_state) with exact_totals = true: totals E, M exact; the averages at the target's
+#      β^μ equal the totals of the lattice to O(1/s_a); spread over particles = the exact single-particle covariance.
+#   E. Canonical: over many configurations the totals (E, P) fluctuate about their averages at the target's β^μ
 #      with the covariance N·C_a (the global susceptibility).
+# (Until docs/focus_plan.tex Q9 the β^μ were solved from the totals, beta_from_averages, and D compared the thermal start.)
 #   C. Consistency with the SPH representation after re-smoothing (reported).
 #   D. A short coupled run from this start (reported).
 #
@@ -75,17 +76,15 @@ end
 
 # ── B. A lattice ─────────────────────────────────────────────────────────────
 println("\nB. Lattice, h/a = 2, box 0.6")
-# a uniform lattice moving along x: setup_ic takes the momentum density M(x, y), here
-# w γ² v with w of the state at rest (the speed comes out close to v); vbg is the speed
-# of the uniform state before the draw
+# a uniform lattice at the target state s_rel,0 = S0 moving along x (src/measure.jl target_state): S = γ S0, M = w0 γ² v;
+# vbg is the speed of the uniform state before the draw
 function lattice(v; S0 = 1e6, seed = 1, exact_totals = true)
-    _, p0, _, _ = setup_ic(0.05, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)
-    Mx = (p0[1].e + p0[1].p) * v / (1 - v^2)
-    params, ps, cl, _ = setup_ic(0.05, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(Mx, 0.0); L = 0.6, lattice = :hex)
+    tgt = target_state(S0, v, eos)
+    params, ps, cl, _ = setup_ic(0.05, 2.0, eos, (x, y) -> tgt.S, (x, y) -> tgt.M0; L = 0.6, lattice = :hex)
     thermalize!(ps, params, cl, eos)
     vbg = ps[1].v_over_S * ps[1].S_smooth
     E0 = sum(particle_energy(p, eos) for p in ps);  M0 = sum(p.m for p in ps)
-    r = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(seed), exact_totals)
+    r = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(seed), exact_totals, bath = tgt.bath)
     return params, ps, cl, r, E0, M0, vbg
 end
 for v in (0.0, 0.3)
@@ -96,8 +95,12 @@ for v in (0.0, 0.3)
     check(norm(sum(m) - M0) < 1e-10 * norm(sum(abs.(p.m) for p in ps)), "Σ m_a = M exactly")
     avg = sum(particle_moments(V_, r.β0, r.β, eos).mean for V_ in r.V)
     @printf("    background speed %.6f;  v = β/β⁰ of the most probable state %.6f (differs at O(1/s_a))\n", vbg[1], r.v[1])
-    check(abs(avg[1] / E0 - 1) < 1e-10 && norm(SVector(avg[2], avg[3]) - M0) < 1e-10 * E0,
-          "the averages at β reproduce the totals: Σ⟨e_a⟩ = E, Σ⟨m_a⟩ = M")
+    sa = ps[1].s
+    @printf("    averages at the target's β / totals − 1: E %+.2e, M_x %+.2e (1/s_a = %.1e)\n", avg[1] / E0 - 1,
+            v == 0 ? avg[2] / E0 : avg[2] / M0[1] - 1, 1 / sa)
+    # (the canonical mean lies above the most probable state, the lattice, by a few T per particle: about 8/s_a in E here)
+    check(abs(avg[1] / E0 - 1) < 20 / sa && norm(SVector(avg[2], avg[3]) - M0) < 20 / sa * norm(SVector(E0, M0[1])),
+          "the averages at the target's β reproduce the totals of the lattice to O(1/s_a)")
     check(r.acc > 0.4, "acceptance > 0.4 (30 independence steps: unmixed chains ~ 0.6^30)")
     # spread over particles against the single-particle covariance
     C = particle_moments(r.V[1], r.β0, r.β, eos).cov            # exact single-particle covariance
@@ -111,12 +114,11 @@ end
 # ── E. Canonical: fluctuations of the totals ─────────────────────────────────
 println("\nE. Canonical ensemble: totals over many configurations (lattice volumes, N = 672)")
 for (S0, v) in ((1e6, 0.0), (1e6, 0.3), (1e5, 0.0))
-    _, p0, _, _ = setup_ic(0.05, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)
-    Mx = (p0[1].e + p0[1].p) * v / (1 - v^2)
-    params, ps, cl, _ = setup_ic(0.05, 2.0, eos, (x, y) -> S0, (x, y) -> SVector(Mx, 0.0); L = 0.6, lattice = :hex)
-    V = [p.s / p.S_smooth for p in ps];  N = length(V)
-    E = sum(particle_energy(p, eos) for p in ps);  M = sum(p.m for p in ps)
-    β0, β, mom = beta_from_averages(V, E, M, eos)
+    tgt = target_state(S0, v, eos)
+    params, ps, cl, _ = setup_ic(0.05, 2.0, eos, (x, y) -> tgt.S, (x, y) -> tgt.M0; L = 0.6, lattice = :hex)
+    p0 = ps;  V = [p.s / p.S_smooth for p in ps];  N = length(V)
+    β0, β = tgt.β0, tgt.β;  mom = moments_table(V, β0, β, eos)
+    avgs = sum(mom(v_).mean for v_ in V);  E = avgs[1];  M = SVector(avgs[2], avgs[3])    # the averages at the target's β^μ
     K = 3000;  rng = Xoshiro(21)
     tot = [sum(draw_configuration(V, β0, β, mom, eos, rng)[1]) for _ in 1:K]
     μ = mean(tot);  Ct = sum((t - μ) * (t - μ)' for t in tot) / (K - 1)
@@ -134,7 +136,7 @@ for (S0, v) in ((1e6, 0.0), (1e6, 0.3), (1e5, 0.0))
         @printf("      thermodynamics (Gaussian): Var E/(V_tot T² c_v) = %.3f,  Var P_x/(V_tot w T) = %.3f\n",
                 Ct[1, 1] / (Vt * T^2 * 4 * st.ε / T), Ct[2, 2] / (Vt * w * T))
     end
-    check(all(abs.(μ - SVector(E, M[1], M[2])) ./ (sd ./ sqrt(K)) .< 4.5), "average totals = (E, M) within 4.5σ")
+    check(all(abs.(μ - SVector(E, M[1], M[2])) ./ (sd ./ sqrt(K)) .< 4.5), "average totals = Σ_a ⟨(e_a, m_a)⟩ within 4.5σ")
     check(all(abs.(diag(Ct) ./ diag(Cpred) .- 1) .< 4.5 * sqrt(2 / K)), "Cov(totals) = N C_a (global susceptibility)")
     check(abs(Ct[1, 2] / sqrt(Ct[1, 1] * Ct[2, 2]) - Cpred[1, 2] / sqrt(Cpred[1, 1] * Cpred[2, 2])) < 4.5 / sqrt(K), "E–P_x correlation as predicted")
 end
@@ -152,14 +154,13 @@ end
 
 # ── D. A short coupled run from this start ───────────────────────────────────
 println("\nD. Coupled run (leapfrog + stochastic step), t = 3: particle-energy variance over time")
-for start in (:thermal_init, :equilibrium_init)
+for start in (:equilibrium_init,)
     params, ps, cl, _ = setup_ic(0.05, 2.0, eos, (x, y) -> 1e6, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex)
     thermalize!(ps, params, cl, eos)
-    E0 = sum(particle_energy(p, eos) for p in ps)
-    r = equilibrium_init!(deepcopy(ps), params, deepcopy(cl), eos; rng = Xoshiro(9))   # for the reference variance
+    E0 = sum(particle_energy(p, eos) for p in ps);  bath = target_state(1e6, 0.0, eos).bath
+    r = equilibrium_init!(deepcopy(ps), params, deepcopy(cl), eos; rng = Xoshiro(9), bath)   # for the reference variance
     vref = var(r.e)
-    start === :thermal_init ? thermal_init!(ps, params, cl, eos; rng = Xoshiro(3)) :
-                              equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(3), exact_totals = true)
+    equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(3), exact_totals = true, bath)
     N = params.N;  rngs = make_phys_rng(N, 4);  rng = Xoshiro(5);  dotm = zeros(SVector{2,Float64}, N)
     dt = 0.5 * compute_dt(ps, params, eos; mode = :viscous);  nsteps = ceil(Int, 3.0 / dt)
     out = String[]

@@ -1,5 +1,5 @@
 # step.jl — fixed-seed regression (test/run.sh regress): the full coupled
-# step (thermal start, leapfrog + stochastic step, gradient-corrected map), on a small box.
+# step (equilibrium start, leapfrog + stochastic step), on a small box.
 # Saves or compares the final particle states.  test/run.sh runs this file on both sides (copied
 # into the reference worktree, with the reference's library), so it uses only what both have.
 # The λ = ∞ case was removed with the deterministic residual (docs/focus_plan.tex, Q1).
@@ -21,7 +21,8 @@ function run_case(; L = 0.6, nsteps = 12, cache = get(ENV, "SR_NOCACHE", "0") ==
     eos = conformal_eos(default_phys_dim(); η_by_s = 0.2)
     params, ps, cl, eos = setup_ic(0.05, 2.0, eos, (x, y) -> 1e5, (x, y) -> SVector(0.0, 0.0); L, lattice=:hex)
     N = params.N;  rngs = make_phys_rng(N, 11);  rng = Xoshiro(12);  dotm = zeros(SVector{2,Float64}, N)
-    thermal_init!(ps, params, cl, eos; rng = Xoshiro(13))
+    # the equilibrium draw at the requested state, totals exact (the thermal start was removed, docs/focus_plan.tex Q9)
+    equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(13), exact_totals = true, bath = (1 / trel_of_srel(eos, 1e5), SVector(0.0, 0.0)))
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     reset_guards!()
     acc = Float64[]

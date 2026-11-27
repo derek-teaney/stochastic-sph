@@ -124,7 +124,7 @@ for c2 in (0.5, 0.25)
     params, ps, cl, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 54.0 / (sqrt(3) / 2 * (0.05 / 2)^2), (x, y) -> SVector(0.0, 0.0);
                                              L = 0.3, lattice = :hex, seed = 4))
     SPLIT_VBAR[] = NaN;  check_split(params)                       # V̄ = L²/N, as a run
-    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1)))
+    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1), bath = target_state(54.0 / (sqrt(3) / 2 * (0.05 / 2)^2), 0.0, eos).bath))
     Hnow() = hmc_measure!(ps, params, cl, eos)[1]
     dt0 = 0.5 * compute_dt(ps, params, eos; mode = :ideal)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]

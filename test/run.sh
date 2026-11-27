@@ -85,11 +85,11 @@ if [ "$MODE" = load ] || [ "$MODE" = all ]; then
 fi
 
 if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
-    # The regression is of the tree level and the start of before (since 2026-11-23 the defaults are SPH_RENORM=split and
-    # SR_BATH=nominal): both sides run with SPH_RENORM=0 SR_BATH=totals, so that the default path of <ref> must be reproduced
-    # bit-identically; the equilibrium and stability drivers run at the defaults as well (focus_plan.tex, Q0).
-    # The renormalized runs are also tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit run above.
-    export SPH_RENORM=0 SR_BATH=totals
+    # The regression is of the tree level (both sides run with SPH_RENORM=0); the equilibrium and stability drivers run at the
+    # default renormalization (split) as well (focus_plan.tex, Q0).  SR_BATH=totals was exported here until focus_plan.tex Q9,
+    # which removed it.  The renormalized runs are also tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit
+    # run above.
+    export SPH_RENORM=0
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"
     # step.jl: this version's script on both sides (with each side's library), so that it exercises only what both have
@@ -105,24 +105,32 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
         done
         record "step.jl, $H" regress $ok $(( $(date +%s) - t0 ))
     done
-    # the equilibrium driver at the tree level (the environment above) and at the defaults (split, the nominal bath, the HMC start:
-    # what production runs use; "env -u" drops the two settings for these runs only)
+    # the equilibrium driver at the tree level (the environment above) and at the default renormalization ("env -u" drops it), for
+    # the starts (SR_START, focus_plan.tex Q9) hot and cold, and hmc when <ref> has it.  A <ref> before Q9 names the same starts
+    # SR_POSITIONS=lattice SR_START=eq (hot) and SR_POSITIONS=lattice SR_START=cold (cold); its hmc start drew again after hybrid
+    # Monte Carlo and had another proposal, so it is not compared.
+    oldref=false;  grep -q 'SR_POSITIONS' "$(drv "$W")" && oldref=true
+    starts="hot cold";  $oldref || starts="hot cold hmc"
     for cfg in tree default; do
-        u="";  [ $cfg = default ] && u="-u SPH_RENORM -u SR_BATH"
-        for c in rest boost; do
-            t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
-            for side in ref here; do
-                d=$R; [ $side = ref ] && d=$W
-                ( cd "$d" && env $u SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$cfg/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_${cfg}_$c.log" 2>&1 ) &
-            done; wait
-            ok=fail
-            julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$cfg/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$cfg/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_${cfg}_$c.log" 2>&1 && ok=pass
-            record "equilibrium driver, $cfg, $c" regress $ok $(( $(date +%s) - t0 ))
+        u="";  [ $cfg = default ] && u="-u SPH_RENORM"
+        for sta in $starts; do
+            here_env="SR_START=$sta";  ref_env="$here_env"
+            $oldref && { [ $sta = hot ] && ref_env="SR_POSITIONS=lattice SR_START=eq" || ref_env="SR_POSITIONS=lattice SR_START=cold"; }
+            for c in rest boost; do
+                t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
+                for side in ref here; do
+                    d=$R;  e=$here_env;  [ $side = ref ] && { d=$W;  e=$ref_env; }
+                    ( cd "$d" && env $u $e SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$cfg/$sta/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_${cfg}_${sta}_$c.log" 2>&1 ) &
+                done; wait
+                ok=fail
+                julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$cfg/$sta/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$cfg/$sta/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_${cfg}_${sta}_$c.log" 2>&1 && ok=pass
+                record "equilibrium driver, $cfg, $sta, $c" regress $ok $(( $(date +%s) - t0 ))
+            done
         done
     done
     sdrv() { [ -f "$1/examples/stability.jl" ] && echo "$1/examples/stability.jl" || echo "$1/examples/stochrep_hamiltonian.jl"; }
     for H in energy default; do                        # default: the energy Hamiltonian at the default renormalization (split)
-        t0=$(date +%s);  u="";  [ $H = default ] && u="-u SPH_RENORM -u SR_BATH"
+        t0=$(date +%s);  u="";  [ $H = default ] && u="-u SPH_RENORM"
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
             ( cd "$d" && env $u SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
