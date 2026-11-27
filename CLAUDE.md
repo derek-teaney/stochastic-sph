@@ -25,6 +25,10 @@ the `.tex`).  Owner: D. Teaney.
   To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
   `SPH_DISSIPATION=particle` (before 2026-11-14).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
+- **Planned: focusing the code** (decided 2026-11-27, not started): `docs/focus_plan.tex` is the staged plan (Q0–Q15: tag
+  `pre-prune`; keep only the n-scheme, `:moment`, the generalized leapfrog and the Liouville measure; remove the 1D path and the grid
+  step; strict settings; the comments; the restructure of `examples/equilibrium.jl`).  `docs/code_review_notes.md` is the discussion
+  behind it.
 - **The renormalization program** (since 2026-11-26, branch `renorm-main`, to be merged into `main`): three Hamiltonians, each with
   the positional counterterm ω (`SPH_POSITIONAL=1`, the default; `src/positional.jl`; Wendland C2 only, other kernels need
   `SPH_POSITIONAL=0`):

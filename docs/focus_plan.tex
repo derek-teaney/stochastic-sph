@@ -1,0 +1,312 @@
+\documentclass[11pt,aps,preprint,nofootinbib,superscriptaddress,tightenlines]{revtex4-2}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\let\lambdabar\relax   % revtex defines it; newpxmath does too
+\usepackage{newpxtext,newpxmath}
+\usepackage{bm}
+\usepackage[final]{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{dsfont}
+\newcommand{\one}{\mathds{1}}
+\definecolor{darkblue}{RGB}{20,60,140}
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue]{hyperref}
+
+\def\st{\begin{equation}}
+\def\stp{\end{equation}}
+\def\Eq#1{eq.~(\ref{#1})}
+\def\Sect#1{Sect.~\ref{#1}}
+\def\Tab#1{Table~\ref{#1}}
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}{\par\bigskip\oldparagraph}
+\newcommand{\ask}{\textbf{Ask}}
+
+\begin{document}
+\sloppy
+
+\title{Focusing the code: plan for the pruning and the restructure}
+\author{D.~Teaney}
+\affiliation{Department of Physics and Astronomy, Stony Brook University,
+Stony Brook, New York 11794, USA}
+\date{\today}
+
+\begin{abstract}
+The code has accumulated options: every change of default left the old path reachable through a setting.  This plan reduces it to its
+mission, deterministic runs in two dimensions and stochastic runs in two dimensions, with one choice for each part of the method: the
+number volume with the energy Hamiltonian, the generalized leapfrog, the inverse-moment viscous step, and the Liouville measure.  It then
+makes the inputs strict, rewrites the comments, and restructures the main driver.  Almost every stage must leave the numbers bit-identical; the
+few that change them on purpose are separate stages with their own checks.  The plan is written for the session at NERSC.  The decisions
+behind it were taken in a review with the owner on 2026-11-27; the discussion is in \nolinkurl{docs/code_review_notes.md}.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+%=============================================================================
+\section{What stays}
+\label{sec:stays}
+
+After the work the code does three kinds of run, all with periodic boxes in two dimensions:
+\begin{itemize}
+\item deterministic runs (the ideal step and the deterministic viscous step), with the physical dimension $d=2$ by default or $d=3$ (a fluid
+  independent of $z$, simulated in the plane);
+\item stochastic runs, $d=2$;
+\item hybrid Monte Carlo, for the start of the stochastic runs and for equilibrium measurements.
+\end{itemize}
+Each part of the method has one form:
+
+\begin{center}
+\small
+\begin{tabular}{p{0.16\textwidth}p{0.36\textwidth}p{0.38\textwidth}}
+\toprule
+part & stays & goes \\
+\midrule
+Hamiltonian, volume & energy Hamiltonian, $V_a=1/n_a$ (the n-scheme) & smoothed Hamiltonian, entropy volume \\
+ideal step & generalized leapfrog & drift--kick--drift leapfrog, the grid step \\
+viscous step & \texttt{:moment} & \texttt{:particle}, \texttt{:common}, \texttt{:bond}, \texttt{:two\_level} \\
+measure & Liouville & Einstein \\
+representation & the particle variables only & the change of representation, the gradient back map \\
+stochastic step & single vote, $\lambda=1$; Hastings on or off & votes \texttt{:bonds}, \texttt{:even}; $\lambda=\infty$; \texttt{residual}, \texttt{shift} \\
+dimension & simulation in 2D; $d=2$ or 3 & the 1D path \\
+start & \texttt{cold}, \texttt{hot}, \texttt{hmc} & \texttt{thermal}, \texttt{SR\_BATH=totals}, Poisson positions \\
+renormalization & tree level, split, S-scheme & (unchanged here) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Kept although little used: the kernels Wendland C4 and C6 (undeveloped; to be brought alive after this work, \Sect{sec:after}), the jitter of
+the lattice (with its own random numbers, Q10), the frozen lattice of the stochastic step, the flag \texttt{SPH\_HASTINGS} (and with it the
+coefficients stored in \texttt{Star}), the generic equation of state behind \texttt{AbstractEOS}, \texttt{energy\_pressure}, the test switches
+\texttt{SR\_NOVISC}, \texttt{SR\_NOHAM}, \texttt{SR\_DTFAC}, \texttt{SR\_RECORD\_E}, \texttt{SR\_CS2}, \texttt{SR\_ZETAS}, and
+\nolinkurl{examples/legacy/}.  The \texttt{Particle} struct is not changed in this plan.
+
+%=============================================================================
+\section{For the NERSC session}
+\label{sec:nersc}
+
+The rules of \nolinkurl{CLAUDE.md} apply.  In addition:
+\begin{enumerate}
+\item \emph{Read first.}  \nolinkurl{docs/code_review_notes.md} (the review, with file and line references), \nolinkurl{docs/codeplan.tex} (the
+  test suite and the run record), and \nolinkurl{nersc/LOG.md}.
+\item \emph{Branch.}  Work on a new branch \texttt{focus} from \texttt{main}, in a new worktree.  One commit per stage, pushed.  \texttt{main} is
+  merged only on the owner's word.
+\item \emph{The gate.}  Every stage that is not marked otherwise passes
+  \st
+  \texttt{test/run.sh all -r pre-prune}
+  \stp
+  with the regression bit-identical.  A difference in the last bits is not accepted silently: find whether the arithmetic changed or only the
+  order of operations (for instance the compiler's fusion of multiply--add, which depends on the surrounding code; several functions are
+  \texttt{@noinline} for this reason), and report it.
+\item \emph{Removed settings stop.}  Every setting removed in a stage goes into \texttt{RETIRED\_SETTINGS} (\nolinkurl{src/settings.jl}) in the
+  same stage, with a message that names the tag \texttt{pre-prune} for reruns of old campaign lines.  Removed values of a setting that stays (for
+  instance \texttt{SPH\_RENORM=1}) stop in the same way.
+\item \emph{Scripts and tests.}  In each stage, a script in \nolinkurl{examples/} or a test that only exercises a removed path is deleted; one that
+  also does something that stays is changed to the path that stays.  Campaign files are not edited: they are the record of what was run.
+\item \emph{Running campaigns.}  The stages change the checkpoint format (Q14 at the latest).  Before the branch is merged, check that no
+  campaign is still running or may need to resume from a checkpoint of the old code.
+\item \emph{The S-scheme work} touches the same files.  \ask{} the owner before starting whether it continues in parallel; if it does, merge
+  \texttt{main} into \texttt{focus} at each stage boundary rather than in the middle of a stage.
+\item \emph{Budget.}  Tests and smoke runs in \texttt{-q debug} or an interactive node.  The only campaign of this plan is the check of Q9;
+  \ask{} with its estimate.
+\item \emph{Check-ins.}  Stop at the points marked \ask{} and whenever a gate fails.  Record each stage in \Sect{sec:results} (what was removed,
+  the commit, the gate's result).
+\end{enumerate}
+
+%=============================================================================
+\section{The stages}
+\label{sec:stages}
+
+The order removes the leaves first: the options of the stochastic step, then the paths that only the removed options use, then the larger
+alternatives.  Stages Q1--Q8 are bit-identical against \texttt{pre-prune}; Q9 and Q10 change numbers on purpose; Q11 changes behavior only where
+a step fails; Q12--Q14 are bit-identical against the end of Q11.
+
+\subsection*{Q0. The baseline}
+\begin{itemize}
+\item Tag the head of \texttt{main} as \texttt{pre-prune} and push the tag.
+\item \texttt{test/run.sh all -r main} at the tag, on an interactive node.  Record in \Sect{sec:results} which checks pass and which known
+  differences remain (the regression's comment lists them).
+\item The regression of \nolinkurl{test/run.sh} loops over \texttt{SPH\_HAMILTONIAN} (energy, smoothed) and runs the equilibrium driver with
+  \texttt{SPH\_RENORM=0 SR\_BATH=totals}.  Add the defaults (split, the nominal bath, the HMC start) next to the tree level, so that the gate
+  covers what production runs use.  The \texttt{smoothed} entries are removed in Q7 and the \texttt{totals} ones in Q9.
+\end{itemize}
+\ask{} the owner with the list of known differences before Q1.
+
+\subsection*{Q1. The options of the stochastic step}
+Remove, in \nolinkurl{src/stochastic.jl}:
+\begin{itemize}
+\item $\lambda$ and its path: \texttt{resid\_deterministic!}, \texttt{moment\_fit}, \texttt{GUARD\_SUBDIV}, the $\lambda$ argument of the
+  proposals and votes, \texttt{SR\_LAMBDA} in the drivers.  The residual move always has $\lambda=1$.
+\item The votes \texttt{:bonds} and \texttt{:even}: the shares $\sigma_{ab}$ and the even split in \texttt{ask\_star!},
+  \texttt{GUARD\_EVENSPLIT}, the \texttt{vote} argument and field.  The single vote stays.  Note the commit \texttt{pre-prune} in
+  \nolinkurl{docs/stochastic.tex} where the bond vote is described: the owner may come back to it.
+\item The fields \texttt{residual} and \texttt{shift} of \texttt{StochOptions} (always true).
+\end{itemize}
+Stays: \texttt{SPH\_HASTINGS} and the path without Hastings (single vote), the frozen lattice.  Users to change:
+\nolinkurl{examples/stochastic_moving.jl}, \nolinkurl{test/teststochastic_guard.jl}.
+
+\subsection*{Q2. The measure}
+Liouville only.  Remove the field \texttt{measure} of \texttt{SimParams}, \texttt{default\_measure}, \texttt{SPH\_MEASURE}, the argument
+\texttt{liouville} of \texttt{vote\_entropy}, the votes and the sweeps, the Einstein branches (\texttt{vote\_entropy} returning $S_a$ alone, the
+$\Sigma\ln T_a$ term of the acceptance of \nolinkurl{src/hmc.jl}, the end-of-step branch of \texttt{stochastic\_step!}), and the checks ``needs
+the Liouville measure'' in \nolinkurl{src/renorm_split.jl} and \nolinkurl{src/sscheme.jl}.
+
+\emph{Care.}  \texttt{HMCTarget} builds its Gaussian proposal with \texttt{particle\_moments(..., liouville = false)}, the Einstein weight.
+Changing it changes the proposals and hence the numbers of every HMC start.  In this stage keep that weight for the proposal (an internal
+function, named for what it is), so the stage stays bit-identical; the proposal moves to the Liouville weight in Q9.  The keyword defaults
+\texttt{liouville = false} of \nolinkurl{src/measure.jl} go.
+
+\subsection*{Q3. The change of representation}
+Remove the gradient back map (\texttt{gradient\_freeze}, \texttt{gradient\_backmap!}, the field \texttt{gradient} of \texttt{StochOptions},
+\texttt{GUARD\_BACKMAP}), the gradient-corrected conversion map of \nolinkurl{src/pointwise.jl} (\texttt{kernel\_star!}, \texttt{kernel\_star},
+\texttt{star\_fit}, \texttt{inverse\_susceptibility}, \texttt{gradient\_energy}) and \texttt{pointwise\_state}, \texttt{pointwise\_beta!} if
+nothing else uses them, and the deterministic viscous steps that belong to the change of representation in \nolinkurl{src/viscous.jl}
+(\texttt{viscous\_step\_first!}, \texttt{viscous\_step\_exact!}, \texttt{viscous\_step\_grad!}: check against \texttt{viscous\_step\_energy!},
+which stays).  Delete \nolinkurl{test/testchangerep.jl}.  The two particle maps of \nolinkurl{src/pointwise.jl} stay.
+
+\subsection*{Q4. The one-dimensional path}
+Remove \texttt{WendlandC2\_1D}, the branch \texttt{sim\_dim == 1} of \texttt{SimParams} and its keyword, the function \texttt{sim\_dim} (or make it
+the constant 2), the 1D cases of the \texttt{default\_*} functions and of \texttt{check\_stochastic\_dims}, \texttt{make\_1d\_particles!} and its
+branch in \texttt{setup\_ic}, \texttt{bond\_weights\_1d} and the \texttt{oneD} branch of the bond dissipation, the 1D constants of
+\texttt{viscous\_rate\_bound}, the one-row case of \texttt{neighbor\_range}.  Delete \nolinkurl{examples/testsound_viscous_1d.jl},
+\nolinkurl{examples/testgaussian_1d.jl}, the 1D branch of \nolinkurl{examples/stochastic_thermalize.jl}, the 1D part of
+\nolinkurl{test/testdims.jl}.  The field \texttt{phys\_dim} stays (default 2; $d=3$ for deterministic runs).
+
+\subsection*{Q5. The viscous step}
+\texttt{:moment} only.  Remove \texttt{:particle}, \texttt{:common}, \texttt{:bond} (and the name \texttt{:changerep}), the field
+\texttt{dissipation} and \texttt{default\_dissipation}, \texttt{SPH\_DISSIPATION}, \texttt{bond\_weights\_comoving} and the $\Lambda_a$
+correction if \texttt{:moment} does not use them, \texttt{is\_common}, \texttt{lab\_weights}, the residual factor's \texttt{:common} branch, and
+\texttt{bond\_h} (field, keyword, \texttt{bond\_weight}); \texttt{viscous\_rate\_bound} then uses $h$.  \texttt{:moment} currently requires the
+energy Hamiltonian: after Q7 that check goes too.  Delete \nolinkurl{test/testcommonkernel.jl} or move what it checks of \texttt{:moment} into
+\nolinkurl{test/testmoment.jl}.  \nolinkurl{test/testmoment.jl} compares \texttt{:moment} with \texttt{:common} (its item 4, reported only): drop
+that item.
+
+\subsection*{Q6. The ideal step}
+The generalized leapfrog only.  Remove the drift--kick--drift body of \texttt{leapfrog\_step!} (which then calls \texttt{generalized\_step!}), the
+grid step (\nolinkurl{src/grid.jl}, \texttt{record\_grid!}, the \texttt{GRID} branches and series of \nolinkurl{examples/equilibrium.jl}, the
+checks ``not with the grid step''), the field \texttt{ideal}, \texttt{default\_ideal}, \texttt{SPH\_IDEAL}.  Delete \nolinkurl{examples/grid_*.jl}
+and \nolinkurl{test/testgridfft.jl}.
+
+\subsection*{Q7. The Hamiltonian and the volume}
+The n-scheme only.  Remove the smoothed Hamiltonian (the bodies of \texttt{smooth\_to\_particles!}, \texttt{update\_velocities!},
+\texttt{hamiltonian\_force!} in \nolinkurl{src/ideal.jl}; each then is its \texttt{*\_energy!} version), the entropy volume (the
+\texttt{number = false} branches), the fields \texttt{hamiltonian} and \texttt{volume}, \texttt{default\_hamiltonian}, \texttt{SPH\_HAMILTONIAN},
+\texttt{SPH\_VOLUME}, and the \texttt{smoothed} loop of the regression.  Delete \nolinkurl{src/legacy/} (the two-level form and the old sweep;
+the tag keeps them) and point to the tag in \nolinkurl{docs/codeplan.tex}.  Keep the round trip $S_{\rm smooth}=s_a n_a$, $V_a=s_a/S_{\rm
+smooth}$: removing it changes the last bits (\Sect{sec:after}).  The \texttt{Particle} struct is not changed.
+
+\subsection*{Q8. The rest}
+Remove \texttt{make\_uniform\_particles} (and the square lattice if nothing else uses it), \texttt{smooth\_to\_grid}, and the Poisson positions
+of the driver (\texttt{SR\_POSITIONS=poisson}; \nolinkurl{test/testmoment.jl} builds its own Poisson stars).  Check \nolinkurl{test/run.sh load}:
+every script that remains still loads.
+
+\subsection*{Q9. The start of a run (numbers change)}
+\label{sec:q9}
+
+\paragraph{The target state.}  One function,
+\begin{multline}
+\texttt{target\_state}(s_{\rm rel,0}, v, \text{eos}) \to \big(T_{\rm rel,0},\, v,\, \gamma,\, e_0,\, w_0,\, S=\gamma s_{\rm rel,0},\\
+M_0=w_0\gamma^2 v,\, \beta^0=\gamma/T_{\rm rel,0},\, \bm\beta=\gamma\bm v/T_{\rm rel,0}\big),
+\end{multline}
+from the equation of state alone.  The set-up, the draw, hybrid Monte Carlo, the normalization of KE and the record all read it.
+\texttt{SR\_BATH} goes, with \texttt{beta\_from\_averages} and the set-up-particle values of $w$, $T$ in the driver; \texttt{moments\_table}
+stays.
+
+\paragraph{One flag for the start.}  \texttt{SR\_START} $\in\{$\texttt{cold}, \texttt{hot}, \texttt{hmc}$\}$, default \texttt{hmc}, replaces
+\texttt{SR\_START}, \texttt{SR\_POSITIONS} and \texttt{SR\_BATH}:
+\begin{itemize}
+\item \texttt{cold}: the lattice as set up, no fluctuations; the run thermalizes.  For demonstrations.
+\item \texttt{hot}: the lattice, $(e_a,\bm m_a)$ drawn at the target $\beta^\mu$, then shifted so that the total energy and momentum equal those of
+  the cold start.  Cold and hot are then on the same shell and must reach the same equilibrium.  For demonstrations.
+\item \texttt{hmc}: the draw, then hybrid Monte Carlo at the target $\beta^\mu$ (positions, and $(e_a,\bm m_a)$ through the heat bath).  No
+  redraw after it, no shift.  For production.  A debugging flag \texttt{SR\_HMC\_SHIFT\_TOTALS} (Bool, default false) shifts the final sample
+  to the cold totals.  The HMC settings (\texttt{SR\_HMC\_*}) are read only here.
+\end{itemize}
+The cold totals $(E_{\rm cold},\bm P_{\rm cold})=(\sum_a e_a,\sum_a \bm m_a)$ of the lattice are computed once, right after the set-up and before
+any draw, and kept in the run state and the record.  \texttt{SR\_START=thermal} (\texttt{thermal\_init!}) and \texttt{SR\_START=eq} stop with a
+message naming the new values.  The extra redraw after HMC (today \texttt{initial\_state!} with \texttt{:eq}) goes.  The proposal of the HMC heat
+bath moves to the Liouville weight (Q2).
+
+\paragraph{One loop of hybrid Monte Carlo.}  The loop of HMC updates with random trajectory lengths is written in five drivers
+(\nolinkurl{examples/equilibrium.jl}, \nolinkurl{eos_measure.jl}, \nolinkurl{hmc_positions.jl}, \nolinkurl{moment_fluctuations.jl},
+\nolinkurl{volume_fluctuations.jl}).  Move it into \nolinkurl{src/hmc.jl} as \texttt{hmc\_equilibrate!} and use it everywhere.
+
+\paragraph{Checks.}  (i) \texttt{hot} is bit-identical to \texttt{pre-prune} with \texttt{SR\_POSITIONS=lattice SR\_START=eq}.  (ii)
+\texttt{cold} is bit-identical to \texttt{pre-prune} with \texttt{SR\_START=cold SR\_POSITIONS=lattice}.  (iii) \texttt{hmc} is a different,
+statistically equivalent start: compare with \texttt{pre-prune} at $s_a=54$ and 16, at rest and $v_0=0.8$, the equal-time quantities (KE/eq,
+the static spectra of $M$ and $S$, $\langle H\rangle$) and the transverse and longitudinal correlators.  \ask{} with the estimate before
+submitting.  (iv) \texttt{SR\_HMC\_SHIFT\_TOTALS=true} reproduces the cold totals to rounding.
+
+\subsection*{Q10. The random numbers of the jitter (numbers change)}
+The jitter of \texttt{make\_hex\_particles!} uses the global \texttt{RNG} of \nolinkurl{src/sph.jl}.  Give it its own generator,
+\texttt{Xoshiro(params.seed)}, and remove the global \texttt{RNG} (\nolinkurl{test/testneighbor.jl} uses it once).  Jittered positions change; runs
+without jitter are bit-identical.  The tests that use jitter (\nolinkurl{test/testmoment.jl}, \nolinkurl{test/testhastings.jl},
+\nolinkurl{test/testdissipative.jl}) must pass with the new positions.
+
+\subsection*{Q11. A failed step of the leapfrog}
+\texttt{generalized\_leapfrog!} returns $-1$ when it reaches a state without a Hamiltonian; hybrid Monte Carlo rejects the trajectory, but
+\texttt{generalized\_step!} ignores the return, so a run continues from that state.  \ask{} the owner what a run should do (stop with a
+diagnostic, or retry the step with a smaller $\Delta t$, or something else).  Numbers change only where a step fails.
+
+\subsection*{Q12. Strict inputs}
+\begin{itemize}
+\item \emph{A table of the settings} in \nolinkurl{src/settings.jl}: every valid name, its default and a one-line meaning.  Each
+  \texttt{setting(...)} call takes its default from the table.  Defaults that depend on other choices are written as such in the table.
+\item \emph{Unknown names stop.}  At load, any \texttt{SR\_*} or \texttt{SPH\_*} in the environment that is not in the table stops the run, with
+  the nearest valid name in the message.  Retired names keep their own message.
+\item \emph{Bad values stop.}  Bool: \texttt{1}/\texttt{true}/\texttt{yes} or \texttt{0}/\texttt{false}/\texttt{no} (any case), anything else
+  stops.  Symbol: checked against its allowed values.  Numbers: as now.
+\item \emph{Unused names are recorded.}  Just before the main loop, the names set in the environment but never read go into an
+  \texttt{[unused]} table of the run record, with their values.  Nothing is printed and the run does not stop.
+\item \emph{A listing.}  \texttt{julia src/settings.jl --list} prints the table.
+\item Optional: \nolinkurl{nersc/check_campaign.jl}, which checks the names and values of every line of a campaign file before \texttt{sbatch}.
+\end{itemize}
+Numbers bit-identical; the record gains \texttt{[unused]}.
+
+\subsection*{Q13. The comments}
+Rewrite the comments of \nolinkurl{src/} and of the drivers that stay.  Short lines; one point per paragraph; a blank comment line (\texttt{\#}
+alone) between logically distinct points.  The dated history of options that no longer exist goes; where a choice was made for a reason that
+still matters (for instance \texttt{@noinline} for bit-identity), the reason stays.  Gate: the regression is bit-identical, and the diff of the
+stage with comments stripped is empty.
+
+\subsection*{Q14. The main driver}
+Restructure \nolinkurl{examples/equilibrium.jl}:
+\begin{itemize}
+\item \emph{\texttt{RunConfig}}: every input of a run, read once through the table of Q12, grouped (the physics, the numerics, the start, the
+  output, the test switches), printed at the start and written to the record.  The command-line arguments go into it too.
+\item \emph{\texttt{RunState}}: a declared struct in place of the named tuple \texttt{st} (the system, the random numbers, the time, the
+  references, the recorders and series).  This is what a checkpoint holds.
+\item \emph{The parts}: \texttt{one\_realization} split into the set-up, the start (Q9), the evolution, the recording, and the checkpoint and
+  output.  What other drivers need (the set-up of the fluid at the target state, the start, the Strang loop with a recording callback, the
+  checkpoints) moves into \nolinkurl{src/}, so that \nolinkurl{examples/stability.jl}, \nolinkurl{eos_measure.jl} and the others use the same
+  pieces.
+\item \emph{Compatibility}: checkpoints of the old code do not resume (say so in \nolinkurl{nersc/README.md}).  The keys of the record that
+  \nolinkurl{nersc/collect_runs.jl} and \nolinkurl{examples/boost_analysis.jl} read are kept or those scripts are changed in the same stage.
+  \ask{} the owner with the new layout of the record before committing it.
+\end{itemize}
+Gate: bit-identical data against the end of Q13 for the same settings.
+
+\subsection*{Q15. The documents}
+\nolinkurl{CLAUDE.md}, \nolinkurl{README.md}, \nolinkurl{GETTING_STARTED.md}, the settings table of \nolinkurl{nersc/README.md}, and
+\nolinkurl{docs/codeplan.tex}: describe what stays, and point to \texttt{pre-prune} for what went.  \ask{} the owner to read them, then to merge
+\texttt{focus} into \texttt{main}.
+
+%=============================================================================
+\section{After this plan}
+\label{sec:after}
+
+Not part of the plan, recorded so that they are not lost:
+\begin{itemize}
+\item The kernels C4 and C6: tabulate the positional counterterm for them, so that they run with \texttt{SPH\_POSITIONAL=1}.
+\item The round trip $S_{\rm smooth}=s_a n_a$ and the fields of \texttt{Particle} that the removed paths used (\texttt{M\_smooth} as a smoothed
+  field, \texttt{Teff}, \texttt{F\_over\_S}, \texttt{dotx}, $\Delta s$, $\Delta m$): a later change of the struct, not bit-identical.
+\item The tuning of hybrid Monte Carlo (\texttt{nmh}, \texttt{widen}, the tolerances) into the record.
+\item The seeds: a list of the blocks of \texttt{SR\_SEEDOFFSET} in use, in \nolinkurl{nersc/LOG.md}.
+\end{itemize}
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+
+One entry per stage: what was removed or changed, the commit, the result of the gate, and any decision taken.
+
+\end{document}
