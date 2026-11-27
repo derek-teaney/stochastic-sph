@@ -1234,4 +1234,9 @@ note in `docs/` with the tables and figures.
   round-off residues, 1e-16..1e-12: the stored V in place of s/S_smooth), testcheckpoint (the record of H; trajectory and acceptances
   equal), testrunrecord (the new settings and src files), testlegendre (a path).  All expected.  First complete run of the suite here
   (the debug runs timed out before the unit-output stage).
+- P2 (76badbf) SPH_RENORM=1 removed; P3 (0f10b92) legendre removed (src/renorm.jl, testlegendre, bench_legendre; analysis scripts to
+  examples/legacy/); P4 (648c220) the full form removed; P4b (8262b4a) beta -> b_rho, SPH_SSCHEME_BETA -> SPH_SSCHEME_BRHO (retired with a
+  message; campaign files renamed); P4c (ee9eea0) SPH_POSITIONAL=1 by default (C2 only), campaign lines since 2026-11-23 without omega get
+  SPH_POSITIONAL=0; P5 (64fcc9b) positional_dyn approach figure tagged; P6 CLAUDE.md, nersc/README.md (retired settings, removed values,
+  the new default).  Removed values stop with a message naming 9846a6c, the last commit with them.
 

@@ -25,18 +25,25 @@ the `.tex`).  Owner: D. Teaney.
   To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
   `SPH_DISSIPATION=particle` (before 2026-11-14).
   `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
-- **Current work: the S-scheme** (since 2026-11-25, integration branch `sscheme`, from `split`): the renormalization by
-  state counting, s = S(e, m, V) = S_t − Δ_χ − Δ_ℓ, meant to replace split and legendre.  `docs/sscheme_plan.tex` is the plan
-  (branches, tests, campaigns, the points marked **Ask**); read it first, then `docs/renorm3.tex` (the theory, concise) and
-  `docs/renorm2.tex` (derivations, the order 1/V, the comparison with legendre).  `examples/sscheme_ref.py` is the reference
-  implementation the unit tests take their values from (python3, mpmath).
-  Since 2026-11-26 the form to implement has the term (D/2+1) ln S_t in the measure of the labels, ρ(s) = e^s s^(-β)(1 − β/s) on s > β = D/2+1,
-  and s = S_t − Δ^H in the label: `docs/sscheme_plan.tex`, "Level 1, amended" (items N1–N5), and `docs/renorm3.tex`, "The bounds, …".
+- **The renormalization program** (since 2026-11-26, branch `renorm-main`, to be merged into `main`): three Hamiltonians, each with
+  the positional counterterm ω (`SPH_POSITIONAL=1`, the default; `src/positional.jl`; Wendland C2 only, other kernels need
+  `SPH_POSITIONAL=0`):
+  - `SPH_RENORM=split` (the default; ω in the energy);
+  - `SPH_RENORM=sscheme`, renormalization by state counting (`src/sscheme.jl`; ω in the label), in two forms, `SPH_SSCHEME_FORM`:
+    `measure` (the default: b_ρ ln S_t in the measure of the labels, ρ(s) = e^s s^(−b_ρ)(1 − b_ρ/s) on s > b_ρ, `SPH_SSCHEME_BRHO`,
+    default D/2+1; any c_s²) and `exact` (the exact count of states of the particle as the label, flat measure, `src/sscheme_exact.jl`,
+    c_s² = 1/2 only);
+  - `SPH_RENORM=0`, the tree level.
+  Removed on 2026-11-26 (`docs/sscheme_plan.tex`, sec:prune; last commit with them 9846a6c): `SPH_RENORM=legendre`, `SPH_RENORM=1`
+  (the entropy shift) and `SPH_SSCHEME_FORM=full`; `SPH_SSCHEME_BETA` is renamed `SPH_SSCHEME_BRHO` (b_ρ: β is u^μ/T in the notes).
+  Each stops with a message.  Read `docs/sscheme_plan.tex` (the plan, the results, the decisions), `docs/renorm3.tex` (the theory,
+  concise), `docs/renorm2.tex` (derivations), `docs/split_dynamics.tex` (the dynamical comparisons).  `examples/sscheme_ref.py` is the
+  reference the unit tests take their values from (python3, mpmath); `examples/exact_count.py` makes the table of the exact form.
 - **The renormalization, the start and the inputs** (since 2026-11-23, branch `split`):
   - `SPH_RENORM=split` is the default (Step 5: the label part of the one-loop counterterm in the measure, the rest in H;
-    `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=legendre` is the alternative scheme,
-    `SPH_RENORM=0` the tree level (the default before).  Split supports d = 2, the energy Hamiltonian with the number volume, the
-    Liouville measure, not the grid step; any other scheme stops with a message to set `SPH_RENORM=0`.  Tests of tree-level machinery
+    `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=0` is the tree level (the default
+    before).  Split supports d = 2, the energy Hamiltonian with the number volume, the
+    Liouville measure, not the grid step; any other scheme stops with a message to set `SPH_RENORM=0`.  The S-scheme has the same requirements.  Tests of tree-level machinery
     set `SPH_RENORM=0` themselves; the regression against `main` runs with `SPH_RENORM=0 SR_BATH=totals`.
   - The start (`examples/equilibrium.jl`, `examples/hmc_positions.jl`): HMC and the equilibrium draw at the requested state,
     β⁰ = γ/T_rel,0, β = γv/T_rel,0, T_rel,0 from the EOS at s_rel,0 (`SR_BATH=nominal`; `SR_BATH=totals` = before).
@@ -44,6 +51,8 @@ the `.tex`).  Owner: D. Teaney.
     s_a = S_0/n.  `SR_S0` is retired (a hard stop, `src/settings.jl`); old campaign files keep it as the record.
     `SR_CS2`, `SR_ZETAS` (equilibrium.jl): c_s² and ζ/s (`SR_CS2=1/3 SR_ZETAS=(η/s)/3` = the stochastic step before the dimension fix).
   - To reproduce runs before 2026-11-23: `SPH_RENORM=0 SR_BATH=totals` (and `SR_SREL0` for `SR_S0`).
+  - To reproduce split or S-scheme runs before 2026-11-26: `SPH_POSITIONAL=0` (ω was off by default; the campaign files since
+    2026-11-23 carry it).
 - **The ideal step, the measure and the equilibrium start** (since 2026-11-15, branch `new-defaults`): the defaults
   are the generalized leapfrog (`SPH_IDEAL=generalized`, `src/hmc.jl`), the Liouville measure (`SPH_MEASURE=liouville`,
   S_a − ln T_a in the votes; docs/equilibrium_positions.tex, Appendix A), both in 2D with the energy Hamiltonian, and in
