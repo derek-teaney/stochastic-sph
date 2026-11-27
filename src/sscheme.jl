@@ -1,7 +1,7 @@
 # sscheme.jl — the S-scheme, state counting at one loop (docs/renorm3.tex; docs/sscheme_plan.tex, "Level 1", item B, and "Level 1, amended").
 #
 # The default form (SPH_SSCHEME_FORM=measure) moves β ln S_t of Δ into the measure of the labels: see SSchemeConsts below.  The header
-# describes the full form (SPH_SSCHEME_FORM=full).
+# describes the one-loop label S_t − Δ_χ − Δ_ℓ that the measure form is built on (it was the full form, removed on 2026-11-26).
 #
 # A particle has the label s (flat Liouville measure e^s ds d²m, conserved by the ideal step), the momentum m and the volume V.  Its
 # target state is the temperature T_rel and velocity v that the input equation of state gives to a cell of volume V holding the particle's
@@ -33,7 +33,7 @@ const SS_MAXIT = 30           # Newton steps before the bisection
 const SS_D = 3                # D = d + 1 (d = 2)
 
 # The form of the scheme (sscheme_plan.tex, "Level 1, amended"; renorm3.tex, "The bounds, ..."), SPH_SSCHEME_FORM:
-#   full     s = S_t − Δ_χ − Δ_ℓ, flat Liouville measure e^s ds (renorm3.tex, eq. scheme; the code of item C);
+#   (full    s = S_t − Δ_χ − Δ_ℓ with the flat measure: removed on 2026-11-26, superseded by exact; its one-loop core stays, for measure)
 #   measure  (default) β ln S_t of Δ moved into the measure of the labels: s = S_t − Δ^H, Δ^H = Δ − β ln S_t − const, measure
 #            ρ(s) = e^s s^(−β) (1 − β/s) on s > β (the wall).  For a constant speed of sound
 #              Δ^H = (D/2 + 1 − β) ln(S_t/S̄_t) − 𝒩 ln(s_rel/s̄_rel) + ½ ln(a/q),   𝒩 = 1 − d c_s²,
@@ -45,7 +45,8 @@ const SS_D = 3                # D = d + 1 (d = 2)
 #   entropy density of the targets, V̄ = L²/N, as split sets its V̄.  measure-f (the factor F of eq. schemeF) is reserved.
 #   exact    s = S_1loop + δ(ln S_t, θ), the exact count of states of the particle, flat measure (sscheme_exact.jl; c_s² = 1/2 only).
 const SS_FORM = setting("SPH_SSCHEME_FORM", :measure)
-SS_FORM in (:full, :measure, :exact) || error("SPH_SSCHEME_FORM = $SS_FORM: full, measure or exact (measure-f is reserved, not implemented)")
+SS_FORM in (:measure, :exact) || error("SPH_SSCHEME_FORM = $SS_FORM: measure (the default) or exact.  The full form (flat measure, the one-loop label) " *
+    "was removed on 2026-11-26: the exact form is the full form with the exact count (docs/sscheme_plan.tex, sec:prune; last commit with it 9846a6c)")
 const SS_MEASURE = SS_FORM === :measure
 const SS_BETA = setting("SPH_SSCHEME_BETA", SS_D / 2 + 1)
 const SS_REF = Ref((NaN, NaN))          # (s̄_rel, V̄)
