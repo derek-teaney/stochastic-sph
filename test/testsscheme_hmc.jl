@@ -58,8 +58,8 @@ if get(ENV, "SR_TEST_QUICK", "0") != "1"
             nacc += u.accepted;  nexit += !isfinite(u.dH);  hb += u.heatbath / 20
         end
         smin = minimum(q.s for q in ps);  sc = sscheme_counts()
-        check(nexit == 0 && nacc >= 16, @sprintf("c_s² = %.2f: %d of 20 accepted, %d left the domain, heat-bath acceptance %.3f; smallest label %.3f (β = %.2f); %d solves without a state",
-                                                c2, nacc, nexit, hb, smin, SS_MEASURE ? SSchemeConsts(eos).β : NaN, sc.nostate))
+        check(nexit == 0 && nacc >= 16, @sprintf("c_s² = %.2f: %d of 20 accepted, %d left the domain, heat-bath acceptance %.3f; smallest label %.3f (b_ρ = %.2f); %d solves without a state",
+                                                c2, nacc, nexit, hb, smin, SS_MEASURE ? SSchemeConsts(eos).bᵨ : NaN, sc.nostate))
     end
 end
 

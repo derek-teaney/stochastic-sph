@@ -15,6 +15,6 @@ run() {  # scheme-tag, c2, sa, v, seed, extra env
 for c2 in 0.5 0.25; do for sa in 16 54; do for v in 0 0.8; do for k in 0 1; do
   run sscheme $c2 $sa $v $k "SPH_RENORM=sscheme"
   run split   $c2 $sa $v $k "SPH_RENORM=split"
-  [ $c2 = 0.25 ] && run sschemeb $c2 $sa $v $k "SPH_RENORM=sscheme SPH_SSCHEME_BETA=2.0"
+  [ $c2 = 0.25 ] && run sschemeb $c2 $sa $v $k "SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0"
 done; done; done; done
 wait

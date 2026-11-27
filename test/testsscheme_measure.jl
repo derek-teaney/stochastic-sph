@@ -1,15 +1,15 @@
 # testsscheme_measure.jl — the measure form of the S-scheme, SPH_SSCHEME_FORM=measure (docs/sscheme_plan.tex, "Level 1, amended", N3;
-# src/sscheme.jl): s = S_t − Δ^H, measure ρ(s) = e^s s^(−β)(1 − β/s) on s > β, β = D/2 + 1.
+# src/sscheme.jl): s = S_t − Δ^H, measure ρ(s) = e^s s^(−b_ρ)(1 − b_ρ/s) on s > b_ρ, b_ρ = D/2 + 1.
 #   1. ∂H/∂s = T_a, ∂H/∂m = v_a, ∂H/∂V = −P_a by central differences of H(s, m, V), to 1e-9;
 #   2. the map from the energy inverts the map from the label, and the reverse;
 #   3. reference values of s, H, T_a, v_a, P_a and the weight ln ρ(s) − ln T_a from state_m of examples/sscheme_ref.py (mpmath, A = 1,
 #      F = 1, T_0 at s_rel = 16), to 1e-12 relative;
-#   4. s − (S_t − Δ_χ − Δ_ℓ + β ln S_t) is one constant for every state;
-#   5. (N3 i) on a grid of (|m|, V): the label increases with S_t on the domain, the domain is one interval, and the label β + 1e-6 (just
+#   4. s − (S_t − Δ_χ − Δ_ℓ + b_ρ ln S_t) is one constant for every state;
+#   5. (N3 i) on a grid of (|m|, V): the label increases with S_t on the domain, the domain is one interval, and the label b_ρ + 1e-6 (just
 #      above the wall) has a state;
 #   6. the weight is −Inf at and below the wall, and a label below it has no state.
 ENV["SPH_SSCHEME_FORM"] = "measure"
-haskey(ENV, "SPH_SSCHEME_BETA") && delete!(ENV, "SPH_SSCHEME_BETA")
+haskey(ENV, "SPH_SSCHEME_BRHO") && delete!(ENV, "SPH_SSCHEME_BRHO")
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
@@ -17,11 +17,11 @@ ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 rel(a, b) = b == 0 ? abs(a) : abs(a / b - 1)
 eos_A1(c2) = ConstantCs2EOS(c2, c2^(1 / (1 + 1 / c2)), 0.0, 0.0)        # A = 1, as the reference script
-sscheme_reference!(16.0, 1.0)                                          # s̄_rel = 16 (T_0 of the reference values); V̄ does not enter at β = D/2 + 1
+sscheme_reference!(16.0, 1.0)                                          # s̄_rel = 16 (T_0 of the reference values); V̄ does not enter at b_ρ = D/2 + 1
 state_St(St, m, V, c) = (r = sscheme_target_entropy(St, m, V, c);  sscheme_state(r[1], r[2], V, c))
 Hof(s, m, V, c, St0) = sscheme_from_label(s, m, V, c, St0).H
 d4(f, x, h) = (-f(x + 2h) + 8f(x + h) - 8f(x - h) + f(x - 2h)) / (12h)
-println("β = ", SS_BETA)
+println("b_ρ = ", SS_BRHO)
 
 println("1. the derivatives of H(s, m, V)")
 for c2 in (0.5, 0.25), (St, m, V) in ((16.0, 0.0, 1.0), (16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (54.0, 300.0, 0.8), (4.0, 2.0, 1.0))
@@ -65,13 +65,13 @@ for (c2, St, m, V, s, H, Ta, va, Pa, wt) in ref
     check(err < 1e-12, @sprintf("c_s² = %.2f, S_t = %3d, |m| = %3d, V = %.1f: largest relative difference %.0e", c2, St, m, V, err))
 end
 
-println("4. the relation to the full form: s − (S_t − Δ_χ − Δ_ℓ + β ln S_t) is a constant")
+println("4. the relation to the full form: s − (S_t − Δ_χ − Δ_ℓ + b_ρ ln S_t) is a constant")
 for c2 in (0.5, 0.25)
     c = SSchemeConsts(eos_A1(c2));  vals = Float64[]
     for (St, m, V) in ((16.0, 9.0, 1.3), (54.0, 40.0, 0.8), (541.0, 900.0, 1.1), (30.0, 200.0, 0.7), (4.0, 2.0, 1.0))
         st = state_St(St, m, V, c);  γ = st.γ;  v = st.v;  Tr = st.Trel;  w = c.n * c.A * Tr^c.n
         full = St - (1.5 * log(2π * V * γ * w * Tr) + 0.5 * log(c.q - v^2)) - (1 + log(V) + log(γ) - log(Tr))
-        push!(vals, st.s - full - c.β * log(St))
+        push!(vals, st.s - full - c.bᵨ * log(St))
     end
     check(maximum(vals) - minimum(vals) < 1e-11, @sprintf("c_s² = %.2f: the constant %.12f, spread %.0e", c2, vals[1], maximum(vals) - minimum(vals)))
 end
@@ -89,19 +89,19 @@ for c2 in (0.5, 0.25)
         ss = [st.s for st in sts[i0:end] if st.ok]
         all(diff(ss) .> 0) || (nonmono += 1)
         Dmin = min(Dmin, minimum(st.D for st in sts[i0:end] if st.ok))
-        r = sscheme_from_label(c.β + 1e-6, SVector(mm, 0.0), V, c, 10.0)          # just above the wall
+        r = sscheme_from_label(c.bᵨ + 1e-6, SVector(mm, 0.0), V, c, 10.0)          # just above the wall
         r.ok || (noroot += 1)
     end
     check(nonmono == 0 && nogap == 0 && noroot == 0,
-          @sprintf("c_s² = %.2f, %d cases (|m| ≤ 100, 1/4 ≤ V ≤ 4): not increasing %d, domain not one interval %d, label β + 1e-6 without a state %d; smallest 𝒟 on the domain %.3f",
+          @sprintf("c_s² = %.2f, %d cases (|m| ≤ 100, 1/4 ≤ V ≤ 4): not increasing %d, domain not one interval %d, label b_ρ + 1e-6 without a state %d; smallest 𝒟 on the domain %.3f",
                    c2, ncase, nonmono, nogap, noroot, Dmin))
 end
 
 println("6. the wall")
 let c = SSchemeConsts(eos_A1(0.25))
-    fl = sscheme_from_label(c.β - 1e-3, SVector(1.0, 0.0), 1.0, c, 10.0)
-    check(ss_lnrho(c.β, c) == -Inf && ss_lnrho(c.β - 0.1, c) == -Inf && isfinite(ss_lnrho(c.β + 1e-9, c)) && !fl.ok && fl.weight == -Inf,
-          @sprintf("ln ρ(β) = %s, ln ρ(β + 1e-9) = %.3f; the label β − 1e-3: ok = %s", ss_lnrho(c.β, c), ss_lnrho(c.β + 1e-9, c), fl.ok))
+    fl = sscheme_from_label(c.bᵨ - 1e-3, SVector(1.0, 0.0), 1.0, c, 10.0)
+    check(ss_lnrho(c.bᵨ, c) == -Inf && ss_lnrho(c.bᵨ - 0.1, c) == -Inf && isfinite(ss_lnrho(c.bᵨ + 1e-9, c)) && !fl.ok && fl.weight == -Inf,
+          @sprintf("ln ρ(b_ρ) = %s, ln ρ(b_ρ + 1e-9) = %.3f; the label b_ρ − 1e-3: ok = %s", ss_lnrho(c.bᵨ, c), ss_lnrho(c.bᵨ + 1e-9, c), fl.ok))
     n = sscheme_counts()
     println(@sprintf("  counters: %d solves, %.1f Newton steps per solve, %d fallbacks, %d without a state", n.solves, n.iters / max(n.solves, 1), n.fallbacks, n.nostate))
 end

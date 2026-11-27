@@ -31,6 +31,7 @@ end
 # silently ignored.  The campaign files that used them are kept as the record of what was run (nersc/README.md, "Retired settings").
 const RETIRED_SETTINGS = Dict(
     "SR_S0" => "renamed SR_SREL0 on 2026-11-23: the rest-frame entropy density s_rel,0 of the run (docs/inputs.tex)",
+    "SPH_SSCHEME_BETA" => "renamed SPH_SSCHEME_BRHO on 2026-11-26: b_ρ, the exponent of the measure of the labels (β is u^μ/T in the notes; docs/sscheme_plan.tex, P4b)",
 )
 for (name, why) in RETIRED_SETTINGS
     haskey(ENV, name) && error("setting $name is retired: $why.  Unset it (to rerun an old campaign line, replace $name= by the new name).")

@@ -4,7 +4,7 @@
 #   0. the table: I₀ at the reference values of item H; the interpolant's derivative against a central difference;
 #   1. ∂H/∂(label) = T_a, ∂H/∂m = v_a, −∂H/∂V = P_a by central differences of H with ω on, c_s² = 1/2, 1/4, S_t = 4 to 541, in motion;
 #   2. the inverse (from the energy) of the map from the label, with ω on;
-#   3. (sscheme) N3 (i) with ω: the label increases with S_t on the domain, and the label β + 1e-6 has a state.
+#   3. (sscheme) N3 (i) with ω: the label increases with S_t on the domain, and the label b_ρ + 1e-6 has a state.
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "sscheme")
 ENV["SPH_POSITIONAL"] = "1";  ENV["SPH_POSITIONAL_A2"] = "0.3"
 using StaticArrays, LinearAlgebra, Printf, Random
@@ -56,7 +56,7 @@ if SSCHEME
             ss = [st.s for st in sts[i0:end] if st.ok]
             (all(st -> st.ok, sts[i0:end]) && all(diff(ss) .> 0)) || (bad += 1)
             Dmin = min(Dmin, minimum(st.D for st in sts[i0:end] if st.ok))
-            SS_MEASURE && (sscheme_from_label(c.β + 1e-6, SVector(mm, 0.0), V, c, 10.0).ok || (bad += 1))
+            SS_MEASURE && (sscheme_from_label(c.bᵨ + 1e-6, SVector(mm, 0.0), V, c, 10.0).ok || (bad += 1))
         end
         check(bad == 0, @sprintf("c_s² = %.2f: %d cases, %d failing; smallest 𝒟 %.3f", c2, n, bad, Dmin))
     end

@@ -530,24 +530,24 @@ label, so any positive function of the label may stand in the measure.  We there
 keep the rest of $\Delta$ in the label, where it is inverted exactly as in the S-scheme.  What remains in the Hamiltonian is a function of
 $T_{\rm rel}$ and the bounded sound factor.  It has no explicit volume, it is almost independent of the velocity, and its slope has the safe sign.
 
-\paragraph{The model for a constant speed of sound.}  With $\beta=D/2+1$ and $T_0$ the rest-frame temperature of the nominal state of the run
+\paragraph{The model for a constant speed of sound.}  With $b_\rho=D/2+1$ and $T_0$ the rest-frame temperature of the nominal state of the run
 (\texttt{trel\_of\_srel} of \texttt{SR\_SREL0}),
 \begin{keyeq}
 \st
 \begin{gathered}
 s=S_{\rm t}-F\,\Delta^H,\qquad \Delta^H=-(q-d)\ln\frac{T_{\rm rel}}{T_0}+\tfrac12\ln\big(1-c_s^2v^2\big),\\
-\rho(s)=e^{\,s}s^{-\beta}\Big(1-\frac\beta s\Big)\quad(s>\beta) .
+\rho(s)=e^{\,s}s^{-b_\rho}\Big(1-\frac{b_\rho} s\Big)\quad(s>b_\rho) .
 \end{gathered}
 \label{amend}
 \stp
 \end{keyeq}
-There are two forms.  In the plain form $F=1$.  In the form with the factor, $F=(S_{\rm t}+2\beta)/(S_{\rm t}+\beta)$, which restores the agreement
+There are two forms.  In the plain form $F=1$.  In the form with the factor, $F=(S_{\rm t}+2b_\rho)/(S_{\rm t}+b_\rho)$, which restores the agreement
 with \Eq{label} to order $1/S_{\rm t}^2$.  With
 \st
 \begin{gathered}
 \Delta_p^H=-(q-d)+\frac{v^2(1-v^2)}{a},\quad \Delta_\theta^H=-\frac{v(1-v^2)}{a},\\
 \epsilon_p=\frac{F\Delta_p^H}{S_{\rm t}a},\quad \epsilon_\parallel=\frac{F\Delta_\theta^H}{S_{\rm t}},\quad
-\kappa=1+\frac{\beta\,\Delta^H}{(S_{\rm t}+\beta)^2}
+\kappa=1+\frac{b_\rho\,\Delta^H}{(S_{\rm t}+b_\rho)^2}
 \end{gathered}
 \stp
 (and $\kappa=1$ in the plain form), the state of the particle is
@@ -561,13 +561,13 @@ v_a=\frac{v(\kappa-2\epsilon_p)+\epsilon_\parallel}{\mathcal D},\qquad
 \stp
 The weight of the votes, of the heat bath and of the equilibrium draw is
 \st
-\ln\rho(s)-\ln T_a=s-\beta\ln s+\ln\Big(1-\frac\beta s\Big)-\ln T_a ,
+\ln\rho(s)-\ln T_a=s-b_\rho\ln s+\ln\Big(1-\frac{b_\rho} s\Big)-\ln T_a ,
 \label{amendweight}
 \stp
-and it is $-\infty$ for $s\le\beta$.  The reference implementation is \texttt{state\_m} in \nolinkurl{examples/sscheme_ref.py}.
+and it is $-\infty$ for $s\le b_\rho$.  The reference implementation is \texttt{state\_m} in \nolinkurl{examples/sscheme_ref.py}.
 
 \paragraph{N1. The single particle.}  Add the two forms to \nolinkurl{examples/renorm_quadrature_sscheme.py} (models \texttt{sscheme-m} and
-\texttt{sscheme-mf}), with the measure $\rho(s)$ in place of $e^s$ and the labels restricted to $s>\beta$.  Repeat Table~\ref{tab:A} for both, with
+\texttt{sscheme-mf}), with the measure $\rho(s)$ in place of $e^s$ and the labels restricted to $s>b_\rho$.  Repeat Table~\ref{tab:A} for both, with
 $s_a=30$ added.  Report $E$, $p$, $R$, and the weight of the tree-level particle below the bound.  The expectation is that the form with the factor
 reproduces the S-scheme columns at $s_a\ge54$, and that the plain form differs from them in motion by an amount of the size of split's errors.
 
@@ -578,7 +578,7 @@ $\mathcal D$.  The level~2 counterterm will enter as $\Delta^H\to\Delta^H-\omega
 only place where $\rho$ enters.  The ideal step never evaluates it.
 
 \paragraph{N3. Tests.}  Repeat tests 1 to 3 of item~D against \texttt{state\_m} for the plain form.  Add three tests.  (i) On a grid of $(\bm m,V)$ the
-label increases with $S_{\rm t}$ for every $S_{\rm t}$ whose label is above $\beta$, and every label above $\beta$ has a root.  (ii) For a small system
+label increases with $S_{\rm t}$ for every $S_{\rm t}$ whose label is above $b_\rho$, and every label above $b_\rho$ has a root.  (ii) For a small system
 the Jacobian determinant of one ideal step in $(\bm x,\bm m)$ at fixed labels is one, by finite differences.  This tests that $\bm v_a$ and $P_a$ are
 the derivatives of one Hamiltonian, whatever the form.  (iii) Test~7 at $s_a=16$, both $c_s^2$: the expectation is the acceptance of split, with no
 trajectory leaving the domain.
@@ -587,9 +587,9 @@ trajectory leaving the domain.
 the fraction of particles with $P_a<0$ and the number of proposals rejected at the bound.  \textbf{Ask}: show the owner N1 and N4 before the campaigns.
 
 \paragraph{N5. The campaigns.}  Campaigns F and G then run with the plain form, and include $s_a=16$.  The sensitivity study of item~E2 becomes a
-variation of this form: $\beta=D/2$, $b$ and $D/2+1$, with and without the factor, and a bound of the measure placed above $\beta$.
+variation of this form: $b_\rho=D/2$, $b$ and $D/2+1$, with and without the factor, and a bound of the measure placed above $b_\rho$.
 
-\paragraph{The bounds to expect} (\nolinkurl{renorm3.tex}, the table of bounds).  Above $s=\beta$ the temperature is positive and $|v_a|<1$ at every
+\paragraph{The bounds to expect} (\nolinkurl{renorm3.tex}, the table of bounds).  Above $s=b_\rho$ the temperature is positive and $|v_a|<1$ at every
 velocity for $c_s^2=1/2$, $1/3$, $1/4$ and $1/6$ in the scans of the desktop session.  The pressure is positive for $S_{\rm t}>q-d$, which is below the
 bound of the measure for $c_s^2\ge1/4$ in the plain form.  With the factor at $c_s^2=1/4$ and $s_a=16$ the pressure was negative up to the label
 $2.8$, slightly above the bound.
@@ -834,15 +834,15 @@ Not started: campaigns F and G at $s_a\ge54$ come first, since the regularizatio
 \subsection*{Level 1, amended: N2, N3 (2026-11-25, branch \texttt{sscheme-measure} from \texttt{sscheme} at 2bdf1c4; commits b98983d, 0c00611)}
 
 \paragraph{The code.}  \texttt{SPH\_SSCHEME\_FORM=measure} (the default) or \texttt{full}; \texttt{SPH\_SSCHEME\_BETA} (default $D/2+1$).  As a term added
-to the full counterterm the change is $M=-\beta\ln S_{\rm t}+C$, whose slopes along $(\tau,\theta,\ln V)$ are $(-\beta q,-\beta v,-\beta)$; it shifts
-$\Delta_p$ by $-\beta(q-v^2)$, $\Delta_\theta$ by $-\beta v$ and $P_aV/T_a$ by $\beta(1-q/n)$, and everything else in \nolinkurl{src/sscheme.jl} is shared by
-the two forms.  The measure enters only through the weight, $\ln\rho(s)-\ln T_a$, and the wall is $s>\beta$.  For a general $\beta$,
+to the full counterterm the change is $M=-b_\rho\ln S_{\rm t}+C$, whose slopes along $(\tau,\theta,\ln V)$ are $(-b_\rho q,-b_\rho v,-b_\rho)$; it shifts
+$\Delta_p$ by $-b_\rho(q-v^2)$, $\Delta_\theta$ by $-b_\rho v$ and $P_aV/T_a$ by $b_\rho(1-q/n)$, and everything else in \nolinkurl{src/sscheme.jl} is shared by
+the two forms.  The measure enters only through the weight, $\ln\rho(s)-\ln T_a$, and the wall is $s>b_\rho$.  For a general $b_\rho$,
 \st
-\Delta^H=\Big(\frac D2+1-\beta\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\frac aq ,
+\Delta^H=\Big(\frac D2+1-b_\rho\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\frac aq ,
 \stp
 with the reference $(\bar s_{\rm rel},\bar V)$ taken from the initial condition (the mean rest-frame entropy density of the targets and $L^2/N$, as
-split takes $\bar V$), $\bar S_{\rm t}=\bar s_{\rm rel}\bar V$.  At $\beta=D/2+1$ only $\bar s_{\rm rel}$ enters ($T_0$ of \Eq{amend}); at $\beta=b$ only
-$\bar V$, and $\Delta^H$ is split's $\mathcal N\ln(\gamma V/\bar V)+\tfrac12\ln(a/q)$; for the conformal fluid at $\beta=D/2+1$ neither enters.  The
+split takes $\bar V$), $\bar S_{\rm t}=\bar s_{\rm rel}\bar V$.  At $b_\rho=D/2+1$ only $\bar s_{\rm rel}$ enters ($T_0$ of \Eq{amend}); at $b_\rho=b$ only
+$\bar V$, and $\Delta^H$ is split's $\mathcal N\ln(\gamma V/\bar V)+\tfrac12\ln(a/q)$; for the conformal fluid at $b_\rho=D/2+1$ neither enters.  The
 g-regulator of E2 is not on this branch (it stays on \texttt{sscheme-reg}, not merged).
 
 \paragraph{Decision (owner, 2026-11-25).}  The reference $T_0$ is kept.  The entropy density is $s=C\,(T/\hbar c)^d\,(T/T_{\rm scale})^{q-d}$; the
@@ -853,7 +853,7 @@ $T_{\rm scale}$ (absolute) or the run's $T_0$.  For the conformal fluid, $q=d$, 
 \paragraph{Why a reference.}  With $T_{\rm scale}=1$ the code is in natural units and $T_{\rm rel}^{\,d}/s$ is a number, so the constant of
 $\Delta^H$ is defined once the cell of the label measure is fixed.  With the cell $(2\pi)^2$ the absolute $\Delta^H$ at rest is $+0.02$ for
 $c_s^2=1/2$ (the convention $s=S_{\rm t}$ at rest, to 0.02), but $-4.5$ ($s_a=16$) and $-5.1$ ($s_a=54$) for $c_s^2=1/4$, where it is a
-logarithm of $s/T^2\approx190$.  The measure form differs from one loop by $\beta\Delta^H/S_{\rm t}$ (renorm3, eq.~mismatch), which would then
+logarithm of $s/T^2\approx190$.  The measure form differs from one loop by $b_\rho\Delta^H/S_{\rm t}$ (renorm3, eq.~mismatch), which would then
 be $0.7$ at $s_a=16$.  The reference is therefore not needed for the dimensions; it makes $\Delta^H$ vanish where the particles are, which keeps
 the measure form closest to one loop.
 
@@ -861,13 +861,13 @@ the measure form closest to one loop.
 \begin{itemize}
 \item \nolinkurl{test/testsscheme_measure.jl}: the derivatives of $H(s,\bm m,V)$ are $T_a$, $v_a$, $-P_a$ to $<3\times10^{-10}$; the two maps invert each
   other to $10^{-15}$; $s$, $H$, $T_a$, $v_a$, $P_a$ and the weight agree with \texttt{state\_m} of \nolinkurl{examples/sscheme_ref.py} to $3\times10^{-15}$
-  (12 states, $S_{\rm t}=4$ to 541); $s-(S_{\rm t}-\Delta_\chi-\Delta_\ell+\beta\ln S_{\rm t})$ is one constant to $10^{-13}$.
+  (12 states, $S_{\rm t}=4$ to 541); $s-(S_{\rm t}-\Delta_\chi-\Delta_\ell+b_\rho\ln S_{\rm t})$ is one constant to $10^{-13}$.
 \item N3 (i): on 35 points $|\bm m|\le100$, $\tfrac14\le V\le4$, the domain in $S_{\rm t}$ is one interval, the label increases on it, and the label
-  $\beta+10^{-6}$ has a state.  The smallest $\mathcal D$ is $0.837$ ($c_s^2=1/2$) and $1.000$ ($c_s^2=1/4$).
+  $b_\rho+10^{-6}$ has a state.  The smallest $\mathcal D$ is $0.837$ ($c_s^2=1/2$) and $1.000$ ($c_s^2=1/4$).
 \item N3 (ii), \nolinkurl{test/testsscheme_jacobian.jl}: two steps of the generalized leapfrog, 168 particles at $s_a=16$ after the equilibrium draw,
   Jacobian by central differences in all 672 coordinates: $\ln\det J=7.7\times10^{-8}$ ($c_s^2=1/2$) and $5.5\times10^{-8}$ ($c_s^2=1/4$).
 \item N3 (iii), \nolinkurl{test/testsscheme_hmc.jl} part 8, $s_a=16$, $N=672$, 20 updates of length $0.6/c_s$: 19 and 20 of 20 accepted, none leaves
-  the domain, no solve without a state; the smallest label after the updates is $2.91$ and $2.64$ ($\beta=2.5$).  The full form had 8 of 40.
+  the domain, no solve without a state; the smallest label after the updates is $2.91$ and $2.64$ ($b_\rho=2.5$).  The full form had 8 of 40.
 \item \nolinkurl{test/testsscheme.jl} (tests 1--6) pins the full form; \nolinkurl{test/testsscheme_hmc.jl} part 7 runs the measure form.
 \end{itemize}
 
@@ -921,14 +921,14 @@ reference, the label cell $1$ or $(2\pi)^2$).  $E/E_{\rm t}-1$ at rest: $c_s^2=1
 $1.8\times10^{-4}$, cell 1 $-1.1\times10^{-2}$; $c_s^2=1/4$, $s_a=54$: $-2.7\times10^{-3}$, $+4.2\times10^{-3}$, $-1.7\times10^{-2}$; $s_a=541$:
 $-1.9\times10^{-5}$, $+8.9\times10^{-5}$, $-7.1\times10^{-5}$ ($p$: $2.7\times10^{-6}$ against $1.1\times10^{-4}$ for the cell $(2\pi)^2$).  For the
 conformal fluid only the cell matters and $(2\pi)^2$ is as good as $T_0$; for $c_s^2=1/4$ the absolute normalization is worse than $T_0$ by
-1.5--40 times at $s_a\ge54$ (the factor $F$ recovers most of it), as $\beta\Delta^H/S_{\rm t}$ predicts.  The rows, and those of $\beta=D/2$ and $b$
+1.5--40 times at $s_a\ge54$ (the factor $F$ recovers most of it), as $b_\rho\Delta^H/S_{\rm t}$ predicts.  The rows, and those of $b_\rho=D/2$ and $b$
 (models \texttt{sscheme-m@1.5}, \texttt{@2.0}), are in the same csv.
 
 
 %-----------------------------------------------------------------------------
 \subsection*{The correction of the positions: one loop and $\nu_*$ (2026-11-25, items H and L on the level-1 data)}
 
-\paragraph{Decision (owner, 2026-11-25).}  Split and the measure form with $\beta=D/2+1$ are the schemes to keep; for the conformal fluid they are
+\paragraph{Decision (owner, 2026-11-25).}  Split and the measure form with $b_\rho=D/2+1$ are the schemes to keep; for the conformal fluid they are
 the same scheme in two codings (N1).  The single-particle differences between them are much smaller than the correction of the positions, which is
 what we measure next: the offset of hybrid Monte Carlo from the single particle, against the one-loop prediction \Eq{loopPE}, and what remains
 against $\nu_*^2$ (item L), with the existing runs of \texttt{eos\_split} and \texttt{eos\_sscheme}.
@@ -994,7 +994,7 @@ $c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & 
 
 \paragraph{The measure form} (\Tab{tab:eoserrm}, \Tab{tab:eoserrb}).
 \begin{table}[h]
-\caption{The error of the equation of state of the measure form with $\beta=D/2+1$ (\texttt{SPH\_SSCHEME\_FORM=measure}, the default), in percent.  Campaign \texttt{eos\_measure} (interactive 62015696, commit c0ea823), at rest, $L=0.45$, 8 seeds of 300 updates; the single particle is the model \texttt{sscheme-m} of N1. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
+\caption{The error of the equation of state of the measure form with $b_\rho=D/2+1$ (\texttt{SPH\_SSCHEME\_FORM=measure}, the default), in percent.  Campaign \texttt{eos\_measure} (interactive 62015696, commit c0ea823), at rest, $L=0.45$, 8 seeds of 300 updates; the single particle is the model \texttt{sscheme-m} of N1. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
 the same scheme is subtracted, (2) after the one-loop correction of the positions is also subtracted, (3) after the $a_2$ term ($a_2=0.091$) is also
 subtracted; $\pm$ the statistical error.}
 \label{tab:eoserrm}
@@ -1022,7 +1022,7 @@ $c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & 
 \end{center}
 \end{table}
 \begin{table}[h]
-\caption{As \Tab{tab:eoserrm} for the measure form with $\beta=b=2$ at $c_s^2=1/4$ (\texttt{SPH\_SSCHEME\_BETA=2}, the S-scheme coding of split); the single particle is the model \texttt{sscheme-m@2.0}.  For $c_s^2=1/2$, $b=D/2+1$ and the form is that of \Tab{tab:eoserrm}. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
+\caption{As \Tab{tab:eoserrm} for the measure form with $b_\rho=b=2$ at $c_s^2=1/4$ (\texttt{SPH\_SSCHEME\_BETA=2}, the S-scheme coding of split); the single particle is the model \texttt{sscheme-m@2.0}.  For $c_s^2=1/2$, $b=D/2+1$ and the form is that of \Tab{tab:eoserrm}. The columns are those of \Tab{tab:eoserr}: (0) the error of hybrid Monte Carlo, (1) after the exact single-particle error of
 the same scheme is subtracted, (2) after the one-loop correction of the positions is also subtracted, (3) after the $a_2$ term ($a_2=0.091$) is also
 subtracted; $\pm$ the statistical error.}
 \label{tab:eoserrb}
@@ -1044,8 +1044,8 @@ $c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (2) & (3) & $\pm$ & (0) & (1) & 
 \end{table}
 \begin{itemize}
 \item $c_s^2=1/2$: the measure form gives the numbers of split in every column within the errors (it is split in another coding).
-\item $c_s^2=1/4$, $\beta=b$: the numbers of split within the errors, at every $s_a$.
-\item $c_s^2=1/4$, $\beta=D/2+1$: at $s_a\ge54$ as split (column (3) at most $0.07\%$); at $s_a=16$ worse than split, $P$ $+2.7$--$3.0\%$ and $E$
+\item $c_s^2=1/4$, $b_\rho=b$: the numbers of split within the errors, at every $s_a$.
+\item $c_s^2=1/4$, $b_\rho=D/2+1$: at $s_a\ge54$ as split (column (3) at most $0.07\%$); at $s_a=16$ worse than split, $P$ $+2.7$--$3.0\%$ and $E$
   $+3.1$--$4.2\%$ in column (3) against split's $+2.0$--$2.2\%$ and $+2.4$--$3.4\%$.  The raw error (0) at $s_a=16$, $h/a=2$ is $E$ $+8.2\%$ against
   split's $+7.4\%$, the size of the gap found with the regulator g (Results, F at $s_a=16$): with $c_s^2=1/4$ the remainder of $\Delta^H$ depends on
   the temperature, and at $s_a=16$ the positions feel it.
@@ -1084,7 +1084,7 @@ $\chi^2/{\rm dof}=0.73$).  Error bars: the statistical error of the HMC mean, sc
 \subsection*{Level 1, amended: N4, the smoke runs (2026-11-25, interactive 62013554, worktree at 0c00611)}
 
 \nolinkurl{examples/equilibrium.jl}, $L=0.6$ ($N=672$), $h/a=2$, $t=20$, 2 seeds (offsets 900, 901), the hybrid Monte Carlo start of 200 updates;
-split, the measure form with $\beta=D/2+1$ (\texttt{sscheme}) and, at $c_s^2=1/4$, the measure form with $\beta=b=2$ (\texttt{sschemeb},
+split, the measure form with $b_\rho=D/2+1$ (\texttt{sscheme}) and, at $c_s^2=1/4$, the measure form with $b_\rho=b=2$ (\texttt{sschemeb},
 \texttt{SPH\_SSCHEME\_BETA=2}, the S-scheme coding of split).  Script \texttt{\$SCRATCH/sph/ssM/smoke\_n4\_all.sh}.  Columns: the acceptance of the
 hybrid Monte Carlo start; the acceptances of the stress and residual moves of the stochastic step; KE/eq (in motion it includes the mean flow, about
 15--20 for every scheme); $\Delta H/H$ at $t=20$ for the two seeds; the guard rejections per step; and for the measure form the largest fraction of
@@ -1105,16 +1105,16 @@ $c_s^2$ & $s_a$ & $v_0$ & scheme & HMC & acc.\ (stress, resid.) & KE/eq & $\Delt
 \midrule
 1/4 & 16 & 0 & split & 0.970 & 0.928, 0.327 & 1.096 & $-7.6\,\mathrm e{-6}$, $+9.4\,\mathrm e{-6}$ & 2119 & & & \\
  & & & measure & 0.980 & 0.929, 0.329 & 1.060 & $+2.3\,\mathrm e{-7}$, $-1.1\,\mathrm e{-5}$ & 1927 & 0 & $8.4\,\mathrm e{-4}$ & 2.567 \\
- & & & measure, $\beta=b$ & 0.985 & 0.931, 0.355 & 1.037 & $-1.4\,\mathrm e{-5}$, $+9.1\,\mathrm e{-6}$ & 2203 & $2.2\,\mathrm e{-3}$ & $7.0\,\mathrm e{-4}$ & 2.301 \\
+ & & & measure, $b_\rho=b$ & 0.985 & 0.931, 0.355 & 1.037 & $-1.4\,\mathrm e{-5}$, $+9.1\,\mathrm e{-6}$ & 2203 & $2.2\,\mathrm e{-3}$ & $7.0\,\mathrm e{-4}$ & 2.301 \\
  & & 0.8 & split & 0.995 & 0.961, 0.445 & 18.99 & $-8.5\,\mathrm e{-8}$, $+2.1\,\mathrm e{-7}$ & 494 & & & \\
  & & & measure & 0.990 & 0.962, 0.457 & 20.76 & $+2.1\,\mathrm e{-7}$, $+8.6\,\mathrm e{-8}$ & 489 & 0 & $2.2\,\mathrm e{-4}$ & 3.222 \\
- & & & measure, $\beta=b$ & 0.985 & 0.961, 0.454 & 19.44 & $-1.4\,\mathrm e{-7}$, $-1.8\,\mathrm e{-7}$ & 526 & $1.2\,\mathrm e{-4}$ & $1.6\,\mathrm e{-4}$ & 2.423 \\
+ & & & measure, $b_\rho=b$ & 0.985 & 0.961, 0.454 & 19.44 & $-1.4\,\mathrm e{-7}$, $-1.8\,\mathrm e{-7}$ & 526 & $1.2\,\mathrm e{-4}$ & $1.6\,\mathrm e{-4}$ & 2.423 \\
  & 54 & 0 & split & 0.970 & 0.950, 0.567 & 0.984 & $+1.1\,\mathrm e{-6}$, $+9.3\,\mathrm e{-6}$ & 20 & & & \\
  & & & measure & 0.985 & 0.949, 0.565 & 0.960 & $+7.0\,\mathrm e{-6}$, $+6.5\,\mathrm e{-6}$ & 54 & 0 & $2.1\,\mathrm e{-5}$ & 4.060 \\
- & & & measure, $\beta=b$ & 0.990 & 0.948, 0.561 & 0.972 & $+9.8\,\mathrm e{-6}$, $-1.3\,\mathrm e{-6}$ & 21 & $2.2\,\mathrm e{-6}$ & $5.0\,\mathrm e{-6}$ & 2.449 \\
+ & & & measure, $b_\rho=b$ & 0.990 & 0.948, 0.561 & 0.972 & $+9.8\,\mathrm e{-6}$, $-1.3\,\mathrm e{-6}$ & 21 & $2.2\,\mathrm e{-6}$ & $5.0\,\mathrm e{-6}$ & 2.449 \\
  & & 0.8 & split & 1.000 & 0.969, 0.597 & 20.26 & $-1.4\,\mathrm e{-7}$, $+2.5\,\mathrm e{-8}$ & 0 & & & \\
  & & & measure & 0.995 & 0.967, 0.584 & 20.14 & $-2.0\,\mathrm e{-7}$, $-1.1\,\mathrm e{-7}$ & 0.1 & 0 & $2\,\mathrm e{-9}$ & 29.34 \\
- & & & measure, $\beta=b$ & 1.000 & 0.968, 0.591 & 19.77 & $+2.7\,\mathrm e{-7}$, $+9.6\,\mathrm e{-8}$ & 0.1 & 0 & $5\,\mathrm e{-9}$ & 27.01 \\
+ & & & measure, $b_\rho=b$ & 1.000 & 0.968, 0.591 & 19.77 & $+2.7\,\mathrm e{-7}$, $+9.6\,\mathrm e{-8}$ & 0.1 & 0 & $5\,\mathrm e{-9}$ & 27.01 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1124,8 +1124,8 @@ $c_s^2$ & $s_a$ & $v_0$ & scheme & HMC & acc.\ (stress, resid.) & KE/eq & $\Delt
 \item The measure form and split agree in every column within the scatter of two seeds: the acceptances of the stochastic step, KE/eq, the drift of
   $H$ ($10^{-5}$ at $s_a=16$ at rest, $10^{-7}$ in motion, for both), and the guard rejections.
 \item The wall refuses at most $8\times10^{-4}$ of the proposals from the energy ($s_a=16$, $c_s^2=1/4$, at rest), $10^{-4}$ for the conformal fluid at
-  $s_a=16$, and none at $s_a=54$ for the conformal fluid.  The smallest label reached is 2.57--2.63 at $s_a=16$ at rest ($\beta=2.5$).
-\item $P_a<0$: never with $\beta=D/2+1$.  With $\beta=b$ at $c_s^2=1/4$, up to $2.2\times10^{-3}$ of the solves at $s_a=16$ (the window
+  $s_a=16$, and none at $s_a=54$ for the conformal fluid.  The smallest label reached is 2.57--2.63 at $s_a=16$ at rest ($b_\rho=2.5$).
+\item $P_a<0$: never with $b_\rho=D/2+1$.  With $b_\rho=b$ at $c_s^2=1/4$, up to $2.2\times10^{-3}$ of the solves at $s_a=16$ (the window
   $2<S_{\rm t}<2.5$ of the table of bounds in \nolinkurl{renorm3.tex}), $2\times10^{-6}$ at $s_a=54$.
 \end{itemize}
 \textbf{Ask} (N4): the owner reads N1 and N4 before the campaigns.
@@ -1216,7 +1216,7 @@ $c_s^2$ & $s_a$ & $h/a$ & $\nu_*$ & (0) & (1) & (p) & (3) & $\pm$ & (0) & (1) & 
 \end{center}
 \end{table}
 \begin{table}[h]
-\caption{As \Tab{tab:eoserrsw} for the measure form with $\omega$ in the label ($\beta=D/2+1$ at $c_s^2=1/2$, $\beta=b$ at $c_s^2=1/4$).  Columns: (0) the error of hybrid Monte Carlo, $X_{\rm HMC}/x-1$, with $\omega$ in the Hamiltonian; (1) after the exact
+\caption{As \Tab{tab:eoserrsw} for the measure form with $\omega$ in the label ($b_\rho=D/2+1$ at $c_s^2=1/2$, $b_\rho=b$ at $c_s^2=1/4$).  Columns: (0) the error of hybrid Monte Carlo, $X_{\rm HMC}/x-1$, with $\omega$ in the Hamiltonian; (1) after the exact
 single-particle error of the scheme is subtracted; (p) the prediction for (1), column (2) of \Tab{tab:eoserr} (split without $\omega$, less the one-loop
 correction of the positions); (3) column (1) after the term beyond one loop, $a_2\nu_*^2$ with $a_2=0.091$, is also subtracted; $\pm$ the
 statistical error.  Percent.}
@@ -1451,7 +1451,7 @@ the quadrature'' above) cuts the dynamics off at small $S_{\rm t}$ in a natural 
 s=s_{\rm exact}(e,\bm m,V)=\ln G(e,|\bm m|,V)-\ln V-1=S_{\rm 1loop}+\delta(\ln S_{\rm t},\theta)\,,\qquad S_{\rm 1loop}=S_{\rm t}-\Delta_\chi-\Delta_\ell\,,
 \label{sexact}
 \stp
-with the flat Liouville measure $e^s\,ds\,d^2m\,d^2x$: no wall, no $\beta\ln S_{\rm t}$ in the measure, no reference state.  $\theta$ is the rapidity
+with the flat Liouville measure $e^s\,ds\,d^2m\,d^2x$: no wall, no $b_\rho\ln S_{\rm t}$ in the measure, no reference state.  $\theta$ is the rapidity
 of the target and $\delta$ depends on $(S_{\rm t},\theta)$ alone (the constant $A$ of $p=AT_{\rm rel}^n$ cancels).  Two properties make it the natural
 cutoff.  The exact number of states increases with the energy at every $(\bm m,V)$, so $s(e)$ has no fold (the one loop folds at $S_{\rm t}\approx b$,
 \Sect{sec:results}, E).  And as $S_{\rm t}\to0$ the count is that of one quantum, so for $c_s^2=1/2$ the label has a floor,
@@ -1549,13 +1549,13 @@ split$+\omega$ against the exact form$+\omega$ (\nolinkurl{split_dynamics.tex}, 
 \end{itemize}
 
 %=============================================================================
-\section{The choice of \texorpdfstring{$\beta$}{beta} off conformal: the pressure of the label gas (2026-11-26)}
+\section{The choice of \texorpdfstring{$b_\rho$}{b_rho} off conformal: the pressure of the label gas (2026-11-26)}
 \label{sec:beta}
 
-\paragraph{The question (owner, 2026-11-26).}  For the conformal fluid the measure forms with $\beta=b$ and $\beta=D/2+1$ are the same.  Off
-conformal they differ, and they seem to make different choices: $\beta=b$ takes its reference from the volume ($\bar V$), $\beta=D/2+1$ from the
-temperature ($T_0$).  But there are many ways to name the reference; the $\beta=b$ case could as well be written with a reference temperature, like
-$\beta=D/2+1$ (owner).  And the code sets \texttt{T\_scale}$\,=1$ everywhere.  Can the choice be stated once, through the pressure of the gas of
+\paragraph{The question (owner, 2026-11-26).}  For the conformal fluid the measure forms with $b_\rho=b$ and $b_\rho=D/2+1$ are the same.  Off
+conformal they differ, and they seem to make different choices: $b_\rho=b$ takes its reference from the volume ($\bar V$), $b_\rho=D/2+1$ from the
+temperature ($T_0$).  But there are many ways to name the reference; the $b_\rho=b$ case could as well be written with a reference temperature, like
+$b_\rho=D/2+1$ (owner).  And the code sets \texttt{T\_scale}$\,=1$ everywhere.  Can the choice be stated once, through the pressure of the gas of
 labels?  This section answers on paper, with one numerical check of the maps.  No campaign has been run.
 
 \paragraph{The one loop and its scale.}  With $D=d+1$, a constant speed of sound, $q=1/c_s^2$, $n=q+1$, and
@@ -1571,35 +1571,35 @@ the one-loop counterterm of the particle is, with $S_{\rm t}=\gamma s_{\rm rel}V
 $S_{\rm t}$ is a number, but $s_{\rm rel}$ and $V$ are not, so off conformal the count carries a scale, $s_*=1/V_*$, set by $A$ (that is, by
 \texttt{T\_scale}, through $\hbar$).  For the conformal fluid $\mathcal N=0$ and the scale drops out.
 
-\paragraph{One family.}  The measure form puts $\beta\ln s$ into the measure of the labels, $\rho(s)=e^s s^{-\beta}(1-\beta/s)$, and keeps
-$\Delta^H=\Delta-\beta\ln S_{\rm t}-{\rm const}$ in the label, with the constant fixed by the reference state, $\Delta^H(\bar S_{\rm t})=0$.  Write
+\paragraph{One family.}  The measure form puts $b_\rho\ln s$ into the measure of the labels, $\rho(s)=e^s s^{-b_\rho}(1-b_\rho/s)$, and keeps
+$\Delta^H=\Delta-b_\rho\ln S_{\rm t}-{\rm const}$ in the label, with the constant fixed by the reference state, $\Delta^H(\bar S_{\rm t})=0$.  Write
 \st
-\beta=b+\lambda\,\mathcal N:\qquad
+b_\rho=b+\lambda\,\mathcal N:\qquad
 \Delta^H=(1-\lambda)\,\mathcal N\ln\frac{\gamma V}{\bar V}-\lambda\,\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\big(1-c_s^2v^2\big) .
 \label{betafamily}
 \stp
-$\lambda=0$ is $\beta=b$ (the volume only, reference $\bar V$), and $\lambda=1$ is $\beta=D/2+1$ (the temperature only, since
+$\lambda=0$ is $b_\rho=b$ (the volume only, reference $\bar V$), and $\lambda=1$ is $b_\rho=D/2+1$ (the temperature only, since
 $\mathcal N\ln s_{\rm rel}=(q-d)\ln T_{\rm rel}+{\rm const}$; reference $T_0$, \Eq{amend}).  The two choices are two points on one line.
 
-\paragraph{The reference is one state, whatever the $\beta$.}  The reference only fixes the constant of $\Delta^H$.  In the form the code uses,
+\paragraph{The reference is one state, whatever the $b_\rho$.}  The reference only fixes the constant of $\Delta^H$.  In the form the code uses,
 \st
-\Delta^H=\Big(\frac D2+1-\beta\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\Delta^H=\Big(\frac D2+1-b_\rho\Big)\ln\frac{S_{\rm t}}{\bar S_{\rm t}}-\mathcal N\ln\frac{s_{\rm rel}}{\bar s_{\rm rel}}+\tfrac12\ln\big(1-c_s^2v^2\big),
 \qquad \bar S_{\rm t}=\bar s_{\rm rel}\bar V,
 \stp
 it is one state of the particle, $(\bar S_{\rm t},\bar s_{\rm rel})$, or equivalently $(\bar S_{\rm t},T_0)$ with $\bar s_{\rm rel}=s_{\rm rel}(T_0)$,
-for every $\beta$.  For $\beta=b$ the combination that appears is $\bar V=\bar S_{\rm t}/s_{\rm rel}(T_0)$, so the volume is not a separate choice: it
-can be named by a reference temperature and the nominal entropy per particle, as for $\beta=D/2+1$.  For $\beta=D/2+1$ the term in $\bar S_{\rm t}$
-drops and $T_0$ alone is left; for $\beta_*$ below it is $\bar p\bar V$.  One convention covers all of them: the reference is the nominal state of the
+for every $b_\rho$.  For $b_\rho=b$ the combination that appears is $\bar V=\bar S_{\rm t}/s_{\rm rel}(T_0)$, so the volume is not a separate choice: it
+can be named by a reference temperature and the nominal entropy per particle, as for $b_\rho=D/2+1$.  For $b_\rho=D/2+1$ the term in $\bar S_{\rm t}$
+drops and $T_0$ alone is left; for $b_{\rho*}$ below it is $\bar p\bar V$.  One convention covers all of them: the reference is the nominal state of the
 run, $T_0=T_{\rm rel,0}$ from \texttt{SR\_SREL0} and $\bar S_{\rm t}=s_a$.  (The code takes $\bar s_{\rm rel}$ as the mean of the targets of the initial
 condition and $\bar V=L^2/N$, which is that state up to the fluctuations of the start.)  What distinguishes the members is not the reference but the
 function the remainder depends on: $\gamma V$, $T_{\rm rel}$, or, below, the energy.
 
-\paragraph{Who carries the pressure.}  At fixed energy, $\partial\ln S_{\rm t}/\partial\ln V=p/(e+p)=1/n$.  Moving $\beta\ln S_{\rm t}$ out of $\Delta$
-therefore adds $\beta/n$ to $P_aV/T_a$ from the Hamiltonian, and the label gas, through $s^{-\beta}$, carries
+\paragraph{Who carries the pressure.}  At fixed energy, $\partial\ln S_{\rm t}/\partial\ln V=p/(e+p)=1/n$.  Moving $b_\rho\ln S_{\rm t}$ out of $\Delta$
+therefore adds $b_\rho/n$ to $P_aV/T_a$ from the Hamiltonian, and the label gas, through $s^{-b_\rho}$, carries
 \st
-\frac{P_{\rm label}V}{T_a}=-\frac\beta n\quad\text{per particle.}
+\frac{P_{\rm label}V}{T_a}=-\frac{b_\rho} n\quad\text{per particle.}
 \stp
-The total does not depend on $\beta$; $\beta$ decides how it is shared.  What the Hamiltonian carries (plain form, $F=1$) is
+The total does not depend on $b_\rho$; $b_\rho$ decides how it is shared.  What the Hamiltonian carries (plain form, $F=1$) is
 \st
 \frac{P_aV}{T_a}=\frac{S_{\rm t}}n-\mathcal N+\frac{\lambda\mathcal N}n ,
 \label{betapressure}
@@ -1610,7 +1610,7 @@ the tree level $S_{\rm t}/n$ plus the part of the remainder $\Delta^H$.  For $\l
 one-loop pressure.  This is $\lambda=n$:
 \begin{keyeq}
 \st
-\beta_*=b+n\mathcal N=\frac D2+1+q-d,\qquad
+b_{\rho*}=b+n\mathcal N=\frac D2+1+q-d,\qquad
 \Delta^H=-q\mathcal N\ln\frac{\gamma pV}{\bar p\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),\qquad \frac{P_a}{T_a}=\frac{P_{\rm tree}}{T_{\rm tree}} .
 \label{betastar}
 \stp
@@ -1620,7 +1620,7 @@ $\bar V$ or $T_0$.  The three values in $d=2$:
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
-$c_s^2$ & $\beta=b$ & $\beta=D/2+1$ & $\beta_*$ \\
+$c_s^2$ & $b_\rho=b$ & $b_\rho=D/2+1$ & $b_{\rho*}$ \\
 \midrule
 $1/2$ & $5/2$ & $5/2$ & $5/2$ \\
 $1/3$ & $13/6$ & $5/2$ & $7/2$ \\
@@ -1628,7 +1628,7 @@ $1/4$ & $2$ & $5/2$ & $9/2$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-The cost of $\beta_*$ is a larger exponent and a higher bound of the measure, $s>\beta_*$.  In exchange the pressure cannot go negative: by \Eq{pastar} below, $P_a=p/\mathcal D>0$ wherever $\mathcal D>0$
+The cost of $b_{\rho*}$ is a larger exponent and a higher bound of the measure, $s>b_{\rho*}$.  In exchange the pressure cannot go negative: by \Eq{pastar} below, $P_a=p/\mathcal D>0$ wherever $\mathcal D>0$
 (compare \Sect{sec:amend}, ``The bounds to expect'').  Whether $\mathcal D>0$ (no fold) holds everywhere above the bound has not been checked.
 
 \paragraph{What $T$, $p$, $T_a$ and $P_a$ are.}  The target of a particle is the uniform fluid cell, at tree level, with the particle's energy
@@ -1642,36 +1642,36 @@ and $P_a$ belong to the dynamics: they are the derivatives of the Hamiltonian $H
 \st
 T_a=\frac{\partial H}{\partial s}=\frac T{\mathcal D},\qquad P_a=-\frac{\partial H}{\partial V},\qquad \mathcal D=\frac{\partial s}{\partial S_{\rm t}} .
 \stp
-With \Eq{betapressure}, for any $\beta=b+\lambda\mathcal N$ (plain form),
+With \Eq{betapressure}, for any $b_\rho=b+\lambda\mathcal N$ (plain form),
 \st
 P_a=\frac1{\mathcal D}\Big[p-\Big(1-\frac\lambda n\Big)\mathcal N\,\frac TV\Big],
-\qquad\text{and at }\beta_*:\qquad P_a=\frac p{\mathcal D},\quad T_a=\frac T{\mathcal D} .
+\qquad\text{and at }b_{\rho*}:\qquad P_a=\frac p{\mathcal D},\quad T_a=\frac T{\mathcal D} .
 \label{pastar}
 \stp
-At $\beta_*$ the pressure and the temperature of the dynamics are those of the target, both divided by the same $\mathcal D$, at every velocity.
+At $b_{\rho*}$ the pressure and the temperature of the dynamics are those of the target, both divided by the same $\mathcal D$, at every velocity.
 \begin{itemize}
-\item For the conformal fluid $\mathcal N=0$, so $P_a=p/\mathcal D$ holds for every $\beta$: all S-scheme runs so far without $\omega$ have it.
-\item The positional counterterm adds $\omega_V T_a/V$ to $P_a$ (level 2), so with $\omega$ it holds at no $\beta$.
+\item For the conformal fluid $\mathcal N=0$, so $P_a=p/\mathcal D$ holds for every $b_\rho$: all S-scheme runs so far without $\omega$ have it.
+\item The positional counterterm adds $\omega_V T_a/V$ to $P_a$ (level 2), so with $\omega$ it holds at no $b_\rho$.
 \item The velocity is not that of the target: $v_a=(v(\kappa-2\epsilon_p)+\epsilon_\parallel)/\mathcal D$ (\Eq{amendstate}) carries the slope of
   $\Delta^H$ in the rapidity, from $\tfrac12\ln(1-c_s^2v^2)$ and from $\gamma$ in $\gamma pV$.
 \end{itemize}
 
-\paragraph{What $\beta_*$ does not say.}  It does not make the single particle the infinite-volume one.  That is the condition that fixes the
-counterterm $\Delta$, at one loop, and it holds for every $\beta$, since $\beta$ only moves pressure between $H$ and the label gas.  $\beta_*$ says
+\paragraph{What $b_{\rho*}$ does not say.}  It does not make the single particle the infinite-volume one.  That is the condition that fixes the
+counterterm $\Delta$, at one loop, and it holds for every $b_\rho$, since $b_\rho$ only moves pressure between $H$ and the label gas.  $b_{\rho*}$ says
 something narrower: the equation of state holds particle by particle in the mechanics, $P_a/T_a=p/T$ at the target, and the one-loop correction
-of the pressure lives entirely in the statistics of the labels, the factor $s^{-\beta_*}$.  The conformal runs show that this is not the whole
+of the pressure lives entirely in the statistics of the labels, the factor $s^{-b_{\rho*}}$.  The conformal runs show that this is not the whole
 story: they have $P_a=p/\mathcal D$, yet at $s_a=16$, $h/a=2$ the measure form without $\omega$ is off by $P$ $-1.4\%$, $E$ $+2.1\%$ against hybrid
 Monte Carlo (Results, ``Level 2: the positional counterterm in the Hamiltonian''), from the positions, the light cone and beyond one loop.  Off conformal there are already data at
-$c_s^2=1/4$ (Results, ``The correction of the positions: one loop and $\nu_*$''): $\beta=b$ gives split's numbers at every $s_a$, and $\beta=D/2+1$ is worse at $s_a=16$ ($E$ raw $+8.2\%$
-against $+7.4\%$).  On \Eq{betafamily}, $\beta_*$ lies beyond $\beta=D/2+1$ from $\beta=b$ ($\lambda=n$ against 1 and 0), so that trend is a warning
-for $\beta_*$, to be tested.
+$c_s^2=1/4$ (Results, ``The correction of the positions: one loop and $\nu_*$''): $b_\rho=b$ gives split's numbers at every $s_a$, and $b_\rho=D/2+1$ is worse at $s_a=16$ ($E$ raw $+8.2\%$
+against $+7.4\%$).  On \Eq{betafamily}, $b_{\rho*}$ lies beyond $b_\rho=D/2+1$ from $b_\rho=b$ ($\lambda=n$ against 1 and 0), so that trend is a warning
+for $b_{\rho*}$, to be tested.
 
 \paragraph{Check.}  \Eq{betapressure} against the maps of \nolinkurl{src/sscheme.jl} (measure form, \texttt{SPH\_SSCHEME\_BETA} set to each
 value, an arbitrary reference $\bar s_{\rm rel}=3$, $\bar V=4$): $P_aV/T_a-S_{\rm t}/n$ at $S_{\rm t}=16$, 54 and 541, at rest:
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
-$c_s^2$ & $\beta=b$ & $\beta=D/2+1$ & $\beta_*$ \\
+$c_s^2$ & $b_\rho=b$ & $b_\rho=D/2+1$ & $b_{\rho*}$ \\
 \midrule
 $1/4$, predicted $-\mathcal N+\lambda\mathcal N/n$ & $-0.5$ & $-0.4$ & $0$ \\
 $1/4$, the maps & $-0.500000$ & $-0.400000$ & $0.000000$ \\
@@ -1681,7 +1681,7 @@ $1/3$, the maps & $-0.333333$ & $-0.250000$ & $0.000000$ \\
 \end{tabular}
 \end{center}
 The same holds in motion: at $c_s^2=1/3$ with $|\bm m|=0.4\,S_{\rm t}$ ($v=0.38$, 0.21, 0.15 at the three $S_{\rm t}$) the maps give $-0.333333$,
-$-0.250000$ and $0.000000$, as predicted: the remainder at $\beta_*$ carries no pressure at any velocity, since $\tfrac12\ln(1-c_s^2v^2)$ has no
+$-0.250000$ and $0.000000$, as predicted: the remainder at $b_{\rho*}$ carries no pressure at any velocity, since $\tfrac12\ln(1-c_s^2v^2)$ has no
 slope along $\ln V$ or $\ln T_{\rm rel}$.  (A scratch script on the login node, seconds; not a test of the suite.)
 
 \paragraph{The scale and \texttt{T\_scale}$\,=1$.}
@@ -1690,16 +1690,16 @@ slope along $\ln V$ or $\ln T_{\rm rel}$.  (A scratch script on the login node, 
   leaves the trajectories and the entropies unchanged.
 \item In the forms with the flat measure (full, exact) the scale enters only as a constant added to the label, through $\ln A$, and $e^s\,ds$ does
   not see it.  For the conformal exact form this is the $\ln A$ of $s=s_{\rm min}+\ln A+g$.
-\item In the measure form $s^{-\beta}$ is not invariant under a shift of $s$, so the constant matters, at relative order
-  $\beta\mathcal N\ln(\text{ratio of scales})/S_{\rm t}^2$ in $T_a$ and $P_a$ (not computed).  The code fixes it with the reference state of the run
+\item In the measure form $s^{-b_\rho}$ is not invariant under a shift of $s$, so the constant matters, at relative order
+  $b_\rho\mathcal N\ln(\text{ratio of scales})/S_{\rm t}^2$ in $T_a$ and $P_a$ (not computed).  The code fixes it with the reference state of the run
   instead of $A$, which makes $s\approx S_{\rm t}$ where the particles are.
 \item The scale becomes physical only beyond one loop for a non-conformal exact count, where it sets the number of quanta per unit of entropy.
 \end{itemize}
 So \texttt{T\_scale}$\,=1$ is harmless for what has been run.  The weakness of the present choice is elsewhere: the reference is taken from the
 initial condition, which is right in equilibrium but goes stale in an expanding flow, with an error of order $\mathcal N\ln(V/\bar V)/S_{\rm t}$.
 
-\paragraph{For the owner.}  (i) Whether to keep $\beta=b$, $\beta=D/2+1$, $\beta_*$, or the whole family as one setting, when the code is pruned.
-(ii) The non-conformal run (split$+\omega$ against the measure form at $\beta=b$, $D/2+1$ and $\beta_*$, $s_a=16$ and 54, at rest and $v_0=0.8$),
+\paragraph{For the owner.}  (i) Whether to keep $b_\rho=b$, $b_\rho=D/2+1$, $b_{\rho*}$, or the whole family as one setting, when the code is pruned.
+(ii) The non-conformal run (split$+\omega$ against the measure form at $b_\rho=b$, $D/2+1$ and $b_{\rho*}$, $s_a=16$ and 54, at rest and $v_0=0.8$),
 estimated at 5--7 node-hours, waits for that decision; before it, the tests of the S-scheme and of $\omega$ need a pass at $c_s^2=1/3$ (they cover
 $1/2$ and $1/4$).
 
@@ -1711,7 +1711,7 @@ The owner merges \texttt{sscheme-measure} into \texttt{main} and prunes the code
 \begin{itemize}
 \item \emph{Remove the full form} (\texttt{SPH\_SSCHEME\_FORM=full}).  The exact form is the full form with the exact count in place of the one
   loop: the same flat measure, no wall and no reference, and a label that has no fold at small $S_{\rm t}$.  Keep the one-loop $\Delta$ and its
-  slopes in \nolinkurl{src/sscheme.jl}, since the measure form is built on them ($\Delta^H=\Delta-\beta\ln S_{\rm t}-C$), and the full label in
+  slopes in \nolinkurl{src/sscheme.jl}, since the measure form is built on them ($\Delta^H=\Delta-b_\rho\ln S_{\rm t}-C$), and the full label in
   \nolinkurl{examples/sscheme_ref.py} and the quadrature as references.  Tests 1--6 of \nolinkurl{test/testsscheme.jl}, which set the full form,
   move to the measure form or go where \nolinkurl{test/testsscheme_measure.jl} covers them.  Off conformal the exact form needs a table in a
   third variable, the scale of \Eq{deltascale}; until then the measure form is the S-scheme there.
@@ -1724,14 +1724,14 @@ The owner merges \texttt{sscheme-measure} into \texttt{main} and prunes the code
 \begin{itemize}
 \item \emph{Remove \texttt{SPH\_RENORM=1}}, the first renormalized Hamiltonian (\nolinkurl{partition_v2.tex}): it is not consistent with one loop.
   Its energy is the tree level of the target at $u=S_{\rm t}$ and only the weight changes, through the label $s=u-b\ln u$; with the Liouville
-  measure flat in $s$, $e^s\,ds=e^u u^{-b}(1-b/u)\,du$, so it is the measure form with $\beta=b$ and $\Delta^H=0$: it drops split's
+  measure flat in $s$, $e^s\,ds=e^u u^{-b}(1-b/u)\,du$, so it is the measure form with $b_\rho=b$ and $\Delta^H=0$: it drops split's
   $\mathcal N\ln(\gamma V)$ and the sound term $\tfrac12\ln(1-c_s^2v^2)$ (for the conformal fluid the sound term alone).  Its code is
   \texttt{renorm\_vote\_entropy} and the \texttt{RENORM} flag of \nolinkurl{src/stochastic.jl} and \nolinkurl{src/hmc.jl}; its only users are the
   legendre-era scripts \nolinkurl{examples/eos_legendre.py} and \nolinkurl{examples/eos_compare.py}.  \texttt{SPH\_RENORM=1} becomes a hard stop;
   \texttt{SPH\_RENORM=0} (the tree level) stays for the tests of the tree-level machinery and the regression.
 \end{itemize}
 What remains, each with the positional counterterm optional (\texttt{SPH\_POSITIONAL=1}): split, with $\omega$ in the energy; the S-scheme in the
-measure form, any $c_s^2$, $\beta$ to be chosen (\Sect{sec:beta}), with $\omega$ in the label; the S-scheme in the exact form, $c_s^2=1/2$, with
+measure form, any $c_s^2$, $b_\rho$ to be chosen (\Sect{sec:beta}), with $\omega$ in the label; the S-scheme in the exact form, $c_s^2=1/2$, with
 $\omega$ in the label; and the tree level, \texttt{SPH\_RENORM=0}.  After the pruning, \texttt{test/run.sh all} runs without the time limit, and
 the regression against \texttt{main} at \texttt{SPH\_RENORM=0} and at split should be bit-identical apart from the record of $H$ and the start of
 the nominal bath (\Sect{sec:results}, C; \nolinkurl{split_dynamics.tex}).
@@ -1758,7 +1758,7 @@ merged only on the owner's word (P8).
 \item[P4b.] \emph{Rename $\beta$ of the measure form} to $b_\rho$, ``the $b$ of the measure $\rho$'' ($\beta$ is $u^\mu/T$ in the notes): $\rho(s)=e^s
   s^{-b_\rho}(1-b_\rho/s)$, with the choices $b_\rho=b$, $D/2+1$, $b_{\rho*}$ (\Sect{sec:beta}).  Code: the identifier $b_\rho$ in the formulas (Unicode subscript, typed \texttt{b\textbackslash\_rho} and Tab), \texttt{SS\_BRHO},
   the setting \texttt{SPH\_SSCHEME\_BRHO}; \texttt{SPH\_SSCHEME\_BETA} becomes a hard stop that names the new setting.  The notes in use
-  (\nolinkurl{renorm3.tex}, this plan, \nolinkurl{split_dynamics.tex}) change only where $\beta$ is the exponent of the measure.
+  (\nolinkurl{renorm3.tex}, this plan, \nolinkurl{split_dynamics.tex}) change only where $b_\rho$ is the exponent of the measure.
 \item[P4c.] \emph{The positional counterterm on by default}, \texttt{SPH\_POSITIONAL=1}, for split and both forms of the S-scheme (owner).  It
   costs 20--40\% per step with split and under 10\% with the S-scheme (campaign \texttt{hastings\_compare}).  A kernel other than Wendland C2 with
   $\omega$ on stays a hard stop (owner) until the tables of C4 and C6 are in (after the merge).  The regression against \texttt{main} then runs

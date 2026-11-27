@@ -550,9 +550,9 @@ that $\rho$ is positive.  The volume changes along the flow, so nothing that dep
 that $G$ is the phase-space volume below an energy surface, which is the adiabatic invariant of a Hamiltonian system, so the label $\ln G$ is the
 natural quantity for the ideal step to conserve.
 
-\paragraph{The scheme with the logarithm in the measure.}  We move the term $\beta\ln S_{\rm t}$ of \Eq{Deltasplit} into the measure, with
+\paragraph{The scheme with the logarithm in the measure.}  We move the term $b_\rho\ln S_{\rm t}$ of \Eq{Deltasplit} into the measure, with
 \st
-\beta\equiv\frac D2+1 .
+b_\rho\equiv\frac D2+1 .
 \stp
 The label of a particle is its target entropy less what remains,
 \begin{keyeq}
@@ -566,30 +566,30 @@ where $T_0$ is the rest-frame temperature of the nominal state of the run, so th
 $H(s,\bm m,V)$ is the solution $e$ of this equation, as in \Eq{root}.  The measure of the labels is
 \begin{keyeq}
 \st
-d\mu=\rho(s)\,ds\,d\bm m\,d\bm x,\qquad \rho(s)=\frac{d}{ds}\Big[e^{\,s}s^{-\beta}\Big]=e^{\,s}\,s^{-\beta}\Big(1-\frac\beta s\Big),\qquad s>\beta .
+d\mu=\rho(s)\,ds\,d\bm m\,d\bm x,\qquad \rho(s)=\frac{d}{ds}\Big[e^{\,s}s^{-b_\rho}\Big]=e^{\,s}\,s^{-b_\rho}\Big(1-\frac{b_\rho} s\Big),\qquad s>b_\rho .
 \label{rho}
 \stp
 \end{keyeq}
-The factor $1-\beta/s$ is the Jacobian of the relabeling $s'=s-\beta\ln s$, for which $\rho\,ds=e^{s'}ds'$.  We keep it, because dropping it would
-change the weight by $-\beta/s$, which is much larger than the term $c/S_{\rm t}$ that one loop neglects.  With the Jacobian the density is positive
-only for $s>\beta$, and this is the one bound of the scheme.  The ideal step conserves the label, so a particle above the bound stays above it.  The
+The factor $1-b_\rho/s$ is the Jacobian of the relabeling $s'=s-b_\rho\ln s$, for which $\rho\,ds=e^{s'}ds'$.  We keep it, because dropping it would
+change the weight by $-b_\rho/s$, which is much larger than the term $c/S_{\rm t}$ that one loop neglects.  With the Jacobian the density is positive
+only for $s>b_\rho$, and this is the one bound of the scheme.  The ideal step conserves the label, so a particle above the bound stays above it.  The
 viscous step, the heat bath of hybrid Monte Carlo and the equilibrium draw reject a proposal below it.  The density vanishes linearly at the bound,
 so few proposals arrive there.
 
-\paragraph{The relation to \Eq{scheme}.}  In the new label the old one is $s'=s-\beta\ln s$, up to a constant.  Since $\ln s$ is evaluated at the
+\paragraph{The relation to \Eq{scheme}.}  In the new label the old one is $s'=s-b_\rho\ln s$, up to a constant.  Since $\ln s$ is evaluated at the
 label and not at $S_{\rm t}$,
 \st
-s-\beta\ln s=S_{\rm t}-\Delta_\chi-\Delta_\ell+\frac{\beta\,\Delta^H}{S_{\rm t}}+\text{const}+O\Big(\frac1{S_{\rm t}^2}\Big) .
+s-b_\rho\ln s=S_{\rm t}-\Delta_\chi-\Delta_\ell+\frac{b_\rho\,\Delta^H}{S_{\rm t}}+\text{const}+O\Big(\frac1{S_{\rm t}^2}\Big) .
 \label{mismatch}
 \stp
 The two schemes agree at one loop and differ at the order of $c/S_{\rm t}$.  The difference vanishes in the nominal state at rest.  In motion
-$\beta\Delta^H$ is $-0.17$, $-0.48$ and $-0.75$ at $v=0.5$, $0.8$ and $0.95$ for $c_s^2=1/2$, which is comparable to $c$.  If the comparison of the
+$b_\rho\Delta^H$ is $-0.17$, $-0.48$ and $-0.75$ at $v=0.5$, $0.8$ and $0.95$ for $c_s^2=1/2$, which is comparable to $c$.  If the comparison of the
 single particle (\Sect{sec:accuracy}) shows that this matters, the difference can be removed to the next order by the label
 \st
-s=S_{\rm t}-F(S_{\rm t})\,\Delta^{H},\qquad F(S_{\rm t})=\frac{S_{\rm t}+2\beta}{S_{\rm t}+\beta} .
+s=S_{\rm t}-F(S_{\rm t})\,\Delta^{H},\qquad F(S_{\rm t})=\frac{S_{\rm t}+2b_\rho}{S_{\rm t}+b_\rho} .
 \label{schemeF}
 \stp
-The factor $F$ is the inverse of the Jacobian, $S_{\rm t}/(S_{\rm t}-\beta)$, with its pole removed.  With it the left side of \Eq{mismatch} agrees with
+The factor $F$ is the inverse of the Jacobian, $S_{\rm t}/(S_{\rm t}-b_\rho)$, with its pole removed.  With it the left side of \Eq{mismatch} agrees with
 \Eq{scheme} up to $O(1/S_{\rm t}^2)$, and it no longer depends on $T_0$ to that order.
 
 \paragraph{The state of the particle.}  The steps of \Sect{sec:state} apply with $\Delta^H$ in place of $\Delta$.  Its slopes along the two modes are
@@ -602,7 +602,7 @@ The factor $F$ is the inverse of the Jacobian, $S_{\rm t}/(S_{\rm t}-\beta)$, wi
 We write the state for the label \Eq{schemeF}; the label \Eq{schemeH} is the case $F=1$, $\kappa=1$.  With
 \st
 \epsilon_p=\frac{F\,\Delta_p^{H}}{S_{\rm t}\,a},\qquad \epsilon_\parallel=\frac{F\,\Delta_\theta^{H}}{S_{\rm t}},\qquad
-\kappa=1-\frac{dF}{dS_{\rm t}}\,\Delta^H=1+\frac{\beta\,\Delta^H}{(S_{\rm t}+\beta)^2},
+\kappa=1-\frac{dF}{dS_{\rm t}}\,\Delta^H=1+\frac{b_\rho\,\Delta^H}{(S_{\rm t}+b_\rho)^2},
 \stp
 the temperature, the velocity and the pressure of the particle are
 \begin{keyeq}
@@ -624,7 +624,7 @@ the pressure is
 \stp
 at every velocity.  The weight of a particle in the energy, which the viscous step uses, is
 \st
-\ln\rho(s)-\ln T_a=s-\beta\ln s+\ln\Big(1-\frac\beta s\Big)-\ln T_a .
+\ln\rho(s)-\ln T_a=s-b_\rho\ln s+\ln\Big(1-\frac{b_\rho} s\Big)-\ln T_a .
 \label{weightH}
 \stp
 
@@ -638,21 +638,21 @@ s=S_{\rm t}+\mathcal N\ln S_{\rm t}+\text{const} ,
 \stp
 which increases for every $S_{\rm t}$ when $c_s^2\le1/d$.  The slope that is left in the Hamiltonian has the safe sign, and there is no fold.
 
-\paragraph{The choice of $\beta$.}  Any exponent between $0$ and $D/2+1$ could be moved to the measure, with the rest of the logarithm left in the
+\paragraph{The choice of $b_\rho$.}  Any exponent between $0$ and $D/2+1$ could be moved to the measure, with the rest of the logarithm left in the
 Hamiltonian.  The choices agree at one loop.  \Tab{tab:bounds} compares four of them.  The exponent $D/2$ is the Gaussian width alone, and $b$ is the
-choice of the split scheme.  With $\beta=D/2+1$ the exponent does not depend on the equation of state, the remainder has no explicit volume, and
+choice of the split scheme.  With $b_\rho=D/2+1$ the exponent does not depend on the equation of state, the remainder has no explicit volume, and
 for $c_s^2=1/4$ every condition holds above the bound of the measure, which none of the other choices achieves.  For a very soft fluid, $q>d+D/2+1$,
 the pressure bound $S_{\rm t}>q-d$ rises above the bound of the measure.
 
 \begin{table}[h]
-\caption{The lower bounds on $S_{\rm t}$ in $d=2$ for a constant speed of sound when $\beta\ln S_{\rm t}$ is in the measure and the rest of $\Delta$ in
+\caption{The lower bounds on $S_{\rm t}$ in $d=2$ for a constant speed of sound when $b_\rho\ln S_{\rm t}$ is in the measure and the rest of $\Delta$ in
 the Hamiltonian ($F=1$).  Each entry is the smallest $S_{\rm t}$ above which the condition held for all $v\le0.995$ and three volumes; a dash means that
 it held everywhere, or wherever $T_a>0$.  The bound of the measure is on the label, which is close to $S_{\rm t}$.}
 \label{tab:bounds}
 \begin{center}
 \begin{tabular}{llcccc}
 \toprule
-$c_s^2$ & $\beta$ & measure, $s>\beta$ & $T_a>0$ & $|v_a|<1$ & $P_a>0$ \\
+$c_s^2$ & $b_\rho$ & measure, $s>b_\rho$ & $T_a>0$ & $|v_a|<1$ & $P_a>0$ \\
 \midrule
 $1/2$ & $0$ (\Eq{scheme}) & --- & 2.8 & 2.9 & --- \\
       & $D/2$ & 1.5 & 1.3 & 1.4 & --- \\
@@ -684,7 +684,7 @@ a step needs follows once the target state $\bar\beta_\mu$ of the particle is kn
 \paragraph{With the logarithm in the measure.}  The paragraphs below are written for the label \Eq{scheme} and the Liouville measure.  For the form
 of \Sect{sec:bounds}, which is the one to implement, three things change and nothing else.  The label is \Eq{schemeH} or \Eq{schemeF} in place of
 \Eq{scheme}.  The state of the particle is \Eq{TavaH} and \Eq{PaH} in place of \Eq{Tava} and \Eq{Pa}.  The weight in the energies is
-$\ln\rho(s)-\ln T_a$ of \Eq{weightH} in place of $S-\ln T_a$, and it is $-\infty$ for a label below the bound $s=\beta$.  The ideal step never
+$\ln\rho(s)-\ln T_a$ of \Eq{weightH} in place of $S-\ln T_a$, and it is $-\infty$ for a label below the bound $s=b_\rho$.  The ideal step never
 evaluates $\rho$.
 
 \paragraph{From the energy.}  When the energy is known, as in the viscous step, nothing has to be solved beyond what the code does now.  Given $e$,
@@ -838,8 +838,10 @@ k_{\parallel\parallel\perp\perp}&=k_{\perp_1\perp_1\perp_2\perp_2}=q+3 .
 the susceptibility is diagonal, so \Eq{CgCh} no longer contains an inverse matrix,
 \begin{keyeq}
 \st
-c_g=\frac18\sum_{i,j}\frac{k_{iijj}}{k_ik_j}-\frac18\sum_i\frac{w_i^2}{k_i}-\frac1{12}\sum_{i,j,k}\frac{k_{ijk}^2}{k_ik_jk_k},\qquad
+\begin{gathered}
+c_g=\frac18\sum_{i,j}\frac{k_{iijj}}{k_ik_j}-\frac18\sum_i\frac{w_i^2}{k_i}-\frac1{12}\sum_{i,j,k}\frac{k_{ijk}^2}{k_ik_jk_k},\\
 c_h=-\frac{(1+v^2)^2}a-v^2+\frac12\Big[\frac{(1+v^2)\,w_p}a-v\,w_\parallel\Big] ,
+\end{gathered}
 \label{cdiag}
 \stp
 \end{keyeq}

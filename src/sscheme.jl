@@ -1,6 +1,6 @@
 # sscheme.jl — the S-scheme, state counting at one loop (docs/renorm3.tex; docs/sscheme_plan.tex, "Level 1", item B, and "Level 1, amended").
 #
-# The default form (SPH_SSCHEME_FORM=measure) moves β ln S_t of Δ into the measure of the labels: see SSchemeConsts below.  The header
+# The default form (SPH_SSCHEME_FORM=measure) moves bᵨ ln S_t of Δ into the measure of the labels: see SSchemeConsts below.  The header
 # describes the one-loop label S_t − Δ_χ − Δ_ℓ that the measure form is built on (it was the full form, removed on 2026-11-26).
 #
 # A particle has the label s (flat Liouville measure e^s ds d²m, conserved by the ideal step), the momentum m and the volume V.  Its
@@ -34,13 +34,13 @@ const SS_D = 3                # D = d + 1 (d = 2)
 
 # The form of the scheme (sscheme_plan.tex, "Level 1, amended"; renorm3.tex, "The bounds, ..."), SPH_SSCHEME_FORM:
 #   (full    s = S_t − Δ_χ − Δ_ℓ with the flat measure: removed on 2026-11-26, superseded by exact; its one-loop core stays, for measure)
-#   measure  (default) β ln S_t of Δ moved into the measure of the labels: s = S_t − Δ^H, Δ^H = Δ − β ln S_t − const, measure
-#            ρ(s) = e^s s^(−β) (1 − β/s) on s > β (the wall).  For a constant speed of sound
-#              Δ^H = (D/2 + 1 − β) ln(S_t/S̄_t) − 𝒩 ln(s_rel/s̄_rel) + ½ ln(a/q),   𝒩 = 1 − d c_s²,
-#            zero at the reference state of the run at rest (S̄_t = s̄_rel V̄); β = D/2 + 1 (SPH_SSCHEME_BETA, default): Δ^H = −(q − d) ln(T_rel/T_0)
-#            + ½ ln(a/q), the owner's eq. amend (F = 1), and only s̄_rel enters; β = b = D/2 + d c_s²: Δ^H = 𝒩 ln(γV/V̄) + ½ ln(a/q), the split of
-#            SPH_RENORM=split, and only V̄ enters.  As a term added to Δ the change is M = −β ln S_t + C, with slopes (−βq, −βv, −β) along
-#            (τ = ln T_rel, rapidity, ln V); it shifts Δ_p by −β(q − v²), Δ_θ by −βv and P_a V/T_a by β(1 − q/n).
+#   measure  (default) bᵨ ln S_t of Δ moved into the measure of the labels (bᵨ = b_ρ, "the b of the measure ρ"; it was β until 2026-11-26): s = S_t − Δ^H, Δ^H = Δ − bᵨ ln S_t − const, measure
+#            ρ(s) = e^s s^(−bᵨ) (1 − bᵨ/s) on s > bᵨ (the wall).  For a constant speed of sound
+#              Δ^H = (D/2 + 1 − bᵨ) ln(S_t/S̄_t) − 𝒩 ln(s_rel/s̄_rel) + ½ ln(a/q),   𝒩 = 1 − d c_s²,
+#            zero at the reference state of the run at rest (S̄_t = s̄_rel V̄); bᵨ = D/2 + 1 (SPH_SSCHEME_BRHO, default): Δ^H = −(q − d) ln(T_rel/T_0)
+#            + ½ ln(a/q), the owner's eq. amend (F = 1), and only s̄_rel enters; bᵨ = b = D/2 + d c_s²: Δ^H = 𝒩 ln(γV/V̄) + ½ ln(a/q), the split of
+#            SPH_RENORM=split, and only V̄ enters.  As a term added to Δ the change is M = −bᵨ ln S_t + C, with slopes (−bᵨq, −bᵨv, −bᵨ) along
+#            (τ = ln T_rel, rapidity, ln V); it shifts Δ_p by −bᵨ(q − v²), Δ_θ by −bᵨv and P_a V/T_a by bᵨ(1 − q/n).
 #   The reference (s̄_rel, V̄) is set from the initial condition (sscheme_reference!, called by sscheme_labels!): s̄_rel the mean rest-frame
 #   entropy density of the targets, V̄ = L²/N, as split sets its V̄.  measure-f (the factor F of eq. schemeF) is reserved.
 #   exact    s = S_1loop + δ(ln S_t, θ), the exact count of states of the particle, flat measure (sscheme_exact.jl; c_s² = 1/2 only).
@@ -48,14 +48,14 @@ const SS_FORM = setting("SPH_SSCHEME_FORM", :measure)
 SS_FORM in (:measure, :exact) || error("SPH_SSCHEME_FORM = $SS_FORM: measure (the default) or exact.  The full form (flat measure, the one-loop label) " *
     "was removed on 2026-11-26: the exact form is the full form with the exact count (docs/sscheme_plan.tex, sec:prune; last commit with it 9846a6c)")
 const SS_MEASURE = SS_FORM === :measure
-const SS_BETA = setting("SPH_SSCHEME_BETA", SS_D / 2 + 1)
+const SS_BRHO = setting("SPH_SSCHEME_BRHO", SS_D / 2 + 1)
 const SS_REF = Ref((NaN, NaN))          # (s̄_rel, V̄)
 
 struct SSchemeConsts
     c2 :: Float64;  q :: Float64;  n :: Float64;  A :: Float64
     Pconst :: Float64         # P_a V/T_a = S_t/n + Pconst
-    β :: Float64              # the exponent in the measure (0 in the full form)
-    C :: Float64              # the constant of M = −β ln S_t + C (Δ^H = 0 at the reference state)
+    bᵨ :: Float64             # b_ρ, the exponent of the measure of the labels (0 in the exact form)
+    C :: Float64              # the constant of M = −bᵨ ln S_t + C (Δ^H = 0 at the reference state)
 end
 # The label of the full form at rest, (S_t, V) (closed form: T_rel^q = S_t/(nAV))
 function sscheme_label_full_rest(St, V, c2, q, n, A)
@@ -67,20 +67,20 @@ function SSchemeConsts(eos::ConstantCs2EOS)
     Pc = ((SS_D / 2) * (2 + q) - 1) / n - (SS_D / 2 + 1)
     SS_FORM === :exact && check_sscheme_exact(eos)
     SS_MEASURE || return SSchemeConsts(c2, q, n, A, Pc, 0.0, 0.0)
-    β = SS_BETA;  N = 1 - (SS_D - 1) * c2;  k = SS_D / 2 + 1 - β
+    bᵨ = SS_BRHO;  N = 1 - (SS_D - 1) * c2;  k = SS_D / 2 + 1 - bᵨ
     srel, Vb = SS_REF[]
     if !(isfinite(srel) && isfinite(Vb))
         (abs(N) < 1e-14 && abs(k) < 1e-14) || error("SPH_SSCHEME_FORM=measure: the reference state is not set (sscheme_reference!, called by sscheme_labels!)")
-        srel, Vb = 1.0, 1.0           # conformal with β = D/2 + 1: Δ^H = ½ ln(a/q), the reference does not enter
+        srel, Vb = 1.0, 1.0           # conformal with bᵨ = D/2 + 1: Δ^H = ½ ln(a/q), the reference does not enter
     end
     Stb = srel * Vb
-    C = sscheme_label_full_rest(Stb, Vb, c2, q, n, A) + β * log(Stb) - Stb     # s(reference, rest) = S̄_t
-    return SSchemeConsts(c2, q, n, A, Pc + β * (1 - q / n), β, C)
+    C = sscheme_label_full_rest(Stb, Vb, c2, q, n, A) + bᵨ * log(Stb) - Stb     # s(reference, rest) = S̄_t
+    return SSchemeConsts(c2, q, n, A, Pc + bᵨ * (1 - q / n), bᵨ, C)
 end
 # The reference state of the measure form: s̄_rel (rest-frame entropy density) and V̄
 sscheme_reference!(srel::Real, Vbar::Real) = (SS_REF[] = (Float64(srel), Float64(Vbar));  nothing)
-# The logarithm of the measure of the labels: s (full), ln ρ(s) = s − β ln s + ln(1 − β/s), −Inf for s ≤ β (measure)
-@inline ss_lnrho(s::Float64, c::SSchemeConsts) = !SS_MEASURE ? s : (s > c.β ? s - c.β * log(s) + log1p(-c.β / s) : -Inf)
+# The logarithm of the measure of the labels: s (full), ln ρ(s) = s − bᵨ ln s + ln(1 − bᵨ/s), −Inf for s ≤ bᵨ (measure)
+@inline ss_lnrho(s::Float64, c::SSchemeConsts) = !SS_MEASURE ? s : (s > c.bᵨ ? s - c.bᵨ * log(s) + log1p(-c.bᵨ / s) : -Inf)
 SSchemeConsts(eos::AbstractEOS) = error("SPH_RENORM=sscheme: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
 const SS_NOSTATE = (ok = false, s = -Inf, St = NaN, H = NaN, Ta = NaN, va = NaN, Pa = NaN, D = NaN, weight = -Inf,
@@ -102,9 +102,9 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
     s = St - Dχ - Dℓ
     Dp = (SS_D / 2) * (2 + q - v2) + v2 * (1 - v2) / a - (1 + v2)
     Dθ = (SS_D / 2) * v - v * (1 - v2) / a + v
-    if SS_MEASURE                                              # Δ → Δ^H = Δ + M, M = −β ln S_t + C
-        s += c.β * log(St) - c.C
-        Dp -= c.β * (q - v2);  Dθ -= c.β * v
+    if SS_MEASURE                                              # Δ → Δ^H = Δ + M, M = −bᵨ ln S_t + C
+        s += c.bᵨ * log(St) - c.C
+        Dp -= c.bᵨ * (q - v2);  Dθ -= c.bᵨ * v
     end
     Pω = 0.0
     if POS_ON                                                  # the positional counterterm, s → s + ω(S_t/n, V) (positional.jl)
@@ -116,7 +116,7 @@ const SS_WALL = merge(SS_NOSTATE, (D = Inf,))          # no state only because t
     T = Tr / γ
     Ta = T / D;  va = (v * (1 - 2εp) + εpar) / D
     (D > 0 && abs(va) < 1) || return SS_NOSTATE
-    SS_MEASURE && s <= c.β && return SS_WALL                 # measure: the wall s > β
+    SS_MEASURE && s <= c.bᵨ && return SS_WALL                 # measure: the wall s > bᵨ
     Pa = (St / n + c.Pconst + Pω) * Ta / V
     return (ok = true, s = s, St = St, H = V * (w * γ * γ - p), Ta = Ta, va = va, Pa = Pa, D = D, weight = ss_lnrho(s, c) - log(Ta),
             γ = γ, Trel = Tr, T = T, v = v, erest = p / c.c2)
@@ -264,7 +264,7 @@ function sscheme_labels!(particles, params, cl, eos)
             Tr, _ = sscheme_target_entropy(pa.s, norm(pa.m), pa.V, c0);  sr += c0.n * c0.A * Tr^c0.q
         end
         sscheme_reference!(sr / length(particles), prod(params.L) / params.N)
-        println(@sprintf("SPH_SSCHEME_FORM=measure, β = %.4g: reference s̄_rel = %.10g, V̄ = %.10g (S̄_t = %.6g)", SS_BETA, SS_REF[]..., prod(SS_REF[])))
+        println(@sprintf("SPH_SSCHEME_FORM=measure, b_ρ = %.4g: reference s̄_rel = %.10g, V̄ = %.10g (S̄_t = %.6g)", SS_BRHO, SS_REF[]..., prod(SS_REF[])))
     end
     c = SSchemeConsts(eos)
     for pa in particles

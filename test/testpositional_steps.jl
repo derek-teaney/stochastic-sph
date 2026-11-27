@@ -11,7 +11,7 @@ const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exac
 quiet(f) = redirect_stdout(f, devnull)
 ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
-println("scheme ", SSCHEME ? "sscheme ($(SS_FORM), β = $(SS_BETA))" : SPLIT ? "split" : "other", ", ω on, a₂ = ", POS_A2)
+println("scheme ", SSCHEME ? "sscheme ($(SS_FORM), b_ρ = $(SS_BRHO))" : SPLIT ? "split" : "other", ", ω on, a₂ = ", POS_A2)
 
 println("1. the Jacobian determinant of the ideal step")
 for c2 in CS2S
