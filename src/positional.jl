@@ -1,4 +1,5 @@
-# positional.jl — the positional counterterm (docs/sscheme_plan.tex, "Level 2", eq. omega; items H, I), SPH_POSITIONAL=1 (default 0: off).
+# positional.jl — the positional counterterm (docs/sscheme_plan.tex, "Level 2", eq. omega; items H, I), SPH_POSITIONAL=1 (the default since
+# 2026-11-26, P4c; 0: off, as every run before).  With a renormalized Hamiltonian only (split, sscheme); Wendland C2 only (a hard stop otherwise).
 #
 # The one-loop correction of the positions per particle, at the particle's own target state and volume,
 #   ω(σ̄, V) = a₁ ν_* + a₂ ν_*²,   ν_* = −I₀(σ̄) V/(2 a₁ h²),   σ̄ = S_t/n = p γ V/T_rel,   a₁ = π/(2 sin(2π/n_W)),
@@ -11,7 +12,7 @@
 #   SPH_RENORM=sscheme  the label, s = S_t − Δ^H + ω (sscheme.jl: Δ_p → Δ_p − a ω_σ, Δ_θ → Δ_θ − v ω_σ, P_a V/T_a → + ω_V + ω_σ/n);
 #   SPH_RENORM=split    the energy, E_dyn = T (Δs_dyn − ω(u/n, V)) (renorm_split.jl).
 # h and the kernel are those of the run (positional_set!, called by check_split / check_sscheme when SimParams is built).
-const POS_ON = setting("SPH_POSITIONAL", 0) != 0
+const POS_ON = setting("SPH_POSITIONAL", 1) != 0
 const POS_A2 = setting("SPH_POSITIONAL_A2", 0.0)
 const POS_H = Ref(NaN)                      # the smoothing length of the run
 const POS_A1 = π / (2 * sin(2π / 5))        # Wendland C2 (n_W = 5)
@@ -51,7 +52,7 @@ end
 
 function positional_set!(params)
     POS_ON || return nothing
-    params.kernel isa WendlandC2_2D || error("SPH_POSITIONAL=1: the table of I₀ is for Wendland C2 in 2D only (SPH_KERNEL=wc2)")
+    params.kernel isa WendlandC2_2D || error("SPH_POSITIONAL=1 (the default): the table of I₀ is for Wendland C2 in 2D only (SPH_KERNEL=wc2); set SPH_POSITIONAL=0 for another kernel")
     POS_H[] = params.h
     return nothing
 end

@@ -7,6 +7,7 @@
 #   5. at c_s² = 1/2 (𝒩 = 0) with the sound term off, the vote weight equals that of SPH_RENORM=1 (stochastic.jl, renorm_vote_entropy) to 1e-12;
 #   6. hybrid Monte Carlo: the energy error of a trajectory falls as δt², a few updates are accepted, no failed solves.
 ENV["SPH_RENORM"] = "split"
+haskey(ENV, "SPH_POSITIONAL") || (ENV["SPH_POSITIONAL"] = "0")   # the bare scheme (ω: testpositional*.jl); the maps are called without SimParams
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 quiet(f) = redirect_stdout(f, devnull)

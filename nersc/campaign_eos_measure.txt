@@ -3,21 +3,22 @@
 # (SPH_SSCHEME_BRHO=2, the S-scheme coding of split) at c_s^2 = 1/4; s_a = 16, 54, 541; h/a = 2, 3; v = 0; L = 0.45; 8 seeds of 300 updates.
 # For the table of the EOS error after each correction (single particle, positions at one loop, a_2).  144 tasks on 2 threads.
 # Output $SCRATCH/sph/eos_measure/<run>/<tag>_seed<k>.{txt,h5}.
-eosS_ssm_c05_s16_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssm_c05_s16_ha2_v0
-eosS_ssm_c05_s16_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssm_c05_s16_ha3_v0
-eosS_ssm_c05_s54_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssm_c05_s54_ha2_v0
-eosS_ssm_c05_s54_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssm_c05_s54_ha3_v0
-eosS_ssm_c05_s541_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssm_c05_s541_ha2_v0
-eosS_ssm_c05_s541_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssm_c05_s541_ha3_v0
-eosS_ssm_c025_s16_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssm_c025_s16_ha2_v0
-eosS_ssm_c025_s16_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssm_c025_s16_ha3_v0
-eosS_ssm_c025_s54_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssm_c025_s54_ha2_v0
-eosS_ssm_c025_s54_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssm_c025_s54_ha3_v0
-eosS_ssm_c025_s541_ha2_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssm_c025_s541_ha2_v0
-eosS_ssm_c025_s541_ha3_v0   8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssm_c025_s541_ha3_v0
-eosS_ssmb_c025_s16_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssmb_c025_s16_ha2_v0
-eosS_ssmb_c025_s16_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssmb_c025_s16_ha3_v0
-eosS_ssmb_c025_s54_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssmb_c025_s54_ha2_v0
-eosS_ssmb_c025_s54_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssmb_c025_s54_ha3_v0
-eosS_ssmb_c025_s541_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssmb_c025_s541_ha2_v0
-eosS_ssmb_c025_s541_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssmb_c025_s541_ha3_v0
+# SPH_POSITIONAL=0 added on 2026-11-26 to the lines without it: the positional counterterm is on by default since then (P4c); these lines ran without it.
+eosS_ssm_c05_s16_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssm_c05_s16_ha2_v0
+eosS_ssm_c05_s16_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssm_c05_s16_ha3_v0
+eosS_ssm_c05_s54_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssm_c05_s54_ha2_v0
+eosS_ssm_c05_s54_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssm_c05_s54_ha3_v0
+eosS_ssm_c05_s541_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssm_c05_s541_ha2_v0
+eosS_ssm_c05_s541_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssm_c05_s541_ha3_v0
+eosS_ssm_c025_s16_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssm_c025_s16_ha2_v0
+eosS_ssm_c025_s16_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssm_c025_s16_ha3_v0
+eosS_ssm_c025_s54_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssm_c025_s54_ha2_v0
+eosS_ssm_c025_s54_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssm_c025_s54_ha3_v0
+eosS_ssm_c025_s541_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssm_c025_s541_ha2_v0
+eosS_ssm_c025_s541_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssm_c025_s541_ha3_v0
+eosS_ssmb_c025_s16_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosS_ssmb_c025_s16_ha2_v0
+eosS_ssmb_c025_s16_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosS_ssmb_c025_s16_ha3_v0
+eosS_ssmb_c025_s54_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ssmb_c025_s54_ha2_v0
+eosS_ssmb_c025_s54_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ssmb_c025_s54_ha3_v0
+eosS_ssmb_c025_s541_ha2_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ssmb_c025_s541_ha2_v0
+eosS_ssmb_c025_s541_ha3_v0   8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ssmb_c025_s541_ha3_v0

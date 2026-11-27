@@ -4,6 +4,7 @@
 # tests the state of the particle in the steps, whatever the form (SPH_SSCHEME_FORM, default measure).  A small system at s_a = 16 after
 # the equilibrium draw (thermal momenta), c_s² = 1/2 and 1/4.
 ENV["SPH_RENORM"] = "sscheme"
+haskey(ENV, "SPH_POSITIONAL") || (ENV["SPH_POSITIONAL"] = "0")   # the bare scheme (ω: testpositional*.jl); the maps are called without SimParams
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only

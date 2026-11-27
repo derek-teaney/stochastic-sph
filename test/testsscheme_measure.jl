@@ -11,6 +11,7 @@
 ENV["SPH_SSCHEME_FORM"] = "measure"
 haskey(ENV, "SPH_SSCHEME_BRHO") && delete!(ENV, "SPH_SSCHEME_BRHO")
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")
+haskey(ENV, "SPH_POSITIONAL") || (ENV["SPH_POSITIONAL"] = "0")   # the bare scheme (ω: testpositional*.jl); the maps are called without SimParams
 using StaticArrays, LinearAlgebra, Printf
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 ok = true

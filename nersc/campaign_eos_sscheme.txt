@@ -3,19 +3,20 @@
 # v = 0, 0.8; L = 0.45; 8 seeds of 300 updates (one third discarded).  128 tasks on 2 threads.  The s_a = 16 lines are left out (owner,
 # 2026-11-25): one-loop state counting has a fold there (sscheme_plan.tex, item E).  The split, tree-level and SPH_RENORM=1 lines are
 # those of eos_split and eos_legendre.  Output $SCRATCH/sph/eos_sscheme/<run>/<tag>_seed<k>.{txt,h5}.
-eosS_ss_c05_s54_ha2_v0        8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c05_s54_ha2_v0
-eosS_ss_c05_s54_ha3_v0        8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c05_s54_ha3_v0
-eosS_ss_c05_s541_ha2_v0       8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c05_s541_ha2_v0
-eosS_ss_c05_s541_ha3_v0       8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c05_s541_ha3_v0
-eosS_ss_c05_s54_ha2_v08       8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c05_s54_ha2_v08
-eosS_ss_c05_s54_ha3_v08       8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c05_s54_ha3_v08
-eosS_ss_c05_s541_ha2_v08      8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c05_s541_ha2_v08
-eosS_ss_c05_s541_ha3_v08      8  SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c05_s541_ha3_v08
-eosS_ss_c025_s54_ha2_v0       8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c025_s54_ha2_v0
-eosS_ss_c025_s54_ha3_v0       8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c025_s54_ha3_v0
-eosS_ss_c025_s541_ha2_v0      8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c025_s541_ha2_v0
-eosS_ss_c025_s541_ha3_v0      8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c025_s541_ha3_v0
-eosS_ss_c025_s54_ha2_v08      8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c025_s54_ha2_v08
-eosS_ss_c025_s54_ha3_v08      8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c025_s54_ha3_v08
-eosS_ss_c025_s541_ha2_v08     8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c025_s541_ha2_v08
-eosS_ss_c025_s541_ha3_v08     8  SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c025_s541_ha3_v08
+# SPH_POSITIONAL=0 added on 2026-11-26 to the lines without it: the positional counterterm is on by default since then (P4c); these lines ran without it.
+eosS_ss_c05_s54_ha2_v0        8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c05_s54_ha2_v0
+eosS_ss_c05_s54_ha3_v0        8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c05_s54_ha3_v0
+eosS_ss_c05_s541_ha2_v0       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c05_s541_ha2_v0
+eosS_ss_c05_s541_ha3_v0       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c05_s541_ha3_v0
+eosS_ss_c05_s54_ha2_v08       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c05_s54_ha2_v08
+eosS_ss_c05_s54_ha3_v08       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c05_s54_ha3_v08
+eosS_ss_c05_s541_ha2_v08      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c05_s541_ha2_v08
+eosS_ss_c05_s541_ha3_v08      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.5 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c05_s541_ha3_v08
+eosS_ss_c025_s54_ha2_v0       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c025_s54_ha2_v0
+eosS_ss_c025_s54_ha3_v0       8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c025_s54_ha3_v0
+eosS_ss_c025_s541_ha2_v0      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c025_s541_ha2_v0
+eosS_ss_c025_s541_ha3_v0      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c025_s541_ha3_v0
+eosS_ss_c025_s54_ha2_v08      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosS_ss_c025_s54_ha2_v08
+eosS_ss_c025_s54_ha3_v08      8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosS_ss_c025_s54_ha3_v08
+eosS_ss_c025_s541_ha2_v08     8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosS_ss_c025_s541_ha2_v08
+eosS_ss_c025_s541_ha3_v08     8  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_CS2=0.25 SR_V=0.8 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosS_ss_c025_s541_ha3_v08

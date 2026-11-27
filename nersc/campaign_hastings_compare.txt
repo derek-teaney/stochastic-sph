@@ -7,6 +7,7 @@
 # Split without omega and the tree level are hastings_bath/hs<sa>_{sp,tr}_v<v>, hq<sa>_{sp,tr}_v<v> (commit 3262b00): line by line, same seeds.
 # Analysis: examples/positional_dyn.jl (dynamics / own HMC), examples/boost_analysis.jl (shear and sound against hydrodynamics, susceptibilities).
 # 384 tasks of 4 cores.
+# SPH_POSITIONAL=0 added on 2026-11-26 to the lines without it: the positional counterterm is on by default since then (P4c); these lines ran without it.
 hs16_spw_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_spw_v0
 hs16_spw_v0.8   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_spw_v0.8
 hs54_spw_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_spw_v0
@@ -15,14 +16,14 @@ hq16_spw_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 
 hq16_spw_v0.8   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_spw_v0.8
 hq54_spw_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_spw_v0
 hq54_spw_v0.8   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_spw_v0.8
-hs16_ssm_v0   16  SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssm_v0
-hs16_ssm_v0.8   16  SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssm_v0.8
-hs54_ssm_v0   16  SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ssm_v0
-hs54_ssm_v0.8   16  SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ssm_v0.8
-hq16_ssm_v0   16  SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ssm_v0
-hq16_ssm_v0.8   16  SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ssm_v0.8
-hq54_ssm_v0   16  SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ssm_v0
-hq54_ssm_v0.8   16  SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ssm_v0.8
+hs16_ssm_v0   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssm_v0
+hs16_ssm_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssm_v0.8
+hs54_ssm_v0   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ssm_v0
+hs54_ssm_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ssm_v0.8
+hq16_ssm_v0   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ssm_v0
+hq16_ssm_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=2.956e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_ssm_v0.8
+hq54_ssm_v0   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ssm_v0
+hq54_ssm_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=sscheme SR_SREL0=9.977e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_ssm_v0.8
 hs16_ssmw_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssmw_v0
 hs16_ssmw_v0.8   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_ssmw_v0.8
 hs54_ssmw_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_ssmw_v0

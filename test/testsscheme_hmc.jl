@@ -2,6 +2,7 @@
 #   7. hybrid Monte Carlo: the energy error of a trajectory falls as δt², a few updates are accepted, no state without a Hamiltonian;
 #   and the set-up: the labels of setup_ic are those of the target entropy S_func V (pa.St), and pa.V = 1/n_a.
 ENV["SPH_RENORM"] = "sscheme"
+haskey(ENV, "SPH_POSITIONAL") || (ENV["SPH_POSITIONAL"] = "0")   # the bare scheme (ω: testpositional*.jl); the maps are called without SimParams
 using StaticArrays, LinearAlgebra, Printf, Random
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const CS2S = (SSCHEME && SS_FORM === :exact) ? (0.5,) : (0.5, 0.25)   # the exact form is tabulated for c_s² = 1/2 only
