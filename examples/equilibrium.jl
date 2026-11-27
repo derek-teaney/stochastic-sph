@@ -88,10 +88,8 @@ const RECORD_E = setting("SR_RECORD_E", false) || BOOST != 0
 #           T_rel = 208, v = 0.66 (campaign hastings_split, nersc/LOG.md).
 const BATH = setting("SR_BATH", :nominal)
 BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
-const LAMBDA = setting("SR_LAMBDA", 1.0)            # residual move: 1 (detailed balance) or Inf
-const VOTE   = :star                                                 # stochastic step: one consensus vote per star
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
-stoch_opts(params) = StochOptions(params; λ = LAMBDA, vote = VOTE)
+stoch_opts(params) = StochOptions(params)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
 # SPH_IDEAL=grid (SimParams.ideal): the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
 # src/grid.jl) in place of the leapfrog.  (Was SR_GRID=1 until 2026-11-13; that name now stops the run.)  The particles never move; the stochastic step is the
@@ -121,7 +119,7 @@ function run_meta(params, st, n, wall, complete, eos)
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
      grid = GRID, grid_stats = haskey(st, :gstats) ? grid_summary(st.gstats) : NamedTuple(),
-     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, lambda = LAMBDA, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
+     tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
 
 # the series and static spectra of the grid runs for the .h5 (nothing for the particle step, whose files

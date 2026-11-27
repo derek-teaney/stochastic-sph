@@ -1,9 +1,7 @@
 # stability.jl — a uniform fluid at rest with the Hamiltonian step ON and the
 # stochastic viscous step in the particle representation (docs/stochastic.tex), from zero
-# momenta.  Three variants of the viscous step:
-#     :full    stress + residual moves, λ = 1
-#     :det     stress move + deterministic residual (λ = ∞)
-#     :stress  stress move only
+# momenta.  The viscous step: stress and residual moves, each accepted by the single vote of its star
+# (the variants det, stress and the bond vote were removed on 2026-11-27, docs/focus_plan.tex Q1; the tag pre-prune has them).
 # Each time step: stochastic half step, leapfrog, stochastic half step (as generic_step!).
 # Measured: the momentum spectrum ⟨|m_k|²⟩/(N V w T) versus k h at several times, the
 # smoothed energy H and the particle energies Σe over time, and the lattice disorder.
@@ -13,7 +11,7 @@
 #   SR_OUTDIR (output directory), SR_SEED0 (seed offset), SR_START (eq | cold | thermal,
 #   default eq: equilibrium_init!, docs/eqstart.tex; cold: the uniform state at rest),
 #   SPH_HAMILTONIAN=energy (H = Σ e_a, docs/energystep.tex; plain back map, suffix _energy).
-# Defaults: kinds = full (λ = 1), vote = star, gradient-corrected map, start eq.
+# Defaults: gradient-corrected map (not with the energy Hamiltonian), start eq.
 # Run:  julia -t auto --project examples/stability.jl [h/a] [t_end] [nreal] [kinds, e.g. full,det] [vote] [Δt factor] [split] [nograd]
 #   → docs/figs/stochrep_hamiltonian.png
 using StaticArrays, LinearAlgebra, Printf, Random, Serialization
@@ -22,8 +20,10 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 const HA    = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 2.0
 const TEND  = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 4.0
 const NREAL = length(ARGS) > 2 ? parse(Int, ARGS[3]) : 1          # realizations per variant
-const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))       # full: λ = 1; det: λ = ∞; stress: no residual
-const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star (single vote) or :bonds
+const KINDS = Tuple(Symbol.(split(length(ARGS) > 3 ? ARGS[4] : "full", ",")))       # full: the only variant (kept as an argument for the file names)
+KINDS == (:full,) || error("stability.jl: the kinds det and stress were removed (docs/focus_plan.tex, Q1; tag pre-prune); use full")
+const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :star, the single vote (the only one; kept for the file names)
+VOTE === :star || error("stability.jl: the bond vote was removed (docs/focus_plan.tex, Q1; tag pre-prune); use star")
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
 setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=grid is not supported yet (equilibrium.jl only)")
@@ -88,8 +88,7 @@ function run(kind, seed=1)
     pairs = [(i, j, norm(minimum_image(ps[j].x - ps[i].x, params.L))) for i in 1:N for j in i+1:N
              if norm(minimum_image(ps[j].x - ps[i].x, params.L)) < 1.2 * params.a]
     dotm = zeros(SVector{2,Float64}, N);  cache = StochCache()      # reused arrays of the stochastic step
-    λ, resid = kind === :full ? (1.0, true) : kind === :det ? (Inf, true) : (1.0, false)
-    opts = StochOptions(params; λ, residual = resid, vote = VOTE, gradient = GRAD)
+    opts = StochOptions(params; gradient = GRAD)
     lock(RECORD_LOCK) do
         r = RECORD[];  RECORD[] = (params = params, eos = eos, opts = merge(get(r, :opts, Dict{Symbol,Any}()), Dict(kind => opts)))
     end

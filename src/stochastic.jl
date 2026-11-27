@@ -11,12 +11,12 @@
 #                   ⟨ξξ⟩ = 2Δt T_a κ_a / V_a and gives the traction ξ_a A_ab to each
 #                   bond b, A_ab = V_a w_ab r_ab.  Mean: the resolved part of the bond force.
 #   residual sweep  particle a draws a random vector y_ab on each bond,
-#                   ⟨y yᵀ⟩ = 2Δt c_ab / λ, and gives y_ab − (Y_a/V_a) A_ab,
+#                   ⟨y yᵀ⟩ = 2Δt c_ab, and gives y_ab − (Y_a/V_a) A_ab,
 #                   Y_a = Σ_b y_ab r_abᵀ.  Mean: the residual part of the bond force.
-#                   λ = 1 is detailed balance, λ > 1 a cold residual, λ = Inf the
-#                   deterministic residual step.
-# Each move is accepted with Π_b min(1, exp(λ ΔS_ab)), ΔS_ab = ΔS_b + ΔS_a/n_a (λ = 1 for
-# the stress move): all or nothing.
+# Each move is accepted with one vote of the star, min(1, exp ΔS), ΔS = Σ_c ΔS_c (with the
+# Hastings correction, min(1, exp(ΔS + ln q′/q))): all or nothing.  The cold residual (λ > 1),
+# the deterministic residual (λ = ∞) and the per-bond votes were removed on 2026-11-27
+# (docs/focus_plan.tex, Q1; the tag pre-prune has them).
 #
 # The coefficients (T_rel, η, ζ, w_ab, c_ab, ℓ, P) are frozen at the start of the step, at
 # the particle velocities of that moment; in 2D they take the comoving forms of
@@ -178,10 +178,10 @@ end
 
 # :moment (inverse_moment.tex): the draws conditioned on zero virial, y − Y_a u_ab, u_ab = c_ab R_a⁻¹ r_ab.  A separate function, so
 # that the code of the other schemes is unchanged (bit-identical: the compiler's fusion of muladd depends on the surrounding code).
-@noinline function propose_resid_moment!(δ, st::Star, dt, λ, rng)
+@noinline function propose_resid_moment!(δ, st::Star, dt, rng)
     Y = zero(SMatrix{2,2,Float64})
     for k in eachindex(st.nb)
-        y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
+        y = sqrt(2dt * st.c[k]) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
         δ[k] = y;  Y += y * st.r[k]'
     end
     for k in eachindex(st.nb)
@@ -189,11 +189,11 @@ end
     end
 end
 
-function propose_resid!(δ, st::Star, dt, λ, rng)
-    isempty(st.U) || return propose_resid_moment!(δ, st, dt, λ, rng)
+function propose_resid!(δ, st::Star, dt, rng)
+    isempty(st.U) || return propose_resid_moment!(δ, st, dt, rng)
     Y = zero(SMatrix{2,2,Float64})
     for k in eachindex(st.nb)
-        y = sqrt(2dt * st.c[k] / λ) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
+        y = sqrt(2dt * st.c[k]) * (st.ℓh * SVector(randn(rng), randn(rng)))   # ⟨yyᵀ⟩ ∝ ℓ
         δ[k] = y;  Y += y * st.r[k]'
     end
     for k in eachindex(st.nb)
@@ -233,25 +233,15 @@ const VOTE_GUESS = Tuple{Float64,SVector{2,Float64}}[]
 
 # Events guarded against, summed over the run (reset with reset_guards!()).
 const GUARD_REJECTED = Threads.Atomic{Int}(0)    # moves rejected for an unphysical state
-const GUARD_EVENSPLIT = Threads.Atomic{Int}(0)   # bond split fell back to the even split
 const GUARD_BACKMAP = Threads.Atomic{Int}(0)     # gradient back map fell back to the plain map
-const GUARD_SUBDIV = Threads.Atomic{Int}(0)      # deterministic residual step subdivided
-reset_guards!() = foreach(c -> (c[] = 0), (GUARD_REJECTED, GUARD_EVENSPLIT, GUARD_BACKMAP, GUARD_SUBDIV))
-guards() = (rejected = GUARD_REJECTED[], evensplit = GUARD_EVENSPLIT[], backmap = GUARD_BACKMAP[],
-            subdiv = GUARD_SUBDIV[])
-# restore the counters from a checkpoint (the NamedTuple returned by guards())
-restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_EVENSPLIT[] = g.evensplit;
-                      GUARD_BACKMAP[] = g.backmap;  GUARD_SUBDIV[] = g.subdiv;  g)
+reset_guards!() = foreach(c -> (c[] = 0), (GUARD_REJECTED, GUARD_BACKMAP))
+guards() = (rejected = GUARD_REJECTED[], backmap = GUARD_BACKMAP[])
+# restore the counters from a checkpoint (the NamedTuple returned by guards(); older checkpoints also hold evensplit, subdiv)
+restore_guards!(g) = (GUARD_REJECTED[] = g.rejected;  GUARD_BACKMAP[] = g.backmap;  g)
 
-# Ask the bonds: accept with Π_b min(1, exp(λ ΔS_ab)), all or nothing.  The bond
-# factor is ΔS_ab = ΔS_b + σ_ab + R/n_a, with σ_ab the share of ΔS_a due to the
-# traction t_ab = δ[k] (vote = :bonds, docs/stochastic.tex):
-#     σ_ab = ½[S_a(m_a − t_ab) − S_a(m_a)] − ½[S_a(m_a′ + t_ab) − S_a(m_a′)],
-# m_a′ = m_a + δm_a, and R = ΔS_a − Σ_b σ_ab.  Each σ_ab flips sign exactly under the
-# reverse move, and σ_ab ≈ β_a·t_ab, so ΔS_ab ≈ −Δβ_ab·t_ab is the bond's own entropy
-# production (invariant under a uniform shift of β).  vote = :even uses σ_ab = 0
-# (ΔS_a split evenly); vote = :star a single vote, min(1, exp(λ Σ_c ΔS_c)).  All exact.
-function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbol = :star, liouville::Bool = false)
+# The single vote of the star: accept the move with min(1, exp ΔS), ΔS = Σ_c ΔS_c over the
+# particle and its bonds, all or nothing.
+function ask_star!(m, Sc, e, V, a, st::Star, δ, eos, rng, Snew, liouville::Bool = false)
     n  = length(st.nb)
     δa = -sum(@view δ[1:n])
     ma′ = m[a] + δa
@@ -259,8 +249,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
     if !isfinite(Sa)
         Threads.atomic_add!(GUARD_REJECTED, 1);  return false
     end
-    ΔSa = Sa - Sc[a]
-    ΔStot = ΔSa
+    ΔStot = Sa - Sc[a]
     for k in 1:n
         b = st.nb[k]
         Snew[k] = vote_entropy(e[b], m[b] + δ[k], V[b], eos, liouville; guess = vg(b))
@@ -269,29 +258,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
         end
         ΔStot += Snew[k] - Sc[b]
     end
-    logP = 0.0
-    if vote === :star
-        logP = min(0.0, λ * ΔStot)
-    elseif vote === :even
-        for k in 1:n
-            logP += min(0.0, λ * (Snew[k] - Sc[st.nb[k]] + ΔSa / n))
-        end
-    else
-        σ = zeros(n)
-        for k in 1:n
-            σ[k] = 0.5 * (vote_entropy(e[a], m[a] - δ[k], V[a], eos, liouville; guess = vg(a)) - Sc[a]) -
-                   0.5 * (vote_entropy(e[a], ma′ + δ[k], V[a], eos, liouville; guess = vg(a)) - Sa)
-        end
-        # an unphysical intermediate state: use the even split for this move (the same
-        # points are evaluated for the reverse move, so detailed balance is kept)
-        if !all(isfinite, σ)
-            Threads.atomic_add!(GUARD_EVENSPLIT, 1);  σ .= 0.0
-        end
-        R = ΔSa - sum(σ)
-        for k in 1:n
-            logP += min(0.0, λ * (Snew[k] - Sc[st.nb[k]] + σ[k] + R / n))
-        end
-    end
+    logP = min(0.0, ΔStot)
     if logP >= 0 || log(rand(rng)) < logP
         for k in 1:n
             b = st.nb[k];  m[b] += δ[k];  Sc[b] = Snew[k]
@@ -303,7 +270,7 @@ function ask_star!(m, Sc, e, V, a, st::Star, δ, λ, eos, rng, Snew, vote::Symbo
 end
 
 # One checkerboard sweep of the given kind (:stress or :resid).  Returns the number accepted.
-function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, eos, rngs, rng, vote, liouville::Bool = false)
+function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville::Bool = false)
     nacc = Threads.Atomic{Int}(0)
     for g in shuffle(rng, collect(eachindex(groups)))
         cg = groups[g]
@@ -315,57 +282,16 @@ function color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ, eos, rngs
                 resize!(δ, n);  resize!(Snew, n)
                 if kind === :stress
                     propose_stress!(δ, st, dt, rngs[a])
-                    ok = ask_star!(m, Sc, e, V, a, st, δ, 1.0, eos, rngs[a], Snew, vote, liouville)
                 else
-                    propose_resid!(δ, st, dt, λ, rngs[a])
-                    ok = ask_star!(m, Sc, e, V, a, st, δ, λ, eos, rngs[a], Snew, vote, liouville)
+                    propose_resid!(δ, st, dt, rngs[a])
                 end
+                ok = ask_star!(m, Sc, e, V, a, st, δ, eos, rngs[a], Snew, liouville)
                 ok && Threads.atomic_add!(nacc, 1)
             end
         end
     end
     return nacc[]
 end
-
-# λ = Inf: the deterministic residual step, Δm from the residual tractions
-# −Δt c_ab δ_ab, δ_ab = Δβ_ab − G_a r_ab, at fixed e_a; exact back map.
-function resid_deterministic!(m, Sc, e, V, stars, dt, eos)
-    N = length(m)
-    β = map(1:N) do a
-        _, v, T = particle_inverse(e[a], m[a], V[a], eos);  v / T
-    end
-    Δm = zeros(SVector{2,Float64}, N)
-    for a in 1:N
-        st = stars[a]
-        G = zero(SMatrix{2,2,Float64})
-        for k in eachindex(st.nb)
-            G += st.w[k] * ((β[st.nb[k]] - β[a]) * st.r[k]')
-        end
-        G = G * st.ℓi                                  # G_a = Σ w Δβ rᵀ ℓ⁻¹
-        isempty(st.U) || (G = moment_fit(β, a, st))    # :moment: the fit X_a with the weights c_ab
-
-        for k in eachindex(st.nb)
-            δab = β[st.nb[k]] - β[a] - G * st.r[k]
-            t = -dt * st.c[k] * (st.ℓ * δab)
-            Δm[st.nb[k]] += t;  Δm[a] -= t
-        end
-    end
-    # guard: if any particle would become unphysical, do the step as two half steps
-    Snew = [particle_entropy(e[a], m[a] + Δm[a], V[a], eos) for a in 1:N]
-    if !all(isfinite, Snew)
-        Threads.atomic_add!(GUARD_SUBDIV, 1)
-        dt < 1e-6 && error("resid_deterministic!: unphysical state even for dt = $dt")
-        resid_deterministic!(m, Sc, e, V, stars, dt / 2, eos)
-        resid_deterministic!(m, Sc, e, V, stars, dt / 2, eos)
-        return
-    end
-    for a in 1:N
-        m[a] += Δm[a];  Sc[a] = Snew[a]
-    end
-end
-
-@noinline moment_fit(β, a, st::Star) =
-    sum((β[st.nb[k]] - β[a]) * st.U[k]' for k in eachindex(st.nb); init = zero(SMatrix{2,2,Float64}))
 
 # ── The Hastings correction (dissipation = :moment, SPH_HASTINGS=1; inverse_moment.tex, stage 2) ──────────────
 # The coefficients of star a are computed from the present state (e_a, m_a, V_a) of particle a, as build_stars does from the
@@ -561,56 +487,41 @@ function stochastic_frozen(particles::Vector{Particle}, params::SimParams, cl::C
     return (V = V, e = e, stars = build_stars(particles, params, cl, eos, V; cache))
 end
 
-# Defaults: λ = 1 (detailed balance), the single vote (vote = :star: one factor
-# min(1, e^{λ ΣΔS}) per move; :bonds, the per-bond product, rejects more and heats faster
-# in coupled runs, docs/fullruns.tex), the gradient-corrected change of representation.
 # One stochastic viscous step at fixed positions: a stress sweep and a residual sweep,
-# in an order that alternates with `flip`.  With `gradient` (default, unless `frozen` is
-# given) the change of representation uses the gradient-corrected map.  Returns acceptance fractions.  Pass
-# `frozen = stochastic_frozen(...)` to keep V_a, e_a and the stars fixed across steps
-# (a frozen lattice); otherwise they are recomputed from the current state.  Pass the same
-# `cache = StochCache()` to every step of a simulation to reuse its arrays (faster, same results).
-# The settings of the stochastic step, with their defaults in one place:
-#   λ         residual move: 1 (detailed balance) or Inf (deterministic)
-#   residual  do the residual move (else the stress move only)
-#   vote      :star (one consensus vote per star) or :bonds
-#   shift     random shift of the checkerboard grid for each sweep
+# in an order that alternates with `flip`; each move is accepted by the single vote of its star.
+# Returns acceptance fractions.  Pass `frozen = stochastic_frozen(...)` to keep V_a, e_a and
+# the stars fixed across steps (a frozen lattice); otherwise they are recomputed from the
+# current state.  Pass the same `cache = StochCache()` to every step of a simulation to reuse
+# its arrays (faster, same results).  The checkerboard grid is shifted at random for each sweep.
+# The settings of the stochastic step:
 #   gradient  gradient-corrected back map; default on, except with hamiltonian = :energy
 #             (H = Σ e_a exactly, no gradient energy to carry; energystep.tex) and on a
 #             frozen lattice
 #   hastings  the Hastings correction (inverse_moment.tex, stage 2): the coefficients of each star from the present state of its
 #             particle at every proposal, and the ratio of the reverse and forward proposal densities in the vote.  Needs
-#             dissipation = :moment, λ = 1, the single vote, 2D.  Default from SPH_HASTINGS, else on wherever it applies
+#             dissipation = :moment and 2D.  Default from SPH_HASTINGS, else on wherever it applies
 #             (since 2026-11-15, with :moment the default viscous step); SPH_HASTINGS=0 turns it off.
 # The default of `gradient` is resolved here, so the struct holds the value used.
 struct StochOptions
-    λ        :: Float64
-    residual :: Bool
-    vote     :: Symbol
-    shift    :: Bool
     gradient :: Bool
     hastings :: Bool
 end
-function StochOptions(params::SimParams; λ = 1.0, residual::Bool = true, vote::Symbol = :star,
-                      shift::Bool = true, frozen::Bool = false,
+function StochOptions(params::SimParams; frozen::Bool = false,
                       gradient::Bool = !frozen && params.hamiltonian !== :energy,
-                      hastings::Bool = setting("SPH_HASTINGS",
-                          is_moment(params) && λ == 1 && vote === :star))
+                      hastings::Bool = setting("SPH_HASTINGS", is_moment(params)))
     gradient && params.hamiltonian === :energy &&
         error("stochastic_step!: gradient = true is not consistent with hamiltonian = :energy")
-    hastings && !(is_moment(params) && λ == 1 && vote === :star) &&
-        error("SPH_HASTINGS=1 needs dissipation = :moment, λ = 1, the single vote and 2D (inverse_moment.tex, stage 2)")
-    return StochOptions(Float64(λ), residual, vote, shift, gradient, hastings)
+    hastings && !is_moment(params) &&
+        error("SPH_HASTINGS=1 needs dissipation = :moment and 2D (inverse_moment.tex, stage 2)")
+    return StochOptions(gradient, hastings)
 end
 
 # The step with the settings as keywords (tests, examples): builds the StochOptions.
 function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
-                          dt::Float64, eos::AbstractEOS;
-                          λ::Float64 = 1.0, residual::Bool = true, vote::Symbol = :star,
-                          shift::Bool = true, frozen = nothing,
+                          dt::Float64, eos::AbstractEOS; frozen = nothing,
                           gradient::Bool = frozen === nothing && params.hamiltonian !== :energy,
                           kw...)
-    opts = StochOptions(params; λ, residual, vote, shift, frozen = frozen !== nothing, gradient)
+    opts = StochOptions(params; frozen = frozen !== nothing, gradient)
     return stochastic_step!(particles, params, cl, dt, eos, opts; frozen, kw...)
 end
 
@@ -619,7 +530,7 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
                           flip::Bool = false, rng::AbstractRNG = Random.default_rng(),
                           rngs::Vector{Xoshiro} = PHYS_RNG, groups = color_groups(cl),
                           frozen = nothing, cache = nothing)
-    (; λ, residual, vote, shift, gradient, hastings) = opts
+    (; gradient, hastings) = opts
     @assert length(rngs) == length(particles) "rng vector length ≠ particle count — call seed_phys!(N, seed)"
     check_stochastic_dims(params)
     fz = frozen === nothing ? stochastic_frozen(particles, params, cl, eos; cache) : frozen
@@ -627,9 +538,9 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     N  = length(particles)
     m  = [pa.m for pa in particles]
     # measure = :liouville: Sc holds the vote entropy S_a − ln T_a during the sweeps; the particle entropies are the true S_a,
-    # recomputed at the end.  Not with the deterministic residual (λ = ∞) or the gradient back map, which write true S_a into Sc.
+    # recomputed at the end.  Not with the gradient back map, which writes true S_a into Sc.
     liouville = params.measure === :liouville
-    liouville && (isinf(λ) || gradient) && error("measure = :liouville is not available with λ = ∞ or the gradient back map")
+    liouville && gradient && error("measure = :liouville is not available with the gradient back map")
     if SPLIT                                           # SPH_RENORM=split: the label and the target's rest-frame energy density (renorm_split.jl)
         resize!(VOTE_GUESS, N)
         for a in 1:N;  pa = particles[a];  VOTE_GUESS[a] = (pa.s, SVector(pa.e, 0.0));  end
@@ -642,29 +553,23 @@ function stochastic_step!(particles::Vector{Particle}, params::SimParams, cl::Ce
     # energy g_a of the long-wavelength momentum profile is frozen during the sweeps, so
     # e_a = e′_a + g_a is fixed there; the back map refits it, s′ = S_a(e′_a + g′_a, m′_a).
     gr = gradient ? gradient_freeze(particles, params, cl, eos, cache) : nothing
-    kinds = residual ? (flip ? (:resid, :stress) : (:stress, :resid)) : (:stress,)
+    kinds = flip ? (:resid, :stress) : (:stress, :resid)
     acc = Dict(:stress => NaN, :resid => NaN)
     grj = Dict(:stress => 0.0, :resid => 0.0)          # fraction of proposals rejected by the guard
     lqs = Dict(:stress => (NaN, NaN), :resid => (NaN, NaN))   # with hastings: mean and rms of ln q′/q over the proposals
     for kind in kinds
-        if kind === :resid && isinf(λ)
-            resid_deterministic!(m, Sc, e, V, stars, dt, eos)
+        # random shift of the grid for each sweep
+        u = SVector(rand(rng) * cl.cell_size[1], rand(rng) * cl.cell_size[2])
+        cells = shifted_cells(particles, cl, u)
+        g0 = GUARD_REJECTED[]
+        if hastings
+            nh, ls, lq2, ln = color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params)
+            acc[kind] = nh / N
+            ln > 0 && (lqs[kind] = (ls / ln, sqrt(lq2 / ln)))
         else
-            # random shift of the grid for each sweep (1D: along x only)
-            u = shift ? SVector(rand(rng) * cl.cell_size[1], rand(rng) * cl.cell_size[2]) :
-                        zero(SVector{2,Float64})
-            cells = shifted_cells(particles, cl, u)
-            g0 = GUARD_REJECTED[]
-            if hastings
-                nh, ls, lq2, ln = color_sweep_hastings!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville, params)
-                acc[kind] = nh / N
-                ln > 0 && (lqs[kind] = (ls / ln, sqrt(lq2 / ln)))
-            else
-                acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, λ,
-                                         eos, rngs, rng, vote, liouville) / N
-            end
-            grj[kind] = (GUARD_REJECTED[] - g0) / N
+            acc[kind] = color_sweep!(m, Sc, e, V, stars, groups, cells, kind, dt, eos, rngs, rng, liouville) / N
         end
+        grj[kind] = (GUARD_REJECTED[] - g0) / N
     end
     gradient && gradient_backmap!(Sc, gr, m, e, V, eos)
     for (a, pa) in enumerate(particles)
