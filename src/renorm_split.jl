@@ -1,34 +1,53 @@
-# renorm_split.jl — the split renormalization, Step 5 (docs/step5_plan.tex, SPH_RENORM=split; docs/partition.tex, "The label s_eff").
+# renorm_split.jl — the split renormalization, Step 5 (docs/step5_plan.tex, SPH_RENORM=split;
+# docs/partition.tex, "The label s_eff").
 #
-# The one-loop counterterm of the single particle, at the target state (T, v) of the label u, the momentum m and the volume V,
-#   δln Z_1 = Δs_lab(u) + Δs_dyn(T, v, V),   Δs_lab = b ln u + const,   b = 5/2 − 𝒩,   𝒩 = 1 − 2 c_s²,
-#   Δs_dyn = 𝒩 ln(γ V / V̄) + ½ ln(1 − c_s² v²),
-# is split: the label part stays in the measure, as in SPH_RENORM=1 (flat in s_a = u − b ln u, with the Jacobian 1 − b/u), and the rest
-# goes into the Hamiltonian as an energy,
+# The one-loop counterterm of the single particle, at the target state (T, v) of the label u,
+# the momentum m and the volume V,
+#   δln Z_1 = Δs_lab(u) + Δs_dyn(T, v, V),   Δs_lab = b ln u + const,   b = 5/2 − 𝒩,
+#   𝒩 = 1 − 2 c_s²,   Δs_dyn = 𝒩 ln(γ V / V̄) + ½ ln(1 − c_s² v²),
+# is split.  The label part stays in the measure (flat in s_a = u − b ln u, with the Jacobian
+# 1 − b/u), and the rest goes into the Hamiltonian as an energy,
 #   H(u, m, V) = e_t(u, m, V) + E_dyn,   E_dyn = T Δs_dyn
-# (the term T ∂Δs_dyn/∂u of the plan is left out: step5_plan.tex, "Results", A).  pa.s is the label u (the target's entropy), as with
-# SPH_RENORM=1.  The forward map fills (step5_plan.tex, eq. fields)
-#   pa.T = ∂H/∂u = T + ∂E_dyn/∂u,   ẋ = ∂H/∂m = (v + ∂E_dyn/∂|m|) m̂,   pa.p = −∂H/∂V = P_t − ∂E_dyn/∂V,   H = e_t + E_dyn,
+# (the term T ∂Δs_dyn/∂u of the plan is left out: step5_plan.tex, "Results", A).
+# pa.s is the label u (the target's entropy).
+#
+# The forward map fills (step5_plan.tex, eq. fields)
+#   pa.T = ∂H/∂u = T + ∂E_dyn/∂u,   ẋ = ∂H/∂m = (v + ∂E_dyn/∂|m|) m̂,
+#   pa.p = −∂H/∂V = P_t − ∂E_dyn/∂V,   H = e_t + E_dyn,
 # the derivatives at fixed particle variables by the chain rule through the target's (T, v):
-#   ∂g/∂u|_{m,V} = (g_T m_v − g_v u_v)/det,   ∂g/∂|m||_{u,V} = (g_v u_T − g_T u_v)/det,   ∂g/∂V|_{u,m} = g_V − (u ∂g/∂u + |m| ∂g/∂|m|)/V,
-# u_T = (n−1) u/T, u_v = m_T = n γ² v u, m_v = n A V γ^(n+2) T^n (1 + (n+2) γ² v²), det = u_T m_v − u_v² (ConstantCs2EOS: p = A T_rel^n,
-# n = 1 + 1/c_s²).  A state with ∂H/∂u ≤ 0 or |ẋ| ≥ 1 has no Hamiltonian (NaN fields; hybrid Monte Carlo rejects the trajectory).
-# SPH_POSITIONAL=1 adds the positional counterterm to E_dyn: E_dyn = T (Δs_dyn − ω(u/n, V)) (positional.jl).
-# Inverse (the votes, the heat bath): (e, m, V) → u by Newton in u alone, H(u, m, V) = e, from the target's inversion at e.
-# Vote weight (Liouville measure): u − b ln u − ln(∂H/∂u / (1 − b/u)), −∞ for u ≤ b (the label boundary).
+#   ∂g/∂u|_{m,V} = (g_T m_v − g_v u_v)/det,   ∂g/∂|m||_{u,V} = (g_v u_T − g_T u_v)/det,
+#   ∂g/∂V|_{u,m} = g_V − (u ∂g/∂u + |m| ∂g/∂|m|)/V,
+# with u_T = (n−1) u/T, u_v = m_T = n γ² v u, m_v = n A V γ^(n+2) T^n (1 + (n+2) γ² v²),
+# det = u_T m_v − u_v² (ConstantCs2EOS: p = A T_rel^n, n = 1 + 1/c_s²).
+#
+# A state with ∂H/∂u ≤ 0 or |ẋ| ≥ 1 has no Hamiltonian (NaN fields; hybrid Monte Carlo rejects
+# the trajectory).
+#
+# SPH_POSITIONAL=1 adds the positional counterterm to E_dyn: E_dyn = T (Δs_dyn − ω(u/n, V))
+# (positional.jl).
+#
+# Inverse (the votes, the heat bath): (e, m, V) → u by Newton in u alone, H(u, m, V) = e, from
+# the target's inversion at e.
+#
+# Vote weight (Liouville measure): u − b ln u − ln(∂H/∂u / (1 − b/u)), −∞ for u ≤ b (the label
+# boundary).
 
-const SPLIT_CNT = zeros(Int, 8, Threads.maxthreadid())    # rows: solves, iterations, failures (no convergence), no state, cold retries
+# counters, rows: solves, iterations, failures (no convergence), no state, cold retries
+const SPLIT_CNT = zeros(Int, 8, Threads.maxthreadid())
 @inline splitcnt!(i, x = 1) = (@inbounds SPLIT_CNT[i, Threads.threadid()] += x;  nothing)
 reset_split_counts!() = fill!(SPLIT_CNT, 0)
 split_counts() = (t = sum(SPLIT_CNT; dims = 2);  (solves = t[1], iters = t[2], fails = t[3], nostate = t[4], cold = t[5]))
 
-# V̄, the reference volume of Δs_dyn (SPH_RENORM_VBAR; default the mean volume L²/N of the run, set by check_split)
+# V̄, the reference volume of Δs_dyn (SPH_RENORM_VBAR; default the mean volume L²/N of the run,
+# set by check_split)
 const SPLIT_VBAR = Ref(NaN)
 const SPLIT_VBAR_SETTING = setting("SPH_RENORM_VBAR")   # read at load (the run record lists every setting); 0: L²/N
-const SPLIT_FAILLOG = Any[];  const SPLIT_FAILLOCK = ReentrantLock()   # the first 200 solves that did not converge: (e, m, V, u, H − e, ∂H/∂u)
+# the first 200 solves that did not converge: (e, m, V, u, H − e, ∂H/∂u)
+const SPLIT_FAILLOG = Any[];  const SPLIT_FAILLOCK = ReentrantLock()
 splitlog(x) = lock(() -> length(SPLIT_FAILLOG) < 200 && push!(SPLIT_FAILLOG, x), SPLIT_FAILLOCK)
-const SPLIT_TOL = 1e-12      # relative residual of the inverse's Newton solve in u: the accuracy of the target's forward solve
-                             # (eos_newton, tol 1e-12), below which H(u) does not resolve u (the steps stall at ~1e-13)
+# relative residual of the inverse's Newton solve in u: the accuracy of the target's forward
+# solve (eos_newton, tol 1e-12), below which H(u) does not resolve u (the steps stall at ~1e-13)
+const SPLIT_TOL = 1e-12
 const SPLIT_MAXIT = 20
 
 struct SplitConsts
@@ -41,7 +60,8 @@ function SplitConsts(eos::ConstantCs2EOS)
 end
 SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for ConstantCs2EOS only (got $(typeof(eos)))")
 
-# E_dyn and its derivatives at fixed particle variables, at the target state (T, |v|, γ) of the label u, |m| and V.
+# E_dyn and its derivatives at fixed particle variables, at the target state (T, |v|, γ) of the
+# label u, |m| and V.
 # sound = false drops the sound term ½ ln(1 − c_s² v²) (the tests).
 @inline function split_dyn(T, v, γ, u, mm, V, c::SplitConsts; sound::Bool = true)
     (; c2, n, A, N) = c
@@ -53,7 +73,9 @@ SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for Constan
     det = uT * mv - uv * uv
     gu = (gT * mv - gv * uv) / det;  gm = (gv * uT - gT * uv) / det
     E = T * Δ;  Eu = gu;  Em = gm;  EV = gV - (u * gu + mm * gm) / V
-    if POS_ON          # the positional counterterm (positional.jl): E_dyn → E_dyn − T ω(u/n, V); T = T(u, |m|, V) of the target
+    # the positional counterterm (positional.jl): E_dyn → E_dyn − T ω(u/n, V),
+    # T = T(u, |m|, V) of the target
+    if POS_ON
         o = positional_omega(u / n, V)
         Tu = mv / det;  Tm = -uv / det;  TV = -(u * Tu + mm * Tm) / V
         E -= T * o.ω;  Eu -= Tu * o.ω + T * o.ωσ / u;  Em -= Tm * o.ω;  EV -= TV * o.ω + T * o.ωV / V
@@ -61,7 +83,8 @@ SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for Constan
     return (E = E, Eu = Eu, Em = Em, EV = EV, det = det)
 end
 
-# The state of the particle of label u (= s) at the entropy density S = u/V and momentum density M (warm start e0 of the target).
+# The state of the particle of label u (= s) at the entropy density S = u/V and momentum
+# density M (warm start e0 of the target).
 function split_forward(s, S_in, M_vec, e0, eos; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2), sound::Bool = true,
                        tol = 1e-12, maxiter = 50, verbose = false)
     c = SplitConsts(eos)
@@ -85,9 +108,12 @@ end
     return (H = u * st.HS + d.E, TH = st.T + d.Eu, xd = vt + d.Em, v = st.v, e = st.e, γ = st.γ)
 end
 
-# Newton in u for H(u, m, V) = e from (u, e0) (e0 the target's rest-frame energy density, the warm start of its forward solve).
-# Returns (status, u, r, its): status :conv (r the state at the last iterate, u the converged label), :nostate (the solution, if any,
-# is below the label boundary b, where the weight is zero) or :fail (no convergence).
+# Newton in u for H(u, m, V) = e from (u, e0) (e0 the target's rest-frame energy density, the
+# warm start of its forward solve).
+# Returns (status, u, r, its), status
+#   :conv     r the state at the last iterate, u the converged label;
+#   :nostate  the solution, if any, is below the label boundary b, where the weight is zero;
+#   :fail     no convergence.
 @inline function split_newton(u, e0, e, m, mm, V, eos, c; sound::Bool = true)
     its = 0;  r = split_H(u, mm, m, V, e0, eos, c; sound)
     for it in 1:SPLIT_MAXIT
@@ -96,8 +122,10 @@ end
         (isfinite(r.H) && r.TH > 0) || return (:fail, u, r, its)
         du = (r.H - e) / r.TH
         un = u - du
-        if un <= c.b                                           # below the label boundary b: the solution, if any, is above it
-            rb = split_H(c.b, mm, m, V, e0, eos, c; sound)    # H is increasing in u: e ≤ H(b) has no state with weight
+        # below the label boundary b: the solution, if any, is above it.
+        # H is increasing in u: e ≤ H(b) has no state with weight.
+        if un <= c.b
+            rb = split_H(c.b, mm, m, V, e0, eos, c; sound)
             (isfinite(rb.H) && rb.H < e) || return (:nostate, u, r, its)
             un = (u + c.b) / 2
         end
@@ -109,9 +137,14 @@ end
     return (:fail, u, r, its)
 end
 
-# The cold start: the target's label at the same energy; where the target has no state there (E_dyn < 0 lowers H below the target's
-# energy, so e can be below what the target needs at this momentum: |M| ≥ ε), at an energy raised step by step until it has one;
-# a start at or below the label boundary (where ∂H/∂u can be < 0) moves to 2b, or there is no state.  Returns (u, e0) or (NaN, NaN).
+# The cold start: the target's label at the same energy.
+#
+# Where the target has no state there (E_dyn < 0 lowers H below the target's energy, so e can be
+# below what the target needs at this momentum: |M| ≥ ε), at an energy raised step by step until
+# it has one.
+#
+# A start at or below the label boundary (where ∂H/∂u can be < 0) moves to 2b, or there is no
+# state.  Returns (u, e0) or (NaN, NaN).
 function split_cold_start(e, m, mm, V, eos, c; sound::Bool = true)
     u, v0, T0 = target_inverse(e, m, V, eos)
     δe = 1e-3 * (abs(e) + mm)
@@ -128,9 +161,11 @@ function split_cold_start(e, m, mm, V, eos, c; sound::Bool = true)
     return (u, (T0 / sqrt(1 - dot(v0, v0)) / eos.T_scale)^(1 + 1 / eos.cs2_val))
 end
 
-# The fast inverse: Newton in the target's energy e_t for e_t + E_dyn = e, each step the target's closed-form inversion at (e_t, m, V)
-# (eos_from_energy; no forward solve) and E_dyn at its (T, v): g(e_t) = e_t + E_dyn − e, dg/de_t = 1 + (∂E_dyn/∂u)/T (∂e_t/∂u = T at
-# fixed m, V).  Starts from e_t = e − Eg.  Returns (status, u, T, v⃗, d, its).
+# The fast inverse: Newton in the target's energy e_t for e_t + E_dyn = e.  Each step is the
+# target's closed-form inversion at (e_t, m, V) (eos_from_energy; no forward solve) and E_dyn
+# at its (T, v):
+#   g(e_t) = e_t + E_dyn − e,   dg/de_t = 1 + (∂E_dyn/∂u)/T   (∂e_t/∂u = T at fixed m, V).
+# Starts from e_t = e − Eg.  Returns (status, u, T, v⃗, d, its).
 @inline function split_newton_et(e, m, mm, V, eos, c, Eg; sound::Bool = true)
     et = e - Eg;  its = 0;  δprev = Inf
     for it in 1:SPLIT_MAXIT
@@ -142,8 +177,9 @@ end
         dg = 1 + d.Eu / T
         (isfinite(g) && dg > 0) || return (:fail, u, T, v, d, its)
         δ = g / dg
-        # every step is closed form, so the iteration runs to rounding: until the step is at the rounding of e_t, or stops shrinking
-        # (a test relative to e alone stops early near the light cone, where e/(T u) ~ γ²)
+        # every step is closed form, so the iteration runs to rounding: until the step is at the
+        # rounding of e_t, or stops shrinking (a test relative to e alone stops early near the
+        # light cone, where e/(T u) ~ γ²)
         if g == 0 || abs(δ) <= 4e-16 * (abs(e) + abs(et)) || (abs(δ) >= abs(δprev) && abs(δ) <= 1e-10 * (abs(e) + abs(et)))
             return (:conv, u, T, v, d, its)
         end
@@ -152,17 +188,23 @@ end
     return (:fail, NaN, NaN, SVector(NaN, NaN), nothing, its)
 end
 
-# Inverse: (u, ẋ, ∂H/∂u) of the particle of energy e, momentum m and volume V; u = −Inf for a state with no solution, below the label
-# boundary, or with γ > γ_max.  First the fast Newton in the target's energy (split_newton_et); where it fails (the target has no
-# state at an iterate: E_dyn < 0 can put e_t below what the target needs at this momentum), the Newton in u (split_newton) from the
-# cold start.  guess (the particle's label and target energy density, set by the votes and the heat bath) is accepted and not used.
+# Inverse: (u, ẋ, ∂H/∂u) of the particle of energy e, momentum m and volume V; u = −Inf for a
+# state with no solution, below the label boundary, or with γ > γ_max.
+#
+# First the fast Newton in the target's energy (split_newton_et).  Where it fails (the target
+# has no state at an iterate: E_dyn < 0 can put e_t below what the target needs at this
+# momentum), the Newton in u (split_newton) from the cold start.
+#
+# guess (the particle's label and target energy density, set by the votes and the heat bath) is
+# accepted and not used.
 function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
     c = SplitConsts(eos)
     fail = (-Inf, SVector(NaN, NaN), NaN)
     splitcnt!(1)
     (isfinite(e) && isfinite(V) && V > 0 && all(isfinite, m)) || (splitcnt!(4);  return fail)
     mm = norm(m)
-    st, u, T, v, d, its = split_newton_et(e, m, mm, V, eos, c, 0.0; sound)     # from e_t = e (the guess is not needed: the start is closed form)
+    # from e_t = e (the guess is not needed: the start is closed form)
+    st, u, T, v, d, its = split_newton_et(e, m, mm, V, eos, c, 0.0; sound)
     if st === :conv
         splitcnt!(2, its)
         u > c.b || (splitcnt!(4);  return fail)
@@ -184,8 +226,9 @@ function split_inverse(e, m, V, eos; guess = nothing, sound::Bool = true)
     return (u, vt > 0 ? r.v * (r.xd / vt) : r.v, r.TH)
 end
 
-# The weight of a state in the votes: s_a(u) = u − b ln u − ln(∂H/∂u / (1 − b/u)) (the Liouville measure; ∂H/∂s_a).  With
-# lnT = false the label s_a(u) alone (testsplit.jl).
+# The weight of a state in the votes (the Liouville measure; ∂H/∂s_a):
+#   u − b ln u − ln(∂H/∂u / (1 − b/u)).
+# With lnT = false the label s_a(u) = u − b ln u alone (testsplit.jl).
 @noinline function split_vote_entropy(e, m, V, eos, lnT::Bool; guess = nothing, sound::Bool = true)
     u, _, TH = split_inverse(e, m, V, eos; guess, sound)
     (isfinite(u) && TH > 0) || return -Inf

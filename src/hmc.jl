@@ -1,18 +1,26 @@
-# hmc.jl — hybrid Monte Carlo on the positions and momenta (docs/equilibrium_positions.tex, Sects. V and VIII).
-# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the Liouville measure
+# hmc.jl — hybrid Monte Carlo on the positions and momenta
+# (docs/equilibrium_positions.tex, Sects. V and VIII), and the ideal step with the
+# generalized leapfrog.
+#
+# Samples, at fixed multipliers β⁰ = 1/T and β = v/T, the joint distribution with the
+# Liouville measure
 #   π_L ∝ exp[Σ_a s_a − β⁰ H + β·P]   (flat in the entropies; Appendix A of the note).
-# (The Einstein measure, flat in the particle energies and momenta, was removed on 2026-11-27: docs/focus_plan.tex, Q2.)
+#
 # One update:
-#   1. heat bath at fixed positions: per particle, an independence Metropolis chain for (e_a, m_a), continued from the
-#      current values (so the conditional distribution is preserved exactly), then s_a = S_a(e_a, m_a);
-#   2. a Hamiltonian trajectory at fixed s_a with the generalized leapfrog (symplectic and reversible for the
-#      non-separable H), accepted with min(1, exp[−β⁰ΔH + β·ΔP]).
-# The n-scheme, where ∂H/∂m_a = v_a and −∂H/∂x_a is hamiltonian_force!.
+#   1. heat bath at fixed positions: per particle, an independence Metropolis chain for
+#      (e_a, m_a), continued from the current values (so the conditional distribution is
+#      preserved exactly), then s_a = S_a(e_a, m_a);
+#   2. a Hamiltonian trajectory at fixed s_a with the generalized leapfrog (symplectic and
+#      reversible for the non-separable H), accepted with min(1, exp[−β⁰ΔH + β·ΔP]).
+#
+# The n-scheme: ∂H/∂m_a = v_a, and −∂H/∂x_a is hamiltonian_force!.
 
-# The multipliers and the proposal of the heat bath: the most probable densities (ε̄, M̄) at (β⁰, β) and the Gaussian
-# pieces of a particle of volume Vref (rescaled per particle: Hn ∝ 1/V, L ∝ √V).  The proposal only affects the
-# acceptance of the chain, not its target.  Its Gaussian is that of the target's own weight (the Liouville measure, vote_entropy;
-# until docs/focus_plan.tex Q9 that of the weight flat in (e, m), the former Einstein measure).
+# The multipliers and the proposal of the heat bath: the most probable densities (ε̄, M̄) at
+# (β⁰, β) and the Gaussian pieces of a particle of volume Vref (rescaled per particle:
+# Hn ∝ 1/V, L ∝ √V).
+#
+# The proposal only affects the acceptance of the chain, not its target.  Its Gaussian is
+# that of the target's own weight (the Liouville measure, vote_entropy).
 struct HMCTarget
     β0   :: Float64
     β    :: SVector{2,Float64}
@@ -34,7 +42,8 @@ function hmc_measure!(ps, params, cl, eos)
     return sum(q.H for q in ps), sum(q.m for q in ps)
 end
 
-# 1. Heat bath at fixed positions (the smoothed state must be current).  Returns the acceptance of the chains.
+# 1. Heat bath at fixed positions (the smoothed state must be current).
+# Returns the acceptance of the chains.
 function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, widen::Float64 = 2.0)
     nacc = 0                                              # the target S_a − ln T_a (the Liouville measure, sph.jl)
     for pa in ps
@@ -45,7 +54,7 @@ function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, w
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
         x = SVector(e - ē, pa.m[1] - m̄[1], pa.m[2] - m̄[2]);  wx = logp(x) - logq(x)
-        HAS_DOMAIN && isnan(wx) && (wx = -Inf)             # a current state with no weight (a failed solve): any valid proposal leaves it
+        HAS_DOMAIN && isnan(wx) && (wx = -Inf)             # no weight (a failed solve): any valid proposal leaves
         for _ in 1:nmh
             y = Lw * SVector(randn(rng), randn(rng), randn(rng));  wy = logp(y) - logq(y)
             if isfinite(wy) && log(rand(rng)) < wy - wx
@@ -72,11 +81,15 @@ end
 setx!(ps, params, cl, x) = (for (a, q) in enumerate(ps);  q.x = x[a];  end;  wrap_positions!(ps, params.L);  rebuild_cell_list!(cl, ps))
 setm!(ps, m) = (for (a, q) in enumerate(ps);  q.m = m[a];  end)
 
-# One step of the generalized leapfrog (implicit half steps iterated to tol).  Returns the iterations used, or −1 if the step reached
-# a state with no Hamiltonian (a force or a velocity not finite: with a renormalized Hamiltonian a particle whose label is below the edge
-# of the single-particle domain at its new volume): H = +∞ there, and the trajectory is rejected (hmc_update!).  strict = true (the ideal
-# step, generalized_step!): the finiteness is checked at the tree level too, and an implicit iteration that does not converge returns −2
-# instead of a warning.
+# One step of the generalized leapfrog (implicit half steps iterated to tol).
+#
+# Returns the iterations used, or −1 if the step reached a state with no Hamiltonian (a force
+# or a velocity not finite: with a renormalized Hamiltonian, a particle whose label is below
+# the edge of the single-particle domain at its new volume).  H = +∞ there, and the
+# trajectory is rejected (hmc_update!).
+#
+# strict = true (the ideal step, generalized_step!): the finiteness is checked at the tree
+# level too, and an implicit iteration that does not converge returns −2 instead of a warning.
 function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, maxit = 60, strict::Bool = false)
     chk = HAS_DOMAIN || strict
     N = length(ps);  m0 = [q.m for q in ps];  x0 = [q.x for q in ps];  mh = copy(m0)
@@ -109,7 +122,8 @@ function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, 
     return its
 end
 
-# 2. A trajectory of nsteps generalized leapfrog steps; no acceptance test.  Returns the iterations used.
+# 2. A trajectory of nsteps generalized leapfrog steps; no acceptance test.
+# Returns the iterations used, or −1.
 function hmc_trajectory!(ps, params, cl, eos, dt, nsteps; kw...)
     N = length(ps);  F = zeros(SVector{2,Float64}, N);  v0 = similar(F);  v1 = similar(F);  its = 0
     for _ in 1:nsteps
@@ -120,8 +134,8 @@ function hmc_trajectory!(ps, params, cl, eos, dt, nsteps; kw...)
     return its
 end
 
-# One update: heat bath, trajectory, accept or reject.  Returns (accepted, ΔH/H, Δ ln π, heat-bath acceptance,
-# iterations per leapfrog step).  Leaves the smoothed state current.
+# One update: heat bath, trajectory, accept or reject.  Leaves the smoothed state current.
+# Returns (accepted, ΔH/H, Δ ln π, heat-bath acceptance, iterations per leapfrog step).
 function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, dt::Float64, nmh::Int = 10)
     check_stochastic_dims(params)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
@@ -143,10 +157,13 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     return (accepted = acc, dH = (H1 - H0) / H0, dlnpi = dlnπ, heatbath = hb, iters = its / nsteps)
 end
 
-# Hybrid Monte Carlo to equilibrium (the start of a run, docs/focus_plan.tex Q9; the drivers that sample equilibria): nupdates
-# updates at the target tg, trajectories of nsteps leapfrog steps of δt = dt, each of a random length, uniform in
-# [(1 − taujit) nsteps, nsteps], when taujit > 0.  callback(n, u) after each update n (u from hmc_update!).  Returns the
-# fraction of trajectories accepted.
+# Hybrid Monte Carlo to equilibrium (the start of a run, SR_START=hmc; the drivers that
+# sample equilibria): nupdates updates at the target tg, trajectories of nsteps leapfrog
+# steps of δt = dt.  When taujit > 0 each trajectory has a random length, uniform in
+# [(1 − taujit) nsteps, nsteps].
+#
+# callback(n, u) after each update n (u from hmc_update!).  Returns the fraction of
+# trajectories accepted.
 function hmc_equilibrate!(ps, params, cl, eos, tg::HMCTarget, rng; nupdates::Int, nsteps::Int, dt::Float64, taujit::Float64 = 0.0,
                           callback = nothing)
     nacc = 0
@@ -160,13 +177,18 @@ end
 hmc_equilibrate!(callback::Function, ps, params, cl, eos, tg::HMCTarget, rng; kw...) =      # the do-block form
     hmc_equilibrate!(ps, params, cl, eos, tg, rng; callback, kw...)
 
-# The ideal step with the generalized leapfrog (the only ideal step, ideal.jl leapfrog_step!): one step of
-# generalized_leapfrog!, the implicit half steps iterated to GLF_TOL (SPH_GLF_TOL, default 1e-10: second order and
-# reversible to that accuracy).  Called by leapfrog_step!; dotm is the force buffer.
-# A failed step (docs/focus_plan.tex Q11: a state without a Hamiltonian, or implicit iterations that do not converge) is redone
-# from its start as two half steps, recursively, down to Δt/16; each retry adds one to the guard GUARD_LEAPFROG (stochastic.jl,
-# guards()).  If it still fails at Δt/16 the particles are put back at the start of the step and a LeapfrogFailure is thrown, with
-# that state and the particles without a finite force or velocity: a run never continues from a state without a Hamiltonian.
+# The ideal step (ideal.jl leapfrog_step!): one step of generalized_leapfrog!, the implicit
+# half steps iterated to GLF_TOL (SPH_GLF_TOL, default 1e-10: second order and reversible to
+# that accuracy).  Called by leapfrog_step!; dotm is the force buffer.
+#
+# A failed step (a state without a Hamiltonian, or implicit iterations that do not converge;
+# docs/focus_plan.tex Q11) is redone from its start as two half steps, recursively, down to
+# Δt/16.  Each retry adds one to the guard GUARD_LEAPFROG (stochastic.jl, guards()).
+#
+# If it still fails at Δt/16, the particles are put back at the start of the step and a
+# LeapfrogFailure is thrown, with that state and the particles without a finite force or
+# velocity: a run never continues from a state without a Hamiltonian.
+#
 # When no step fails the arithmetic is that of a plain generalized_leapfrog! call.
 const GLF_TOL = setting("SPH_GLF_TOL")
 const GLF_MAXDEPTH = 4                                    # Δt/2⁴ = Δt/16
@@ -177,13 +199,14 @@ struct LeapfrogFailure <: Exception
     x      :: Vector{SVector{2,Float64}}                  # the state at the start of the step
     m      :: Vector{SVector{2,Float64}}
     s      :: Vector{Float64}
-    bad    :: Vector{Int}                                 # particles without a finite force or velocity where the last try failed
+    bad    :: Vector{Int}                                 # without a finite force or velocity at the last try
 end
 Base.showerror(io::IO, e::LeapfrogFailure) =
     print(io, "LeapfrogFailure: ", e.reason, " at Δt/", 2^GLF_MAXDEPTH, " (Δt = ", e.dt, "); particles ", first(e.bad, 12),
           length(e.bad) > 12 ? " …" : "")
 
-# one try of step dt, and on failure two half steps; returns 0 on success, else the code of the last failure (−1, −2)
+# One try of step dt, and on failure two half steps.
+# Returns 0 on success, else the code of the last failure (−1, −2).
 function glf_retry!(ps, params, cl, eos, dt, F, v0, v1, depth)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
     its = generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = GLF_TOL, strict = true)

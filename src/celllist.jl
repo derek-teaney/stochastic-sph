@@ -1,7 +1,10 @@
 # celllist.jl — the cell list and the neighbour list (and threaded_chunks).
 
-# With ncy==1 (a box less than 4h high), mod(anything, 1)==0 maps all three dy offsets to the same
-# cell, triple-counting every particle.  Clamp the stencil to a single offset.
+# The dy offsets of the cell stencil for ncy cells in y.
+#
+# With ncy==1 (a box less than 4h high), mod(anything, 1)==0 maps all three dy offsets to the
+# same cell, triple-counting every particle: use the single offset 0.
+#
 # With ncy==2 the offsets −1 and +1 both reach the other cell, double-counting it
 # (thin strips, e.g. examples/shearwave_scan.jl): use the offsets 0 and 1.
 neighbor_range(n::Int) = n == 1 ? (0:0) : n == 2 ? (0:1) : (-1:1)
@@ -42,9 +45,12 @@ end
 # ── Neighbour list ───────────────────────────────────────────────────────────
 # For each particle a, the particles b (a itself included) with |x_b − x_a| < 2h(1 + 1e-9),
 # in exactly the order of the cell scan (dx in −1:1, dy in neighbor_range(ncy), cell
-# order), so that a pass over the list sums in the same order as the scan.  Each pass
-# keeps its own exact distance test.  The list remembers the positions it was built from
-# and is rebuilt whenever they differ (one comparison per particle per call).
+# order), so that a pass over the list sums in the same order as the scan.
+#
+# Each pass keeps its own exact distance test.
+#
+# The list remembers the positions it was built from and is rebuilt whenever they differ
+# (one comparison per particle per call).
 mutable struct NeighborList
     offsets :: Vector{Int}                 # neighbours of a: index[offsets[a]:offsets[a+1]-1]
     index   :: Vector{Int}

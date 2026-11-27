@@ -1,19 +1,25 @@
-# viscous.jl — the deterministic viscous step on the particle variables of the energy Hamiltonian: the inverse-moment bond
-# dissipation (docs/inverse_moment.tex; docs/commonkernel.tex for the resolved part, docs/bond_dissipation.tex for the notation).
+# viscous.jl — the deterministic viscous step on the particle variables: the inverse-moment
+# bond dissipation (docs/inverse_moment.tex; docs/commonkernel.tex for the resolved part,
+# docs/bond_dissipation.tex for the notation).  Other dissipations: tag pre-prune.
+#
 #   r_ab = x_b − x_a,  Δb_ab = b_b − b_a,  b_a = ẋ_a/T_a
-#   ψ_ab        the bond weight of the SPH kernel at the lab distance, −W′(r_ab)/r_ab;  w_ab = V_b ψ_ab / n_a
-#   G_a         = (∇b)_a, the least-squares fit with the weights ψ_ab;  θ_a = ℓ_a:G_a / ⟨Pℓ⟩_a;  Y_a = sym G_a − θ_a P_a
-#   K_a = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ²] + ½ Σ_b c_ab δ_ab·ℓ δ_ab,  δ_ab = Δb_ab − X_a r_ab (the residual of the fit X_a
-#               with the weights c_ab = 2 V_a T_a η w_ab (r̂·ℓ r̂)²)
-# The force is F_a = −∂K/∂b_a: the residual tractions and, through the fit G_a, the resolved stress E_a = ∂K_a/∂G_a.
-# The simulation is two-dimensional: P and the subtracted dilation use d_s = 2, and the shear of the d − 2 unresolved
-# directions of the d-dimensional fluid goes into ζ_eff = ζ + 2η (1/2 − 1/d).
-# Removed on 2026-11-27 (docs/focus_plan.tex, Q3 and Q5; the tag pre-prune has them): the change of representation of the
-# smoothed Hamiltonian (changerep.tex), the dissipations :particle, :common, :bond (the comoving weights with Λ_a, bond_h) and
-# the 1D bonds.
+#   ψ_ab  the bond weight of the SPH kernel at the lab distance, −W′(r_ab)/r_ab
+#   w_ab  = V_b ψ_ab / n_a
+#   G_a   = (∇b)_a, the least-squares fit with the weights ψ_ab
+#   θ_a   = ℓ_a:G_a / ⟨Pℓ⟩_a,   Y_a = sym G_a − θ_a P_a
+#   K_a   = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ²] + ½ Σ_b c_ab δ_ab·ℓ δ_ab
+#   δ_ab  = Δb_ab − X_a r_ab, the residual of the fit X_a with the weights
+#           c_ab = 2 V_a T_a η w_ab (r̂·ℓ r̂)²
+#
+# The force is F_a = −∂K/∂b_a: the residual tractions and, through the fit G_a, the resolved
+# stress E_a = ∂K_a/∂G_a.
+#
+# The simulation is two-dimensional: P and the subtracted dilation use d_s = 2, and the shear
+# of the d − 2 unresolved directions of the d-dimensional fluid goes into
+# ζ_eff = ζ + 2η (1/2 − 1/d).
 
-# comoving metric ℓ = δ − v vᵀ, its inverse δ + γ² v vᵀ, and the scalar projector
-# P (2×2 block) and ⟨Pℓ⟩ for physical dimension d.
+# The comoving metric ℓ = δ − v vᵀ, its inverse δ + γ² v vᵀ, and the scalar projector
+# P (2×2 block) and ⟨Pℓ⟩ for dimension d.
 function comoving_structures(v::SVector{2,Float64}, cs2v::Float64, d::Int)
     v   = cap_velocity(v)                               # |v|² ≤ 1 − 1/γ_max² (sph.jl)
     vv  = v * v'
@@ -25,14 +31,17 @@ function comoving_structures(v::SVector{2,Float64}, cs2v::Float64, d::Int)
     return ℓ, ℓi, P, Pℓ
 end
 
-# The bond weight of the SPH kernel itself (commonkernel.tex): ψ(r) = −W′(r; h)/r for params.kernel, so that
-# ψ_ab r_ab = D_ab, the kernel gradient of the ideal step.  Its normalization is divided out by n_a.
+# The bond weight of the SPH kernel itself (commonkernel.tex): ψ(r) = −W′(r; h)/r for
+# params.kernel, so that ψ_ab r_ab = D_ab, the kernel gradient of the ideal step.
+# Its normalization is divided out by n_a.
 function common_bond_weight(params::SimParams)
     h = params.h;  K = params.kernel
     return r -> r > 0 ? -kernel_gradW(SVector(r, 0.0), r, h, K)[1] / r : 0.0
 end
-# The lab weights without the correction Λ_a (inverse_moment.tex): ψ_ab = ψfun(r_ab), and n_a with
-# tr Σ_b V_b ψ_ab r_ab r_abᵀ = 2 n_a, so that the normalized moment 𝓜_a = Σ_b w_ab r rᵀ has trace 2 (𝟙 on a perfect lattice).
+# The lab weights (inverse_moment.tex): ψ_ab = ψfun(r_ab), and n_a with
+#   tr Σ_b V_b ψ_ab r_ab r_abᵀ = 2 n_a,
+# so that the normalized moment 𝓜_a = Σ_b w_ab r rᵀ has trace 2 (𝟙 on a perfect lattice).
+# Returns (ψ, n_a).
 function bond_weights_lab(nb, particles, ψfun;
                           ψ0 = Vector{Float64}(undef, length(nb)), Vb = Vector{Float64}(undef, length(nb)))
     resize!(ψ0, length(nb));  resize!(Vb, length(nb))
@@ -46,9 +55,11 @@ end
 # the factor of the residual of bond r in the metric ℓ, (r̂·ℓ r̂)² (commonkernel.tex, eq. fab)
 resid_factor(params::SimParams, ℓ, r) = (dot(r, ℓ * r) / dot(r, r))^2
 
-# Optional bv: force for a given b-field (default b = ẋ/Teff); used by the tests.
-# bond_dissipation(...) returns K itself (same arguments).  Kvec, if given, receives
-# each particle's share of K (its bonds plus its bulk term).
+# The force F = −∂K/∂b into dotm.  Optional bv: the b-field (default b = ẋ/Teff; the tests
+# pass their own).
+#
+# bond_dissipation(...) returns K itself (same arguments).  Kvec, if given, receives each
+# particle's share of K (its bonds plus its bulk term).
 function bond_dissipative_force!(dotm::Vector{SVector{2,Float64}},
                                  particles::Vector{Particle},
                                  params::SimParams, cl::CellList2D,
@@ -63,7 +74,8 @@ bond_dissipation(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
     _bond_dissipation!(nothing, particles, params, cl, eos, bv, Kvec)
 
 # Shared kernel: returns K; if dotm !== nothing also writes F = −∂K/∂b into it.
-# One loop over particles a; each builds its star, weights and mean field, and adds its
+#
+# One loop over particles a; each builds its star, weights and fit, and adds its
 # contributions to g = ∂K/∂b over the star (bond_dissipation.tex, Sect. "Implementation").
 function _bond_dissipation!(dotm, particles::Vector{Particle},
                             params::SimParams, cl::CellList2D,
@@ -104,7 +116,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         va   = pa.dotx                 # coarse-grained particle velocity ẋ_a (update_velocities!)
         ℓ, ℓi, P, Pℓ = comoving_structures(va, cs2v, 2)          # P with d_s = 2
 
-        # weights ψ_ab (moment-corrected) and n_a
+        # weights ψ_ab and n_a
         ψs, n_a = bond_weights_lab(nb, particles, common_bond_weight(params))
         n_a > 0 || continue
 
@@ -120,14 +132,19 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         θa    = sum(ℓ .* G) / Pℓ                    # comoving dilation
         cbond = 2 * Ta * η * Va / n_a               # 2 V_a T_a η_a w_ab = cbond V_b ψ_ab
 
-        # commonkernel.tex, eq. Knew: K_a = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ² + η Σ_b w_ab δ_ab·ℓ δ_ab],
-        # Y = sym G − θ P.  The residual (inverse_moment.tex, eq. Kresid): tractions t_ab = −c_ab ℓ δ_ab, f_ab = (r̂·ℓ r̂)² in c_ab,
-        # δ_ab = Δb_ab − X_a r_ab with the least-squares fit X_a = Σ_b c_ab Δb rᵀ R_a⁻¹, R_a = Σ_b c_ab r rᵀ, whose derivative
-        # through X_a vanishes; through the fit G_a, E_a = ∂K_a/∂G_a is the resolved part.
+        # commonkernel.tex, eq. Knew:
+        #   K_a = V_a T_a [η tr(ℓYℓY) + ½ ζ_eff θ² + η Σ_b w_ab δ_ab·ℓ δ_ab],   Y = sym G − θ P.
+        #
+        # The residual (inverse_moment.tex, eq. Kresid): tractions t_ab = −c_ab ℓ δ_ab, with
+        # f_ab = (r̂·ℓ r̂)² in c_ab, and δ_ab = Δb_ab − X_a r_ab with the least-squares fit
+        #   X_a = Σ_b c_ab Δb rᵀ R_a⁻¹,   R_a = Σ_b c_ab r rᵀ,
+        # whose derivative through X_a vanishes.
+        #
+        # Through the fit G_a, E_a = ∂K_a/∂G_a is the resolved part.
         ζeff = ζ + 2η * (1 / 2 - 1 / d)
         Y    = (G + G') / 2 - θa * P
         Ka   = Va * Ta * (η * tr(ℓ * Y * ℓ * Y) + 0.5 * ζeff * θa^2)
-        Eres = zero(SMatrix{2,2,Float64})           # (zero; kept in E so that the arithmetic is that of the regression's reference)
+        Eres = zero(SMatrix{2,2,Float64})           # zero; kept in E for bit-identity with the regression
         R = zero(SMatrix{2,2,Float64});  Xt = zero(SMatrix{2,2,Float64})
         for (k, (b, r, rr)) in enumerate(nb)
             ψ = ψs[k];  ψ == 0 && continue
@@ -166,9 +183,10 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
     return K
 end
 
-# One dissipative half/full step at fixed positions (viscous_step_energy!).  compute_dt bounds the damping rate of the
-# shortest modes (viscous_rate_bound) so that each viscous half step of generic_step!, of length Δt/2, decays every mode
-# monotonically.
+# One dissipative half/full step at fixed positions (viscous_step_energy!).
+#
+# compute_dt bounds the damping rate of the shortest modes (viscous_rate_bound), so that each
+# viscous half step of generic_step!, of length Δt/2, decays every mode monotonically.
 function viscous_step!(particles::Vector{Particle}, params::SimParams,
                             cl::CellList2D, dt::Float64, eos::AbstractEOS)
     eta_by_s(eos) == 0.0 && zeta_by_s(eos) == 0.0 && return
@@ -176,10 +194,12 @@ function viscous_step!(particles::Vector{Particle}, params::SimParams,
     return
 end
 
-# The n-scheme (energystep.tex, eq. viscstep): the viscous step on the particle
-# variables, with no change of representation.  β_a = v_a/Teff_a, Teff_a = ∂H/∂s_a;
-#   Δm_a = −Δt ∂K/∂β_a  (bond form, changerep.tex),   Δs_a = −β_a·Δm_a ,
-# so ΔH = 0 to first order in Δt and ΣΔs_a = 2K Δt ≥ 0.  Returns (K, ΣΔs).
+# The viscous step on the particle variables (energystep.tex, eq. viscstep).
+# β_a = v_a/Teff_a, Teff_a = ∂H/∂s_a;
+#   Δm_a = −Δt ∂K/∂β_a ,   Δs_a = −β_a·Δm_a ,
+# so ΔH = 0 to first order in Δt and ΣΔs_a = 2K Δt ≥ 0.
+#
+# Returns (K, ΣΔs).
 function viscous_step_energy!(particles::Vector{Particle}, params::SimParams,
                                   cl::CellList2D, dt::Float64, eos::AbstractEOS)
     N    = length(particles)

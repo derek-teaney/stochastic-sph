@@ -2,9 +2,12 @@
 #
 # A StepMonitor is fed after every stochastic step (observe_step!, with the NamedTuple that
 # stochastic_step! returns) and, at the record points, with the particles (observe_particles!).
+#
 # report(mon, t) prints one line for the window since the last report and the totals;
-# monitor_summary(mon) returns the totals as a NamedTuple (for the run metadata); print_summary
-# writes a block at the end of the run.  It is plain data, so it goes into checkpoints.
+# monitor_summary(mon) returns the totals as a NamedTuple (for the run metadata);
+# print_summary writes a block at the end of the run.
+#
+# It is plain data, so it goes into checkpoints.
 #
 # Recorded:
 #   acceptance of the stress (star) and residual proposals, as fractions of all proposals
@@ -12,7 +15,9 @@
 #   the fraction of each kind rejected by the guard: a proposal that would leave some particle
 #     in a state no fluid can have — for the conformal EOS exactly |v| ≥ 1;
 #   the particle speeds at the record points: the largest |v|, and the fractions of particles
-#     with |v| > 0.9 and > 0.99.
+#     with |v| > 0.9 and > 0.99;
+#   the retries of the generalized leapfrog (GUARD_LEAPFROG; hmc.jl, generalized_step!).
+#
 # Include after sph.jl.
 
 mutable struct StepMonitor
@@ -50,7 +55,7 @@ function report(mon::StepMonitor, t; io = stdout, label = "")
     w = mon.win ./ max(mon.nwin, 1);  T = mon.tot ./ max(mon.nsteps, 1)
     @printf(io, "%s t=%-8.3g steps=%-7d wall=%-7.0fs | window: acc stress %.4f resid %.4f  |v|≥1 rejected: stress %.2e resid %.2e  vmax %.3f | total: %.4f %.4f %.2e %.2e  vmax %.3f  |v|>0.9: %.2e%s\n",
             label, t, mon.nsteps, time() - mon.wall0, w..., mon.vmaxwin, T..., mon.vmax, mon.nfast[1] / max(mon.nsamp, 1),
-            GUARD_LEAPFROG[] > 0 ? @sprintf("  leapfrog retries %d", GUARD_LEAPFROG[]) : "")   # (docs/focus_plan.tex Q11)
+            GUARD_LEAPFROG[] > 0 ? @sprintf("  leapfrog retries %d", GUARD_LEAPFROG[]) : "")
     flush(io)
     mon.win .= 0;  mon.nwin = 0;  mon.vmaxwin = 0.0
     return mon

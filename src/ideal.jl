@@ -1,14 +1,17 @@
 # ideal.jl — the ideal (Hamiltonian) step: smoothing, velocities, the Hamiltonian force,
 # the time step and the leapfrog.
+#
+# The n-scheme (volume_n.tex, energystep.tex):
+#   H = Σ_a e_a(s_a, m_a, V_a),   V_a = 1/n_a,   n_a = Σ_b W_ab.
+# Other Hamiltonians and volumes: tag pre-prune.
 
-# The n-scheme (volume_n.tex, energystep.tex): H = Σ_a e_a(s_a, m_a, V_a) with the number volume V_a = 1/n_a, n_a = Σ_b W_ab.
-# The smoothed Hamiltonian and the entropy volume (SPH_HAMILTONIAN, SPH_VOLUME) were removed on 2026-11-27 (docs/focus_plan.tex, Q7;
-# tag pre-prune).
-
-# Only the number density is smoothed, n_a = Σ_b W_ab, V_a = 1/n_a.  Stored as S_smooth = s_a n_a (the round trip
-# V_a = s_a/S_smooth is kept: removing it changes the last bits), and the momentum density is the particle's own,
-#   M_smooth = m_a / V_a ,
-# so solve_eos! returns, unchanged, the particle's own T_a, v_a, p_a and e_a/s_a.
+# Only the number density is smoothed, n_a = Σ_b W_ab, V_a = 1/n_a.
+#
+# Stored as S_smooth = s_a n_a.  The round trip V_a = s_a/S_smooth is kept: removing it
+# changes the last bits.
+#
+# The momentum density is the particle's own, M_smooth = m_a / V_a, so solve_eos! returns,
+# unchanged, the particle's own T_a, v_a, p_a and e_a/s_a.
 function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
                               cl::CellList2D)
     nl = neighbor_list!(cl, particles, params.h)
@@ -19,19 +22,21 @@ function smooth_to_particles!(particles::Vector{Particle}, params::SimParams,
             r_mag = sqrt(r_mic[1]^2 + r_mic[2]^2)
             S_acc += 1.0 * kernel_W(r_mag, params.h, params.kernel)
         end
-        if SSCHEME                                # V_a = 1/n_a stored; S_smooth the target's entropy density (the label can be ≤ 0)
+        if SSCHEME                                # V_a = 1/n_a; S_smooth the target's entropy density (the label can be ≤ 0)
             pa = particles[a];  pa.V = 1 / S_acc;  pa.M_smooth = pa.m * S_acc;  pa.S_smooth = pa.St * S_acc
             continue
         end
         S_acc *= particles[a].s
         particles[a].S_smooth = S_acc
         particles[a].M_smooth = particles[a].m * (S_acc / particles[a].s)
-        particles[a].V = particles[a].s / S_acc   # the expression the code used before V was stored (bit-identical)
+        particles[a].V = particles[a].s / S_acc   # s_a/S_smooth, not 1/n_a: bit-identical
     end
 end
 
-# energystep.tex, eqs. xdot, Teff:  ẋ_a = ∂H/∂m_a = v_a (local, no neighbour sum), and Teff_a = ∂H/∂s_a = T_a exactly,
-# since V_a does not depend on s (volume_n.tex).  Needs the EOS fields (smooth_to_particles! + update_thermodynamics!).
+# energystep.tex, eqs. xdot, Teff:  ẋ_a = ∂H/∂m_a = v_a (local, no neighbour sum), and
+# Teff_a = ∂H/∂s_a = T_a exactly, since V_a does not depend on s (volume_n.tex).
+#
+# Needs the EOS fields (smooth_to_particles! + update_thermodynamics!).
 function update_velocities!(particles::Vector{Particle},
                             params::SimParams, cl::CellList2D)
     Threads.@threads for a in eachindex(particles)
@@ -42,8 +47,9 @@ end
 
 # energystep.tex, eq. mdot, with V_a = 1/n_a (volume_n.tex): the symmetric SPH pressure force
 #   ṁ_a = −∂H/∂x_a = −Σ_b (p_a V_a² + p_b V_b²) ∂W_ab/∂x_a ,
-# odd under a ↔ b, so Σ_a ṁ_a = 0 up to roundoff.  Each particle gathers its own force over its neighbours (threads over
-# particles).
+# odd under a ↔ b, so Σ_a ṁ_a = 0 up to roundoff.
+#
+# Each particle gathers its own force over its neighbours (threads over particles).
 function hamiltonian_force!(dotm::Vector{SVector{2,Float64}},
                             particles::Vector{Particle},
                             params::SimParams, cl::CellList2D)
@@ -97,30 +103,30 @@ function compute_dt(particles, params, eos;
     Γ_s          = visc / Trel_min
     dt_diffusive = CFL * params.h^2 / Γ_s
     dt = min(dt_acoustic, dt_diffusive)
-    # The bond step damps the shortest modes at up to Γ_max (changerep.tex, "The time step").  generic_step! applies two
-    # viscous half steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1, with Γ_bound ≥ Γ_max.
+    # The viscous step damps the shortest modes at up to Γ_max (changerep.tex, "The time step").
+    # generic_step! applies two viscous half steps of Δt/2 each; require Γ_bound Δt/2 ≤ 1,
+    # with Γ_bound ≥ Γ_max.
     dt = min(dt, 2 / viscous_rate_bound(params, eos, Trel_min))
     return dt
 end
 
-# Upper bound on the damping rate of the particle-representation viscous step.
+# Upper bound on the damping rate of the viscous step.
 # Gershgorin on the bond coefficients: Γ_max ≤ 4 (κ_b/w) max_a Σ_b w_ab, and for the
 # Wendland bond weight ψ ∝ (1 − ρ/2h)³ in two dimensions
-#   Σ_b w_ab ≤ 2 ∫ψ / ∫ψ ρ² = c_2 / h²,   c_2 = 7/2
-# (the continuum integral includes ρ → 0, which the bond sum omits, so it bounds the
-# lattice sum).  κ_b is the largest viscosity carried by the bonds: 2η + ζ_eff.  κ_b/w = (κ_b/s)/T_rel.
+#   Σ_b w_ab ≤ 2 ∫ψ / ∫ψ ρ² = c_2 / h²,   c_2 = 7/2 .
+# The continuum integral includes ρ → 0, which the bond sum omits, so it bounds the lattice sum.
+#
+# κ_b is the largest viscosity carried by the bonds: 2η + ζ_eff.  κ_b/w = (κ_b/s)/T_rel.
 function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     d  = params.phys_dim
     η_s, ζ_s = eta_by_s(eos), zeta_by_s(eos)
     κb_s = 2η_s + zeta_eff_by_s(eos, d)
     c_d  = 7 / 2
-    return 4 * (κb_s / Trel) * c_d / params.h^2       # (the bond length h_ψ was h; bond_h removed, focus_plan.tex Q5)
+    return 4 * (κb_s / Trel) * c_d / params.h^2       # the bond length is h
 end
 
-# The ideal step: the generalized leapfrog (hmc.jl, generalized_step!; implicit, symplectic and reversible for the
-# non-separable H; equilibrium_positions.tex).  The
-# drift–kick–drift leapfrog (SPH_IDEAL=particle) and the grid step (SPH_IDEAL=grid) were removed on 2026-11-27
-# (docs/focus_plan.tex, Q6; tag pre-prune).
+# The ideal step: the generalized leapfrog (hmc.jl, generalized_step!; implicit, symplectic and
+# reversible for the non-separable H; equilibrium_positions.tex).
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
                          cl::CellList2D, dt::Float64, eos::AbstractEOS,
                          dotm::Vector{SVector{2,Float64}})

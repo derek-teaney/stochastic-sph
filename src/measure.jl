@@ -1,15 +1,18 @@
 # measure.jl — equilibrium initial states, recording of Fourier modes, and correlators
-# (docs/plan.tex, "Measurements in thermalized ensembles").  Include after stochastic.jl;
-# needs FFTW, BinningAnalysis and HDF5.
+# (docs/plan.tex, "Measurements in thermalized ensembles").
+#
+# Include after stochastic.jl; needs FFTW, BinningAnalysis and HDF5.
+# (Other starts: tag pre-prune.)
 using FFTW, BinningAnalysis, HDF5, Serialization
 
 # ── Equilibrium initial state ────────────────────────────────────────────────
-# (thermal_init!, the start SR_START=thermal — momenta drawn at fixed particle energies — was removed on 2026-11-27:
-# docs/focus_plan.tex, Q9; tag pre-prune.)
 
-# The state a run is at (docs/focus_plan.tex, Q9): from the equation of state alone, the rest-frame entropy density s_rel,0
-# moving at speed v along x.  Every part of the start reads it: the set-up (S, M0), the draw and hybrid Monte Carlo (the
-# multipliers β⁰ = γ/T_rel,0, β = γv/T_rel,0, as bath = (β⁰, β)), the normalization of KE and the record.
+# The state a run is at (docs/focus_plan.tex, Q9), from the equation of state alone:
+# the rest-frame entropy density s_rel,0, moving at speed v along x.
+#
+# Every part of the start reads it: the set-up (S, M0), the draw and hybrid Monte Carlo
+# (the multipliers β⁰ = γ/T_rel,0, β = γv/T_rel,0, as bath = (β⁰, β)), the normalization
+# of KE and the record.
 function target_state(srel0::Float64, v::Float64, eos::AbstractEOS)
     γ = 1 / sqrt(1 - v^2)
     e0 = e_of_srel(eos, srel0);  Trel0 = trel_of_srel(eos, srel0);  w0 = e0 + pressure(eos, e0)
@@ -46,8 +49,9 @@ function draw_particle(ē, m̄, V, β0, β, eos, L, Hn, rng; nmh = 30, widen = 2
     logq(x) = -0.5 * dot(x, Hn * x) / widen
     Lw = sqrt(widen) * L
     x = Lw * SVector(randn(rng), randn(rng), randn(rng));  wx = logp(x) - logq(x);  nacc = 0
-    # a start beyond the light cone (|v| ≥ 1: weight 0) is drawn again; at low s_a in a fast flow the widened Gaussian reaches it
-    # often enough that all nmh proposals can miss.  No extra draws when the first start is physical (bit-identical otherwise).
+    # A start beyond the light cone (|v| ≥ 1: weight 0) is drawn again: at low s_a in a fast
+    # flow the widened Gaussian reaches it often enough that all nmh proposals can miss.
+    # No extra draws when the first start is physical (bit-identical otherwise).
     tries = 0
     while !isfinite(wx) && tries < 10_000
         x = Lw * SVector(randn(rng), randn(rng), randn(rng));  wx = logp(x) - logq(x);  tries += 1
@@ -78,7 +82,9 @@ end
 # Exact single-particle averages at (β⁰, β) for volume V by quadrature of
 # exp[S_a(e, m) − β⁰ e + β·m] on a grid around the most probable state (skewed range in e):
 # returns the most probable (ē, m̄), the mean ⟨(e, m)⟩, the covariance, and the Gaussian
-# pieces (L, Hn) for the sampler.  The weight is that of the votes (the Liouville measure) unless another is given.
+# pieces (L, Hn) for the sampler.
+#
+# The weight is that of the votes (the Liouville measure) unless another is given.
 function particle_moments(V, β0, β::SVector{2,Float64}, eos::AbstractEOS; nq::Int = 41, weight::F = vote_entropy) where {F}
     st = state_from_beta(β0, β, eos);  ē = V * st.ε;  m̄ = V * st.M
     H  = entropy_hessian(ē, m̄, V, eos, 0.02 * sqrt(ē / β0));  Hn = SMatrix{3,3,Float64}(-H)
@@ -137,8 +143,9 @@ function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int
         X[a] = SVector(p.ē + x[1], p.m̄[1] + x[2], p.m̄[2] + x[3]);  nacc += na
     end
     if exact_totals
-        # The shift to the exact totals can push a particle across the light cone (low s_a in a fast flow): such particles are drawn
-        # again and the shift is redone.  When none is pushed (as in every run before 2026-11-15) this is the shift as before.
+        # The shift to the exact totals can push a particle across the light cone (low s_a in
+        # a fast flow): such particles are drawn again and the shift is redone.  When none is
+        # pushed this is the plain shift (bit-identical).
         X0 = copy(X);  Vtot = sum(V)
         for attempt in 1:1000
             d = sum(X0) - SVector(E, M[1], M[2])
@@ -156,10 +163,12 @@ function draw_configuration(V::Vector{Float64}, β0, β, mom, eos, rng; nmh::Int
     return X, nacc / (N * nmh)
 end
 
-# Equilibrium draw: the particle energies and momenta at the multipliers bath = (β⁰, β) (target_state(...).bath; required: the
-# solve for the β^μ of the totals, beta_from_averages and SR_BATH=totals, was removed on 2026-11-27, docs/focus_plan.tex Q9),
-# keeping the positions and the volumes V_a.  Sets m_a and s_a = S_a(e_a, m_a), then re-smooths.  exact_totals = true shifts the
-# draw to the totals (E, M) exactly (draw_configuration; default: the totals of the current state).
+# Equilibrium draw: the particle energies and momenta at the multipliers bath = (β⁰, β)
+# (required; target_state(...).bath), keeping the positions and the volumes V_a.
+# Sets m_a and s_a = S_a(e_a, m_a), then re-smooths.
+#
+# exact_totals = true shifts the draw to the totals (E, M) exactly (draw_configuration;
+# default: the totals of the current state).
 function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                            eos::AbstractEOS; bath, rng::AbstractRNG = Random.default_rng(),
                            E = nothing, M = nothing, nmh::Int = 30, exact_totals::Bool = false)
@@ -180,13 +189,15 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
     return (β0 = β0, β = β, T = 1 / β0, v = β / β0, e = e, V = V, acc = acc, E = Etot, M = Mtot)
 end
 
-# The totals of the state as set up (the lattice, before any draw): the cold start's (E, P), which the hot start and, with
-# SR_HMC_SHIFT_TOTALS, the hmc start are shifted to.
+# The totals of the state as set up (the lattice, before any draw): the cold start's (E, P).
+# The hot start and, with SR_HMC_SHIFT_TOTALS, the hmc start are shifted to them.
 cold_totals(particles, params, cl, eos) = (thermalize!(particles, params, cl, eos);
     (E = sum(particle_energy(pa, eos) for pa in particles), P = sum(pa.m for pa in particles)))
 
-# Shift (e_a, m_a) so that the totals are (E, P) exactly, the difference removed in proportion to the volumes (as the exact
-# totals of draw_configuration), at fixed positions; s_a = S_a(e_a, m_a).  SR_HMC_SHIFT_TOTALS: the hmc start at the cold totals.
+# Shift (e_a, m_a) at fixed positions so that the totals are (E, P) exactly, the difference
+# removed in proportion to the volumes (as in draw_configuration); s_a = S_a(e_a, m_a).
+#
+# Used by SR_HMC_SHIFT_TOTALS: the hmc start at the cold totals.
 function shift_to_totals!(particles, params, cl, eos, E, P)
     thermalize!(particles, params, cl, eos)
     V = [pa.V for pa in particles];  Vtot = sum(V)
@@ -201,11 +212,14 @@ function shift_to_totals!(particles, params, cl, eos, E, P)
     return d
 end
 
-# The start of a run on the lattice (drivers: SR_START; the hmc start is the draw and hmc_equilibrate!, hmc.jl):
+# The start of a run on the lattice (drivers: SR_START; the hmc start is the draw and
+# hmc_equilibrate!, hmc.jl):
 #   :cold  the state as set up, no fluctuations; the run thermalizes.  For demonstrations.
-#   :hot   (e_a, m_a) drawn at the target's multipliers bath, then shifted so that the totals are the cold ones (E, P): cold
-#          and hot are on the same shell and must reach the same equilibrium.  For demonstrations.
-# :eq and :thermal (before 2026-11-27) stop: :eq is now :hot (with the bath of the target), :thermal was removed.
+#   :hot   (e_a, m_a) drawn at the target's multipliers bath, then shifted so that the totals
+#          are the cold ones (E, P): cold and hot are on the same shell and must reach the
+#          same equilibrium.  For demonstrations.
+#
+# The retired names :eq and :thermal stop with a message.
 function initial_state!(particles::Vector{Particle}, params::SimParams, cl::CellList2D,
                         eos::AbstractEOS, start::Symbol; rng::AbstractRNG = Random.default_rng(), bath = nothing, totals = nothing)
     # returns a description of the start, for the run record (src/runinfo.jl)
@@ -332,8 +346,8 @@ mutable struct ParticleRecorder
     psi6loc :: Vector{Float64}                # Σ_a |q_a|/N: local bond order
     Nk    :: Vector{Vector{ComplexF64}}       # N_k = Σ_a e^{−ik·x_a};  S(k) = |N_k|²/N
     pair0 :: Any                              # the pair observables of the starting positions (t = 0)
-    # angular harmonics of g(r, φ) = g(r) + 2 Σ_n g_n(r) cos nφ, φ the angle of the bond to x (the flow): g_n for n = 2, 4, 6
-    # (odd n vanish: every pair is counted both ways)
+    # angular harmonics of g(r, φ) = g(r) + 2 Σ_n g_n(r) cos nφ, φ the angle of the bond to x
+    # (the flow): g_n for n = 2, 4, 6 (odd n vanish: every pair is counted both ways)
     gn    :: Vector{Matrix{Float64}}          # one nbin × 3 matrix per record, columns n = 2, 4, 6
 end
 
@@ -362,11 +376,15 @@ function ParticleRecorder(particles::Vector{Particle}, params; rs = (1.0, 2.0, 4
 end
 
 # Pair observables of the present positions (docs/equilibrium_positions.tex, stage 1):
-# g(r) from the pairs within 2h of the neighbour list, in bins of dr, normalized by the
-# ideal-gas count N n0 × (shell area), n0 = N/A; the harmonics g_n(r) = Σ_pairs cos nφ_ab / (N n0 × shell area), n = 2, 4, 6,
-# φ_ab the angle of the bond to x, so that g(r, φ) = g(r) + 2 Σ g_n(r) cos nφ; g_par and g_perp (deprecated) the same as g for
-# the bonds at less / more than 45° to x (each normalized by half the shell); the bond order q_a over the six nearest
-# neighbours; N_k at pr.ks.  The cell list must be current.
+#   g(r)    from the pairs within 2h of the neighbour list, in bins of dr, normalized by the
+#           ideal-gas count N n0 × (shell area), n0 = N/A;
+#   g_n(r)  = Σ_pairs cos nφ_ab / (N n0 × shell area), n = 2, 4, 6, φ_ab the angle of the
+#           bond to x, so that g(r, φ) = g(r) + 2 Σ g_n(r) cos nφ;
+#   g_par, g_perp (deprecated)  g for the bonds at less / more than 45° to x (each
+#           normalized by half the shell);
+#   q_a     the bond order over the six nearest neighbours;
+#   N_k     at pr.ks.
+# The cell list must be current.
 function pair_observables(pr::ParticleRecorder, particles::Vector{Particle}, cl::CellList2D)
     nl = neighbor_list!(cl, particles, pr.h)
     N = length(particles);  L = pr.L;  n0 = N / (L[1] * L[2]);  dr = pr.dr;  nb = pr.nbin
@@ -402,7 +420,7 @@ function pair_observables(pr::ParticleRecorder, particles::Vector{Particle}, cl:
     return (g = g, gpar = gp, gperp = gq, gn = gh, psi6 = abs(sum(q)) / N, psi6loc = sum(abs, q) / N, Nk = Nk)
 end
 
-# current displacements (unwrapped, mean drift removed); call update! first
+# current displacements (unwrapped, mean drift removed); record! accumulates them
 function displacements(pr::ParticleRecorder)
     u = pr.xu .- pr.x0;  ū = sum(u) / length(u)
     return [v - ū for v in u]
@@ -569,11 +587,12 @@ function save_checkpoint(path::AbstractString, state::NamedTuple)
 end
 load_checkpoint(path::AbstractString) = open(deserialize, path)
 
-# Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE),
-# with meta a NamedTuple of the attributes and rec a Recorder.
-# s_rel,0, the rest-frame entropy density of a run, from its record (key srel0 since 2026-11-23; S0 before)
+# s_rel,0, the rest-frame entropy density of a run, from its record (key srel0; S0 in
+# older records)
 srel0_of(m) = haskey(m, :srel0) ? m.srel0 : m.S0
 
+# Read a file written by write_equilibrium_h5 (or an old .jls) as (meta, rec, H, KE, part),
+# with meta a NamedTuple of the attributes and rec a Recorder.
 function read_equilibrium(path::AbstractString)
     endswith(path, ".jls") && return deserialize(path)
     h5open(path, "r") do f
@@ -596,12 +615,17 @@ function read_equilibrium(path::AbstractString)
     end
 end
 
-# ── Energy density and pressure of the model (docs/gravity.tex, "The energy density and the stress") ──────────
-# The responses of ln Z to the lapse and to the spatial metric: the energy density E = Σ_a e_a / L^d, and the stress
-#   S^{ij} = (1/L^d) Σ_a (v_a^i m_a^j + P_a V_a² Q_a^{ij}),   Q_a^{ij} = Σ_b r_ab^i D_ab^j,  D_ab = −W'(r_ab) r̂_ab,
-# whose trace over d is the mechanical pressure, the kinetic (label) part plus the virial part (the n-scheme);
-# smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the shear-stress
-# components of the sum, (Sxy, (Sxx − Syy)/2), for the record.
+# ── Energy density and pressure of the model ─────────────────────────────────
+# (docs/gravity.tex, "The energy density and the stress")
+# The responses of ln Z to the lapse and to the spatial metric: the energy density
+# E = Σ_a e_a / L^d, and the stress
+#   S^{ij} = (1/L^d) Σ_a (v_a^i m_a^j + P_a V_a² Q_a^{ij}),
+#   Q_a^{ij} = Σ_b r_ab^i D_ab^j,   D_ab = −W'(r_ab) r̂_ab,
+# whose trace over d is the mechanical pressure: the kinetic (label) part plus the virial
+# part (the n-scheme).
+#
+# Smooths and solves the state first.  Returns per unit area (E, P, Pkin, Pvir) and the
+# shear-stress components of the sum, (Sxy, (Sxx − Syy)/2), for the record.
 function energy_pressure(particles::Vector{Particle}, params::SimParams, cl::CellList2D, eos::AbstractEOS)
     smooth_to_particles!(particles, params, cl);  update_thermodynamics!(particles, eos)
     nl = neighbor_list!(cl, particles, params.h)

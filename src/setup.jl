@@ -1,18 +1,18 @@
-# Shared helpers for shear-wave test scripts.
+# setup.jl — the lattice and the initial conditions of test and example scripts.
 # Include after sph.jl and celllist.jl.
 
-# (The square lattice, make_uniform_particles, was removed on 2026-11-27: docs/focus_plan.tex, Q8; tag pre-prune.)
-
-# Hexagonal close-packed lattice.  N_x columns (spacing a), N_y rows (spacing a√3/2).
-# Odd rows are offset by a/2 in x.  Geometry (N, vol, a) is already set by SimParams
-# constructor; this function only places the particles.
+# Hexagonal close-packed lattice: N_x columns (spacing a), N_y rows (spacing a√3/2), odd rows
+# offset by a/2 in x.
+#
+# The geometry (N, vol, a) is already set by the SimParams constructor; this function only
+# places the particles.  The jitter has its own random numbers, Xoshiro(params.seed).
 function make_hex_particles!(params::SimParams, s_density; jitter=0.0)
     Lx  = params.L[1];  Ly = params.L[2]
     a_x = params.a
     N_x = round(Int, Lx / a_x)
     N_y = round(Int, params.N / N_x)
     a_y = Ly / N_y
-    rng = Xoshiro(params.seed)        # the jitter's own random numbers (docs/focus_plan.tex Q10; the global RNG until then)
+    rng = Xoshiro(params.seed)        # the jitter's own random numbers
     particles = Particle[]
     for iy in 0:N_y-1
         x_off = (iy % 2 == 0) ? 0.0 : 0.5 * a_x
@@ -30,7 +30,7 @@ end
 
 # Set initial conditions from continuous density fields.
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
-# Per-particle quantities are S_func(x,y)*vol and M_func(x,y)*vol respectively.
+# The particle values are S_func(x,y)*vol and M_func(x,y)*vol.
 # Pass nothing to leave that field unchanged.
 function set_ic!(particles, params::SimParams; S_func=nothing, M_func=nothing)
     vol = params.vol
@@ -47,11 +47,11 @@ function thermalize!(particles, params, cl, eos)
     update_velocities!(particles, params, cl)
 end
 
-# SPH kernel estimate of field(p) on a 1D slice through the box.
-# Formula: f̄(r) = Σ_a field(pa)·pa.s·W(|r - rₐ|, h) / Σ_a pa.s·W(|r - rₐ|, h)
+# SPH kernel estimate of field(p) on a line through the box:
+#   f̄(r) = Σ_a field(pa)·pa.s·W(|r - rₐ|, h) / Σ_a pa.s·W(|r - rₐ|, h)
 # dim=:x (default): vary x at fixed y = yslice (default L/2).
 # dim=:y          : vary y at fixed x = xslice (default L/2).
-# Returns (xs, fs) — caller is responsible for plotting, labels, and title.
+# Returns (xs, fs); the caller plots.
 function plot_slice(particles, params, cl;
                     field=p->p.s, dim=:x,
                     xslice=params.L[1]/2, yslice=params.L[2]/2, Ng=400)
@@ -88,7 +88,7 @@ function plot_slice(particles, params, cl;
 end
 
 # General setup: build params, particles, cl from smooth density fields.
-# eos must be constructed by the caller (allows S_func/M_func to close over eos quantities).
+# The caller constructs eos, so that S_func/M_func can close over it.
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Lattice kwargs: jitter, lattice.  Returns (params, particles, cl, eos).
 function setup_ic(h, ha_ratio, eos, S_func, M_func;

@@ -332,4 +332,52 @@ Not part of the plan, recorded so that they are not lost:
 
 One entry per stage: what was removed or changed, the commit, the result of the gate, and any decision taken.
 
+The gate is \texttt{test/run.sh all -r pre-prune} (Q0--Q11) or \texttt{-r focus-q11} (Q12--Q14), on an interactive or a regular node.
+Two changes of the harness apply to every stage: \nolinkurl{test/regress/step.jl} is the present version on both sides (the owner agreed,
+2026-11-27), and \nolinkurl{test/regress/h5cmp.jl} does not compare the \texttt{hast\_lq\_*} datasets, the statistics of the Hastings
+log ratios summed with atomic adds by the threads: their last bits differ between two runs of identical code (the Q0 baseline showed it).
+They are reported.
+
+\paragraph{Q0} (tag \texttt{pre-prune} = \texttt{f5237d9}; \texttt{1d69ec2}, \texttt{32da36c}).  The regression runs the drivers at the
+defaults too.  Baseline (interactive 62102226, the code of the tag against the tag): unit, physics, load pass; \texttt{step.jl} and the
+stability driver bit-identical; the equilibrium driver bit-identical but for \texttt{hast\_lq\_*}; the unit logs differ only in a wall
+time of hybrid Monte Carlo (now masked).  The known differences of the regression's comment (the record of $H$, the nominal bath)
+belong to references before the merge and do not appear against the tag.
+
+\paragraph{Q1} (\texttt{60a127e}, \texttt{a61e506}).  Gate 62103015: the drivers bit-identical (but for \texttt{hast\_lq\_*}); one unit
+failure, \nolinkurl{test/testmoment.jl} calling \texttt{propose\_resid!} with the removed $\lambda$ (fixed in Q5).
+
+\paragraph{Q2} (\texttt{1911977}, \texttt{81b6837}).  Gate (on 62103015): drivers bit-identical; \texttt{testmoment} as in Q1 and
+\texttt{testeqstart}, whose quadrature integrated the Einstein target (fixed in \texttt{81b6837}).  \emph{Deviation from the plan}: with
+the Einstein measure gone, the smoothed Hamiltonian cannot run the stochastic step or the equilibrium start (it had that measure), so
+the regression's smoothed entries went in Q2, not Q7.  The proposal of the HMC heat bath kept the flat weight (\texttt{flat\_weight})
+until Q9, as planned.
+
+\paragraph{Q3--Q8} (\texttt{15aeb7d}, \texttt{2843434}, \texttt{10a4084}, \texttt{e6d2074}, \texttt{68d29c3}, \texttt{4d6e300}).  Gated
+together at the head of Q8 (62103676).  Decisions: the one-row case of \texttt{neighbor\_range} stays (a 2D box less than $4h$ high
+needs it); \nolinkurl{test/testdissipative.jl} moved to \texttt{:moment} (the continuum $K$ of linear fields, the exact fit, the finite
+differences: all hold to roundoff), \nolinkurl{test/testcommonkernel.jl}, \nolinkurl{test/testparticle_sweep.jl},
+\nolinkurl{test/testkappa.jl}, \nolinkurl{test/testgridfft.jl}, \nolinkurl{test/testchangerep.jl} deleted with their paths;
+\nolinkurl{examples/moment_det.jl} keeps \texttt{:moment} alone, \nolinkurl{examples/moment_gaussian.jl} and
+\nolinkurl{examples/commonkernel_waves.jl} (comparisons with \texttt{:common}) deleted.
+
+\paragraph{Q9} (\texttt{cfd6988}).  Checks (i), (ii): \texttt{hot} and \texttt{cold} bit-identical to \texttt{pre-prune} with
+\texttt{SR\_POSITIONS=lattice SR\_START=eq} and \texttt{=cold}, at the tree level and with split, at rest and $v_0=0.8$.  Check (iv):
+\texttt{SR\_HMC\_SHIFT\_TOTALS} reproduces the cold totals to $10^{-15}$ (\nolinkurl{test/teststart.jl}, at $s_a\approx540$; at $s_a\approx16$
+in motion the uniform shift can push a particle past the light cone, and \texttt{shift\_to\_totals!} stops).  Check (iii): campaign
+\texttt{q9\_start} (62104058, 62104059; \nolinkurl{nersc/campaign_q9_start.txt}).  The stability driver now starts \texttt{hot} at the
+target (before: the totals solve), so its regression against \texttt{pre-prune} differs from Q9 on.
+
+\paragraph{Q10} (\texttt{5aa40c9}).  \texttt{testmoment}, \texttt{testhastings}, \texttt{testdissipative} pass with the new jittered
+positions; \texttt{testneighbor} keeps its numbers with its own generator.
+
+\paragraph{Q11} (\texttt{504ea20}; tag \texttt{focus-q11}).  The owner's decision as written.  \nolinkurl{test/testleapfrog_fail.jl}: a
+step 1000 times the acoustic one fails at every depth: four retries, a \texttt{LeapfrogFailure} with the state at the start of the
+step, the driver exits 1 with the record marked failed and the state saved.  Gate 62104423 (the Q11 head against \texttt{pre-prune}).
+
+\paragraph{Q12} (\texttt{9576776}).  The table \texttt{SETTING\_SPECS}; the batch and test variables are in it as \emph{infra} (not read
+through \texttt{setting}, not listed as unused).  Defaults that depend on the driver (\texttt{SR\_KHMAX}, \texttt{SR\_START},
+\texttt{SR\_SEED0}, \ldots) are marked so and given by the driver; every other call takes the table's.  The optional
+\nolinkurl{nersc/check_campaign.jl} is not written.  Gate 62104585 against \texttt{focus-q11}.
+
 \end{document}

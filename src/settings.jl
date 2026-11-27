@@ -1,21 +1,34 @@
 # settings.jl — the inputs of a run: the table of every setting, and `setting`, through which every one is read.
 #
-#   setting(name)           the value of the environment variable `name`, parsed to the type of its default in the table
-#   setting(name, default)  the same, for a setting whose default depends on the driver (varies in the table); for any other the
-#                           default given must be the table's
+#   setting(name)           the value of the environment variable `name`, parsed to the type
+#                           of its default in the table
+#   setting(name, default)  the same, for a setting whose default depends on the driver
+#                           (varies in the table); for any other the default given must be
+#                           the table's
 #
-# Strict (docs/focus_plan.tex, Q12): at load, any SR_* or SPH_* in the environment that is not in the table stops the run, with the
-# nearest valid name; a retired name stops with its own message.  A Bool must be 1/true/yes or 0/false/no (any case), a Symbol one of
-# its allowed values, a number a number: anything else stops.  Each call notes the name, the value used, the default and whether it was
-# set; the run record (runinfo.jl) writes them all, and [unused] lists the names set in the environment but never read (record only).
+# Strict (docs/focus_plan.tex, Q12): at load, any SR_* or SPH_* in the environment that is not
+# in the table stops the run, with the nearest valid name; a retired name stops with its own
+# message.
+#
+# A Bool must be 1/true/yes or 0/false/no (any case), a Symbol one of its allowed values, a
+# number a number: anything else stops.
+#
+# Each call notes the name, the value used, the default and whether it was set.  The run record
+# (runinfo.jl) writes them all, and [unused] lists the names set in the environment but never
+# read (record only).
+#
 # `julia src/settings.jl --list` prints the table.  Loaded first by load.jl.
 
 const SETTINGS = Dict{String,NamedTuple{(:value, :default, :set),Tuple{Any,Any,Bool}}}()
 const SETTING_ORDER = String[]
 
-# The table.  type: the Julia type the value is parsed to; default: the value when unset (nothing: it depends on the driver or on
-# other settings, said in `meaning`, and the call gives it); allowed: the values of a Symbol; infra: set by the batch scripts or the
-# tests, read directly from ENV (never through `setting`), not listed as unused.
+# The table.
+#   type:     the Julia type the value is parsed to;
+#   default:  the value when unset (nothing: it depends on the driver or on other settings, said
+#             in `meaning`, and the call gives it);
+#   allowed:  the values of a Symbol;
+#   infra:    set by the batch scripts or the tests, read directly from ENV (never through
+#             `setting`), not listed as unused.
 spec(type, default, meaning; allowed = nothing, infra = false) = (; type, default, meaning, allowed, infra)
 const SETTING_SPECS = Dict{String,Any}(
     # the scheme (src/)
@@ -107,8 +120,9 @@ function setting(name::AbstractString)
     return setting(name, sp.default)
 end
 
-# Retired settings: a hard stop at load time, so that a script or campaign file that still sets one fails at once instead of being
-# silently ignored.  The campaign files that used them are kept as the record of what was run (nersc/README.md, "Retired settings").
+# Retired settings: a hard stop at load time, so that a script or campaign file that still sets
+# one fails at once instead of being silently ignored.  The campaign files that used them are
+# kept as the record of what was run (nersc/README.md, "Retired settings").
 const RETIRED_SETTINGS = Dict(
     "SR_S0" => "renamed SR_SREL0 on 2026-11-23: the rest-frame entropy density s_rel,0 of the run (docs/inputs.tex)",
     "SPH_SSCHEME_BETA" => "renamed SPH_SSCHEME_BRHO on 2026-11-26: b_ρ, the exponent of the measure of the labels (β is u^μ/T in the notes; docs/sscheme_plan.tex, P4b)",
@@ -126,7 +140,8 @@ for (name, why) in RETIRED_SETTINGS
     haskey(ENV, name) && error("setting $name is retired: $why.  Unset it (to rerun an old campaign line, replace $name= by the new name).")
 end
 
-# Unknown names stop (the nearest valid name in the message): a misspelled setting must not be silently ignored.
+# Unknown names stop (the nearest valid name in the message): a misspelled setting must not be
+# silently ignored.
 function levenshtein(a::AbstractString, b::AbstractString)
     a, b = collect(a), collect(b);  d = collect(0:length(b))
     for i in 1:length(a)
@@ -144,14 +159,15 @@ for name in sort(collect(keys(ENV)))
                                          "$(nearest_setting(name))?  `julia src/settings.jl --list` lists them.")
 end
 
-# The raw string of a setting, or nothing, not recorded: only to choose how a setting is then read with `setting`
-# (sph.jl: SPH_RENORM=split or sscheme is read as a Symbol, 0 as a Bool, as before).
+# The raw string of a setting, or nothing, not recorded: only to choose how a setting is then
+# read with `setting` (sph.jl: SPH_RENORM=split or sscheme is read as a Symbol, 0 as a Bool).
 setting_peek(name::AbstractString) = get(ENV, name, nothing)
 
 # every setting read so far, in the order first read: name => (value, default, set)
 settings_read() = lock(() -> [n => SETTINGS[n] for n in SETTING_ORDER], SETTINGS_LOCK)
 
-# the settings set in the environment but never read (not the infrastructure): name => value.  The run record's [unused].
+# the settings set in the environment but never read (not the infrastructure): name => value.
+# The run record's [unused].
 unused_settings() = lock(SETTINGS_LOCK) do
     Dict{String,String}(n => ENV[n] for n in keys(ENV) if haskey(SETTING_SPECS, n) && !SETTING_SPECS[n].infra && !haskey(SETTINGS, n))
 end

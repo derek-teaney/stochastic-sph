@@ -1,20 +1,17 @@
-# pointwise.jl — the particle representation (docs/changerep.tex): the pointwise state of a
-# particle, the maps between particle energies and entropies, and the star fit of the
-# gradient-corrected map.  Used by the viscous step (viscous.jl), the stochastic step and
-# the equilibrium start.
+# pointwise.jl — the particle variables: the pointwise state of a particle and the maps
+# between particle energies and entropies.  Used by the viscous step (viscous.jl), the
+# stochastic step and the equilibrium start.
 #
-# The Hamiltonian step works with smoothed fields: b_a = ẋ_a / Teff_a is the fluid
-# velocity smoothed twice.  Here the viscous step is done instead with each
-# particle's own (pointwise) thermodynamic force
+# The thermodynamic force of a particle is its own (pointwise) one,
 #
 #   β_a = v_a / T_a ,   (v_a, T_a) from the EOS at entropy density S_a and momentum
 #                       density m_a / V_a ,   V_a = s_a / S_a ,
 #
-# where T_a is the code's density-frame temperature (e+p)/S = ∂h/∂S.  β_a is the
-# derivative of the particle energy E_a = V_a h(s_a/V_a, m_a/V_a) at fixed V_a:
-#   ∂E_a/∂m_a = v_a ,  ∂E_a/∂s_a = T_a ,  so  β_a = (∂E_a/∂m_a)/(∂E_a/∂s_a).
-# The step Δm_a = Δt F_a, Δs_a = −β_a·Δm_a then keeps each E_a fixed to first order.
+# where T_a is the code's density-frame temperature (e+p)/S = ∂h/∂S.
 #
+# β_a is the derivative of the particle energy E_a = V_a h(s_a/V_a, m_a/V_a) at fixed V_a:
+#   ∂E_a/∂m_a = v_a ,  ∂E_a/∂s_a = T_a ,  so  β_a = (∂E_a/∂m_a)/(∂E_a/∂s_a).
+# A step Δm_a = Δt F_a, Δs_a = −β_a·Δm_a then keeps each E_a fixed to first order.
 
 # Pointwise state of particle a: solve the EOS at (S_a, m_a/V_a).
 # Returns (β_a, e_a, T_a).  Uses a scratch copy so the smoothed fields are untouched.
@@ -36,8 +33,9 @@ end
 # ── Particle energies and the back map ─────────────────────────────────────────
 #
 # Particle a has volume V_a = s_a/S_a (held fixed), energy e_a = V_a h(S_a, m_a/V_a)
-# (held fixed), and entropy S_a(e_a, m_a) = V_a σ(e_a/V_a, m_a/V_a).  The viscous step
-# changes m_a; the back map sets s_a' = S_a(e_a, m_a').  docs/changerep.tex.
+# (held fixed), and entropy S_a(e_a, m_a) = V_a σ(e_a/V_a, m_a/V_a).
+#
+# The viscous step changes m_a; the back map sets s_a' = S_a(e_a, m_a').
 
 # State from the energy density ε = wγ² − p and the density-frame momentum density
 # M = wγ²v = (ε + p) v, as in solve_eos!.  The rest-frame energy density is
@@ -65,23 +63,29 @@ function rest_energy(ε::Float64, M2::Float64, eos::AbstractEOS; tol=1e-15, maxi
     end
     return e
 end
-# Conformal, p = c² e: the fixed point solves c² e² + (1 − c²) ε e + |M|² − ε² = 0; the
-# positive root, written without cancellation (agrees with the iteration to roundoff).
+# Conformal, p = c² e: the fixed point solves c² e² + (1 − c²) ε e + |M|² − ε² = 0.
+# The positive root, written without cancellation (agrees with the iteration to roundoff).
 function rest_energy(ε::Float64, M2::Float64, eos::ConstantCs2EOS; tol=1e-15, maxiter=500)
     c2 = eos.cs2_val
     return 2 * (ε^2 - M2) / ((1 - c2) * ε + sqrt((1 + c2)^2 * ε^2 - 4c2 * M2))
 end
 
 # ── The two particle-level maps (docs/legendre_plan.tex, A) ──────────────────
-# Every particle-level use of the equation of state goes through these two (the field-level uses, which are not about one
-# particle, are not: grid.jl's grid_forward/grid_inverse (the lattice step), the starting guess of beta_from_averages
-# (measure.jl), state_from_beta and particle_moments (the targets and the proposals)).
-#   forward  particle_forward(s, S, M, e0, eos; M_mag, γ0, guess, tol, maxiter, verbose): the state of a particle of entropy s at
-#            the entropy density S = s/V and momentum density M = m/V (warm start e0, the rest-frame energy density, and γ0);
-#            returns (e = rest-frame energy density, p = the particle's pressure, T = ∂H/∂s, γ, v, HS = H/s, FS)
-#   inverse  particle_inverse(e, m, V, eos; guess): (s, v, T) of the particle of energy e, momentum m and volume V; s = −Inf for a
-#            state no fluid can have (the inversion fails, |M| ≥ ε, or γ > γ_max; sph.jl, SPH_GAMMA_MAX)
-# The target's (default): the arithmetic of solve_eos! and eos_from_energy, unchanged.  SPH_RENORM=split: renorm_split.jl; sscheme: sscheme.jl.
+# Every particle-level use of the equation of state goes through these two.  The
+# field-level uses, which are not about one particle, do not: state_from_beta and
+# particle_moments (measure.jl; the targets and the proposals).
+#
+#   forward  particle_forward(s, S, M, e0, eos; M_mag, γ0, guess, tol, maxiter, verbose):
+#            the state of a particle of entropy s at the entropy density S = s/V and
+#            momentum density M = m/V (warm start e0, the rest-frame energy density, and γ0);
+#            returns (e = rest-frame energy density, p = the particle's pressure,
+#            T = ∂H/∂s, γ, v, HS = H/s, FS)
+#   inverse  particle_inverse(e, m, V, eos; guess): (s, v, T) of the particle of energy e,
+#            momentum m and volume V; s = −Inf for a state no fluid can have (the inversion
+#            fails, |M| ≥ ε, or γ > γ_max; sph.jl, SPH_GAMMA_MAX)
+#
+# The target's (tree level): the arithmetic of solve_eos! and eos_from_energy.
+# SPH_RENORM=split: renorm_split.jl; sscheme: sscheme.jl.
 @inline function target_forward(s, S_in, M_vec, e0, eos::AbstractEOS; M_mag = sqrt(M_vec[1]^2 + M_vec[2]^2),
                                 tol = 1e-12, maxiter = 50, verbose = false)
     e = eos_newton(S_in, M_mag, e0, eos; tol, maxiter, verbose)
@@ -103,16 +107,21 @@ end
     S, v, T = r
     return ((isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf, v, T)
 end
-# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots have positive arguments), so the try block,
-# about 17% of a call, is not needed.  Same arithmetic: bit-identical results.
+# Conformal EOS: the closed-form inversion cannot throw once |M| < ε (all square roots have
+# positive arguments), so the try block, about 17% of a call, is not needed.
+# Same arithmetic: bit-identical results.
 @inline function target_inverse(e, m, V, eos::ConstantCs2EOS)
     ε = e / V;  M = m / V
     (isfinite(ε) && ε > 0 && dot(M, M) < ε^2) || return (-Inf, SVector(NaN, NaN), NaN)
     S, v, T = eos_from_energy(ε, M, eos)
     return ((isfinite(S) && dot(v, v) <= V2MAX) ? V * S : -Inf, v, T)
 end
-# the methods are chosen at load time, so that at the tree level the code is exactly that of before
-if SSCHEME      # the S-scheme has no forward map in (s, S, M): solve_eos! and particle_energy call sscheme_from_label (sscheme.jl)
+# The methods are chosen at load time, so that at the tree level the code is exactly
+# target_forward and target_inverse.
+#
+# The S-scheme has no forward map in (s, S, M): solve_eos! and particle_energy call
+# sscheme_from_label (sscheme.jl).
+if SSCHEME
     particle_forward(s, S_in, M_vec, e0, eos; kw...) = error("SPH_RENORM=sscheme: particle_forward is not used (sscheme_from_label)")
     particle_inverse(e, m, V, eos; guess = nothing) = sscheme_inverse(e, m, V, eos)
 elseif SPLIT
