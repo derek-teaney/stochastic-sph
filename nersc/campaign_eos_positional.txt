@@ -1,0 +1,28 @@
+# Campaign `eos_positional` (branch sscheme-measure, docs/sscheme_plan.tex, level 2, item J): the equilibrium lines at rest with the positional
+# counterterm (SPH_POSITIONAL=1, a_2 = 0: one loop), for split+omega (omega in the energy) and the measure form+omega (omega in the label;
+# beta = D/2+1 at c_s^2 = 1/2, beta = b = 2 at c_s^2 = 1/4).  s_a = 16, 54, 541; h/a = 2, 3; L = 0.45; 8 seeds of 300 updates.  192 tasks on 2 threads.
+# The expectation: the error of the EOS falls from column (1) of the tables to about column (2).  Output $SCRATCH/sph/eos_positional/<run>/.
+eosP_split_c05_s16_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosP_split_c05_s16_ha2_v0
+eosP_ssm_c05_s16_ha2_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosP_ssm_c05_s16_ha2_v0
+eosP_split_c05_s16_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosP_split_c05_s16_ha3_v0
+eosP_ssm_c05_s16_ha3_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosP_ssm_c05_s16_ha3_v0
+eosP_split_c05_s54_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosP_split_c05_s54_ha2_v0
+eosP_ssm_c05_s54_ha2_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosP_ssm_c05_s54_ha2_v0
+eosP_split_c05_s54_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosP_split_c05_s54_ha3_v0
+eosP_ssm_c05_s54_ha3_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosP_ssm_c05_s54_ha3_v0
+eosP_split_c05_s541_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosP_split_c05_s541_ha2_v0
+eosP_ssm_c05_s541_ha2_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosP_ssm_c05_s541_ha2_v0
+eosP_split_c05_s541_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosP_split_c05_s541_ha3_v0
+eosP_ssm_c05_s541_ha3_v0   8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_CS2=0.5 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosP_ssm_c05_s541_ha3_v0
+eosP_split_c025_s16_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosP_split_c025_s16_ha2_v0
+eosP_ssm_c025_s16_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 16 300 eosP_ssm_c025_s16_ha2_v0
+eosP_split_c025_s16_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosP_split_c025_s16_ha3_v0
+eosP_ssm_c025_s16_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 16 300 eosP_ssm_c025_s16_ha3_v0
+eosP_split_c025_s54_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosP_split_c025_s54_ha2_v0
+eosP_ssm_c025_s54_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 54 300 eosP_ssm_c025_s54_ha2_v0
+eosP_split_c025_s54_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosP_split_c025_s54_ha3_v0
+eosP_ssm_c025_s54_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 54 300 eosP_ssm_c025_s54_ha3_v0
+eosP_split_c025_s541_ha2_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosP_split_c025_s541_ha2_v0
+eosP_ssm_c025_s541_ha2_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 2 541 300 eosP_ssm_c025_s541_ha2_v0
+eosP_split_c025_s541_ha3_v0   8  SPH_RENORM=split SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosP_split_c025_s541_ha3_v0
+eosP_ssm_c025_s541_ha3_v0   8  SPH_RENORM=sscheme SPH_SSCHEME_BRHO=2.0 SPH_POSITIONAL=1 SR_CS2=0.25 SR_V=0.0 SR_HMC_TAUJIT=0.5 -- examples/eos_measure.jl 0.45 3 541 300 eosP_ssm_c025_s541_ha3_v0

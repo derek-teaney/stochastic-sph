@@ -87,7 +87,7 @@ fi
 if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     # The regression is of the tree level and the start of before (since 2026-11-23 the defaults are SPH_RENORM=split and
     # SR_BATH=nominal): both sides run with SPH_RENORM=0 SR_BATH=totals, so that the default path of <ref> must be reproduced
-    # bit-identically.  The renormalized runs are tested by testsplit.jl, testlegendre.jl and the unit run above.
+    # bit-identically.  The renormalized runs are tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit run above.
     export SPH_RENORM=0 SR_BATH=totals
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"

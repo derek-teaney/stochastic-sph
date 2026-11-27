@@ -158,14 +158,20 @@ function one_realization(seed)
     if isfile(chk)
         st = load_checkpoint(chk)
         restore_guards!(st.guards)
+        # what building SimParams does and deserializing it does not: the scheme's constants (split's V̄; the smoothing length of ω,
+        # positional_set!), and the reference state of the S-scheme's measure form (set from the initial condition, saved with the state)
+        check_split(st.params);  check_sscheme(st.params)
+        haskey(st, :ssref) && all(isfinite, st.ssref) && sscheme_reference!(st.ssref...)
         @printf("seed %d: resuming from %s at step %d of %d\n", seed, chk, st.n, st.nsteps)
     else
         # rest-frame state at s_rel,0: its enthalpy w0 sets the momentum density of the boosted state
         _, ps0, _, _ = setup_ic(HKER, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
                                 L=LBOX, lattice=:hex, seed=1000seed + 4)
         # T_rel0: the temperature of the target fluid at s_rel,0, from the equation of state (not from a particle of the set-up, whose
-        # T = ∂H/∂s depends on the Hamiltonian: with SPH_RENORM=legendre the particle variable is the label, not the target entropy)
-        w0 = ps0[1].e + ps0[1].p;  Trel0 = trel_of_srel(eos, SREL0)
+        # T = ∂H/∂s depends on the Hamiltonian: with a renormalized Hamiltonian the particle variable is the label, not the target entropy)
+        # w0 likewise from the EOS with the nominal bath (a set-up particle of the removed legendre scheme was hotter: w 1.8× at s_a = 54, 4× at s_a = 16)
+        e0 = e_of_srel(eos, SREL0);  Trel0 = trel_of_srel(eos, SREL0)     # (Trel is a local variable below)
+        w0 = BATH === :nominal ? e0 + pressure(eos, e0) : ps0[1].e + ps0[1].p
         Mx0 = w0 * GAMMA^2 * BOOST
         params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
@@ -175,6 +181,7 @@ function one_realization(seed)
             for q in ps;  q.x = SVector(rand(prng) * params.L[1], rand(prng) * params.L[2]);  end
             rebuild_cell_list!(cl, ps);  thermalize!(ps, params, cl, eos)
         end
+        SSCHEME && (JITTER > 0 || POSITIONS === :poisson) && error("SPH_RENORM=sscheme: SR_JITTER and SR_POSITIONS=poisson rescale the label as an entropy; not supported")
         if JITTER > 0 || POSITIONS === :poisson  # uniform smoothed densities: s_a ← s_a S/S_a (lab S = γ s_rel,0), iterated;
             for _ in 1:30                        # m_a = V_a M0 (the momentum density of the boosted state)
                 for q in ps;  q.s *= GAMMA * SREL0 / q.S_smooth;  end
@@ -187,7 +194,10 @@ function one_realization(seed)
                     (sb = sum(q.s for q in ps) / length(ps); sqrt(sum(abs2, [q.s / sb - 1 for q in ps]) / length(ps))))
         end
         N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-        p = ps[1];  V = p.s / p.S_smooth;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
+        p = ps[1];  V = p.V;  w = p.e + p.p;  T = p.T;  Trel = p.T * p.γ
+        # the normalization of KE (the momentum fluctuations, 2(N−1) V w T) and the record's w, T, Trel: the target state with the
+        # nominal bath (EOS at s_rel,0, T = T_rel,0/γ); the set-up particle with SR_BATH=totals (before)
+        BATH === :nominal && (w = w0;  T = Trel0 / GAMMA;  Trel = Trel0)
         hmcinfo = NamedTuple()
         bath = BATH === :nominal ? (GAMMA / Trel0, SVector(GAMMA * BOOST / Trel0, 0.0)) : nothing
         if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run
@@ -212,8 +222,8 @@ function one_realization(seed)
         gstencil = GRID ? GridStencil(ps, params, cl) : nothing
         gchecks = GRID ? grid_checks(gstencil, params, eos, dt) : NamedTuple()
         GRID && print_grid_checks(gchecks)
-        H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.s * q.H_over_S for q in ps))
-        reset_guards!()
+        H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.H for q in ps))
+        reset_guards!();  SSCHEME && reset_sscheme_counts!()
         x0 = [q.x for q in ps]
         NOVISC || stochastic_step!(ps, params, cl, dt / 2, eos, stoch_opts(params); rng, rngs)
         st = (seed = seed, params = params, ps = ps, cl = cl, rngs = rngs, rng = rng,
@@ -275,9 +285,9 @@ function one_realization(seed)
             if GRID                                  # entropy made by the return; power at kh > 1
                 push!(st.grid_dST, st.gstats.sum_dS_T)
                 push!(st.grid_hkm, grid_highk_fraction(ps, params, [q.m for q in ps]))
-                push!(st.grid_hke, grid_highk_fraction(ps, params, [q.s * q.H_over_S for q in ps]))
+                push!(st.grid_hke, grid_highk_fraction(ps, params, [q.H for q in ps]))
                 if n * dt > 5.0                      # static spectra of all lattice modes
-                    Ua = [SVector(q.s * q.H_over_S, q.m[1], q.m[2]) * (q.S_smooth / q.s) for q in ps];  Ub = sum(Ua) / N
+                    Ua = [SVector(q.H, q.m[1], q.m[2]) / q.V for q in ps];  Ub = sum(Ua) / N
                     Uk = [grid_fft(gF, [u[c] - Ub[c] for u in Ua]) for c in 1:3]
                     for c1 in 1:3, c2 in 1:3;  @views st.gCk[c1, c2, :, :] .+= Uk[c1] .* conj.(Uk[c2]) ./ N;  end
                     st.gCn[] += 1
@@ -286,16 +296,17 @@ function one_realization(seed)
             u = record!(prec, ps, n * dt; cl)                             # pair separation, Bragg peak, g(r), ψ6, N_k
             GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
                    record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
-            push!(Ht, sum(q.s * q.H_over_S for q in ps) / H0 - 1)       # smoothed state is current
+            push!(Ht, sum(q.H for q in ps) / H0 - 1)       # smoothed state is current
+            SSCHEME && isnan(Ht[end]) && @printf("seed %d: a particle without a state at t = %.4f (sscheme_faillog: %d)\n", seed, n * dt, length(sscheme_faillog()))
             if JITTER > 0 || POSITIONS in (:poisson, :hmc)                  # unequal volumes: the mean flow is V_a M̄,
-                Md = sum(q.m for q in ps) / sum(q.s / q.S_smooth for q in ps)    # M̄ the mean momentum density
-                push!(KE, sum((d = q.m - (q.s / q.S_smooth) * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
+                Md = sum(q.m for q in ps) / sum(q.V for q in ps)    # M̄ the mean momentum density
+                push!(KE, sum((d = q.m - q.V * Md;  dot(d, d)) for q in ps) / (2 * (N - 1) * V * w * T))
             else
                 mbar = sum(q.m for q in ps) / N                            # fluctuations about the mean flow
                 push!(KE, sum(dot(q.m - mbar, q.m - mbar) for q in ps) / (2 * (N - 1) * V * w * T))
             end
-            push!(sspr, relspread(q.s for q in ps))                         # rms s_a/s̄ − 1
-            push!(Vspr, relspread(q.s / q.S_smooth for q in ps))            # rms V_a/V̄ − 1
+            push!(sspr, relspread(entropy_of(q) for q in ps))                       # rms s_a/s̄ − 1
+            push!(Vspr, relspread(q.V for q in ps))            # rms V_a/V̄ − 1
             # the stochastic step since the last record: acceptance of the stress (star) and the
             # residual proposals, and the fraction of each rejected by the guard (a state no
             # fluid can have; for the conformal EOS exactly |v| ≥ 1); the largest particle speed
@@ -305,14 +316,14 @@ function one_realization(seed)
                 push!(st.lqs_mean, lqwin[1] / RECN);  push!(st.lqs_rms, sqrt(lqwin[2] / RECN))
                 push!(st.lqr_mean, lqwin[3] / RECN);  push!(st.lqr_rms, sqrt(lqwin[4] / RECN));  lqwin .= 0
             end
-            push!(vmax, maximum(norm(q.v_over_S * q.S_smooth) for q in ps))
+            push!(vmax, maximum(norm(q.v) for q in ps))
             observe_particles!(mon, ps)
         end
         (n % REP == 0 || n == nsteps) && report(mon, n * dt; label = "seed $seed")
         stop = STOPAFTER > 0 && n == STOPAFTER
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
-            save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards())))
+            save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards(), ssref = SS_REF[])))
             write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
@@ -327,9 +338,14 @@ function one_realization(seed)
     GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",
                                          seed, g.sum_dH_over_H, g.sum_dS_T_over_S, g.sum_absdS_T_over_S, g.disp_max, g.div_max, g.roundtrip_max, g.dP_max, g.eos_fail))
     print_summary(mon; label = "seed $seed")
+    SSCHEME && !isempty(sscheme_faillog()) && serialize(base * "_ssfail.jls", collect(sscheme_faillog()))   # diagnosis of the states without a Hamiltonian
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",
             seed, N, dt, nsteps, wall, acc[1], acc[2], sum(KE[end÷2:end]) / length(KE[end÷2:end]),
             Ht[end], guards())
+    SSCHEME && (c = sscheme_counts();  ss = minimum(q.s for q in ps);
+                @printf("seed %d: S-scheme (form %s): %d solves from the label (%.2f Newton steps, %d fallbacks, %d without a state, %.2e with P_a < 0); %d states from the energy, %d refused at the wall (%.2e); smallest label now %.3f, smallest S_t now %.3f\n",
+                        seed, SS_FORM, c.solves, c.iters / max(1, c.solves), c.fallbacks, c.nostate, c.negP / max(1, c.solves), c.fromenergy, c.wall, c.wall / max(1, c.fromenergy), ss,
+                        minimum(q.St for q in ps)))
 end
 
 Threads.@threads for s in SEEDOFF + SEED0 * STRIDE .+ (1:NREAL)

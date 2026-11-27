@@ -589,6 +589,27 @@ All campaigns before this date are finished and their runs will be discarded (th
 
 ## Campaigns
 
+### S-scheme measure form and the positional counterterm — 2026-11-25, branch `sscheme-measure` (docs/sscheme_plan.tex, "Level 1, amended", level 2; docs/split_dynamics.tex, last section)
+
+All on interactive nodes with nersc/node.sh (salloc ... bash node.sh <campaign> <name>; at most 2 interactive jobs per user, up to 4 nodes each).
+- `eos_measure` (job 62015696, c0ea823, 144 tasks, 2 nodes, 20 min): the measure form at rest, beta = D/2+1 and beta = b.  = split at c_s^2 = 1/2 and with beta = b.
+- `eos_positional` (62017396, 67471dc, 192 tasks; tasks 107, 114 rerun at 4dda501): equilibrium with omega (SPH_POSITIONAL=1).  The positional error is gone at s_a >= 54.
+- `hastings_positional` (62017421, 67471dc, 160 tasks, 4 nodes; tasks 8, 45 rerun at 4dda501): dynamics with omega at rest, and the approach from the lattice.
+- `hastings_compare` (62019278, d3aacca, 384 tasks, 4 nodes, 35 min) + `hastings_compare_sp` (62020908, d7d26ad, 128 tasks, 15 min): split, split+omega, S-scheme,
+  S-scheme+omega with the seeds of hastings_bath.  The split reference was rerun at the present code, because hastings_bath's split (3262b00) records 10-300x more change in H.
+  CORRECTION (2026-11-26, debug 62046403, \$SCRATCH/sph/bisect_drift): that was the record, not the dynamics. One seed (hs16_sp_v0.8 r601) at
+  every commit 3262b00..d7d26ad (worktrees ~/bisect/<commit>) reproduces both recorded dH/H (+1.99e-4, -1.48e-6). It changes at three commits:
+  ab44bae (+1.14e-3) and 2bc03dd (-2.07e-4) change the start (nominal-bath T_rel 139.69 -> 140.38 from the EOS, KE normalization), so the
+  trajectory and acceptance counts change too; 3fa7a3e (-1.48e-6) changes the record only, the trajectory bit-identical (all counts equal). Before 3fa7a3e the full-step record of H was sum s_a (H/S)_a with the labels after the stochastic step and H/S
+  from before it (no solve in between); since then sum H_a. KE/eq likewise (V = s/S). Full-step dH/H and KE records before 3fa7a3e are
+  wrong at the 1e-4..1e-3 level; runs with SR_NOVISC or SR_NOHAM resmooth before the record and are not affected.
+- Lessons:
+  - srun --overlap steps from the login node into one allocation all bind to the same few cores (32 runs at 25% of a CPU each).  Start many runs in ONE step
+    (srun -c 256 --cpu-bind=none bash script-that-backgrounds-them), or use node.sh.
+  - pdflatex is not on the default path: module load texlive/2024.
+  - The table of I_0 must reach sigma -> 0, because split's vote Newton steps try labels u -> 0; it now starts at 1e-8.
+- Node-hours this session: about 36 of the 100 granted.
+
 ### `eos_legendre` — 2026-11-22, the renormalized Hamiltonian as a Legendre transform — TO DO (note for the NERSC session)
 
 **Plan: docs/legendre_plan.tex (read it first; it is self-contained).**  Implement `SPH_RENORM=legendre`: the particle Hamiltonian is
@@ -757,6 +778,17 @@ estimate ≈ 2–4 node-hours (smoke: split ≈ 2× the tree's cost per step), a
 - **Legendre dynamics smoke** (debug 61893274, then 61894564 with the EOS bath): runs, bath exact (T0 = 84.23 at v = 0.8), cost ≈ split.
   But at s_a = 16 at rest ΔH/H = +2.0e-2 in 5 time units, acceptances 0.83/0.45, 270k guard rejections (split: 3e-4, 0.97/0.58, 43k).
   Campaign hastings_legendre held until this is understood.
+- **Legendre smoke at s_a = 54** (debug 61901626, `$SCRATCH/sph/lg_smoke54`, 5 time units): healthy.  At rest ΔH/H = +2.2e-4, acceptances
+  0.987/0.880, 142 guard rejections, |v| > 0.9 in 1e-5 of samples (split at rest: −3.6e-4, 0.988/0.886, 2); v = 0.8: +2.1e-4, 0 rejections.
+  The s_a = 16 trouble: the counterterm takes T(K − c_s²) = 7T (c_s² = 1/2) from the inertia |m|/v ≈ 16T at rest and 2.5T/V from the
+  pressure, about half the tree values, so particles with low entropy content go to the light cone; at s_a = 54 it is ~14%.
+  KE/eq at rest was 0.56 (s_a = 54) and 0.38 (s_a = 16) with Legendre: the normalization 2(N−1)VwT took w, T from a set-up particle,
+  which under Legendre is hotter (wT 1.79×, 4.06×); corrected 1.00 (s_a = 54) and 1.05 → 1.55 (s_a = 16, heating).  Fixed in
+  equilibrium.jl (SR_BATH=nominal: w0 and the KE normalization from the EOS at s_rel,0, T = T_rel,0/γ; e_of_srel in sph.jl); debug
+  61903312, s_a = 54 at rest, 3 time units: KE/eq Legendre 1.001, split 1.011.
+- **Campaign `hastings_legendre` dropped** (owner, 2026-11-25): superseded by the S-scheme (docs/renorm3.tex: the Legendre Hamiltonian moves
+  the stationary point; docs/sscheme_plan.tex).  Never submitted; its campaign file was not committed.  The KE fix went to branch
+  `sscheme-kefix` (merged into `sscheme`), since the S-scheme's set-up particle is likewise not at the target state.
 
 ### `eos_split` — 2026-11-23, branch `split` (from `legendre` at 53d29e4), docs/step5_plan.tex — Step 5, `SPH_RENORM=split`
 
@@ -1161,3 +1193,74 @@ Next once `first` finishes: stability plots (`examples/stochrep_longruns_plot.jl
 over the seeds), `SR_DATADIR=$SCRATCH/sph/first/eqL1.2 julia --project
 examples/stochrep_correlators.jl L1.2` (and L2.4, in an interactive job), then a short
 note in `docs/` with the tables and figures.
+
+## 2026-11-26: the exact form of the S-scheme (SPH_SSCHEME_FORM=exact; docs/sscheme_plan.tex "The exact form", X1-X6)
+- Table of ln g (g = s_exact - s_min, A = V = 1) by examples/exact_count.py dyntable + checkpoints: debug 62047724 (1 node, ~10 min),
+  $SCRATCH/sph/exact_table; src/tables/exact_lng_c05.csv (c_s^2 = 1/2). A first table of delta = s_exact - S_1loop (62047454) was dropped:
+  at small S_t it cannot give D = ds/dS_t.  Step tests: debug 62048441 ($SCRATCH/sph/ssx_tests; run.sh all timed out at 30 min after
+  unit, physics, load and the step regression passed; the driver regression differs only in the known records of 3fa7a3e).
+- X4 smoke: debug 62049195, worktree ~/ssX at 14ce681, nersc/smoke_x4_sscheme_exact.sh, $SCRATCH/sph/ssX/x4.
+- X5: interactive 62049406 (2 nodes, 12 min), nersc/campaign_eos_positional_ssx.txt -> $SCRATCH/sph/eos_positional/eosP_ssx_*.
+- X6: interactive 62049405 (4 nodes, 23 min), nersc/campaign_hastings_compare_ssx.txt -> $SCRATCH/sph/hastings_compare/h{s,q}<sa>_ssxw_*;
+  ~/ssX at 93e01a2 (code of 14ce681). Analysis: BOOST_GROUP=XCMP16/54 boost_analysis.jl; PD_SCH=":spw:split+ω,:ssxw:exact+ω"
+  PD_TAG=hastings_compare_exact positional_dyn.jl; energy_time.jl ... hastings_compare_exact. Written up in docs/split_dynamics.tex sec:exact.
+- Also today: debug 62046403 bisection ($SCRATCH/sph/bisect_drift, worktrees ~/bisect/<commit>), see the correction above.
+- Node-hours today: ~0.3 (debug) + 1.5 (X6) + 0.4 (X5) + ~0.5 (tests, tables).
+
+## Decisions for the merge with main (owner, 2026-11-26)
+- Remove SPH_SSCHEME_FORM=full (the exact form is full with the exact count; keep the one-loop Delta in src/sscheme.jl for the measure form)
+  and SPH_RENORM=legendre (src/renorm.jl, test/testlegendre.jl, the LEGENDRE branches, the legendre scripts; the setting a hard stop like SR_S0).
+  The owner prunes on the laptop after merging sscheme-measure into main. Also remove SPH_RENORM=1 (owner: not consistent with one loop; = measure form with beta = b, Delta^H = 0, no N ln(gamma V), no
+  sound term); SPH_RENORM=0 (tree level) stays.
+  Details: docs/sscheme_plan.tex, sec:prune. No campaign pending; the non-conformal beta run (5-7 nh) waits for the choice of beta.
+
+## Analysis bug: runs with different time steps (2026-11-26)
+- examples/boost_analysis.jl averaged the runs of a set on the lag grid of the FIRST run; runs whose step differs (the step is set at the start of
+  each run; common at s_a <= 16) were put on a wrong time axis. The "36% fast sound" of S-scheme+omega at s_a = 16 at rest (hastings_compare) was
+  this: its first run (r501, dt 0.0053) had lag spacing 0.0424 against 0.0566 for 14 of 16 runs, ratio 1.33. FIX: all runs on the grid of the
+  most common spacing, others correlated at every record and interpolated (cubic); sets with one step unchanged.
+- Redone: CMP16, XCMP16 (split_dynamics.tex sec:lagfix, tab:cmpsound, tab:xsound). Sound at rest S-scheme+omega 1.360 -> 1.0173(18), split+omega
+  1.010(22) -> 1.0184(23), exact+omega 1.0178 -> 1.0234(22); shear damping at s_a = 16 4.0-7.6 -> 3.8-6.2 (over-damping stays).
+- NOT yet redone, affected: hastings_bath s_a = 16 (3-5 of 16 runs per set; earlier sections of split_dynamics.tex) and campaign hastings
+  (s_a = 4, 12, 16; nearly every run its own step; docs/inverse_moment.tex stage 2 and hastings_low). s_a >= 54 sets have one step.
+
+## renorm-main: P0, P1 (2026-11-26)
+- Branch renorm-main from sscheme-measure (9846a6c); P0: notes of legendre (b80deed), equilibrium/hbya (5152b98), sscheme-reg (5b61bc3:
+  sscheme_fold.tex, sscheme_plan sec:reg; the regulator code stays on sscheme-reg).
+- P1 baseline, interactive 62070496 (1 node, 52 min), worktree ~/rmP1 at 5b61bc3, $SCRATCH/sph/tests/renorm_main_P1: test/run.sh all.
+  Unit (all), physics (3), load (97): pass.  Regression against main (00064e7): step.jl and stability bit-identical; equilibrium driver
+  rest/boost differ only in the records H, KE, Vspr, hast_lq_* (trajectory datasets identical; the record of H since 3fa7a3e, the KE
+  normalization since 2bc03dd); unit-test output differs in testchangerep, testcommonkernel, testdissipative, testmoment (last digits of
+  round-off residues, 1e-16..1e-12: the stored V in place of s/S_smooth), testcheckpoint (the record of H; trajectory and acceptances
+  equal), testrunrecord (the new settings and src files), testlegendre (a path).  All expected.  First complete run of the suite here
+  (the debug runs timed out before the unit-output stage).
+- P2 (76badbf) SPH_RENORM=1 removed; P3 (0f10b92) legendre removed (src/renorm.jl, testlegendre, bench_legendre; analysis scripts to
+  examples/legacy/); P4 (648c220) the full form removed; P4b (8262b4a) beta -> b_rho, SPH_SSCHEME_BETA -> SPH_SSCHEME_BRHO (retired with a
+  message; campaign files renamed); P4c (ee9eea0) SPH_POSITIONAL=1 by default (C2 only), campaign lines since 2026-11-23 without omega get
+  SPH_POSITIONAL=0; P5 (64fcc9b) positional_dyn approach figure tagged; P6 CLAUDE.md, nersc/README.md (retired settings, removed values,
+  the new default).  Removed values stop with a message naming 9846a6c, the last commit with them.
+- P7b (2026-11-26, on interactive 62073121 with srun --overlap; $SCRATCH/sph/tests/p7b, old script = worktree ~/rmOLD at 1cc9d88): the groups
+  with mixed time steps redone, old and corrected analysis on the same runs.  hastings (c_s^2 = 1/3; inverse_moment.tex sec:lagfix): shear
+  damping in motion along the flow at kh = 0.52 was 2.3-2.5 (s_a = 16, 12) -> 1.0-1.2; at rest -0.1..-0.15 at s_a = 16, +0.25 at s_a = 8;
+  s_a = 4 at rest 2.5-2.7 (beyond the edge, as before).  hastings_bath split s_a = 16: rest 4.7-5.9 -> 4.9-6.1, v0 = 0.8 along 11+-3 -> 6.2+-0.7.
+  damping_scan eta/s = 1.0, s_a = 16: 1.09-1.16 -> 0.97-1.04 (the mode-coupling estimate 1.12 is now 1.5-3 sigma high there; s_a = 54 unchanged).
+  cs13/hastings at c_s^2 = 1/3: 0.93-0.98 / 1.17-1.23 -> 0.95-1.01 / 1.04-1.10.  Not redone (no lag-time analysis or not in the notes):
+  dt_scan (steps differ by design), hastings_positional (equal-time spectra), pairs_low, the smoke sets, hastings_sscheme(_b) (superseded, sec:reg).
+- BUG (found in P7, 2026-11-26): examples/stability.jl defined `const SPLIT` (record the energy split), the name of the library's flag of
+  SPH_RENORM=split; Julia 1.12 lets a script redefine a constant, so code compiled after it saw SPLIT = false (check_split returned early).
+  Harmless until omega was on by default (then omega ran with h unset: NaN).  Renamed RECSPLIT.  Affected since split became the default
+  (2026-11-23): stability.jl runs at the default, i.e. only the smoke timings and dH/H of 'split' in the entries of 2026-11-23 above
+  (stability.jl t = 20); no campaign, no note; the regression runs the tree level.  No other script redefines a library constant (checked).
+
+- BUG (found in P7, 2026-11-26): a resumed equilibrium.jl run was not bit-identical with omega on (testcheckpoint: trajectories differ from
+  record 21, the resume point).  The resume path skipped what SimParams normally does (check_split/check_sscheme: split's V-bar, omega's h)
+  and did not save the S-scheme's reference state.  Fixed in d819789 (constants set on resume; SS_REF saved as ssref and restored).
+  Debug 62075417 ($SCRATCH/sph/tests/ckdiag): split+omega and S-scheme measure c_s^2 = 1/4 resumed runs bit-identical in every trajectory
+  dataset; only acc_s/acc_r and hast_lq_* differ, as with omega off and before the fix (per-interval statistics, not checked).
+  testcheckpoint, testrunrecord pass.  Runs resumed before d819789 with omega on: none (omega was off by default until P4c).
+- P7 (interactive 62073121): every Hamiltonian that stays bit-identical P1 -> head (split omega 0/1; S-scheme measure c_s^2 = 1/2, 1/4
+  omega 0/1, b_rho = b; exact omega 0/1; tree; rest and boost), only hast_lq_* differ (thread order).  Full suite at the head: debug 62079209.
+- Full suite at d819789 (debug 62079209, timed out in the regression; the rest in 62080375; $SCRATCH/sph/tests/final): unit (32), physics (3),
+  load (95) pass; step.jl and the stability driver bit-identical to main 00064e7; equilibrium driver differs only in H, KE, Vspr, hast_lq_*
+  and the unit output only in round-off, timing, the settings count, src/renorm.jl -> positional.jl, testlegendre — all as at P1.
+  renorm-main is ready to merge (P8, on the owner's word).

@@ -1,0 +1,11 @@
+# Campaign hastings_compare, split lines (sp): split without omega at the present commit, the seeds of hastings_bath (the reference of hastings_bath ran at 3262b00:
+# its energy drift is 10-300x that of the new lines, so the comparison with and without omega needs split at the same code).  128 tasks of 4 cores; output into $SCRATCH/sph/hastings_compare.
+# SPH_POSITIONAL=0 added on 2026-11-26 to the lines without it: the positional counterterm is on by default since then (P4c); these lines ran without it.
+hs16_sp_v0   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0
+hs16_sp_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_sp_v0.8
+hs54_sp_v0   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0
+hs54_sp_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_sp_v0.8
+hq16_sp_v0   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0
+hq16_sp_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=2.956e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_sp_v0.8
+hq54_sp_v0   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0
+hq54_sp_v0.8   16  SPH_POSITIONAL=0 SPH_RENORM=split SR_SREL0=9.977e4 SR_BOOST=0.8  SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_sp_v0.8

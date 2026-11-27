@@ -31,16 +31,16 @@ end
 # Smooth and solve; returns H, P and Σ ln T_a of the present state.
 function hmc_measure!(ps, params, cl, eos)
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
-    return sum(q.s * q.H_over_S for q in ps), sum(q.m for q in ps), sum(log(q.T) for q in ps)
+    return sum(q.H for q in ps), sum(q.m for q in ps), sum(log(q.T) for q in ps)
 end
 
 # 1. Heat bath at fixed positions (the smoothed state must be current).  Returns the acceptance of the chains.
 function hmc_heatbath!(ps, params, cl, eos, tg::HMCTarget, rng; nmh::Int = 10, widen::Float64 = 2.0)
     nacc = 0;  liouville = params.measure === :liouville       # the target S_a − ln T_a (sph.jl, measure)
     for pa in ps
-        V = pa.s / pa.S_smooth;  r = V / tg.Vref
+        V = pa.V;  r = V / tg.Vref
         ē = V * tg.ε̄;  m̄ = V * tg.M̄;  Lw = sqrt(widen * r) * tg.L;  Hn = tg.Hn / r
-        g = LEGENDRE ? (pa.T, pa.v_over_S * pa.S_smooth) : SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
+        g = SPLIT ? (pa.s, SVector(pa.e, 0.0)) : nothing   # the start of the inverse solves
         logp(x) = vote_entropy(ē + x[1], m̄ + SVector(x[2], x[3]), V, eos, liouville; guess = g) - tg.β0 * x[1] + dot(tg.β, SVector(x[2], x[3]))
         logq(x) = -0.5 * dot(x, Hn * x) / widen
         e = particle_energy(pa, eos)
@@ -73,8 +73,8 @@ setx!(ps, params, cl, x) = (for (a, q) in enumerate(ps);  q.x = x[a];  end;  wra
 setm!(ps, m) = (for (a, q) in enumerate(ps);  q.m = m[a];  end)
 
 # One step of the generalized leapfrog (implicit half steps iterated to tol).  Returns the iterations used, or −1 if the step reached
-# a state with no Hamiltonian (a force or a velocity not finite: with SPH_RENORM=legendre a particle whose label is below the edge of
-# the single-particle domain at its new volume; renorm.jl): H = +∞ there, and the trajectory is rejected (hmc_update!).
+# a state with no Hamiltonian (a force or a velocity not finite: with a renormalized Hamiltonian a particle whose label is below the edge
+# of the single-particle domain at its new volume): H = +∞ there, and the trajectory is rejected (hmc_update!).
 function generalized_leapfrog!(ps, params, cl, eos, dt, F, v0, v1; tol = 1e-13, maxit = 60)
     N = length(ps);  m0 = [q.m for q in ps];  x0 = [q.x for q in ps];  mh = copy(m0)
     msc = maximum(norm, m0) + eps();  its = 0
@@ -122,13 +122,12 @@ end
 function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, dt::Float64, nmh::Int = 10)
     check_stochastic_dims(params)
     params.hamiltonian === :energy && params.volume === :number || error("hmc_update!: needs hamiltonian = :energy, volume = :number")
-    RENORM && params.measure !== :liouville && error("hmc_update!: SPH_RENORM needs the Liouville measure")
     smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos)
     hb = hmc_heatbath!(ps, params, cl, eos, tg, rng; nmh)
     H0, P0, lnT0 = hmc_measure!(ps, params, cl, eos)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]
     its = hmc_trajectory!(ps, params, cl, eos, dt, nsteps)
-    if its < 0                                            # the trajectory left the domain of H (SPH_RENORM=legendre): rejected
+    if its < 0                                            # the trajectory left the domain of H (split, sscheme): rejected
         setm!(ps, m0);  setx!(ps, params, cl, x0);  hmc_measure!(ps, params, cl, eos)
         return (accepted = false, dH = NaN, dlnpi = -Inf, heatbath = hb, iters = NaN)
     end

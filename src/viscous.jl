@@ -84,7 +84,7 @@ function bond_weights_comoving(nb, particles, ℓ, ℓi, hψ;
     resize!(ψ0, length(nb));  resize!(Vb, length(nb));  resize!(ψ, length(nb))
     for (k, (b, r, rr)) in enumerate(nb)
         ψ0[k] = ψfun === nothing ? bond_weight(sqrt(dot(r, ℓi * r)), hψ) : ψfun(rr)
-        Vb[k] = particles[b].s / particles[b].S_smooth
+        Vb[k] = particles[b].V
     end
     # unknowns z = (Λxx, Λxy, Λyy, n):  M + N:Λ − n ℓ = 0  (3 eqs),  ℓ:Λ = 0
     # (static 4×4 system: no allocation)
@@ -135,7 +135,7 @@ function bond_weights_lab(nb, particles, ψfun;
     resize!(ψ0, length(nb));  resize!(Vb, length(nb))
     tr2 = 0.0
     for (k, (b, r, rr)) in enumerate(nb)
-        ψ0[k] = ψfun(rr);  Vb[k] = particles[b].s / particles[b].S_smooth
+        ψ0[k] = ψfun(rr);  Vb[k] = particles[b].V
         tr2 += Vb[k] * ψ0[k] * rr^2
     end
     return ψ0, tr2 / 2
@@ -145,7 +145,7 @@ resid_factor(params::SimParams, ℓ, r) = (dot(r, ℓ * r) / dot(r, r))^2
 
 function bond_weights_1d(nb, particles, ℓi, hψ)
     ψ0 = [bond_weight(sqrt(dot(r, ℓi * r)), hψ) for (b, r, rr) in nb]
-    n  = sum((ψ0[k] * particles[b].s / particles[b].S_smooth) * r[1]^2 for (k, (b, r, rr)) in enumerate(nb); init=0.0)
+    n  = sum((ψ0[k] * particles[b].V) * r[1]^2 for (k, (b, r, rr)) in enumerate(nb); init=0.0)
     return ψ0, n
 end
 
@@ -201,8 +201,8 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         end
 
         # local data
-        Va   = pa.s / pa.S_smooth
-        Ta   = pa.T * pa.γ
+        Va   = pa.V
+        Ta   = target_trel(pa, eos)
         sr   = srel(eos, pa.e)
         η    = eta_by_s(eos) * sr
         ζ    = zeta_by_s(eos) * sr
@@ -231,7 +231,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
             # fit G_a = (Σ_b V_b ψ_ab Δb rᵀ) M_a⁻¹,  M_a = Σ_b V_b ψ_ab r rᵀ  (= n_a ℓ_a)
             M = zero(SMatrix{2,2,Float64});  Gt = zero(SMatrix{2,2,Float64})
             for (k, (b, r, rr)) in enumerate(nb)
-                cb  = ψs[k] * particles[b].s / particles[b].S_smooth
+                cb  = ψs[k] * particles[b].V
                 M  += cb * (r * r')
                 Gt += cb * ((bv[b] - bv[a]) * r')
             end
@@ -259,14 +259,14 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
                 R = zero(SMatrix{2,2,Float64});  Xt = zero(SMatrix{2,2,Float64})
                 for (k, (b, r, rr)) in enumerate(nb)
                     ψ = ψs[k];  ψ == 0 && continue
-                    c = cbond * (particles[b].s / particles[b].S_smooth) * ψ * resid_factor(params, ℓ, r)
+                    c = cbond * (particles[b].V) * ψ * resid_factor(params, ℓ, r)
                     R += c * (r * r');  Xt += c * ((bv[b] - bv[a]) * r')
                 end
                 X = Xt * inv(R)
             end
             for (k, (b, r, rr)) in enumerate(nb)
                 ψ = ψs[k];  ψ == 0 && continue
-                c = cbond * (particles[b].s / particles[b].S_smooth) * ψ * resid_factor(params, ℓ, r)
+                c = cbond * (particles[b].V) * ψ * resid_factor(params, ℓ, r)
                 δ = (bv[b] - bv[a]) - X * r
                 t = -c * (ℓ * δ)
                 Ka   -= 0.5 * dot(δ, t)
@@ -278,7 +278,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
             E    = 2 * Va * Ta * η * (LYL - (sum(P .* LYL) / Pℓ) * ℓ) + (Va * Ta * ζeff * θa / Pℓ) * ℓ + Eres
             qsum = zero(SVector{2,Float64})
             for (k, (b, r, rr)) in enumerate(nb)
-                q = (ψs[k] * particles[b].s / particles[b].S_smooth) * (E * (Mi * r))
+                q = (ψs[k] * particles[b].V) * (E * (Mi * r))
                 g[b] += q
                 qsum += q
             end
@@ -293,7 +293,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
         Ka = 0.0
         for (k, (b, r, rr)) in enumerate(nb)
             ψ = ψs[k];  ψ == 0 && continue
-            c = cbond * (particles[b].s / particles[b].S_smooth) * ψ
+            c = cbond * (particles[b].V) * ψ
             D = (bv[b] - bv[a]) - Q * r
             t = -c * (ℓm * D)
             Ka   -= 0.5 * dot(D, t)
@@ -310,7 +310,7 @@ function _bond_dissipation!(dotm, particles::Vector{Particle},
             # q_ab = V_b ψ_ab E_a M_a⁻¹ r_ab:  ∂K/∂b_b += q_ab,  ∂K/∂b_a −= q_ab
             qsum = zero(SVector{2,Float64})
             for (k, (b, r, rr)) in enumerate(nb)
-                q = (ψs[k] * particles[b].s / particles[b].S_smooth) * (E * (Mi * r))
+                q = (ψs[k] * particles[b].V) * (E * (Mi * r))
                 g[b] += q
                 qsum += q
             end
@@ -439,7 +439,7 @@ function viscous_step_exact!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V = [pa.s / pa.S_smooth for pa in particles]               # held fixed
+    V = [pa.V for pa in particles]               # held fixed
     e = [particle_energy(pa, eos) for pa in particles]         # held fixed
     pointwise_beta!(β, particles, eos)
     K = bond_dissipation(particles, params, cl, eos, β)
@@ -468,7 +468,7 @@ function viscous_step_grad!(particles::Vector{Particle}, params::SimParams,
     smooth_to_particles!(particles, params, cl)
     update_thermodynamics!(particles, eos)
     update_velocities!(particles, params, cl)        # ẋ_a, the velocity of the comoving metric
-    V     = [pa.s / pa.S_smooth for pa in particles]
+    V     = [pa.V for pa in particles]
     stars = [kernel_star(a, particles, params, cl) for a in 1:N]
     C     = [inverse_susceptibility(pa, eos) for pa in particles]
     μ     = [pa.m / pa.s for pa in particles]

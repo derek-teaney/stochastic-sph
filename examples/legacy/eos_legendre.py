@@ -18,7 +18,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = sys.argv[1]
-FIG = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "docs", "figs")
+FIG = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "..", "docs", "figs")
 os.makedirs(FIG, exist_ok=True)
 pat = re.compile(r"eosL_(tree|leg|ren1)_c(05|025)_s(\d+)_ha(\d)_v(0|08)$")
 KEYS = ["sigma", "T0", "acceptance", "E_over_e_minus1", "P_over_p_minus1", "Tyy_over_p_minus1", "M_over_target_minus1", "R",

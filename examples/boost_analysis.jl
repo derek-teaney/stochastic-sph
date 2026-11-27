@@ -79,6 +79,16 @@ const SETS = GROUP == "L24" ?
              GROUP == "SP54" ?                    # the same at s_a = 54
     [("tree v=0", ["hs54_tr_v0"], 0.0, "C0"), ("split v=0", ["hs54_sp_v0"], 0.0, "C1"),
      ("tree v=0.8", ["hs54_tr_v0.8"], 0.8, "C3"), ("split v=0.8", ["hs54_sp_v0.8"], 0.8, "C4")] :
+             GROUP in ("CMP16", "CMP54") ?        # campaign hastings_compare (sscheme_plan.tex, G and K): split, split+ω, the measure form, the measure form+ω;
+    (sa = GROUP[4:5];                     # DIR = $SCRATCH/sph/hastings_compare
+     [("split v=0", ["hs$(sa)_sp_v0"], 0.0, "C0"), ("split+ω v=0", ["hs$(sa)_spw_v0"], 0.0, "C1"),
+      ("S-scheme v=0", ["hs$(sa)_ssm_v0"], 0.0, "C2"), ("S-scheme+ω v=0", ["hs$(sa)_ssmw_v0"], 0.0, "C3"),
+      ("split v=0.8", ["hs$(sa)_sp_v0.8"], 0.8, "C0"), ("split+ω v=0.8", ["hs$(sa)_spw_v0.8"], 0.8, "C1"),
+      ("S-scheme v=0.8", ["hs$(sa)_ssm_v0.8"], 0.8, "C2"), ("S-scheme+ω v=0.8", ["hs$(sa)_ssmw_v0.8"], 0.8, "C3")]) :
+             GROUP in ("XCMP16", "XCMP54") ?      # hastings_compare, the exact form (sscheme_plan.tex, X6): split+ω against the exact form+ω
+    (sa = GROUP[5:6];                     # DIR = $SCRATCH/sph/hastings_compare
+     [("split+ω v=0", ["hs$(sa)_spw_v0"], 0.0, "C1"), ("exact+ω v=0", ["hs$(sa)_ssxw_v0"], 0.0, "C4"),
+      ("split+ω v=0.8", ["hs$(sa)_spw_v0.8"], 0.8, "C1"), ("exact+ω v=0.8", ["hs$(sa)_ssxw_v0.8"], 0.8, "C4")]) :
              GROUP in ("DS16", "DS54") ?          # campaign damping_scan (split_dynamics.tex): tree at rest, η/s = 0.2 (hastings_bath), 1.0, none; DIR = $SCRATCH/sph/damping_scan
     (sa = GROUP[3:4];
      [("η/s=0.2", ["../hastings_bath/hs$(sa)_tr_v0"], 0.0, "C0"), ("η/s=1.0", ["ds$(sa)_e1"], 0.0, "C1"),
@@ -215,8 +225,8 @@ function useries(rec, i)
     Mx = kh[1] .* ML .- kh[2] .* MT;  My = kh[2] .* ML .+ kh[1] .* MT
     (E, Mx, My)
 end
-function corr_run(rec, i, NV)
-    t = rec.t;  dtr = t[2] - t[1];  stride = max(1, round(Int, DTS / dtr));  i0 = findfirst(>=(T0BURN), t)
+function corr_run(rec, i, NV; stride = nothing)
+    t = rec.t;  dtr = t[2] - t[1];  stride = something(stride, max(1, round(Int, DTS / dtr)));  i0 = findfirst(>=(T0BURN), t)
     sel = i0:stride:length(t);  us = [x[sel] for x in useries(rec, i)];  n = length(sel)
     nl = min(round(Int, TAUMAX / (stride * dtr)), n ÷ 2)
     C = zeros(ComplexF64, 3, 3, nl + 1)
@@ -226,6 +236,22 @@ function corr_run(rec, i, NV)
         C[a, b, l+1] = s / (n - l) / NV
     end
     (C, collect(0:nl) .* stride .* dtr)
+end
+
+# C(τ) on the uniform lag grid of spacing δ (from 0), at the lags τs: cubic (Catmull–Rom) interpolation in τ, elementwise
+function interp_lags(C, δ, τs)
+    n = size(C, 3);  out = zeros(ComplexF64, size(C, 1), size(C, 2), length(τs))
+    for (k, τ) in enumerate(τs)
+        u = τ / δ;  i = clamp(floor(Int, u), 1, n - 3);  s = u - i       # C[:, :, i+1] is at lag i δ; points i−1 … i+2
+        w = (-s * (1 - s)^2 / 2, (2 - 5s^2 + 3s^3) / 2, s * (1 + 4s - 3s^2) / 2, -s^2 * (1 - s) / 2)
+        if u < 1                                                          # the first interval: points 0, 1, 2 (quadratic)
+            s = u;  w2 = ((1 - s) * (2 - s) / 2, s * (2 - s), s * (s - 1) / 2)
+            out[:, :, k] = w2[1] .* C[:, :, 1] .+ w2[2] .* C[:, :, 2] .+ w2[3] .* C[:, :, 3]
+        else
+            out[:, :, k] = w[1] .* C[:, :, i] .+ w[2] .* C[:, :, i+1] .+ w[3] .* C[:, :, i+2] .+ w[4] .* C[:, :, i+3]
+        end
+    end
+    out
 end
 
 function unwrap(p)
@@ -251,9 +277,23 @@ for (run, dirs, v, col) in SETS
     iperp = sort([i for i in eachindex(ks) if abs(ks[i][1]) < 1e-9 && ks[i][2] > 0], by = i -> ks[i][2])
     C = Dict{Tuple{Symbol,Int},Any}()
     for (dir, idx) in ((:par, ipar), (:perp, iperp)), (j, i) in enumerate(idx[1:min(3, end)])
-        per = [corr_run(r.rec, i, NV) for r in rs];  nl = minimum(size(p[1], 3) for p in per)
+        per = [corr_run(r.rec, i, NV) for r in rs]
+        # The runs of a set may have different time steps (the step is set at the start of each run), hence different lag spacings.
+        # All runs go on the grid of the most common spacing; a run with another spacing is correlated at every record and put on
+        # that grid by cubic interpolation.  (Before 2026-11-26 the grid of the first run was used for all, which compressed or
+        # stretched the time axis of every run with another step.)
+        sp = [p[2][2] for p in per];  Δ = argmax(x -> count(y -> abs(y - x) < 1e-9 * x, sp), sp)
+        same = [abs(x - Δ) < 1e-9 * Δ for x in sp]
+        j == 1 && dir === :par && !all(same) &&
+            println("  $run: $(count(!, same)) of $(length(rs)) runs with another lag spacing, interpolated onto Δτ = $(round(Δ, sigdigits = 4))")
+        for r in findall(!, same)
+            Cf, τf = corr_run(rs[r].rec, i, NV; stride = 1)
+            nl = floor(Int, (τf[end] - τf[2]) / Δ)
+            per[r] = (interp_lags(Cf, τf[2] - τf[1], (0:nl) .* Δ), collect(0:nl) .* Δ)
+        end
+        nl = minimum(size(p[1], 3) for p in per)
         Cs = [p[1][:, :, 1:nl] for p in per]
-        C[(dir, j)] = (C = mean_(Cs), Cs = Cs, τ = per[1][2][1:nl], k = ks[i])
+        C[(dir, j)] = (C = mean_(Cs), Cs = Cs, τ = collect(0:nl-1) .* Δ, k = ks[i])
     end
     vreq = get(m, :boost, v);  abs(vreq - v) < 1e-9 || error("$run: SETS says v = $v, the runs were made with SR_BOOST = $vreq")
     sts = [measured_state(f) for f in fs]
@@ -336,7 +376,7 @@ for (fname, specs) in (("boost_shear", [(:par, 3, 3, real, "Re C_yy, k ∥ v (ad
 end
 
 # ── method comparisons (HD, HL): one figure per correlator type, one panel per method, as in boost.tex ──────
-if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54")
+if GROUP in ("HD", "HL", "HL2", "HB2", "HB3", "HB4", "MO", "MOA", "MOA4", "MOB", "HS16", "HS54", "HS12", "HS8", "HS4", "SP16", "SP54", "DS16", "DS54", "OLD16", "OLD54", "CS16", "CS54", "CMP16", "CMP54", "XCMP16", "XCMP54")
     # equal time: rows E, M_x, M_y; columns (v, direction); the methods overlaid, jackknife errors
     cols = [(v, dir) for v in sort(unique(res[r].vreq for r in runs)) for dir in (:par, :perp)]
     method(run) = replace(run, r" v=[0-9.]+" => "")                     # the same colour for a method at every v, one key
@@ -405,6 +445,32 @@ for run in runs
     end
     fit[run] = out
 end
+# ── the phase of the sound modes: the frequency from the zero crossings of the normalized correlator, against the same of hydrodynamics ──
+# ω = π / (mean spacing of the zero crossings) over the first NZ crossings (τ ≤ 15), the measured and the hydrodynamic curve on the same τ grid;
+# the ratio ω/ω_hydro is the sound speed (Doppler-shifted along the flow) of the dynamics over that of the equation of state at the bath.
+function zero_omega(τ, y; nz = 6)
+    zs = Float64[]
+    for i in 1:length(y) - 1
+        y[i] * y[i+1] < 0 && push!(zs, τ[i] - y[i] * (τ[i+1] - τ[i]) / (y[i+1] - y[i]))
+        length(zs) == nz && break
+    end
+    length(zs) < 2 && return NaN
+    return π * (length(zs) - 1) / (zs[end] - zs[1])
+end
+println("sound modes (smallest k): ω from the zero crossings of the correlator, over hydrodynamics (the same estimator on the hydrodynamic curve)")
+for run in runs
+    r = res[run]
+    for (dir, a, lab) in ((:par, 2, "Re C_xx k∥"), (:par, 1, "Re C_EE k∥"), (:perp, 3, "Re C_yy k⊥"))
+        (dir === :perp || a == 1) && r.v < 0.1 && continue
+        haskey(r.C, (dir, 1)) || continue
+        c = r.C[(dir, 1)];  it = findall(<=(15.0), c.τ);  τ = c.τ[it]
+        pred, χ, _ = predict(r.Trel, r.v, r.ν, c.k, τ)
+        ωh = zero_omega(τ, [real(p[a, a]) for p in pred] ./ χ[a, a])
+        ω, dω = jack(C -> zero_omega(τ, real.(C[a, a, it]) ./ real(C[a, a, 1])), c.Cs)
+        @printf("  %-15s %-11s kh=%.2f  ω/ω_hydro = %.4f ± %.4f   (ω_hydro/k = %.4f)\n", r.lab, lab, norm(c.k) * r.h, ω / ωh, dω / ωh, ωh / norm(c.k))
+    end
+end
+
 fig, axs = subplots(1, 2, figsize = (13, 4.8))
 fmethod(run) = replace(run, r" v=[0-9.]+" => "")                       # one colour per method (comparison groups), shifted in v
 fmeths = unique(fmethod.(fitruns))

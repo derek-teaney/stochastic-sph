@@ -124,10 +124,10 @@ $T_{\rm rel}$ the tree fluid carries 8--10\% more energy than the target equatio
 Hamiltonians ($0.793\pm0.007$ for split at $s_a=16$).
 
 \paragraph{The damping is 3--6 times hydrodynamics, for both Hamiltonians and both $s_a$} (\Fig{fig:fit}, Figs.~\ref{fig:corr16},
-\ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.7$--$5.9$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
+\ref{fig:corr54}).  Shear at rest: tree $3.5$--$4.0$, split $4.9$--$6.1$ ($s_a=16$); tree $3.0$--$3.3$, split $3.4$--$3.9$ ($s_a=54$).
 The sound modes are over-damped as well.  This is \emph{not} what the earlier campaigns found: in campaign \texttt{hastings}
 ($c_s^2=1/3$, the same $s_{\rm rel,0}$, the same step) the shear damping was $1.0$--$1.2$ times hydrodynamics (\texttt{inverse\_moment.tex},
-Stage 2), and the present analysis applied to those runs gives the same ($1.17$--$1.23$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
+Stage 2), and the present analysis applied to those runs gives the same ($1.04$--$1.10$ at $s_a=16$, $0.94$--$1.10$ at $s_a=54$;
 \texttt{BOOST\_GROUP=OLD16}, \texttt{OLD54}).  So the analysis is not the cause, and neither is the renormalization (tree and split are
 alike).  What differs: at the same $s_{\rm rel,0}$ the temperature is $T_{\rm rel}=140$ instead of $28$ ($s_a=16$), so
 \st
@@ -145,7 +145,7 @@ $\eta/s=0.2$:
 \toprule
  & $s_a=16$ & $s_a=54$ \\ \midrule
 $\eta/s=0.2$ (\texttt{hastings\_bath}) & $3.9$--$4.0$ & $3.3$ \\
-$\eta/s=1.0$, against its own hydrodynamics & $1.09$--$1.16$ & $1.18$--$1.20$ \\
+$\eta/s=1.0$, against its own hydrodynamics & $0.97$--$1.04$ & $1.18$--$1.20$ \\
 no viscous step (\texttt{SR\_NOVISC=1}) & $7.3$--$7.9$ & $5.8$--$6.2$ \\
 \bottomrule
 \end{tabular}
@@ -159,7 +159,8 @@ viscosity,
 \label{eq:loop}
 \stp
 with $\nu_0=(\eta/s)/T_{\rm rel}$ the bare value.  Fixing $A$ from $\eta/s=0.2$ ($\Gamma/\nu_0k^2=4.0$, $A=3\nu_0^2$) predicts
-$1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $1.09$--$1.16$) and $1.09$ at $s_a=54$ (measured $1.11$--$1.20$).  For the
+$1+3/25=1.12$ at $\eta/s=1.0$ ($s_a=16$; measured $0.97$--$1.04$, so the estimate is 1.5--3$\sigma$ high there) and $1.09$ at $s_a=54$
+(measured $1.11$--$1.20$).  (The first version of this note had $1.09$--$1.16$ at $s_a=16$, from the analysis corrected in \Sect{sec:lagfix}.)  For the
 conformal fluid in $d=2$, $s\propto T^2$ and $\nu_0\propto1/T$, so the relative correction $A/\nu_0^2\propto1/(\eta/s)^2$ does not
 depend on $s_a$: $s_a=54$ is nearly as far from hydrodynamics as $s_a=16$.  At $c_s^2=1/3$ and the same $s_{\rm rel,0}$, $\nu_0$ was five times
 larger and the correction about 25 times smaller.  Campaign \texttt{cs13} (below) checks that the old agreement is reproduced by the present code.
@@ -173,15 +174,15 @@ fix; the same $s_{\rm rel,0}$, hence the old $T_{\rm rel}=28.1$ ($s_a=16$) and $
 \begin{tabular}{lcc}
 \toprule
 $\Gamma/\Gamma_{\rm hydro}$, $kh=0.52$ / $1.05$ & \texttt{cs13} & \texttt{hastings} \\ \midrule
-$s_a=16$, rest & $0.93$--$0.98$ & $1.17$--$1.23$ \\
+$s_a=16$, rest & $0.95$--$1.01$ & $1.04$--$1.10$ \\
 $s_a=54$, rest & $0.98$--$1.10$ & $0.94$--$1.10$ \\
 $s_a=54$, $v_0=0.8$ & $1.01$--$1.26$ & $0.96$--$1.20$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 as the fluctuation estimate of \Eq{eq:loop} expects ($\approx1.1$).  So the over-damping at $c_s^2=1/2$, $\eta/s=0.2$ comes from the
-small bare viscosity, not from a change of the code.  (At $s_a=16$, $v_0=0.8$ along the flow both are high and noisy, $2.2$--$3.6$ against
-$1.6$--$2.3$.)
+small bare viscosity, not from a change of the code.  (At $s_a=16$, $v_0=0.8$ along the flow both are near hydrodynamics too, $1.10$--$1.18$ against $1.06$--$1.11$; the first version of this
+note had $2.2$--$3.6$ against $1.6$--$2.3$, from the analysis corrected in \Sect{sec:lagfix}.)
 
 The equal-time spectra of the two differ (\texttt{cs13} $C/\chi\approx1.5$ at $s_a=16$, \texttt{hastings} $0.85$) because of the start:
 \texttt{hastings} solved for the bath from the totals and so started at the right energy and a bath $14\%$ cooler ($T=24.3$ instead of
@@ -213,13 +214,13 @@ $\tau$, right against $\nu_0k^2\tau$.  \texttt{examples/shear\_overlay.jl}.}
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CS16.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CS16.png}
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CS54.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CS54.png}
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_CS54.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_CS54.png}
-\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_CS54.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.0_CS16.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.0_CS16.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.0_CS54.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.0_CS54.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.8_CS54.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.8_CS54.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundperp_v0.8_CS54.png}
 \caption{Campaign \texttt{cs13} (left; run sets \texttt{c13\_<sa>\_v<v>}, commit \texttt{09c10bf}) against campaign \texttt{hastings}
 (right; \texttt{hs<sa>\_h\_v<v>}), tree level, $c_s^2=1/3$, $\eta/s=0.2$, $\zeta_{\rm eff}=\eta/3$.  Top to bottom: $s_a=16$ at rest, shear
 and sound; $s_a=54$ at rest, shear and sound; $s_a=54$ at $v_0=0.8$, the advected shear, the sound along and the sound across the flow;
@@ -261,7 +262,8 @@ at $kh=0.52$ against hydrodynamics (dashed).  \texttt{BOOST\_GROUP=DS16}, \textt
 \label{fig:dscan}
 \end{figure}
 
-\paragraph{The energy against time} (\Fig{fig:energy}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
+\paragraph{The energy against time} (\Fig{fig:energy}; recorded at \texttt{3262b00}, before the record of $H$ was corrected: the values below
+overstate the change of $H$, see \Sect{sec:cmp}).  $\Delta H/H=H(t)/H(0)-1$ has no drift in any set: the mean at $t=100$ is
 $+6\times10^{-4}$ (tree) and $+9\times10^{-4}$ (split) at $s_a=16$ at rest, $4$--$8\times10^{-5}$ at $s_a=54$, smaller than the
 fluctuations of single runs ($\pm3\times10^{-3}$ at $s_a=16$).  The momentum fluctuations over their tree-level equilibrium value
 $2(N-1)VwT$ are $1.40$ (tree) and $1.01$ (split) at $s_a=16$, $1.11$ and $0.99$ at $s_a=54$, flat from $t=0$; the c$_s^2=1/3$ runs of
@@ -272,7 +274,8 @@ heating or cooling of the fluid.
 \centering
 \includegraphics[width=\textwidth]{figs/energy_time_hastings_bath.png}
 \caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); run sets, left to right, \texttt{hs16\_\{tr,sp\}\_v0},
-\texttt{hs54\_\{tr,sp\}\_v0}, \texttt{hs16\_\{tr,sp\}\_v0.8}, \texttt{hs54\_\{tr,sp\}\_v0.8}; tree blue, split orange.  Top: $\Delta H/H$
+\texttt{hs54\_\{tr,sp\}\_v0}, \texttt{hs16\_\{tr,sp\}\_v0.8}, \texttt{hs54\_\{tr,sp\}\_v0.8}; tree blue, split orange.  (The record of $H$ and of the momentum fluctuations at this commit takes the new labels with the
+old state of each particle; the trajectories are right, the records overstate $|\Delta H/H|$ by 10--300 times; \Sect{sec:cmp}.)  Top: $\Delta H/H$
 against $t$; bottom: the momentum fluctuations $\mathrm{KE}/2(N-1)VwT$ ($w$, $T$ of the set-up state).  Each run thin, the mean thick.
 \texttt{examples/energy\_time.jl}.}
 \label{fig:energy}
@@ -284,13 +287,13 @@ than in the tree runs.  Not understood yet; $s_a=54$ shows nothing of the kind.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_SP16_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.0_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.0_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.8_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.8_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_EEpar_v0.8_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundperp_v0.8_SP16_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shearperp_v0.8_SP16_bath.png}
 \caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); $s_a=16$, $T_{\rm rel}=140.4$; run sets \texttt{hs16\_tr\_v<v>}
 (left), \texttt{hs16\_sp\_v<v>} (right).  The correlators of \texttt{inverse\_moment.tex} at the smallest $k$ ($kh=0.52$), normalized at
 $\tau=0$, against hydrodynamics at the bath (dashed), top to bottom: at rest, shear $\mathrm{Re}\,C_{yy}(k\hat x)$ and sound
@@ -301,13 +304,13 @@ $\mathrm{Re}\,C_{EE}$, across it the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ and sh
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_shear_v0.8_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.8_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_EEpar_v0.8_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_SP54_bath.png}
-\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.0_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.0_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shear_v0.8_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundpar_v0.8_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_EEpar_v0.8_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_soundperp_v0.8_SP54_bath.png}
+\includegraphics[width=0.75\textwidth]{figs/boost_shearperp_v0.8_SP54_bath.png}
 \caption{Campaign \texttt{hastings\_bath} (commit \texttt{3262b00}); $s_a=54$, $T_{\rm rel}=258.0$; run sets \texttt{hs54\_tr\_v<v>}
 (left), \texttt{hs54\_sp\_v<v>} (right).  As \Fig{fig:corr16}.}
 \label{fig:corr54}
@@ -344,5 +347,393 @@ damping over hydrodynamics, $\nu k^2/\gamma^3$ along the flow and $\nu k^2/\gamm
 \label{fig:fit}
 \end{figure}
 
+
+%=============================================================================
+\section{Split and the S-scheme, with and without the positional counterterm: campaign \texttt{hastings\_compare}}
+\label{sec:cmp}
+
+This section compares four Hamiltonians in the full dynamics, with the settings and seeds of \texttt{hastings\_bath} (\Sect{sec:runs}): a uniform
+conformal fluid in $d=2$ ($c_s^2=1/2$), $\eta/s=0.2$, $L=0.6$ ($N=672$), $h/a=2$, the hybrid Monte Carlo start at the bath \Eq{eq:bath},
+$s_a=16$ ($T_{\rm rel}=140.4$) and $54$ ($258.0$), at rest and at $v_0=0.8$, 16 runs to $t=100$ and 16 chains of hybrid Monte Carlo of the same
+Hamiltonian (300 updates) per set.  The four Hamiltonians (\texttt{docs/sscheme\_plan.tex}, ``Level 1, amended'' and level 2):
+\begin{center}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+run sets & Hamiltonian & settings (\texttt{SPH\_}) \\ \midrule
+\texttt{h<s,q><sa>\_sp\_v<v>} & split & \texttt{RENORM=split} \\
+\texttt{h<s,q><sa>\_spw\_v<v>} & split $+\,\omega$: $E_{\rm dyn}=T\,(\Delta s_{\rm dyn}-\omega)$ & \texttt{RENORM=split POSITIONAL=1} \\
+\texttt{h<s,q><sa>\_ssm\_v<v>} & S-scheme, measure form, $b_\rho=D/2+1$, $F=1$ & \texttt{RENORM=sscheme} \\
+\texttt{h<s,q><sa>\_ssmw\_v<v>} & S-scheme $+\,\omega$: $s=S_{\rm t}-\Delta^H+\omega$ & \texttt{RENORM=sscheme POSITIONAL=1} \\
+\bottomrule
+\end{tabular}
+\end{center}
+For the conformal fluid split and the S-scheme divide the one-loop counterterm in the same way: $\tfrac52\ln S_{\rm t}$ in the measure of the labels,
+the sound term $\tfrac12\ln(1-c_s^2v^2)$ in $H$ (split) or in the label (the S-scheme, which conserves $s=S_{\rm t}-\tfrac12\ln(1-c_s^2v^2)$ in the ideal
+step instead of $u=S_{\rm t}$).  $\omega(\bar\sigma,V)=a_1\nu_*$ is the one-loop correction of the positions ($a_2=0$; \texttt{src/positional.jl}),
+which removes the offset of the positions from the equation of state of hybrid Monte Carlo at $s_a\ge54$ (\texttt{sscheme\_plan.tex}, the tables of
+level 2).  The split lines ran again at the present code (\texttt{d7d26ad}), with the seeds of \texttt{hastings\_bath}, so that all four lines
+share one code and one record of the energy.  The recorded $\Delta H/H$ of \texttt{hastings\_bath} (\texttt{3262b00}) is 10--300 times that of the
+lines here, and the difference is in the record, not in the dynamics.  A bisection (one seed, \texttt{hs16\_sp\_v0.8} r601, at every commit from
+\texttt{3262b00} to \texttt{d7d26ad} that touches the code; debug job 62046403) reproduces both recorded values exactly.  The
+recorded $\Delta H/H$ changes at three commits: $+1.99\times10^{-4}\to+1.14\times10^{-3}$ at \texttt{ab44bae} and $\to-2.07\times10^{-4}$ at
+\texttt{2bc03dd}, which both change the start (the temperature of the nominal bath from the equation of state, $T_{\rm rel}=139.69\to140.38$,
+and the normalization of the kinetic energy), so the trajectory and the counts of acceptances change too; and $\to-1.48\times10^{-6}$ at
+\texttt{3fa7a3e}, with the trajectory bit-identical before and after (every acceptance and rejection count the same).  The factor 100 is all
+at \texttt{3fa7a3e}.  The stochastic step
+ends with new labels $s_a$ and momenta and no new solve of the particles.  Before \texttt{3fa7a3e} the record took $H=\sum_a s_a(H/S)_a$, the
+new label times the ratio $H/S$ of the old state, which is wrong by $(H/S)_a\Delta s_a$ per particle; since then it takes $\sum_aH_a$, the energies
+that the stochastic step conserves exactly.  The same applies to the momentum fluctuations, through $V_a=s_a/S_a$ (KE/eq $14.30$ against
+$14.10$ in that run).  384 + 128 runs, 4 interactive nodes for 35 and 15 minutes.
+
+\paragraph{Results.}
+\begin{itemize}
+\item \emph{Each Hamiltonian samples its own equilibrium} (\Fig{fig:cmpspectra}).  At rest the equal-time spectra of the dynamics over those of hybrid Monte
+  Carlo of the same Hamiltonian are 1 within 2--4\% at every $kh\le1.6$, for all four, at both $s_a$ (one band at 10\% for the S-scheme at $s_a=54$).  At
+  $v_0=0.8$ the smallest $k$ along the flow has errors of 10--20\% and the departures are of that size, as for split in \Sect{sec:results}.
+\item \emph{The energy} (\Fig{fig:cmpenergy}).  $\Delta H/H$ at $t=100$: at rest $3$--$9\times10^{-5}$ at $s_a=16$ and $1$--$3\times10^{-5}$ at $s_a=54$; in
+  motion $\le10^{-6}$; alike for the four.  The positional counterterm does not make $H$ drift.
+\item \emph{Advection} (\Fig{fig:cmpfit}).  The shear mode along the flow moves with $\Omega/k=0.800$--$0.809$ ($\pm0.002$) for all four (hydrodynamics 0.8).
+\item \emph{Damping} (\Fig{fig:cmpfit}).  The shear damping is $\Gamma/\Gamma_{\rm hydro}=3.0$--$4.2$ at $s_a=54$ and $3.8$--$6.2$ at $s_a=16$, the
+  over-damping of \Sect{sec:results} for every Hamiltonian.  At $s_a=54$ the four agree within the errors.  At $s_a=16$ at rest, $kh=0.52$ (along / across):
+  split $5.0$ / $5.8$, split$+\omega$ $4.7$ / $5.4$, S-scheme $6.2$ / $5.4$, S-scheme$+\omega$ $5.8$ / $5.0$ ($\pm0.2$--$0.4$).
+\item \emph{Equal-time spectra against the susceptibilities} (\Fig{fig:cmpeq}).  At rest $C_{AA}(k,0)/\chi_{AA}$ at the smallest $k$ is $0.96$--$1.12$ for all
+  four at both $s_a$; the positional counterterm does not move it beyond the errors (it changes the mean energy and pressure of the fluid by the
+  percent of the tables of level 2, not the fluctuations at small $k$).  In motion along the flow the errors are 10--20\%.
+\item \emph{The phase of the sound} (Table~\ref{tab:cmpsound}).  The frequency of the sound correlators at the smallest $k$, from their zero crossings,
+  \st
+  \omega=\frac{\pi\,(n_z-1)}{\tau_{n_z}-\tau_1}\,,
+  \stp
+  with $\tau_1,\dots,\tau_{n_z}$ the first $n_z\le6$ zero crossings of the normalized correlator at $\tau\le15$, divided by the same estimator applied to the
+  hydrodynamic curve at the bath (so the damping enters both alike; jackknife errors over the runs).  At $s_a=54$ the sound without $\omega$ is about 1\% slow at
+  rest (split $0.9912\pm0.0013$, S-scheme $0.9896\pm0.0011$) and 1.7\% slow across the flow, so after the five oscillations shown in \Fig{fig:cmpcorr54} the phase
+  lags hydrodynamics by a tenth of a period; with $\omega$ it is $0.998$--$0.999$ at rest and $0.991$--$0.994$ across the flow.  The positional counterterm is a
+  modest improvement that keeps the sound in phase at $s_a=54$: the speed of sound of the fluid is that of the equation of state once the offset of the
+  positions (level 2) is removed.  Along the flow the Doppler shift dominates, $\omega/k$ depends on $c_s$ only through $(1-v^2)$, and all four are within
+  $0.15\%$.  At $s_a=16$ the four are within 2\% of hydrodynamics: along the flow within $0.2\%$, at rest and across the flow $1.007$--$1.018$, and there
+  $\omega$ makes the sound slightly faster (by about 1\%) for both schemes.
+\item \emph{The correlators} (Figs.~\ref{fig:cmpcorr16}--\ref{fig:cmpcorr16c} and \ref{fig:cmpcorr54}--\ref{fig:cmpcorr54c}) look the same for the four Hamiltonians at each $s_a$ and velocity.
+\end{itemize}
+\begin{table}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, split lines \texttt{d7d26ad}), the smallest $k$ ($kh=0.52$): the frequency of the sound
+mode from the zero crossings of its normalized correlator, over the same estimator applied to the prediction of linearized hydrodynamics at the bath
+($\eta/s=0.2$); errors by jackknife over the 16 runs (\texttt{examples/boost\_analysis.jl}, groups \texttt{CMP16}, \texttt{CMP54}).  Along the flow:
+$\mathrm{Re}\,C_{xx}(k\hat x)$ ($\omega_{\rm hydro}/k=0.963$); across: $\mathrm{Re}\,C_{yy}(k\hat y)$ ($\omega_{\rm hydro}/k=0.515$); at rest
+$\mathrm{Re}\,C_{xx}(k\hat x)$ ($\omega_{\rm hydro}/k=0.707=c_s$).  The rows at $s_a=16$ are those of the corrected analysis (\Sect{sec:lagfix}).}
+\label{tab:cmpsound}
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+$s_a$ & correlator & split & split$+\omega$ & S-scheme & S-scheme$+\omega$ \\
+\midrule
+54 & at rest           & $0.9912(13)$ & $0.9981(12)$ & $0.9896(11)$ & $0.9994(10)$ \\
+54 & $v_0=0.8$, along  & $1.0014(3)$  & $1.0009(5)$  & $1.0003(4)$  & $1.0008(4)$ \\
+54 & $v_0=0.8$, across & $0.9823(16)$ & $0.9943(16)$ & $0.9829(15)$ & $0.9914(20)$ \\
+\midrule
+16 & at rest           & $1.0065(27)$ & $1.0184(23)$ & $1.0094(23)$ & $1.0173(18)$ \\
+16 & $v_0=0.8$, along  & $1.0020(5)$  & $1.0013(4)$  & $1.0007(6)$  & $1.0011(4)$ \\
+16 & $v_0=0.8$, across & $1.0017(40)$ & $1.0146(35)$ & $1.0034(32)$ & $1.0156(33)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+So in the dynamics the four are nearly interchangeable within the present errors, with one exception, the sound of S-scheme$+\omega$ at $s_a=16$
+at rest: neither the S-scheme nor the positional counterterm changes the
+equilibration, the conservation of $H$, the advection or the over-damping, which belongs to the viscous step (\Sect{sec:results}); the positional
+counterterm brings the phase of the sound at $s_a=54$ onto hydrodynamics.  What the positional
+counterterm changes is the equation of state the fluid is at (\texttt{sscheme\_plan.tex}, level 2).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.93\textwidth]{figs/hastings_compare_spectra.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, \texttt{d7d26ad}); run sets \texttt{hs<sa>\_<H>\_v<v>} over \texttt{hq<sa>\_<H>\_v<v>},
+$H\in\{$sp, spw, ssm, ssmw$\}$ (split circles, split$+\omega$ squares, S-scheme triangles, S-scheme$+\omega$ diamonds); $c_s^2=1/2$, $L=0.6$, $h/a=2$.  The equal-time
+spectra $|M_{L,\bm k}|^2/N$ (left), $|M_{T,\bm k}|^2/N$ (middle) and $|E_{\bm k}-\avg{E_{\bm k}}|^2/N$ (right) of the dynamics (records after 20\% of
+$t=100$, 16 runs) divided by those of hybrid Monte Carlo chains of the same Hamiltonian (after 20 updates, 16 chains), averaged over the wave vectors in
+bands of $kh$ of width 0.26.  Rows: $s_a=16$ and 54 at rest, then $s_a=16$ and 54 at $v_0=0.8$.  Errors from the spread between runs and chains.}
+\label{fig:cmpspectra}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/energy_time_hastings_compare.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, \texttt{d7d26ad}); columns, left to right: $s_a=16$ at rest, $s_a=16$ at $v_0=0.8$,
+$s_a=54$ at rest, $s_a=54$ at $v_0=0.8$; in each the run sets \texttt{hs<sa>\_\{sp,spw,ssm,ssmw\}\_v<v>} (split, split$+\omega$, S-scheme,
+S-scheme$+\omega$).  Top: the relative change of the total energy, $\Delta H/H=H(t)/H(0)-1$, each run thin, the mean of the 16 runs thick.  Bottom: the
+momentum fluctuations, $\sum_a|\bm m_a-\bar{\bm m}|^2/[2(N-1)VwT]$, which is 1 in equilibrium at rest (in motion it includes the mean flow).}
+\label{fig:cmpenergy}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_CMP16.png}
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_CMP54.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, \texttt{d7d26ad}); run sets \texttt{hs16\_<H>\_v<v>} (left) and \texttt{hs54\_<H>\_v<v>}
+(right), $H\in\{$sp, spw, ssm, ssmw$\}$ in the colours of the legend.  Fits of the shear correlators at the two smallest $k$ ($kh=0.52$, 1.05), along and
+across the flow: the advection speed $\Omega/k$ against hydrodynamics ($v_0$ along the flow, 0 across), and the damping rate over that of
+hydrodynamics with $\eta/s=0.2$ at the bath, $\Gamma/\Gamma_{\rm hydro}$, against $v_0$.  Fit window: the times where the mean correlator over the
+runs satisfies $|C/C(0)|>0.25$, the same window for every jackknife sample; errors by jackknife over the runs.}
+\label{fig:cmpfit}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figs/boost_equaltime_CMP16.png}
+\includegraphics[width=\textwidth]{figs/boost_equaltime_CMP54.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, \texttt{d7d26ad}); run sets \texttt{hs16\_<H>\_v<v>} (top) and \texttt{hs54\_<H>\_v<v>}
+(bottom), split, split$+\omega$, S-scheme, S-scheme$+\omega$ in the colours of the legend.  The equal-time correlators $C_{AA}(\bm k,0)$ of the dynamics,
+$A=E$, $M_x$, $M_y$ (rows), divided by the susceptibilities $\chi_{AA}$ of the target equation of state at the state the runs are measured at, against
+$kh$; columns: at rest with $\bm k$ along and across $x$, at $v_0=0.8$ along and across the flow.  One is the equation of state; errors by jackknife.}
+\label{fig:cmpeq}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CMP16.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CMP16.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, split lines \texttt{d7d26ad}); $s_a=16$, $T_{\rm rel}=140.4$, $c_s^2=1/2$,
+$L=0.6$, $N=672$, $h/a=2$, $\eta/s=0.2$; run sets \texttt{hs16\_\{sp,spw,ssm,ssmw\}\_v<v>}, 16 runs each from the hybrid Monte Carlo start at the bath.
+Panels in each row, left to right and top to bottom: split, split$+\omega$, S-scheme, S-scheme$+\omega$ (see the table of \Sect{sec:cmp}).  The time
+correlators of \texttt{inverse\_moment.tex} at the smallest wave vector, $kh=0.52$, measured (coloured, the mean over the runs) and the
+prediction of linearized hydrodynamics with $\eta/s=0.2$ at the bath $(T_{\rm rel},v_0)$ of the runs (dashed), each normalized to one at $\tau=0$.
+This figure: at rest, the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ (top) and the sound mode $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$
+(bottom).  \Fig{fig:cmpcorr16b} has $v_0=0.8$ with $\bm k$ along the flow and \Fig{fig:cmpcorr16c} across it.  Here $C_{AB}(\bm k,\tau)=\avg{A_{\bm k}(t+\tau)B_{\bm k}^*(t)}$ for $A,B\in\{E,M_x,M_y\}$, averaged over $t$ after $t=5$.}
+\label{fig:cmpcorr16}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.8_CMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.8_CMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_EEpar_v0.8_CMP16.png}
+\caption{As \Fig{fig:cmpcorr16} ($s_a=16$, campaign \texttt{hastings\_compare}; panels split, split$+\omega$, S-scheme, S-scheme$+\omega$), at
+$v_0=0.8$ with $\bm k$ along the flow, top to bottom: the advected shear $\mathrm{Re}\,C_{yy}(k\hat x)$, the Doppler-shifted sound
+$\mathrm{Re}\,C_{xx}(k\hat x)$ and the energy $\mathrm{Re}\,C_{EE}(k\hat x)$; measured (coloured) against linearized hydrodynamics at the bath
+(dashed), normalized at $\tau=0$.}
+\label{fig:cmpcorr16b}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_CMP16.png}
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_CMP16.png}
+\caption{As \Fig{fig:cmpcorr16} ($s_a=16$, campaign \texttt{hastings\_compare}; panels split, split$+\omega$, S-scheme, S-scheme$+\omega$), at
+$v_0=0.8$ with $\bm k$ across the flow: the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ (top) and the shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$
+(bottom); measured (coloured) against linearized hydrodynamics at the bath (dashed), normalized at $\tau=0$.}
+\label{fig:cmpcorr16c}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figs/boost_shear_v0.0_CMP54.png}
+\includegraphics[width=\textwidth]{figs/boost_soundpar_v0.0_CMP54.png}
+\caption{Campaign \texttt{hastings\_compare} (commits \texttt{d3aacca}, split lines \texttt{d7d26ad}); $s_a=54$, $T_{\rm rel}=258.0$, $c_s^2=1/2$,
+$L=0.6$, $N=672$, $h/a=2$, $\eta/s=0.2$; run sets \texttt{hs54\_\{sp,spw,ssm,ssmw\}\_v<v>}, 16 runs each from the hybrid Monte Carlo start at the bath.
+Panels in each row, left to right and top to bottom: split, split$+\omega$, S-scheme, S-scheme$+\omega$ (see the table of \Sect{sec:cmp}).  The time
+correlators of \texttt{inverse\_moment.tex} at the smallest wave vector, $kh=0.52$, measured (coloured, the mean over the runs) and the
+prediction of linearized hydrodynamics with $\eta/s=0.2$ at the bath $(T_{\rm rel},v_0)$ of the runs (dashed), each normalized to one at $\tau=0$.
+This figure: at rest, the shear mode $\mathrm{Re}\,C_{yy}(k\hat x,\tau)$ (top) and the sound mode $\mathrm{Re}\,C_{xx}(k\hat x,\tau)$
+(bottom).  \Fig{fig:cmpcorr54b} has $v_0=0.8$ with $\bm k$ along the flow and \Fig{fig:cmpcorr54c} across it.  Here $C_{AB}(\bm k,\tau)=\avg{A_{\bm k}(t+\tau)B_{\bm k}^*(t)}$ for $A,B\in\{E,M_x,M_y\}$, averaged over $t$ after $t=5$.}
+\label{fig:cmpcorr54}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.8_CMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.8_CMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_EEpar_v0.8_CMP54.png}
+\caption{As \Fig{fig:cmpcorr54} ($s_a=54$, campaign \texttt{hastings\_compare}; panels split, split$+\omega$, S-scheme, S-scheme$+\omega$), at
+$v_0=0.8$ with $\bm k$ along the flow, top to bottom: the advected shear $\mathrm{Re}\,C_{yy}(k\hat x)$, the Doppler-shifted sound
+$\mathrm{Re}\,C_{xx}(k\hat x)$ and the energy $\mathrm{Re}\,C_{EE}(k\hat x)$; measured (coloured) against linearized hydrodynamics at the bath
+(dashed), normalized at $\tau=0$.}
+\label{fig:cmpcorr54b}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figs/boost_soundperp_v0.8_CMP54.png}
+\includegraphics[width=\textwidth]{figs/boost_shearperp_v0.8_CMP54.png}
+\caption{As \Fig{fig:cmpcorr54} ($s_a=54$, campaign \texttt{hastings\_compare}; panels split, split$+\omega$, S-scheme, S-scheme$+\omega$), at
+$v_0=0.8$ with $\bm k$ across the flow: the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ (top) and the shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$
+(bottom); measured (coloured) against linearized hydrodynamics at the bath (dashed), normalized at $\tau=0$.}
+\label{fig:cmpcorr54c}
+\end{figure}
+
+
+\clearpage
+\section{The exact form of the S-scheme against split, both with the positional counterterm: campaign \texttt{hastings\_compare}, lines \texttt{ssxw}}
+\label{sec:exact}
+
+\paragraph{What is compared.}  The exact form puts all of the renormalization of the single particle into its label: the label is the exact number of
+states of a cell holding the energy $e$ and momentum $\bm m$ in the volume $V$ (the Poisson cloud of quanta of \texttt{renorm2.tex}),
+\st
+s=\ln G(e,|\bm m|,V)-\ln V-1=s_{\rm min}+\ln A+g(\ln S_{\rm t},\theta)\,,
+\stp
+with the flat Liouville measure, no wall and no reference state (\texttt{sscheme\_plan.tex}, ``The exact form'', items X1--X6;
+\nolinkurl{src/sscheme_exact.jl}; \texttt{SPH\_RENORM=sscheme SPH\_SSCHEME\_FORM=exact}).  $S_{\rm t}$ and $\theta$ are the target entropy and rapidity, $A$ the
+constant of $p=AT_{\rm rel}^3$, and $g\ge0$ is tabulated from the exact count.  It cuts the dynamics off at small $S_{\rm t}$ by itself: $s(e)$ increases with
+$e$ everywhere (no fold), and as $S_{\rm t}\to0$ the label approaches its floor $s_{\rm min}+\ln A=\ln(A/2\pi)-1$ (one quantum), where $T_a=\partial H/\partial s$
+grows without bound.  The positional counterterm is in the label, $s\to s+\omega$, as for the S-scheme above.  The comparison is split$+\omega$
+(\texttt{spw}, \Sect{sec:cmp}), at the same seeds, lengths and settings:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+run sets & Hamiltonian \\
+\midrule
+\texttt{hs<sa>\_spw\_v<v>}  & split, $\omega$ in the energy \\
+\texttt{hs<sa>\_ssxw\_v<v>} & the exact form, $\omega$ in the label \\
+\bottomrule
+\end{tabular}
+\end{center}
+with the settings \texttt{SPH\_RENORM=split SPH\_POSITIONAL=1} and \texttt{SPH\_RENORM=sscheme SPH\_SSCHEME\_FORM=exact SPH\_POSITIONAL=1}.
+Campaign file \texttt{nersc/campaign\_hastings\_compare\_ssx.txt} (commit \texttt{93e01a2}, code of \texttt{14ce681}), interactive job 62049405, 128 tasks
+on 4 nodes for 23 minutes: $s_a=16$ and 54, $v_0=0$ and 0.8, 16 runs to $t=100$ from the hybrid Monte Carlo start and 16 chains of 300 updates each.
+Before the campaign the exact form passed the unit tests (the derivatives of $H$, the inverse maps, no fold, the Jacobian of the ideal step, hybrid
+Monte Carlo) and smoke runs (\texttt{sscheme\_plan.tex}, X1--X4).
+
+\paragraph{Results.}
+\begin{itemize}
+\item \emph{Each samples its own equilibrium} (\Fig{fig:xspectra}).  At rest the spectra of the dynamics over those of its own hybrid Monte Carlo are 1 within
+  1--5\% (errors 1--4\%) at both $s_a$, for both; in motion the smallest $k$ along the flow has 10\% errors, as before.
+\item \emph{The energy} (\Fig{fig:xenergy}).  $\Delta H/H$ at $t=100$, mean over 16 runs: at $s_a=16$ at rest $+1.9\pm0.5\times10^{-4}$ for the exact form against
+  $+4\pm4\times10^{-5}$ for split$+\omega$, a slow rise in most runs (about $2\times10^{-6}$ per unit time); at $s_a=54$ at rest $+2.4\times10^{-5}$ and
+  $+2.7\times10^{-5}$; in motion $\le10^{-6}$ for both.  The rise at $s_a=16$ is the one difference in the conservation of $H$; its cause is not known
+  (the smallest particles, $S_{\rm t}\approx1$, have a large $T_a$ and set the stiffest time scale of the ideal step).
+\item \emph{The sound} (Table~\ref{tab:xsound}).  At $s_a=54$ both are in phase with hydrodynamics within 0.2\% at rest (the positional counterterm, as in
+  \Sect{sec:cmp}).  At $s_a=16$ the exact form is in phase along the flow ($1.0001\pm0.0004$) and $2.3$--$2.4\%$ fast at rest and across it, against
+  $1.5$--$1.8\%$ for split$+\omega$; the two sounds look alike (\Fig{fig:xcorr16}, second row).
+\item \emph{Advection and damping} (\Fig{fig:xfit}).  $\Omega/k=0.799$--$0.806$ for both.  The shear damping is $\Gamma/\Gamma_{\rm hydro}=2.9$--$3.8$ for the
+  exact form and $3.1$--$3.9$ for split at $s_a=54$ at rest and across the flow; at $s_a=16$ at rest the exact form is more damped at the smallest $k$,
+  $6.2$--$6.3\pm0.4$ against $4.7$--$5.4\pm0.3$, as the S-scheme without $\omega$ ($6.2$ / $5.4$, \Sect{sec:cmp}); in motion along the flow the two agree within the
+  errors ($5.4$, and $6.1\pm0.6$ against $4.9\pm0.8$ at $s_a=54$).
+\item \emph{Equal-time against the susceptibilities} (\Fig{fig:xeq}).  At rest at the smallest $k$, $0.96$--$1.10$ for the exact form and $0.96$--$1.12$ for split,
+  within the errors of each other.
+\item \emph{The equation of state} (hybrid Monte Carlo with $\omega$, campaign \texttt{eos\_positional}, lines \texttt{eosP\_ssx}, interactive 62049406;
+  \texttt{sscheme\_plan.tex}, X5).  The raw error at $s_a=16$, $h/a=2$, is smaller for the exact form: $P$ $+2.96\%$, $E$ $+3.73\%$, against $+4.36\%$, $+5.58\%$
+  for split$+\omega$; at $s_a\ge54$ the two agree ($|P/p-1|\le0.22\%$, $|E/e-1|\le0.04\%$).
+\end{itemize}
+So the exact form works in the dynamics as well as split$+\omega$ and is the better of the two at $s_a=16$ in its equation of state; its sound is as good.
+Its costs at $s_a=16$: a slow rise of $H$ ($2\times10^{-4}$ by $t=100$), lower acceptances of the stochastic step ($0.84$, $0.41$ against $0.93$, $0.53$), and
+more damping of the shear mode at rest.  At $s_a=54$ the two cannot be told apart.
+
+\begin{table}
+\caption{As Table~\ref{tab:cmpsound} for split$+\omega$ (\texttt{hs<sa>\_spw\_v<v>}) and the exact form$+\omega$ (\texttt{hs<sa>\_ssxw\_v<v>}): the frequency of the
+sound mode at $kh=0.52$ from the zero crossings of its normalized correlator, over the same estimator on linearized hydrodynamics at the bath; jackknife
+errors over 16 runs (\texttt{examples/boost\_analysis.jl}, groups \texttt{XCMP16}, \texttt{XCMP54}).}
+\label{tab:xsound}
+\begin{center}
+\begin{tabular}{llcc}
+\toprule
+$s_a$ & correlator & split$+\omega$ & exact$+\omega$ \\
+\midrule
+54 & at rest           & $0.9981(12)$ & $0.9983(13)$ \\
+54 & $v_0=0.8$, along  & $1.0009(5)$  & $1.0008(3)$ \\
+54 & $v_0=0.8$, across & $0.9943(16)$ & $0.9926(14)$ \\
+\midrule
+16 & at rest           & $1.0184(23)$ & $1.0234(22)$ \\
+16 & $v_0=0.8$, along  & $1.0013(4)$  & $1.0001(4)$ \\
+16 & $v_0=0.8$, across & $1.0146(35)$ & $1.0244(43)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.93\textwidth]{figs/hastings_compare_exact_spectra.png}
+\caption{Campaign \texttt{hastings\_compare}: split$+\omega$ (\texttt{spw}, commit \texttt{d3aacca}) and the exact form$+\omega$ (\texttt{ssxw}, commit \texttt{14ce681}); $c_s^2=1/2$,
+$L=0.6$, $h/a=2$.  The equal-time spectra $|M_{L,\bm k}|^2/N$ (left), $|M_{T,\bm k}|^2/N$ (middle) and $|E_{\bm k}-\avg{E_{\bm k}}|^2/N$ (right) of the dynamics
+(records after 20\% of $t=100$, 16 runs) divided by those of hybrid Monte Carlo chains of the same Hamiltonian (after 20 updates, 16 chains), averaged over
+the wave vectors in bands of $kh$ of width 0.26.  Rows: $s_a=16$ and 54 at rest, then at $v_0=0.8$.  Errors from the spread between runs and chains
+(\texttt{examples/positional\_dyn.jl}, \texttt{PD\_SCH=:spw:split+$\omega$,:ssxw:exact+$\omega$}).}
+\label{fig:xspectra}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figs/energy_time_hastings_compare_exact.png}
+\caption{Campaign \texttt{hastings\_compare}: split$+\omega$ (blue, \texttt{hs<sa>\_spw\_v<v>}) and the exact form$+\omega$ (orange, \texttt{hs<sa>\_ssxw\_v<v>}).  Columns: $s_a=16$
+at rest, $s_a=16$ at $v_0=0.8$, $s_a=54$ at rest, $s_a=54$ at $v_0=0.8$.  Top: the relative change of the total energy, $\Delta H/H=H(t)/H(0)-1$ ($H=\sum_aH_a$,
+the record of the present code), each run thin, the mean of the 16 runs thick.  Bottom: the momentum fluctuations $\mathrm{KE}/2(N-1)VwT$ ($w$, $T$ of the
+bath; 1 in equilibrium at rest, $\approx15$ at $v_0=0.8$, where KE includes the mean flow's share).  \texttt{examples/energy\_time.jl}.}
+\label{fig:xenergy}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_XCMP16.png}
+\includegraphics[width=0.49\textwidth]{figs/boost_fit_XCMP54.png}
+\caption{Campaign \texttt{hastings\_compare}, split$+\omega$ (blue) and the exact form$+\omega$ (orange), $s_a=16$ (left pair) and 54 (right pair).  In each pair,
+left: the advection speed $\Omega/k$ of the shear mode along the flow at the smallest $k$ against $v_0$ (dotted: $\Omega/k=v$); right: the damping rate
+$\Gamma$ over linearized hydrodynamics, $\nu k^2/\gamma^3$ along the flow (circles) and $\nu k^2/\gamma$ across it (squares), $\nu=\eta/(e+p)$ at the bath.  The fit is
+$C\propto e^{-i\Omega\tau-\Gamma\tau}$ to the shear projection of the correlator, on $\tau$ where $|C/C_0|>0.25$ for the mean over the runs, the same window for
+every jackknife sample; errors by jackknife over 16 runs.}
+\label{fig:xfit}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.8\textwidth]{figs/boost_equaltime_XCMP16.png}
+\includegraphics[width=0.8\textwidth]{figs/boost_equaltime_XCMP54.png}
+\caption{Campaign \texttt{hastings\_compare}, split$+\omega$ (blue) and the exact form$+\omega$ (orange), $s_a=16$ (top) and 54 (bottom).  The equal-time correlators $C_{AA}(\bm k,0)$,
+$A=E,M_x,M_y$ (rows), over the susceptibilities $\chi_{AA}$ of the ideal fluid at the measured state of the runs, against $kh$, for $\bm k$ along and across
+the flow (columns) at $v_0=0$ and 0.8; jackknife errors over the runs.}
+\label{fig:xeq}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.0_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.0_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.8_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.8_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_EEpar_v0.8_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundperp_v0.8_XCMP16.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_shearperp_v0.8_XCMP16.png}
+\caption{Campaign \texttt{hastings\_compare}, $s_a=16$, $T_{\rm rel}=140.4$, $c_s^2=1/2$, $L=0.6$, $N=672$, $h/a=2$, $\eta/s=0.2$; split$+\omega$ (left, run sets
+\texttt{hs16\_spw\_v<v>}, commit \texttt{d3aacca}) and the exact form$+\omega$ (right, \texttt{hs16\_ssxw\_v<v>}, commit \texttt{14ce681}, job 62049405), 16 runs each from
+the hybrid Monte Carlo start at the bath.  The time correlators at $kh=0.52$, measured (split$+\omega$ orange, the exact form purple; the mean over the runs) against linearized
+hydrodynamics with $\eta/s=0.2$ at the bath (dashed), normalized to one at $\tau=0$; the same rows as \Fig{fig:cmpcorr16}: at rest the shear
+$\mathrm{Re}\,C_{yy}(k\hat x)$ and the sound $\mathrm{Re}\,C_{xx}(k\hat x)$; at $v_0=0.8$ along the flow the advected shear, the Doppler-shifted sound and
+$\mathrm{Re}\,C_{EE}$; across it the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ and the shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$.}
+\label{fig:xcorr16}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.0_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.0_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_shear_v0.8_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundpar_v0.8_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_EEpar_v0.8_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_soundperp_v0.8_XCMP54.png}
+\includegraphics[width=0.72\textwidth]{figs/boost_shearperp_v0.8_XCMP54.png}
+\caption{Campaign \texttt{hastings\_compare}, $s_a=54$, $T_{\rm rel}=258.0$, $c_s^2=1/2$, $L=0.6$, $N=672$, $h/a=2$, $\eta/s=0.2$; split$+\omega$ (left, run sets
+\texttt{hs54\_spw\_v<v>}, commit \texttt{d3aacca}) and the exact form$+\omega$ (right, \texttt{hs54\_ssxw\_v<v>}, commit \texttt{14ce681}, job 62049405), 16 runs each from
+the hybrid Monte Carlo start at the bath.  The time correlators at $kh=0.52$, measured (split$+\omega$ orange, the exact form purple; the mean over the runs) against linearized
+hydrodynamics with $\eta/s=0.2$ at the bath (dashed), normalized to one at $\tau=0$; the same rows as \Fig{fig:cmpcorr16}: at rest the shear
+$\mathrm{Re}\,C_{yy}(k\hat x)$ and the sound $\mathrm{Re}\,C_{xx}(k\hat x)$; at $v_0=0.8$ along the flow the advected shear, the Doppler-shifted sound and
+$\mathrm{Re}\,C_{EE}$; across it the sound $\mathrm{Re}\,C_{yy}(k\hat y)$ and the shear with sound $\mathrm{Re}\,C_{xx}(k\hat y)$.}
+\label{fig:xcorr54}
+\end{figure}
+\clearpage
+%=============================================================================
+\section{Correction of the analysis: runs with different time steps (2026-11-26)}
+\label{sec:lagfix}
+
+The time step of a run is set once, at its start, from the initial state, so at $s_a\le16$ the runs of one set do not all have the same step (in
+\texttt{hastings\_compare} 1 to 7 of 16 runs per set at $s_a=16$; none at $s_a=54$).  \nolinkurl{examples/boost_analysis.jl} correlated each run on its
+own lag grid, of spacing $\Delta\tau=n_s\,\delta t_{\rm rec}$ with $n_s={\rm round}(0.05/\delta t_{\rm rec})$, but averaged them on the grid of the first
+run.  A run with another step was thereby put on a time axis compressed or stretched by the ratio of the spacings.  In the set S-scheme$+\omega$ at
+$s_a=16$ at rest the first run had the smaller step ($\Delta\tau=0.0424$ against $0.0566$ for 14 of the 16 runs), so the sound of 14 runs was drawn
+$0.0566/0.0424=1.33$ times too fast: the ``36\% fast sound'' of the earlier version of this note (Table~\ref{tab:cmpsound}) was this, not the
+Hamiltonian.  Since this version every run is put on the grid of the most common spacing, a run with another spacing correlated at every record and
+interpolated (cubic, error $<10^{-4}$ for the sound at $kh=0.52$); sets whose runs share one step are unchanged.  The figures and tables of $s_a=16$ in
+\Sect{sec:cmp} and \Sect{sec:exact} are those of the corrected analysis.  Changes: the sound at rest of S-scheme$+\omega$ $1.360\to1.017$, of
+split$+\omega$ $1.010(22)\to1.018(2)$ (7 runs of 16 moved), of the exact form $1.018\to1.023$; the shear damping at $s_a=16$ at rest moves by up to
+$1.5$ (the range $4.0$--$7.6$ becomes $3.8$--$6.2$), and the over-damping at $s_a=16$ stays.  The earlier sections were redone the same way (groups \texttt{SP16} on \texttt{hastings\_bath}, \texttt{DS16}, \texttt{CS16}, \texttt{OLD16}; the old
+and the corrected script on the same runs; their figures are the corrected ones).  Unchanged: the tree level and the runs without the viscous step
+(one step per set) and every set at $s_a=54$.  Changed at $s_a=16$: split at rest $4.7$--$5.9\to4.9$--$6.1$, in motion along the flow $11\pm3\to6.2\pm0.7$
+and $6.9\to5.0$ (still over-damped); $\eta/s=1.0$ of \texttt{damping\_scan} $1.09$--$1.16\to0.97$--$1.04$ (now below the mode-coupling estimate $1.12$);
+the $c_s^2=1/3$ runs (\texttt{hastings}, \texttt{cs13}) at rest $1.17$--$1.23\to1.04$--$1.10$ and $0.93$--$0.98\to0.95$--$1.01$, and in motion along the flow
+$1.6$--$3.6\to1.06$--$1.18$.  The conclusions stand (the over-damping at $c_s^2=1/2$, $\eta/s=0.2$; the agreement at $c_s^2=1/3$), with the agreement at
+$c_s^2=1/3$ now closer.  \nolinkurl{inverse_moment.tex} (campaign \texttt{hastings}, $s_a=4$--16) has its own correction section.
 
 \end{document}

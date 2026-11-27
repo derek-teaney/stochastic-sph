@@ -13,6 +13,7 @@
 #   ∂g/∂u|_{m,V} = (g_T m_v − g_v u_v)/det,   ∂g/∂|m||_{u,V} = (g_v u_T − g_T u_v)/det,   ∂g/∂V|_{u,m} = g_V − (u ∂g/∂u + |m| ∂g/∂|m|)/V,
 # u_T = (n−1) u/T, u_v = m_T = n γ² v u, m_v = n A V γ^(n+2) T^n (1 + (n+2) γ² v²), det = u_T m_v − u_v² (ConstantCs2EOS: p = A T_rel^n,
 # n = 1 + 1/c_s²).  A state with ∂H/∂u ≤ 0 or |ẋ| ≥ 1 has no Hamiltonian (NaN fields; hybrid Monte Carlo rejects the trajectory).
+# SPH_POSITIONAL=1 adds the positional counterterm to E_dyn: E_dyn = T (Δs_dyn − ω(u/n, V)) (positional.jl).
 # Inverse (the votes, the heat bath): (e, m, V) → u by Newton in u alone, H(u, m, V) = e, from the target's inversion at e.
 # Vote weight (Liouville measure): u − b ln u − ln(∂H/∂u / (1 − b/u)), −∞ for u ≤ b (the label boundary).
 
@@ -51,7 +52,13 @@ SplitConsts(eos::AbstractEOS) = error("SPH_RENORM=split: implemented for Constan
     mv = n * A * V * γ^(n + 2) * T^n * (1 + (n + 2) * γ * γ * v * v)
     det = uT * mv - uv * uv
     gu = (gT * mv - gv * uv) / det;  gm = (gv * uT - gT * uv) / det
-    return (E = T * Δ, Eu = gu, Em = gm, EV = gV - (u * gu + mm * gm) / V, det = det)
+    E = T * Δ;  Eu = gu;  Em = gm;  EV = gV - (u * gu + mm * gm) / V
+    if POS_ON          # the positional counterterm (positional.jl): E_dyn → E_dyn − T ω(u/n, V); T = T(u, |m|, V) of the target
+        o = positional_omega(u / n, V)
+        Tu = mv / det;  Tm = -uv / det;  TV = -(u * Tu + mm * Tm) / V
+        E -= T * o.ω;  Eu -= Tu * o.ω + T * o.ωσ / u;  Em -= Tm * o.ω;  EV -= TV * o.ω + T * o.ωV / V
+    end
+    return (E = E, Eu = Eu, Em = Em, EV = EV, det = det)
 end
 
 # The state of the particle of label u (= s) at the entropy density S = u/V and momentum density M (warm start e0 of the target).
@@ -187,10 +194,11 @@ end
     return liouville ? s - log(TH / (1 - b / u)) : s
 end
 
-# The schemes Step 5 supports (as check_legendre), and V̄.
+# The schemes Step 5 supports, and V̄.
 function check_split(params)
     SPLIT || return nothing
-    hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level, or SPH_RENORM=legendre"
+    positional_set!(params)
+    hint = "; split is the default renormalization (since 2026-11-23): set SPH_RENORM=0 for the tree level"
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=split needs hamiltonian = :energy and volume = :number" * hint)
     sim_dim(params) == 2 && params.phys_dim == 2 || error("SPH_RENORM=split: implemented for d = 2" * hint)

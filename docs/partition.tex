@@ -990,7 +990,7 @@ the renormalized Hamiltonian of \nolinkurl{partition_v2.tex} removes.
 \subsection{The double Legendre transform in motion, and a shift in \texorpdfstring{$\bm m$}{m}}
 \label{app:doublelegendre}
 
-The question: the renormalized Hamiltonian shifts only the entropy variable, $e(s+\Delta s(u),\bm m,V)$, yet in a moving equilibrium it also renormalizes the
+The question: the renormalized Hamiltonian shifts only the entropy variable, $e(s+\Delta s(s_{\rm eff}),\bm m,V)$, yet in a moving equilibrium it also renormalizes the
 momentum.  How, and what is left?  (Theory of the moving case: \nolinkurl{partition_v2.tex}, ``Equilibrium in motion''.)
 
 \paragraph{The double transform.}  At fixed $V$ the free energy of a particle is the Legendre transform over both $s$ and $\bm m$,
@@ -1004,28 +1004,28 @@ evaluated at the saddle $(s_*,\bm m_*)(T,\bm v,V)$,
 \delta F\big|_{T,\bm v}=\delta e\big|_{s,\bm m}\Big|_*,\qquad \frac{\delta F}T=\Delta s\big|_*\quad\text{for the entropy shift} .
 \stp
 
-\paragraph{Why the shift in $s$ alone moves the momentum.}  The counterterm $\Delta s(u)$ is evaluated at the saddle, where the entropy of the particle is
+\paragraph{Why the shift in $s$ alone moves the momentum.}  The counterterm $\Delta s(s_{\rm eff})$ is evaluated at the saddle, where the entropy of the particle is
 \st
-u_*=\gamma\,s(T_{\rm rel})\,V .
+s_{\rm eff}^*=\gamma\,s(T_{\rm rel})\,V .
 \stp
-So $\delta F/T=\Delta s(u_*)$ depends on $\bm v$ through $\gamma$, and the momentum $M=-\partial F/\partial v$ (per particle) gains $-T\,\partial_v\Delta s(u_*)$.  For the conformal
-shift, $\Delta s=\tfrac\alpha2\ln u$,
+So $\delta F/T=\Delta s(s_{\rm eff}^*)$ depends on $\bm v$ through $\gamma$, and the momentum $M=-\partial F/\partial v$ (per particle) gains $-T\,\partial_v\Delta s(s_{\rm eff}^*)$.  For the conformal
+shift, $\Delta s=\tfrac\alpha2\ln s_{\rm eff}$,
 \st
-\Delta s(u_*)=\tfrac\alpha2\big(1+1/c_s^2\big)\ln\gamma+\dots=c_\gamma\ln\gamma+\dots,\qquad c_\gamma=\tfrac12(d+1)(3+1/c_s^2)\quad(d\,c_s^2=1) ,
+\Delta s(s_{\rm eff}^*)=\tfrac\alpha2\big(1+1/c_s^2\big)\ln\gamma+\dots=c_\gamma\ln\gamma+\dots,\qquad c_\gamma=\tfrac12(d+1)(3+1/c_s^2)\quad(d\,c_s^2=1) ,
 \stp
 the $\gamma$ part of the determinant of the boosted susceptibility, which it cancels: the momentum is renormalized through the dependence of the saddle on $\bm v$,
 without touching $\bm m$.
 
-\paragraph{What a function of $u$ cannot do.}  At fixed $V$, $u_*$ depends on $(T,\bm v)$ only through one combination,
+\paragraph{What a function of $s_{\rm eff}$ cannot do.}  At fixed $V$, $s_{\rm eff}^*$ depends on $(T,\bm v)$ only through one combination,
 \st
-u_*\propto\gamma^{1+1/c_s^2}\,T^{1/c_s^2}\,V .
+s_{\rm eff}^*\propto\gamma^{1+1/c_s^2}\,T^{1/c_s^2}\,V .
 \stp
-So a shift that depends on $u$ alone can cancel only the parts of the one-loop term that depend on $(T,\bm v)$ through that combination.  The other factor of the
+So a shift that depends on $s_{\rm eff}$ alone can cancel only the parts of the one-loop term that depend on $(T,\bm v)$ through that combination.  The other factor of the
 determinant,
 \st
 \tfrac12\ln\big(1-c_s^2v^2\big) ,
 \stp
-depends on $v$ separately, and no $\Delta s(u)$ cancels it: it is the momentum left over, $-T v\,c_s^2/(1-c_s^2v^2)$ per particle, and the violation $R$ of the Lorentz
+depends on $v$ separately, and no $\Delta s(s_{\rm eff})$ cancels it: it is the momentum left over, $-T v\,c_s^2/(1-c_s^2v^2)$ per particle, and the violation $R$ of the Lorentz
 identity.
 
 \paragraph{The general counterterm.}  At fixed $V$ the map $(s,\bm m)\leftrightarrow(T,\bm v)$ is one to one, so any desired $\delta F/T(T,\bm v,V)$ is produced by some function
@@ -1051,7 +1051,7 @@ Equivalently one could shift the momentum variable, $e(s,\bm m+\Delta\bm m,V)$, 
   \stp
   a correction of relative order $1/s_a$, a momentum counterterm.
 \item A dependence on $V$ at fixed $(s,\bm m)$ adds a force term (the pressure of the counterterm).
-\item The present shift, in $u$ only, changes neither.  It renormalizes all that a function of $u$ can reach, and leaves exactly the $1-c_s^2v^2$ piece: the phase space of
+\item The present shift, in $s_{\rm eff}$ only, changes neither.  It renormalizes all that a function of $s_{\rm eff}$ can reach, and leaves exactly the $1-c_s^2v^2$ piece: the phase space of
   the foliation dependence of the sound mode, the stiffness on the moving adiabat.
 \end{itemize}
 So the last piece is removed by a shift that depends on $\bm m$, at the price of a small velocity correction.  (Correction, 2026-11-22: a comoving volume alone would
@@ -1224,15 +1224,15 @@ and $\Delta\bm m$ matter?  Script: \nolinkurl{examples/renorm_velocity.py} (conf
 
 \paragraph{What is guaranteed.}  At the saddle point every scheme has $\dot{\bm x}=\bm v$, the velocity of the bath, since the saddle condition of the weight
 $\exp[s-(e-\bm v\cdot\bm m)/T]$ in the code's variables is $\partial H/\partial\bm m=\bm v$.  The bound is a property of the whole phase space: $|\partial H/\partial\bm m|<1$
-everywhere.  The target energy has it.  With the shift in $u$ alone it holds exactly, since $\dot{\bm x}$ is the target velocity at $(u,\bm m)$.
+everywhere.  The target energy has it.  With the shift in $s_{\rm eff}$ alone it holds exactly, since $\dot{\bm x}$ is the target velocity at $(s_{\rm eff},\bm m)$.
 
-\paragraph{The check.}  At fixed code entropy $s$, as the momentum grows, compare $1-\dot x$ with $1-v$, $v$ the target velocity at $(u,\bm m)$, $u=s+\tfrac\alpha2\ln s$
+\paragraph{The check.}  At fixed code entropy $s$, as the momentum grows, compare $1-\dot x$ with $1-v$, $v$ the target velocity at $(s_{\rm eff},\bm m)$, $s_{\rm eff}=s+\tfrac\alpha2\ln s$
 (a common reference for all schemes):
 \begin{center}
 \small
 \begin{tabular}{lcccc}
 \toprule
-$(1-\dot x)/(1-v)$ at $v\to1$ & $u$ only & all in $\Delta s$ & split, sound in $\Delta\bm m$ & $(1+\mathcal K_0)\ln\gamma$ also in $\Delta\bm m$ \\
+$(1-\dot x)/(1-v)$ at $v\to1$ & $s_{\rm eff}$ only & all in $\Delta s$ & split, sound in $\Delta\bm m$ & $(1+\mathcal K_0)\ln\gamma$ also in $\Delta\bm m$ \\
 \midrule
 $s=5$ & $1$ & $0.79$ & $0.99$ & leaves the domain \\
 $s=16$ & $1$ & $0.91$ & $0.985$ & $0.4$--$0.5$ \\
@@ -1242,15 +1242,15 @@ $s=541$ & $1$ & $0.996$ & $0.997$ & $0.987$ \\
 \end{tabular}
 \end{center}
 \begin{itemize}
-\item \emph{All in $\Delta s$} and \emph{the density-frame split}: $\dot x<1$ everywhere, with $1-\dot x$ a fixed fraction $1-O(1/u)$ of $1-v$, the same at every $\gamma$.  The
+\item \emph{All in $\Delta s$} and \emph{the density-frame split}: $\dot x<1$ everywhere, with $1-\dot x$ a fixed fraction $1-O(1/s_{\rm eff})$ of $1-v$, the same at every $\gamma$.  The
   reason is that the sound term is bounded, $|\ln(1-c_s^2v^2)|\le|\ln(1-c_s^2)|$, since $c_s<1$: neither shift grows near the light cone.
 \item \emph{Moving $(1+\mathcal K_0)\ln\gamma$ into $\Delta\bm m$} (with $-(1+\mathcal K_0)\ln\gamma$ in $\Delta s$): both shifts grow like $\ln\gamma$, the particles move closer to the light
-  cone, and at small $s$ the shifted entropy $u-(1+\mathcal K_0)\ln\gamma$ leaves the domain.  It does not help.  (An earlier remark in the discussion, that this split drags fast
+  cone, and at small $s$ the shifted entropy $s_{\rm eff}-(1+\mathcal K_0)\ln\gamma$ leaves the domain.  It does not help.  (An earlier remark in the discussion, that this split drags fast
   particles, compared the schemes at different reference states and was wrong.)
 \end{itemize}
 
 \paragraph{What the density frame says.}  The violating part $\delta\ln Z_1^{\rm viol}$ is bounded uniformly in $v$, so $\Delta\bm m=T\,\delta\ln Z_1^{\rm viol}/v$ is bounded and vanishes linearly at rest;
-what grows like $\ln\gamma$ is invariant, $\ln V_{\rm rest}=\ln(\gamma V)$, and stays in the entropy, where for the conformal fluid it is absorbed in $\ln u$ with no velocity term.
+what grows like $\ln\gamma$ is invariant, $\ln V_{\rm rest}=\ln(\gamma V)$, and stays in the entropy, where for the conformal fluid it is absorbed in $\ln s_{\rm eff}$ with no velocity term.
 For a general equation of state its velocity term is proportional to
 \st
 \frac{\partial\Delta s}{\partial\ln V_{\rm rest}}\Big|_s=(1+\mathcal K_0)-c_s^2\,T\frac{d\Lambda}{dT}=\mathcal N ,
@@ -1263,7 +1263,7 @@ $\mathcal N\ln V_{\rm rest}$.  Velocity control beyond that (a drag at large $\g
 
 The question (2026-11-22): the counterterm can be written as a shift of the entropy argument, or as log terms in the weight, or as an energy added to the
 Hamiltonian.  Which variable does the code store, and what goes where?  Notation: $\delta\ln Z_1$ is the excess of a particle's $\ln Z_1$ over the target's
-(\nolinkurl{partition_v2.tex}), and the old name $u$ of \texttt{SPH\_RENORM} is $s_{\rm eff}$ below.
+(\nolinkurl{partition_v2.tex}), and the label, the old $u$ of \texttt{SPH\_RENORM} (still \texttt{u} in the code), is $s_{\rm eff}$ below.
 
 \paragraph{Step 1: the model with a shifted argument.}  Each particle carries a label $s$, its entropy variable; the measure is flat in $s$ (Liouville), and the energy is
 the target's at a shifted entropy,
@@ -1441,7 +1441,7 @@ transform of $F_{\rm want}$ in $\bm v$, the Hamiltonian is that of Step 5$''$, r
 G=G_{\rm t}(T,\bm m,V)+T\,\delta\ln Z_1\big(T,\bm v_{\rm t}(T,\bm m),V\big),
 \stp
 with $\bm v_{\rm t}$ the target's velocity.  Step 5 is of this kind for the part of $\delta\ln Z_1$ that depends on $\bm m$: $T_a\Delta s^{\rm dyn}$ added at fixed $(s_{\rm eff},\bm m)$.  It costs
-two things, both from the $\gamma$-dependence of the counterterm.  At large $\gamma$, with $u=\gamma Vs(T_{\rm rel})=wV/T$ the target entropy of the particle, the
+two things, both from the $\gamma$-dependence of the counterterm.  At large $\gamma$, with $s_{\rm eff}=\gamma Vs(T_{\rm rel})=wV/T$ the target entropy of the particle, the
 counterterm \Eq{dlnZgeneral} and the target's response are ($d=2$)
 \st
 \delta\ln Z_1\simeq K\ln\gamma,\qquad K=\tfrac32(n+2),\qquad
@@ -1458,13 +1458,13 @@ counterterm \Eq{dlnZgeneral} and the target's response are ($d=2$)
   \dot{\bm x}=\frac{\partial G}{\partial\bm m}=\bm v_{\rm t}(T,\bm m)+T\,\frac{\partial\,\delta\ln Z_1}{\partial\bm m}\Big|_T,\qquad
   T\,\frac{\partial\,\delta\ln Z_1}{\partial|\bm m|}\Big|_T\simeq\frac{K}{(n+2)\gamma^2u}=\frac{3}{2\gamma^2u} ,
   \stp
-  which exceeds the distance to the light cone, $1-v\simeq1/(2\gamma^2)$, for $u<3$, at any $\gamma$ and any $c_s^2$: rare, but in reach of the tails at $s_a=16$.
+  which exceeds the distance to the light cone, $1-v\simeq1/(2\gamma^2)$, for $s_{\rm eff}<3$, at any $\gamma$ and any $c_s^2$: rare, but in reach of the tails at $s_a=16$.
 \end{enumerate}
 In Step 5$''$, $\bm v$ is the independent variable, so $|\dot{\bm x}|<1$ by construction, and the tree level is $F_{\rm want}$ exactly.  For the conformal fluid
 Step 5 escapes both: its label part is an exact change of variables, and $\Delta s^{\rm dyn}$ is only the bounded sound term, which has no $\ln\gamma$; that is why it
-is more accurate at rest than Step 5$''$ (the check above).  For $c_s^2\neq1/2$ the non-conformal term $-(\mathcal N/c_s^2)\ln T_{\rm rel}$ splits, at fixed label, with $T_{\rm rel}^{\,n-1}\propto u/(\gamma V)$ and $n-1=1/c_s^2$:
+is more accurate at rest than Step 5$''$ (the check above).  For $c_s^2\neq1/2$ the non-conformal term $-(\mathcal N/c_s^2)\ln T_{\rm rel}$ splits, at fixed label, with $T_{\rm rel}^{\,n-1}\propto s_{\rm eff}/(\gamma V)$ and $n-1=1/c_s^2$:
 \st
-\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln u,\qquad \Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln s_{\rm eff},\qquad \Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
 \stp
 with $\bar V$ a constant (its $\ln\bar V$ goes into the measure).  $K$ above is replaced by $\mathcal N$ ($\tfrac12$ at $c_s^2=1/4$): both costs are then small but no
 longer zero.
@@ -1492,7 +1492,7 @@ With $\Delta s^{\rm dyn}=0$ step 1 is the target inverse itself and step 2 is th
 \begin{tabular}{ll}
 \toprule
 $s$ & the label of Step 1 (flat measure, shifted argument); not used by the code \\
-$s_{\rm eff}$ & the label of the code (formerly $u$): stored, conserved, the argument of $e_{\rm t}$ \\
+$s_{\rm eff}$ & the label (\texttt{u} in the code): stored, conserved, the argument of $e_{\rm t}$ \\
 $\Delta s^{\rm lab}$, $J^{\rm lab}$ & the counterterm that is a function of the label: in the measure \\
 $\Delta s^{\rm dyn}$ & the counterterm that depends on $\bm m$, $V$: in $H_{\rm eff}$, times the particle's temperature \\
 \bottomrule
@@ -1594,16 +1594,16 @@ P_a=-\frac{\partial F_{\rm want}}{\partial V}=p(T_{\rm rel})-\frac52\,\frac TV ,
 \stp
 for any $c_s^2$: the counterterm's $-(1+\mathcal K_0)T/V$, which with the label gas ($+T/V$) and the particle's fluctuations ($+\mathcal K_0T/V$) leaves the target's $p$.
 
-\paragraph{What is new when $c_s^2\neq1/d$.}  In terms of the particle's target entropy $u=\gamma Vs(T_{\rm rel})\propto\gamma V\,T_{\rm rel}^{\,n-1}$,
+\paragraph{What is new when $c_s^2\neq1/d$.}  In terms of the particle's target entropy $s_{\rm eff}=\gamma Vs(T_{\rm rel})\propto\gamma V\,T_{\rm rel}^{\,n-1}$,
 \st
-\delta\ln Z_1=\tfrac52\ln u-\frac{\mathcal N}{c_s^2}\ln T_{\rm rel}+\tfrac12\ln\big(1-c_s^2v^2\big)+{\rm const},\qquad \mathcal N=1-d\,c_s^2 .
+\delta\ln Z_1=\tfrac52\ln s_{\rm eff}-\frac{\mathcal N}{c_s^2}\ln T_{\rm rel}+\tfrac12\ln\big(1-c_s^2v^2\big)+{\rm const},\qquad \mathcal N=1-d\,c_s^2 .
 \stp
-The second term is the non-conformality: it is not a function of $u$, so the shift in $u$ alone (\texttt{SPH\_RENORM}) cannot carry it (it would leave the labels the
+The second term is the non-conformality: it is not a function of $s_{\rm eff}$, so the shift in $s_{\rm eff}$ alone (\texttt{SPH\_RENORM}) cannot carry it (it would leave the labels the
 bulk modulus $\delta\mathcal B_s=\mathcal N$).  The Legendre transform carries it automatically: its $T$-dependence shifts $s$, and through $T_{\rm rel}=\gamma T$ it also shifts $\bm m$.
 
 \paragraph{Why constant $c_s^2$ is convenient.}  The target inversions stay in closed form (\texttt{rest\_energy} for \texttt{ConstantCs2EOS}; the forward map by
 $|\bm m|/s^{\,n/(n-1)}$, a function of $v$ alone), so the cold start of every solve is analytic; the Jacobians have no $dc_s^2/dT$ terms; and the measurement of
-$c_s^2$ (\nolinkurl{examples/eos_measure.jl}) has a constant target.  For the conformal case the u-only scheme and the Legendre transform can be compared
+$c_s^2$ (\nolinkurl{examples/eos_measure.jl}) has a constant target.  For the conformal case the $s_{\rm eff}$-only scheme and the Legendre transform can be compared
 directly; for $c_s^2\neq1/2$ only the latter reaches $\mathcal B=0$.
 
 \paragraph{Check.}  The quadrature of \nolinkurl{examples/renorm_quadrature_legendre.py}, now for any constant $c_s^2$ (\texttt{python3 examples/renorm\_quadrature\_legendre.py 0.25 0.7}),
@@ -1624,7 +1624,7 @@ $1/4$ & $+1/2$ & $54$ & $+1.8\times10^{-2}$ & $+1.9\times10^{-2}$ & $+1.6\times1
 \end{tabular}
 \end{center}
 For every $c_s^2$ the residuals are $O(T/s_a)$ per particle (they fall by $\sim100$ from $s_a=54$ to $541$, relative to the target's $O(s_a)$), the same at rest and in
-motion, $R$ cancels and $\mu/T=O(1/s_a)$.  The non-conformal part is removed: a shift in $u$ alone would leave the pressure off by $\mathcal N\bar nT/p=\mathcal N/\sigma$,
+motion, $R$ cancels and $\mu/T=O(1/s_a)$.  The non-conformal part is removed: a shift in $s_{\rm eff}$ alone would leave the pressure off by $\mathcal N\bar nT/p=\mathcal N/\sigma$,
 about $5\%$ at $s_a=54$ and $0.5\%$ at $541$ for $c_s^2=1/4$, against the $1.6\%$ and $0.014\%$ here.  The coefficient of the residual grows slowly as $c_s^2$
 decreases.
 
@@ -1635,17 +1635,21 @@ The question (2026-11-23): Step 5 (\App{app:seff}) and the Legendre transform (\
 particle.  Which to run is decided by the size of that residual, the cost of the maps, and the behaviour at small $s_a$.  Step 5 was ten times more accurate at rest
 for the conformal fluid, but it has not been written for $c_s^2\neq1/2$.  The first comparison is the single particle, before any code.
 
-\paragraph{The model.}  With $u=s_{\rm eff}$ the label and $\mathcal N=1-d\,c_s^2$ (the split of \App{app:seff}, ``Why not the transform in $s$ alone?''),
+\paragraph{The model.}  With $s_{\rm eff}$ the label and $\mathcal N=1-d\,c_s^2$ (the split of \App{app:seff}, ``Why not the transform in $s$ alone?''),
 \st
-d\mu=e^{\,u-\Delta s^{\rm lab}(u)}J^{\rm lab}(u)\,du\,d\bm x\,d\bm m,\qquad
-\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln u+{\rm const},\qquad J^{\rm lab}=1-\frac{\tfrac52-\mathcal N}{u},
+\begin{gathered}
+d\mu=e^{\,s_{\rm eff}-\Delta s^{\rm lab}(s_{\rm eff})}J^{\rm lab}(s_{\rm eff})\,ds_{\rm eff}\,d\bm x\,d\bm m,\\
+\Delta s^{\rm lab}=\big(\tfrac52-\mathcal N\big)\ln s_{\rm eff}+{\rm const},\qquad J^{\rm lab}=1-\frac{\tfrac52-\mathcal N}{s_{\rm eff}},
+\end{gathered}
 \stp
 \st
-H_a=e_{\rm t}(u_a,\bm m_a,V_a)+E^{\rm dyn}_a,\qquad
-E^{\rm dyn}_a=T_a\Big(\Delta s^{\rm dyn}_a+\frac{\partial\Delta s^{\rm dyn}_a}{\partial u}\Big|_{\bm m,V}\Big),\qquad
+\begin{gathered}
+H_a=e_{\rm t}(s_{{\rm eff},a},\bm m_a,V_a)+E^{\rm dyn}_a,\qquad
+E^{\rm dyn}_a=T_a\Big(\Delta s^{\rm dyn}_a+\frac{\partial\Delta s^{\rm dyn}_a}{\partial s_{\rm eff}}\Big|_{\bm m,V}\Big),\\
 \Delta s^{\rm dyn}=\mathcal N\ln\frac{\gamma V}{\bar V}+\tfrac12\ln\big(1-c_s^2v^2\big),
+\end{gathered}
 \stp
-with $T_a$, $\bm v_a$, $\gamma$ the target's at $(u_a,\bm m_a,V_a)$; the derivative is $-\ln J^{\rm dyn}$ at lowest order, as in Step 5$'$.  The measure vanishes below the label boundary $u=\tfrac52-\mathcal N$.
+with $T_a$, $\bm v_a$, $\gamma$ the target's at $(s_{{\rm eff},a},\bm m_a,V_a)$; the derivative is $-\ln J^{\rm dyn}$ at lowest order, as in Step 5$'$.  The measure vanishes below the label boundary $s_{\rm eff}=\tfrac52-\mathcal N$.
 
 \begin{algobox}{The single-particle comparison}
 \begin{algorithmic}[1]
@@ -1706,7 +1710,7 @@ $E^{\rm dyn}_a$; the inverse for the votes is the fixed-point iteration of Step 
 \st
 P_a=P_{\rm t}-\frac{\partial E^{\rm dyn}_a}{\partial V},\qquad
 \dot{\bm x}_a=\bm v_a+\frac{\partial E^{\rm dyn}_a}{\partial\bm m},\qquad
-\frac{\partial H_a}{\partial u}=T_a+\frac{\partial E^{\rm dyn}_a}{\partial u} ,
+\frac{\partial H_a}{\partial s_{\rm eff}}=T_a+\frac{\partial E^{\rm dyn}_a}{\partial s_{\rm eff}} ,
 \stp
 the last being the temperature of the Liouville term $-\ln T$ in the votes, which also carry $-\Delta s^{\rm lab}+\ln J^{\rm lab}$ as \texttt{SPH\_RENORM} does now.
 

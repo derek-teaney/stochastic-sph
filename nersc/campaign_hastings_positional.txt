@@ -1,0 +1,18 @@
+# Campaign `hastings_positional` (branch sscheme-measure, docs/sscheme_plan.tex, level 2, item K and the approach to equilibrium): c_s^2 = 1/2,
+# s_a = 16, 54, at rest, with the positional counterterm (SPH_POSITIONAL=1, a_2 = 0), split+omega (pp) and the measure form+omega (pm).
+#   hs: the full dynamics from the hybrid Monte Carlo start, t = 100 (16 seeds), against
+#   hq: hybrid Monte Carlo chains of the same Hamiltonian, 300 updates (16 seeds): statics, spectra (examples/hastings_analysis.jl);
+#   hl: the dynamics from the hexagonal lattice, no HMC start (SR_POSITIONS=lattice), t = 100 (8 seeds): the approach to equilibrium.
+# L = 0.6 (N = 672), h/a = 2, eta/s = 0.2.  160 tasks of 4 cores.
+hs16_pp_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1016  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_pp_v0
+hq16_pp_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_pp_v0
+hl16_pp_v0    8  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_POSITIONS=lattice SR_SEEDOFFSET=1066  -- examples/equilibrium.jl 0.6 2 100 1 4 hl16_pp_v0
+hs54_pp_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1054  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_pp_v0
+hq54_pp_v0   16  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_pp_v0
+hl54_pp_v0    8  SPH_RENORM=split SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_POSITIONS=lattice SR_SEEDOFFSET=1104  -- examples/equilibrium.jl 0.6 2 100 1 4 hl54_pp_v0
+hs16_pm_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1116  -- examples/equilibrium.jl 0.6 2 100 1 4 hs16_pm_v0
+hq16_pm_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq16_pm_v0
+hl16_pm_v0    8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_POSITIONS=lattice SR_SEEDOFFSET=1166  -- examples/equilibrium.jl 0.6 2 100 1 4 hl16_pm_v0
+hs54_pm_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=1154  -- examples/equilibrium.jl 0.6 2 100 1 4 hs54_pm_v0
+hq54_pm_v0   16  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_HMC_TAUJIT=0.5 SR_HMC_DTFAC=0.35  -- examples/hmc_positions.jl 0.6 2 300 0 hq54_pm_v0
+hl54_pm_v0    8  SPH_RENORM=sscheme SPH_POSITIONAL=1 SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_POSITIONS=lattice SR_SEEDOFFSET=1204  -- examples/equilibrium.jl 0.6 2 100 1 4 hl54_pm_v0
