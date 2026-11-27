@@ -220,43 +220,17 @@ function viscous_rate_bound(params::SimParams, eos::AbstractEOS, Trel::Float64)
     return 4 * (κb_s / Trel) * c_d / params.h^2       # (the bond length h_ψ was h; bond_h removed, focus_plan.tex Q5)
 end
 
+# The ideal step: the generalized leapfrog (hmc.jl, generalized_step!; implicit, symplectic and reversible for the
+# non-separable H; equilibrium_positions.tex).  It needs the n-scheme (hamiltonian = :energy, volume = :number).  The
+# drift–kick–drift leapfrog (SPH_IDEAL=particle) and the grid step (SPH_IDEAL=grid) were removed on 2026-11-27
+# (docs/focus_plan.tex, Q6; tag pre-prune).
 function leapfrog_step!(particles::Vector{Particle}, params::SimParams,
                          cl::CellList2D, dt::Float64, eos::AbstractEOS,
                          dotm::Vector{SVector{2,Float64}})
-    params.ideal === :generalized && return generalized_step!(particles, params, cl, dt, eos, dotm)   # hmc.jl
-    # Störmer–Verlet / position Verlet (DKD) — 2nd-order symplectic:
-    #
-    #   x^{n+1/2} = x^n      + (dt/2) v(x^n,       m^n      )
-    #   m^{n+1}   = m^n      +  dt    F(x^{n+1/2},  m^n      )
-    #   x^{n+1}   = x^{n+1/2}+ (dt/2) v(x^{n+1/2},  m^{n+1}  )
-
-    #Step 1: half-drift  x^n → x^{n+1/2}
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    update_velocities!(particles, params, cl)
-    Threads.@threads for a in eachindex(particles)
-        particles[a].x += (dt/2) * particles[a].dotx
-    end
-    wrap_positions!(particles, params.L)
-    rebuild_cell_list!(cl, particles)
-
-    # Step 2: full kick  m^n → m^{n+1}  evaluated at x^{n+1/2}
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    hamiltonian_force!(dotm, particles, params, cl)
-    Threads.@threads for a in eachindex(particles)
-        particles[a].m += dt * dotm[a]
-    end
-
-    # Step 3: half-drift  x^{n+1/2} → x^{n+1}  with updated M^{n+1}
-    smooth_to_particles!(particles, params, cl)
-    update_thermodynamics!(particles, eos)
-    update_velocities!(particles, params, cl)
-    Threads.@threads for a in eachindex(particles)
-        particles[a].x += (dt/2) * particles[a].dotx
-    end
-    wrap_positions!(particles, params.L)
-    rebuild_cell_list!(cl, particles)
+    params.hamiltonian === :energy && params.volume === :number ||
+        error("leapfrog_step!: the generalized leapfrog needs hamiltonian = :energy and volume = :number (the drift–kick–drift " *
+              "leapfrog of the other schemes was removed on 2026-11-27, docs/focus_plan.tex Q6; tag pre-prune)")
+    return generalized_step!(particles, params, cl, dt, eos, dotm)   # hmc.jl
 end
 
 # ── Visualization ─────────────────────────────────────────────────────────────

@@ -76,7 +76,7 @@ end
 
 println("Shear wave: h=$H_ h/a=$HA L=$L n=$NW η/s=$ETA amp=$AMP tend=$TEND decay times")
 runs = Dict{Tuple{Symbol,Float64},Any}()
-const HAMS = Symbol.(split(get(ENV, "SW_HAMS", "energy,energy_n"), ","))   # smoothed: its viscous step was removed (docs/focus_plan.tex, Q3)
+const HAMS = Symbol.(split(get(ENV, "SW_HAMS", "energy_n"), ","))   # the n-scheme only (docs/focus_plan.tex, Q3, Q6)
 for ham in HAMS, η in (ETA, 0.0)
     runs[(ham, η)] = run_shear(ham, η)
 end

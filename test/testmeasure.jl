@@ -1,8 +1,8 @@
 # testmeasure.jl — the integration measure, Liouville (docs/equilibrium_positions.tex, Appendix A):
 #   1. the vote entropy is S_a − ln T_a, T_a = ∂e_a/∂s_a the bare temperature (finite differences); flat_weight is S_a;
-#   2. the default ideal step: the generalized leapfrog in 2D with the energy Hamiltonian, else :particle;
 #   4. a stochastic step runs and leaves the true entropies S_a(e_a, m_a) in the particles.
-# (Test 3 compared the Einstein and the Liouville starts; the Einstein measure was removed on 2026-11-27, docs/focus_plan.tex Q2.)
+# (Test 3 compared the Einstein and the Liouville starts, test 2 the defaults of the measure and the ideal step: both options were
+# removed on 2026-11-27, docs/focus_plan.tex Q2, Q6.)
 using StaticArrays, LinearAlgebra, Printf, Random, Statistics
 haskey(ENV, "SPH_RENORM") || (ENV["SPH_RENORM"] = "0")   # tree level (split, the default, is tested in testsplit.jl): set before src/load.jl
 include(joinpath(@__DIR__, "..", "src", "load.jl"))
@@ -17,14 +17,6 @@ S = particle_entropy(e, m, V, eos);  δ = 1e-6
 T = 2δ / (particle_entropy(e + δ, m, V, eos) - particle_entropy(e - δ, m, V, eos))     # ∂e/∂s at fixed m, V
 check(abs(vote_entropy(e, m, V, eos) - (S - log(T))) < 1e-8, @sprintf("S − ln T: %.10f vs %.10f", vote_entropy(e, m, V, eos), S - log(T)))
 check(flat_weight(e, m, V, eos) == S, "flat_weight (the proposal of the HMC heat bath): the entropy itself")
-
-println("2. default")
-p0, _, _, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 3e4, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex))
-check(p0.ideal === :generalized, "SimParams.ideal defaults to :generalized in 2D with the energy Hamiltonian (since 2026-11-15)")
-p1 = withenv("SPH_HAMILTONIAN" => "smoothed") do
-    quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 3e4, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex))[1]
-end
-check(p1.ideal === :particle, "with the smoothed Hamiltonian: :particle")
 
 println("4. a stochastic step")
 let

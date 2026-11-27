@@ -303,6 +303,5 @@ function check_sscheme(params)
     params.volume === :number && params.hamiltonian === :energy ||
         error("SPH_RENORM=sscheme needs hamiltonian = :energy and volume = :number" * hint)
     params.phys_dim == 2 || error("SPH_RENORM=sscheme: implemented for d = 2" * hint)
-    params.ideal === :grid && error("SPH_RENORM=sscheme is not available with the grid step (SPH_IDEAL=grid)" * hint)
     return nothing
 end

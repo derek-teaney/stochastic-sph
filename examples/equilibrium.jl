@@ -53,18 +53,17 @@ const KERNEL = setting("SPH_KERNEL", "wc2")
 # SR_JITTER=j: displace each lattice site uniformly by up to ±j·a/2 in x and y (j ≳ 3: random
 # positions), then rescale the s_a so that the smoothed entropy density is uniform again.
 const JITTER = setting("SR_JITTER", 0.0)
-# SR_POSITIONS: where the particles start.  Default (since 2026-11-15) hmc, except with SPH_IDEAL=grid (the grid is the
-# lattice), where it is lattice.  SR_POSITIONS=lattice: on the hexagonal lattice (the default before 2026-11-15; for tests,
+# SR_POSITIONS: where the particles start.  Default (since 2026-11-15) hmc.  SR_POSITIONS=lattice: on the hexagonal lattice (the default before 2026-11-15; for tests,
 # and at large s_a).
 # SR_POSITIONS=poisson: the particles start at N independent uniform positions in the box (a Poisson
 # arrangement) instead of on the hexagonal lattice; then, as for the jitter, the s_a and m_a
-# are rescaled so that the smoothed densities are uniform.  Not with SPH_IDEAL=grid (the grid is the lattice).
+# are rescaled so that the smoothed densities are uniform.
 # SR_POSITIONS=hmc: the positions are first brought to equilibrium by hybrid Monte Carlo from the lattice (src/hmc.jl,
 # docs/equilibrium_positions.tex) at the β^μ of the run (at rest or boosted): SR_HMC_N updates (default 200) with
 # trajectories of length up to SR_HMC_TAU (default L/c_s, the time sound takes to cross the box) and δt = SR_HMC_DTFAC
 # (default 0.35) times the acoustic step; then the present start (SR_START) at the sampled positions, and the run.  The
 # defaults are those of campaign hbya (2026-11-15); before, 40 updates, δt factor 0.5 and a fixed τ.
-const POSITIONS = setting("SR_POSITIONS", setting("SPH_IDEAL", :generalized) === :grid ? :lattice : :hmc)
+const POSITIONS = setting("SR_POSITIONS", :hmc)
 POSITIONS in (:lattice, :poisson, :hmc) || error("SR_POSITIONS must be lattice, poisson or hmc")
 const HMC_N     = setting("SR_HMC_N", 200)
 const HMC_TAU   = setting("SR_HMC_TAU", 0.0)                 # 0: L/c_s
@@ -91,13 +90,6 @@ BATH in (:nominal, :totals) || error("SR_BATH must be nominal or totals")
 # the settings of the stochastic step (src/stochastic.jl); the rest are its defaults
 stoch_opts(params) = StochOptions(params)
 const DTFAC  = setting("SR_DTFAC", 1.0)             # Δt / default (time-step tests)
-# SPH_IDEAL=grid (SimParams.ideal): the ideal step on the fixed lattice (kick, drift and return; docs/gridstep.tex,
-# src/grid.jl) in place of the leapfrog.  (Was SR_GRID=1 until 2026-11-13; that name now stops the run.)  The particles never move; the stochastic step is the
-# same, at fixed positions.  Its diagnostics are recorded (grid_dST, grid_hkm, grid_hke), and the static spectra of
-# all N lattice modes, Σ_records δU_k δU_k† / N with U = (ε, M_x, M_y) the site densities (src/grid.jl, GridFFT),
-# summed after t = 5: grid_Ck_re, grid_Ck_im (3×3×N_x×N_y), grid_Cn (the number of records), grid_kmin (2×N_x×N_y).
-setting("SR_GRID", false) && error("SR_GRID was renamed: use SPH_IDEAL=grid (a SimParams option, recorded in [sim])")
-const GRID   = setting("SPH_IDEAL", :generalized) === :grid    # as SimParams decides (params.ideal)
 
 # With SPH_HASTINGS (inverse_moment.tex, stage 2): the log ratios of the proposals, recorded as hast_lq_{stress,resid}_{mean,rms}.
 # Without it nothing is written, so the output of the other runs is unchanged.
@@ -118,16 +110,8 @@ function run_meta(params, st, n, wall, complete, eos)
      acc = st.acc .* (st.nsteps / max(n, 1)), guards = guards(), wall = wall, rec_every = RECN, khmax = KHMAX,
      monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(),
      boost = BOOST, gamma = GAMMA, record_E = RECORD_E,
-     grid = GRID, grid_stats = haskey(st, :gstats) ? grid_summary(st.gstats) : NamedTuple(),
      tag = TAG, start = string(START), jitter = JITTER, novisc = NOVISC, dtfac = DTFAC, noham = NOHAM, kernel = KERNEL, hamiltonian = string(params.hamiltonian), volume = string(params.volume), commit = COMMIT, julia = string(VERSION), threads = Threads.nthreads())
 end
-
-# the series and static spectra of the grid runs for the .h5 (nothing for the particle step, whose files
-# are unchanged)
-grid_series(st, gF) = (gF === nothing || !haskey(st, :gCk)) ? NamedTuple() :
-    (grid_dST = st.grid_dST, grid_hkm = st.grid_hkm, grid_hke = st.grid_hke,
-     grid_Ck_re = real.(st.gCk), grid_Ck_im = imag.(st.gCk), grid_Cn = [st.gCn[]],
-     grid_kmin = [gF.kmin[i, j][c] for c in 1:2, i in 1:gF.Nx, j in 1:gF.Ny], grid_V = [st.gstencil.V])
 
 relspread(it) = (v = collect(it); m = sum(v) / length(v); sqrt(sum(abs2, v ./ m .- 1) / length(v)))
 
@@ -140,12 +124,11 @@ function runinfo(base, params, eos, st, n, complete)
         run = (driver = "equilibrium.jl", tag = TAG, seed = st.seed, args = ARGS),
         params, eos, opts = NOVISC ? nothing : stoch_opts(params),
         driver = (L = LBOX, h_over_a = HA, t_end = TEND, nreal = NREAL, rec_every = RECN, khmax = KHMAX,
-                  srel0 = SREL0, grid = GRID, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * SREL0 * params.vol,
+                  srel0 = SREL0, boost = BOOST, gamma = GAMMA, record_E = RECORD_E, s_a = GAMMA * SREL0 * params.vol,
                   dv = 1 / sqrt(SREL0 * params.vol), dt = st.dt, dt_mode = "viscous", dt_factor = 0.5 * DTFAC,
                   nsteps = st.nsteps),
         start = haskey(st, :start) ? st.start : (type = string(START),),
         outcome = merge((steps_done = n, complete = complete, wall_s = st.wall), res,
-                        haskey(st, :gstats) ? (grid = grid_summary(st.gstats), grid_checks = st.gchecks) : NamedTuple(),
                         (monitor = haskey(st, :mon) ? monitor_summary(st.mon) : NamedTuple(), guards = guards())))
 end
 
@@ -174,7 +157,6 @@ function one_realization(seed)
         params, ps, cl, eos = setup_ic(HKER, HA, eos, (x, y) -> GAMMA * SREL0, (x, y) -> SVector(Mx0, 0.0);
                                        L=LBOX, lattice=:hex, jitter=JITTER, seed=1000seed + 4)
         if POSITIONS === :poisson
-            params.ideal === :grid && error("SR_POSITIONS=poisson is not possible with SPH_IDEAL=grid")
             prng = Xoshiro(1000seed + 5)
             for q in ps;  q.x = SVector(rand(prng) * params.L[1], rand(prng) * params.L[2]);  end
             rebuild_cell_list!(cl, ps);  thermalize!(ps, params, cl, eos)
@@ -199,7 +181,6 @@ function one_realization(seed)
         hmcinfo = NamedTuple()
         bath = BATH === :nominal ? (GAMMA / Trel0, SVector(GAMMA * BOOST / Trel0, 0.0)) : nothing
         if POSITIONS === :hmc                    # equilibrium positions by hybrid Monte Carlo at the β^μ of the run
-            params.ideal === :grid && error("SR_POSITIONS=hmc is not possible with SPH_IDEAL=grid")
             r0 = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000seed + 6), bath)
             tg = HMCTarget(r0.β0, r0.β, params.vol, eos)
             dtH = HMC_DTFAC * compute_dt(ps, params, eos; mode = :ideal)
@@ -216,10 +197,6 @@ function one_realization(seed)
         start = merge(initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3), bath), hmcinfo, (bath = string(BATH),))
         dt = DTFAC * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
         nsteps = ceil(Int, TEND / dt)
-        GRID == (params.ideal === :grid) || error("equilibrium.jl: SPH_IDEAL and SimParams.ideal disagree")
-        gstencil = GRID ? GridStencil(ps, params, cl) : nothing
-        gchecks = GRID ? grid_checks(gstencil, params, eos, dt) : NamedTuple()
-        GRID && print_grid_checks(gchecks)
         H0 = (smooth_to_particles!(ps, params, cl); update_thermodynamics!(ps, eos); sum(q.H for q in ps))
         reset_guards!();  SSCHEME && reset_sscheme_counts!()
         x0 = [q.x for q in ps]
@@ -230,8 +207,6 @@ function one_realization(seed)
               Ht = Float64[], KE = Float64[], sspr = Float64[], Vspr = Float64[],
               acc_s = Float64[], acc_r = Float64[], grej_s = Float64[], grej_r = Float64[], vmax = Float64[], acc = zeros(2), n = 0, nsteps = nsteps, dt = dt,
               H0 = H0, V = V, w = w, T = T, Trel = Trel, wall = 0.0, guards = guards(),
-              gstencil = gstencil, gchecks = gchecks, gstats = GridStats(),
-              grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[],
               start = merge((lattice = "hex", positions = string(POSITIONS), jitter = JITTER, srel0 = SREL0, boost = BOOST, gamma = GAMMA,
                              S_lab = GAMMA * SREL0, M0 = [Mx0, 0.0], s_a = GAMMA * SREL0 * params.vol,
                              T_rel_uniform = Trel, w_uniform = w, T_rel_rest = Trel0, w_rest = w0,
@@ -251,26 +226,9 @@ function one_realization(seed)
     st.n == 0 && runinfo(base, params, eos, st, 0, false)
     win = zeros(4)                                   # acceptances and guard fractions since the last record
     N = params.N;  cache = StochCache()                              # reused arrays of the stochastic step
-    haskey(st, :gstats) || (st = merge(st, (gstencil = nothing, gchecks = NamedTuple(), gstats = GridStats(),
-                                            grid_dST = Float64[], grid_hkm = Float64[], grid_hke = Float64[])))
-    gsc = GRID ? GridScratch(N) : nothing;  gfail = false
-    gF = GRID ? GridFFT(ps, params) : nothing
-    if GRID && !haskey(st, :gCk)
-        st = merge(st, (gCk = zeros(ComplexF64, 3, 3, gF.Nx, gF.Ny), gCn = Ref(0)))
-    end
-    if GRID                                          # warm start of the Newton solves of the grid step
-        for a in 1:N;  gsc.er[a] = ps[a].e;  end
-    end
     t0 = time();  tchk = time()
     for n in st.n+1:nsteps
-        if GRID
-            if grid_step!(ps, st.gstencil, dt, eos, gsc, st.gstats; n) > 0
-                @printf("seed %d: grid step failed (no state) at step %d: %s\n", seed, n, st.gstats.first_fail)
-                gfail = true;  break
-            end
-        else
-            NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
-        end
+        NOHAM || leapfrog_step!(ps, params, cl, dt, eos, dotm)
         if !NOVISC
             a = stochastic_step!(ps, params, cl, n == nsteps ? dt / 2 : dt, eos, opts; rng, rngs, flip=isodd(n), cache)
             acc .+= (a.stress, a.resid) ./ nsteps
@@ -279,21 +237,9 @@ function one_realization(seed)
             observe_step!(mon, a)
         end
         if n % RECN == 0
-            (NOVISC || NOHAM || GRID) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
-            if GRID                                  # entropy made by the return; power at kh > 1
-                push!(st.grid_dST, st.gstats.sum_dS_T)
-                push!(st.grid_hkm, grid_highk_fraction(ps, params, [q.m for q in ps]))
-                push!(st.grid_hke, grid_highk_fraction(ps, params, [q.H for q in ps]))
-                if n * dt > 5.0                      # static spectra of all lattice modes
-                    Ua = [SVector(q.H, q.m[1], q.m[2]) / q.V for q in ps];  Ub = sum(Ua) / N
-                    Uk = [grid_fft(gF, [u[c] - Ub[c] for u in Ua]) for c in 1:3]
-                    for c1 in 1:3, c2 in 1:3;  @views st.gCk[c1, c2, :, :] .+= Uk[c1] .* conj.(Uk[c2]) ./ N;  end
-                    st.gCn[] += 1
-                end
-            end
+            (NOVISC || NOHAM) && (smooth_to_particles!(ps, params, cl);  update_thermodynamics!(ps, eos))  # H below needs it
             u = record!(prec, ps, n * dt; cl)                             # pair separation, Bragg peak, g(r), ψ6, N_k
-            GRID ? record_grid!(rec, gF, ps, n * dt, eos) :                # Fourier modes: the lattice FFT,
-                   record!(rec, ps, n * dt, eos; u)                        # or direct sums (unwrapped u)
+            record!(rec, ps, n * dt, eos; u)                               # Fourier modes, direct sums (unwrapped u)
             push!(Ht, sum(q.H for q in ps) / H0 - 1)       # smoothed state is current
             SSCHEME && isnan(Ht[end]) && @printf("seed %d: a particle without a state at t = %.4f (sscheme_faillog: %d)\n", seed, n * dt, length(sscheme_faillog()))
             if JITTER > 0 || POSITIONS in (:poisson, :hmc)                  # unequal volumes: the mean flow is V_a M̄,
@@ -322,19 +268,17 @@ function one_realization(seed)
         if n < nsteps && (stop || time() - tchk > 60CHKMIN)
             wall = st.wall + time() - t0
             save_checkpoint(chk, merge(st, (n = n, wall = wall, guards = guards(), ssref = SS_REF[])))
-            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
+            write_equilibrium_h5(base * ".h5", run_meta(params, st, n, wall, false, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), hastings_series(st, HAST)))
             runinfo(base, params, eos, merge(st, (wall = wall,)), n, false)
             tchk = time()
             stop && (@printf("seed %d: stopped after step %d (SR_STOP_AFTER)\n", seed, n);  return)
         end
     end
     wall = st.wall + time() - t0
-    ndone = gfail ? (st.gstats.steps) : nsteps
-    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, !gfail, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), grid_series(st, gF), hastings_series(st, HAST)))
-    runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, !gfail)
+    ndone = nsteps
+    write_equilibrium_h5(base * ".h5", run_meta(params, st, ndone, wall, true, eos), rec, Ht, KE; prec, extra = merge((; sspr, Vspr, acc_s, acc_r, grej_s, grej_r, vmax), hastings_series(st, HAST)))
+    runinfo(base, params, eos, merge(st, (wall = wall,)), ndone, true)
     rm(chk; force = true)
-    GRID && (g = grid_summary(st.gstats);  @printf("seed %d: grid ΣΔH_step/H %+.2e  ΣΔS_T/S %+.2e (Σ|ΔS_T|/S %.2e)  max|v|Δt/a %.3f  max|∇·v|Δt %.2e  roundtrip %.1e  ΔP %.1e  fails %d\n",
-                                         seed, g.sum_dH_over_H, g.sum_dS_T_over_S, g.sum_absdS_T_over_S, g.disp_max, g.div_max, g.roundtrip_max, g.dP_max, g.eos_fail))
     print_summary(mon; label = "seed $seed")
     SSCHEME && !isempty(sscheme_faillog()) && serialize(base * "_ssfail.jls", collect(sscheme_faillog()))   # diagnosis of the states without a Hamiltonian
     @printf("seed %d: N=%d dt=%.2e steps=%d %.0f s  acc=(%.3f, %.3f)  KE/eq=%.3f  ΔH/H=%+.2e  guards=%s\n",

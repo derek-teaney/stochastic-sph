@@ -27,7 +27,6 @@ const VOTE  = length(ARGS) > 4 ? Symbol(ARGS[5]) : :star                  # :sta
 VOTE === :star || error("stability.jl: the bond vote was removed (docs/focus_plan.tex, Q1; tag pre-prune); use star")
 const DTF   = length(ARGS) > 5 ? parse(Float64, ARGS[6]) : 1.0           # Δt / default
 const RECSPLIT = length(ARGS) > 6 && ARGS[7] == "split"                    # record the energy split (not SPLIT: that is the library's flag of SPH_RENORM=split, sph.jl)
-setting("SPH_IDEAL", :generalized) === :grid && error("stability.jl: SPH_IDEAL=grid is not supported yet (equilibrium.jl only)")
 const ENERGYH = default_hamiltonian() === :energy                    # H = Σ e_a (energystep.tex); as SimParams decides
 const ETAS  = setting("SR_ETAS", 0.2)                # η/s
 const SREL0 = setting("SR_SREL0", 1e6)               # s_rel,0: the rest-frame entropy density (sets s_a; was SR_S0)

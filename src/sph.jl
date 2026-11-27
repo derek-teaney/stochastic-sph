@@ -26,7 +26,6 @@ mutable struct SimParams{K<:AbstractKernel}
     kernel  :: K                   # WendlandC2_2D(), C4, C6 (SPH_KERNEL)
     hamiltonian :: Symbol          # :smoothed (default) or :energy — see below
     volume      :: Symbol          # :entropy (default) or :number, with :energy — see below
-    ideal       :: Symbol          # :generalized (default in 2D), :particle or :grid — see below
 end
 
 # The viscous step is the inverse-moment step (inverse_moment.tex; viscous.jl, stochastic.jl), with the Hastings correction of the
@@ -45,14 +44,8 @@ end
 #   of the weights s, so the back map of the stochastic step at fixed positions conserves
 #   H exactly (volume_n.tex).  Stored as S_smooth = s_a n_a, so V_a = s_a/S_smooth either
 #   way.  Default from SPH_VOLUME, else :number with :energy (:entropy with :smoothed).
-# ideal: the ideal step.  :particle is the drift–kick–drift Hamiltonian leapfrog of the moving particles
-#   (ideal.jl); :grid is the step on the fixed lattice — kick, drift and return (gridstep.tex,
-#   grid.jl): the particles stay on the sites of the hexagonal lattice, which needs lattice = :hex,
-#   hamiltonian = :energy and volume = :number.  :generalized is the moving particles with the generalized
-#   leapfrog (hmc.jl: implicit, symplectic and reversible for the non-separable H; equilibrium_positions.tex),
-#   hamiltonian = :energy and volume = :number, about 3× the cost of :particle.  Default from SPH_IDEAL, else
-#   default_ideal: :generalized where it applies (2D, hamiltonian = :energy, volume = :number; since 2026-11-15), else :particle.
-#   SPH_IDEAL=particle gives the earlier default (needed to reproduce runs before that date).
+# The ideal step is the generalized leapfrog (ideal.jl, leapfrog_step!; hmc.jl), which needs the n-scheme.  The drift–kick–drift
+#   leapfrog and the grid step (SPH_IDEAL) were removed on 2026-11-27 (docs/focus_plan.tex, Q6; tag pre-prune).
 # The measure of the stochastic step and of hybrid Monte Carlo is the Liouville measure (equilibrium_positions.tex, Appendix A):
 #   flat in the entropy, the measure the Hamiltonian ideal step preserves (s_a the adiabatic invariant): the votes, the heat bath
 #   and the equilibrium start weight a state by S_a − ln T_a.  It needs hamiltonian = :energy (check_stochastic_dims).  The
@@ -92,14 +85,11 @@ const V2MAX = 1 - 1 / GAMMA_MAX^2
 # the velocity with |v|² capped at V2MAX (the same vector, unchanged, below the cap)
 cap_velocity(v::SVector{2,Float64}) = (v2 = dot(v, v);  v2 <= V2MAX ? v : v * sqrt(V2MAX / v2))
 
-# The ideal step when none is given (2026-11-15): the generalized leapfrog where it applies (2D, the n-scheme), else :particle.
-default_ideal(hamiltonian, volume) = hamiltonian === :energy && volume === :number ? :generalized : :particle
 default_hamiltonian() = setting("SPH_HAMILTONIAN", :energy)
 
 function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=default_phys_dim(), lattice=:square,
                    hamiltonian=default_hamiltonian(),
-                   volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy),
-                   ideal=setting("SPH_IDEAL", default_ideal(hamiltonian, volume)))
+                   volume=setting("SPH_VOLUME", hamiltonian === :energy ? :number : :entropy))
     a = h / ha_ratio
     if lattice == :hex
         dy = a * sqrt(3) / 2
@@ -131,15 +121,9 @@ function SimParams(Lx_t::Real, Ly_t::Real, h, ha_ratio; seed=42, phys_dim=defaul
     volume === :number && hamiltonian !== :energy &&
         error("volume = :number needs hamiltonian = :energy (volume_n.tex)")
     volume === :number && @printf("SimParams: volume = number, V_a = 1/n_a (volume_n.tex)\n")
-    ideal in (:particle, :grid, :generalized) || error("ideal must be :particle, :grid or :generalized, got $ideal")
-    ideal === :generalized && (hamiltonian === :energy && volume === :number ||
-        error("ideal = :generalized needs hamiltonian = :energy and volume = :number (hmc.jl)"))
-    ideal === :generalized && @printf("SimParams: ideal = generalized, the generalized leapfrog (hmc.jl)\n")
-    ideal === :grid && (lattice === :hex && hamiltonian === :energy && volume === :number ||
-        error("ideal = :grid needs the hexagonal lattice in 2D, hamiltonian = :energy and volume = :number (gridstep.tex)"))
-    ideal === :grid && @printf("SimParams: ideal = grid, the step on the fixed lattice (gridstep.tex)\n")
+    hamiltonian === :energy && volume === :number && @printf("SimParams: ideal = generalized, the generalized leapfrog (hmc.jl)\n")
     hamiltonian === :energy && @printf("SimParams: measure = liouville, flat in the entropy (S_a − ln T_a in the votes)\n")
-    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, hamiltonian, volume, ideal)
+    sp = SimParams(L, a, h, N, vol, seed, phys_dim, lattice, kernel, hamiltonian, volume)
     check_split(sp)                               # SPH_RENORM=split: the schemes it supports and V̄, before any map is used (renorm_split.jl)
     check_sscheme(sp)                             # SPH_RENORM=sscheme: the schemes it supports (sscheme.jl)
     sp

@@ -142,7 +142,7 @@ function hmc_update!(ps, params, cl, eos, tg::HMCTarget, rng; nsteps::Int = 10, 
     return (accepted = acc, dH = (H1 - H0) / H0, dlnpi = dlnπ, heatbath = hb, iters = its / nsteps)
 end
 
-# The ideal step with the generalized leapfrog (SimParams.ideal = :generalized, SPH_IDEAL=generalized): one step of
+# The ideal step with the generalized leapfrog (the only ideal step, ideal.jl leapfrog_step!): one step of
 # generalized_leapfrog!, the implicit half steps iterated to GLF_TOL (SPH_GLF_TOL, default 1e-10: second order and
 # reversible to that accuracy).  Called by leapfrog_step!; dotm is the force buffer.
 const GLF_TOL = setting("SPH_GLF_TOL", 1e-10)
