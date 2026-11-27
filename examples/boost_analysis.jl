@@ -225,8 +225,8 @@ function useries(rec, i)
     Mx = kh[1] .* ML .- kh[2] .* MT;  My = kh[2] .* ML .+ kh[1] .* MT
     (E, Mx, My)
 end
-function corr_run(rec, i, NV)
-    t = rec.t;  dtr = t[2] - t[1];  stride = max(1, round(Int, DTS / dtr));  i0 = findfirst(>=(T0BURN), t)
+function corr_run(rec, i, NV; stride = nothing)
+    t = rec.t;  dtr = t[2] - t[1];  stride = something(stride, max(1, round(Int, DTS / dtr)));  i0 = findfirst(>=(T0BURN), t)
     sel = i0:stride:length(t);  us = [x[sel] for x in useries(rec, i)];  n = length(sel)
     nl = min(round(Int, TAUMAX / (stride * dtr)), n ÷ 2)
     C = zeros(ComplexF64, 3, 3, nl + 1)
@@ -236,6 +236,22 @@ function corr_run(rec, i, NV)
         C[a, b, l+1] = s / (n - l) / NV
     end
     (C, collect(0:nl) .* stride .* dtr)
+end
+
+# C(τ) on the uniform lag grid of spacing δ (from 0), at the lags τs: cubic (Catmull–Rom) interpolation in τ, elementwise
+function interp_lags(C, δ, τs)
+    n = size(C, 3);  out = zeros(ComplexF64, size(C, 1), size(C, 2), length(τs))
+    for (k, τ) in enumerate(τs)
+        u = τ / δ;  i = clamp(floor(Int, u), 1, n - 3);  s = u - i       # C[:, :, i+1] is at lag i δ; points i−1 … i+2
+        w = (-s * (1 - s)^2 / 2, (2 - 5s^2 + 3s^3) / 2, s * (1 + 4s - 3s^2) / 2, -s^2 * (1 - s) / 2)
+        if u < 1                                                          # the first interval: points 0, 1, 2 (quadratic)
+            s = u;  w2 = ((1 - s) * (2 - s) / 2, s * (2 - s), s * (s - 1) / 2)
+            out[:, :, k] = w2[1] .* C[:, :, 1] .+ w2[2] .* C[:, :, 2] .+ w2[3] .* C[:, :, 3]
+        else
+            out[:, :, k] = w[1] .* C[:, :, i] .+ w[2] .* C[:, :, i+1] .+ w[3] .* C[:, :, i+2] .+ w[4] .* C[:, :, i+3]
+        end
+    end
+    out
 end
 
 function unwrap(p)
@@ -261,9 +277,23 @@ for (run, dirs, v, col) in SETS
     iperp = sort([i for i in eachindex(ks) if abs(ks[i][1]) < 1e-9 && ks[i][2] > 0], by = i -> ks[i][2])
     C = Dict{Tuple{Symbol,Int},Any}()
     for (dir, idx) in ((:par, ipar), (:perp, iperp)), (j, i) in enumerate(idx[1:min(3, end)])
-        per = [corr_run(r.rec, i, NV) for r in rs];  nl = minimum(size(p[1], 3) for p in per)
+        per = [corr_run(r.rec, i, NV) for r in rs]
+        # The runs of a set may have different time steps (the step is set at the start of each run), hence different lag spacings.
+        # All runs go on the grid of the most common spacing; a run with another spacing is correlated at every record and put on
+        # that grid by cubic interpolation.  (Before 2026-11-26 the grid of the first run was used for all, which compressed or
+        # stretched the time axis of every run with another step.)
+        sp = [p[2][2] for p in per];  Δ = argmax(x -> count(y -> abs(y - x) < 1e-9 * x, sp), sp)
+        same = [abs(x - Δ) < 1e-9 * Δ for x in sp]
+        j == 1 && dir === :par && !all(same) &&
+            println("  $run: $(count(!, same)) of $(length(rs)) runs with another lag spacing, interpolated onto Δτ = $(round(Δ, sigdigits = 4))")
+        for r in findall(!, same)
+            Cf, τf = corr_run(rs[r].rec, i, NV; stride = 1)
+            nl = floor(Int, (τf[end] - τf[2]) / Δ)
+            per[r] = (interp_lags(Cf, τf[2] - τf[1], (0:nl) .* Δ), collect(0:nl) .* Δ)
+        end
+        nl = minimum(size(p[1], 3) for p in per)
         Cs = [p[1][:, :, 1:nl] for p in per]
-        C[(dir, j)] = (C = mean_(Cs), Cs = Cs, τ = per[1][2][1:nl], k = ks[i])
+        C[(dir, j)] = (C = mean_(Cs), Cs = Cs, τ = collect(0:nl-1) .* Δ, k = ks[i])
     end
     vreq = get(m, :boost, v);  abs(vreq - v) < 1e-9 || error("$run: SETS says v = $v, the runs were made with SR_BOOST = $vreq")
     sts = [measured_state(f) for f in fs]

@@ -1213,3 +1213,14 @@ note in `docs/` with the tables and figures.
   The owner prunes on the laptop after merging sscheme-measure into main. Also remove SPH_RENORM=1 (owner: not consistent with one loop; = measure form with beta = b, Delta^H = 0, no N ln(gamma V), no
   sound term); SPH_RENORM=0 (tree level) stays.
   Details: docs/sscheme_plan.tex, sec:prune. No campaign pending; the non-conformal beta run (5-7 nh) waits for the choice of beta.
+
+## Analysis bug: runs with different time steps (2026-11-26)
+- examples/boost_analysis.jl averaged the runs of a set on the lag grid of the FIRST run; runs whose step differs (the step is set at the start of
+  each run; common at s_a <= 16) were put on a wrong time axis. The "36% fast sound" of S-scheme+omega at s_a = 16 at rest (hastings_compare) was
+  this: its first run (r501, dt 0.0053) had lag spacing 0.0424 against 0.0566 for 14 of 16 runs, ratio 1.33. FIX: all runs on the grid of the
+  most common spacing, others correlated at every record and interpolated (cubic); sets with one step unchanged.
+- Redone: CMP16, XCMP16 (split_dynamics.tex sec:lagfix, tab:cmpsound, tab:xsound). Sound at rest S-scheme+omega 1.360 -> 1.0173(18), split+omega
+  1.010(22) -> 1.0184(23), exact+omega 1.0178 -> 1.0234(22); shear damping at s_a = 16 4.0-7.6 -> 3.8-6.2 (over-damping stays).
+- NOT yet redone, affected: hastings_bath s_a = 16 (3-5 of 16 runs per set; earlier sections of split_dynamics.tex) and campaign hastings
+  (s_a = 4, 12, 16; nearly every run its own step; docs/inverse_moment.tex stage 2 and hastings_low). s_a >= 54 sets have one step.
+
