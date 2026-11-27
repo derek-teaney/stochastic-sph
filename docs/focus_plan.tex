@@ -354,7 +354,10 @@ the regression's smoothed entries went in Q2, not Q7.  The proposal of the HMC h
 until Q9, as planned.
 
 \paragraph{Q3--Q8} (\texttt{15aeb7d}, \texttt{2843434}, \texttt{10a4084}, \texttt{e6d2074}, \texttt{68d29c3}, \texttt{4d6e300}).  Gated
-together at the head of Q8 (62103676).  Decisions: the one-row case of \texttt{neighbor\_range} stays (a 2D box less than $4h$ high
+together at the head of Q8 (62103676): unit, physics, load pass; the regression bit-identical to \texttt{pre-prune} (\texttt{step.jl};
+the equilibrium driver at the tree level and at the defaults, split with the HMC start, at rest and $v_0=0.6$; the stability driver);
+the unit logs differ only where the tests changed with the removed options (and the count of settings, a wall time), and the deleted
+tests are reported as only in \texttt{pre-prune}.  Decisions: the one-row case of \texttt{neighbor\_range} stays (a 2D box less than $4h$ high
 needs it); \nolinkurl{test/testdissipative.jl} moved to \texttt{:moment} (the continuum $K$ of linear fields, the exact fit, the finite
 differences: all hold to roundoff), \nolinkurl{test/testcommonkernel.jl}, \nolinkurl{test/testparticle_sweep.jl},
 \nolinkurl{test/testkappa.jl}, \nolinkurl{test/testgridfft.jl}, \nolinkurl{test/testchangerep.jl} deleted with their paths;
