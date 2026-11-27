@@ -1252,3 +1252,11 @@ note in `docs/` with the tables and figures.
   (2026-11-23): stability.jl runs at the default, i.e. only the smoke timings and dH/H of 'split' in the entries of 2026-11-23 above
   (stability.jl t = 20); no campaign, no note; the regression runs the tree level.  No other script redefines a library constant (checked).
 
+- BUG (found in P7, 2026-11-26): a resumed equilibrium.jl run was not bit-identical with omega on (testcheckpoint: trajectories differ from
+  record 21, the resume point).  The resume path skipped what SimParams normally does (check_split/check_sscheme: split's V-bar, omega's h)
+  and did not save the S-scheme's reference state.  Fixed in d819789 (constants set on resume; SS_REF saved as ssref and restored).
+  Debug 62075417 ($SCRATCH/sph/tests/ckdiag): split+omega and S-scheme measure c_s^2 = 1/4 resumed runs bit-identical in every trajectory
+  dataset; only acc_s/acc_r and hast_lq_* differ, as with omega off and before the fix (per-interval statistics, not checked).
+  testcheckpoint, testrunrecord pass.  Runs resumed before d819789 with omega on: none (omega was off by default until P4c).
+- P7 (interactive 62073121): every Hamiltonian that stays bit-identical P1 -> head (split omega 0/1; S-scheme measure c_s^2 = 1/2, 1/4
+  omega 0/1, b_rho = b; exact omega 0/1; tree; rest and boost), only hast_lq_* differ (thread order).  Full suite at the head: debug 62079209.
