@@ -69,7 +69,7 @@ representation & the particle variables only & the change of representation, the
 stochastic step & single vote, $\lambda=1$; Hastings on or off & votes \texttt{:bonds}, \texttt{:even}; $\lambda=\infty$; \texttt{residual}, \texttt{shift} \\
 dimension & simulation in 2D; $d=2$ or 3 & the 1D path \\
 start & \texttt{cold}, \texttt{hot}, \texttt{hmc} & \texttt{thermal}, \texttt{SR\_BATH=totals}, Poisson positions \\
-renormalization & tree level, split, S-scheme & (unchanged here) \\
+renormalization & tree level, split (may remain the default), S-scheme & (unchanged here) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -104,8 +104,8 @@ The rules of \nolinkurl{CLAUDE.md} apply.  In addition:
   also does something that stays is changed to the path that stays.  Campaign files are not edited: they are the record of what was run.
 \item \emph{Running campaigns.}  The stages change the checkpoint format (Q14 at the latest).  Before the branch is merged, check that no
   campaign is still running or may need to resume from a checkpoint of the old code.
-\item \emph{The S-scheme work} touches the same files.  \ask{} the owner before starting whether it continues in parallel; if it does, merge
-  \texttt{main} into \texttt{focus} at each stage boundary rather than in the middle of a stage.
+\item \emph{The S-scheme work} is paused until after this plan (owner, 2026-11-27): the kernels C4, C6 and the non-conformal run of
+  the S-scheme come after the restructure (\Sect{sec:after}).  \texttt{focus} runs without merges from \texttt{main}.
 \item \emph{Budget.}  Tests and smoke runs in \texttt{-q debug} or an interactive node.  The only campaign of this plan is the check of Q9;
   \ask{} with its estimate.
 \item \emph{Check-ins.}  Stop at the points marked \ask{} and whenever a gate fails.  Record each stage in \Sect{sec:results} (what was removed,
@@ -296,7 +296,11 @@ Gate: bit-identical data against the end of Q13 for the same settings.
 
 Not part of the plan, recorded so that they are not lost:
 \begin{itemize}
-\item The kernels C4 and C6: tabulate the positional counterterm for them, so that they run with \texttt{SPH\_POSITIONAL=1}.
+\item The kernels C4 and C6: tabulate the positional counterterm for them, so that they run with \texttt{SPH\_POSITIONAL=1}.  Then the comparison of the kernels (C2 against C4).
+\item The non-conformal run of the S-scheme: split with $\omega$, the measure form at $b_\rho=b$ and at $b_\rho=D/2+1$ (about 5--7 node-hours;
+  \nolinkurl{docs/sscheme_plan.tex}, sec:beta), after the choice of $b_\rho$ and of the reference state off the conformal point, and a pass of
+  the tests of the S-scheme and of $\omega$ at $c_s^2=1/3$.
+\item Split stays (owner, 2026-11-27): it may remain the default.
 \item The round trip $S_{\rm smooth}=s_a n_a$ and the fields of \texttt{Particle} that the removed paths used (\texttt{M\_smooth} as a smoothed
   field, \texttt{Teff}, \texttt{F\_over\_S}, \texttt{dotx}, $\Delta s$, $\Delta m$): a later change of the struct, not bit-identical.
 \item The tuning of hybrid Monte Carlo (\texttt{nmh}, \texttt{widen}, the tolerances) into the record.
