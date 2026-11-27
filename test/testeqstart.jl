@@ -1,7 +1,8 @@
 # testeqstart.jl — the equilibrium start with energy fluctuations (docs/eqstart.tex,
 # equilibrium_init! in src/measure.jl).
 #
-#   A. One particle: the sampler against direct quadrature of exp[S_a(e,m) − β⁰e + β·m],
+#   A. One particle: the sampler against direct quadrature of its target exp[S_a(e,m) − ln T_a − β⁰e + β·m] (the Liouville
+#      measure; exp[S_a − β⁰e + β·m] until the Einstein measure was removed, docs/focus_plan.tex Q2),
 #      at rest and moving, at small and large entropy per particle; the most probable
 #      state is stationary.
 #   B. A lattice with exact_totals = true: totals E, M exact; T and v recovered; spread over
@@ -40,7 +41,7 @@ function one_particle(ε̄, v, V; n = 40000, nq = 61, rng = Xoshiro(1))
     H = entropy_hessian(ē, m̄, V, eos, 0.02 * sqrt(ē * T));  Hn = SMatrix{3,3,Float64}(-H)
     C = inv(Matrix(Hn));  L = SMatrix{3,3,Float64}(cholesky(Symmetric(C)).L);  sd = sqrt.(diag(C))
     xs = [range(-7sd[i], 7sd[i], length = nq) for i in 1:3]
-    lp = [particle_entropy(ē + x, m̄ + SVector(y, z), V, eos) - β0 * x + β[1] * y for x in xs[1], y in xs[2], z in xs[3]]
+    lp = [vote_entropy(ē + x, m̄ + SVector(y, z), V, eos) - β0 * x + β[1] * y for x in xs[1], y in xs[2], z in xs[3]]
     wq = exp.(lp .- maximum(filter(isfinite, lp)));  wq[.!isfinite.(wq)] .= 0;  Z = sum(wq)
     X = [SVector(x, y, z) for x in xs[1], y in xs[2], z in xs[3]]
     μq = sum(wq .* X) / Z;  Cq = sum(wq .* [(x - μq) * (x - μq)' for x in X]) / Z
