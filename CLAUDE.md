@@ -6,71 +6,36 @@ the `.tex`).  Owner: D. Teaney.
 
 ## Where things are
 
-- `docs/plan.tex` — the current plan: speed, NERSC, measurements, next steps, status.
-- `docs/fullruns.tex` — what the full Hamiltonian stochastic runs found so far.
-- `docs/stochastic.tex` — the stochastic step (stress move, residual move, consensus vote,
-  checkerboard sweep, moving fluid).  `docs/changerep.tex`, `docs/bond_dissipation.tex`
-  — the deterministic step it builds on.
-- `src/` — library, loaded by `src/load.jl`: `sph.jl` (kernels, params, EOS), `celllist.jl`, `ideal.jl`
-  (Hamiltonian step), `pointwise.jl` (particle representation), `viscous.jl` (deterministic
-  viscous step), `stochastic.jl`, `grid.jl` (the ideal step on the fixed lattice, its lattice FFT and
-  bare propagator; `SPH_IDEAL=grid`, `docs/gridstep.tex`), `measure.jl`, …  Superseded code (two-level strain form, the
-  old particle sweep) in `src/legacy/`.
-- **The viscous step** (since 2026-11-15, branch `inverse-moment`): the default is the inverse-moment step,
-  `SPH_DISSIPATION=moment` (`docs/inverse_moment.tex`), with the Hastings correction of the stochastic step
-  (`SPH_HASTINGS`, on wherever it applies: moment, λ = 1, the single vote, 2D), and Lorentz factors capped at
-  `SPH_GAMMA_MAX=100`.  The faces carry the inverse bond moment (no Λ_a), the residual move is conditioned on zero
-  virial, and the coefficients are evaluated at each proposal with the ratio of proposal densities in the vote: the
-  stochastic step is in detailed balance across steps (without it the dynamics is 5–20% above HMC at s_a = 54–16).
-  To reproduce earlier runs: `SPH_DISSIPATION=common SPH_HASTINGS=0` (2026-11-14/15; `docs/commonkernel.tex`),
-  `SPH_DISSIPATION=particle` (before 2026-11-14).
-  `docs/commonkernel_comove.tex`: a comoving ideal step, planned, not implemented.
-- **Planned: focusing the code** (decided 2026-11-27, not started): `docs/focus_plan.tex` is the staged plan (Q0–Q15: tag
-  `pre-prune`; keep only the n-scheme, `:moment`, the generalized leapfrog and the Liouville measure; remove the 1D path and the grid
-  step; strict settings; the comments; the restructure of `examples/equilibrium.jl`).  `docs/code_review_notes.md` is the discussion
-  behind it.
-- **The renormalization program** (since 2026-11-26, branch `renorm-main`, to be merged into `main`): three Hamiltonians, each with
-  the positional counterterm ω (`SPH_POSITIONAL=1`, the default; `src/positional.jl`; Wendland C2 only, other kernels need
-  `SPH_POSITIONAL=0`):
-  - `SPH_RENORM=split` (the default; ω in the energy);
-  - `SPH_RENORM=sscheme`, renormalization by state counting (`src/sscheme.jl`; ω in the label), in two forms, `SPH_SSCHEME_FORM`:
-    `measure` (the default: b_ρ ln S_t in the measure of the labels, ρ(s) = e^s s^(−b_ρ)(1 − b_ρ/s) on s > b_ρ, `SPH_SSCHEME_BRHO`,
-    default D/2+1; any c_s²) and `exact` (the exact count of states of the particle as the label, flat measure, `src/sscheme_exact.jl`,
-    c_s² = 1/2 only);
-  - `SPH_RENORM=0`, the tree level.
-  Removed on 2026-11-26 (`docs/sscheme_plan.tex`, sec:prune; last commit with them 9846a6c): `SPH_RENORM=legendre`, `SPH_RENORM=1`
-  (the entropy shift) and `SPH_SSCHEME_FORM=full`; `SPH_SSCHEME_BETA` is renamed `SPH_SSCHEME_BRHO` (b_ρ: β is u^μ/T in the notes).
-  Each stops with a message.  Read `docs/sscheme_plan.tex` (the plan, the results, the decisions), `docs/renorm3.tex` (the theory,
-  concise), `docs/renorm2.tex` (derivations), `docs/split_dynamics.tex` (the dynamical comparisons).  `examples/sscheme_ref.py` is the
-  reference the unit tests take their values from (python3, mpmath); `examples/exact_count.py` makes the table of the exact form.
-- **The renormalization, the start and the inputs** (since 2026-11-23, branch `split`):
-  - `SPH_RENORM=split` is the default (Step 5: the label part of the one-loop counterterm in the measure, the rest in H;
-    `docs/renormalization_review.tex`, `docs/step5_plan.tex`, `src/renorm_split.jl`).  `SPH_RENORM=0` is the tree level (the default
-    before).  Split supports d = 2, the energy Hamiltonian with the number volume, the
-    Liouville measure, not the grid step; any other scheme stops with a message to set `SPH_RENORM=0`.  The S-scheme has the same requirements.  Tests of tree-level machinery
-    set `SPH_RENORM=0` themselves; the regression against `main` runs with `SPH_RENORM=0 SR_BATH=totals`.
-  - The start (`examples/equilibrium.jl`, `examples/hmc_positions.jl`): HMC and the equilibrium draw at the requested state,
-    β⁰ = γ/T_rel,0, β = γv/T_rel,0, T_rel,0 from the EOS at s_rel,0 (`SR_BATH=nominal`; `SR_BATH=totals` = before).
-  - The inputs (`docs/inputs.tex`): the rest-frame entropy density s_rel,0 is `SR_SREL0`; the lab one is S_0 = γ s_rel,0 and
-    s_a = S_0/n.  `SR_S0` is retired (a hard stop, `src/settings.jl`); old campaign files keep it as the record.
-    `SR_CS2`, `SR_ZETAS` (equilibrium.jl): c_s² and ζ/s (`SR_CS2=1/3 SR_ZETAS=(η/s)/3` = the stochastic step before the dimension fix).
-  - To reproduce runs before 2026-11-23: `SPH_RENORM=0 SR_BATH=totals` (and `SR_SREL0` for `SR_S0`).
-  - To reproduce split or S-scheme runs before 2026-11-26: `SPH_POSITIONAL=0` (ω was off by default; the campaign files since
-    2026-11-23 carry it).
-- **The ideal step, the measure and the equilibrium start** (since 2026-11-15, branch `new-defaults`): the defaults
-  are the generalized leapfrog (`SPH_IDEAL=generalized`, `src/hmc.jl`), the Liouville measure (`SPH_MEASURE=liouville`,
-  S_a − ln T_a in the votes; docs/equilibrium_positions.tex, Appendix A), both in 2D with the energy Hamiltonian, and in
-  `examples/equilibrium.jl` the hybrid Monte Carlo start of the positions (`SR_POSITIONS=hmc`, 200 updates,
-  `SR_HMC_TAUJIT=0.5`, `SR_HMC_DTFAC=0.35`).  To reproduce runs before that date: `SPH_IDEAL=particle SPH_MEASURE=einstein
-  SR_POSITIONS=lattice` (and the HMC settings 40, 0, 0.5 if `SR_POSITIONS=hmc` was set).  `SR_POSITIONS=lattice` remains
-  for tests and large s_a; `SPH_IDEAL=grid` starts on the lattice.
-- `examples/stability.jl` — energy/stability runs (uniform fluid, Hamiltonian
-  step on).  `examples/equilibrium.jl` — equilibrium ensembles for correlators.
-  Plotting scripts next to them.
-- `test/` — the test suite, run by `test/run.sh [unit|load|regress|all]` (`docs/codeplan.tex`).
-  After any change to `src/`: `test/run.sh all` — unit tests pass, every script loads, and the
-  regression against `main` is bit-identical unless a change to the numerics is intended.
-- `nersc/` — run-only environment, Slurm job array, campaign files, `nersc/README.md`.
+- **The code has one scheme** (since 2026-11-27, branch `focus`; `docs/focus_plan.tex`, its Results section, and
+  `docs/code_review_notes.md`): the n-scheme (H = Σ_a e_a, V_a = 1/n_a; `docs/volume_n.tex`), the generalized leapfrog
+  (`src/hmc.jl`), the inverse-moment viscous step with the Hastings correction (`docs/inverse_moment.tex`), the Liouville measure
+  (S_a − ln T_a in the votes), two dimensions (d = 2, or d = 3 for deterministic runs), the hexagonal lattice.  Everything else
+  (the smoothed Hamiltonian, the entropy volume, the DKD leapfrog, the grid step, the other dissipations, λ ≠ 1, the bond votes,
+  the Einstein measure, the change of representation, 1D, `src/legacy/`, the Poisson start, `SR_BATH=totals`) is in the tag
+  **`pre-prune`**; the settings that chose them stop with a message (`src/settings.jl`, `RETIRED_SETTINGS`).
+- **The renormalization**: `SPH_RENORM=split` (the default; `src/renorm_split.jl`), `sscheme` (`src/sscheme.jl`; forms `measure`
+  (default) and `exact`, `SPH_SSCHEME_FORM`; b_ρ `SPH_SSCHEME_BRHO`), `0` (the tree level).  The positional counterterm ω
+  (`SPH_POSITIONAL=1`, the default; `src/positional.jl`; Wendland C2 only).  Notes: `docs/sscheme_plan.tex`, `docs/renorm3.tex`,
+  `docs/renorm2.tex`, `docs/split_dynamics.tex`.  `examples/sscheme_ref.py`, `examples/exact_count.py`: the reference values.
+- **The inputs**: `src/settings.jl`, `SETTING_SPECS`, the table of every setting (`julia src/settings.jl --list`).  An unknown
+  `SR_*`/`SPH_*` name stops a run (with the nearest valid name), as does a bad value; the run record lists the settings set but
+  never read (`[unused]`).  s_rel,0 is `SR_SREL0`, the lab S = γ s_rel,0 (`docs/inputs.tex`).
+- **The start of a run**: `SR_START = cold | hot | hmc` (default hmc) at `target_state(s_rel,0, v, eos)` (`src/measure.jl`,
+  `src/run.jl`): hmc = the draw, then hybrid Monte Carlo at the requested β^μ.  hot = the draw shifted to the totals of the lattice,
+  cold = the lattice.
+- **A failed leapfrog step** is redone as half steps down to Δt/16 (counted: `guards().leapfrog_retries`); if it still fails the
+  run stops, saving the state (`<base>_leapfrog_fail.jls`) and marking the record failed.
+- `src/` — the library, loaded by `src/load.jl`: `settings.jl`, `sph.jl` (kernels, SimParams, EOS), `celllist.jl`, `ideal.jl`,
+  `pointwise.jl`, `positional.jl`, `renorm_split.jl`, `sscheme*.jl`, `viscous.jl`, `setup.jl`, `rng.jl`, `stochastic.jl`,
+  `measure.jl` (the start, the records, the correlators), `hmc.jl`, `monitor.jl`, `runinfo.jl` (the run record), `run.jl` (the
+  pieces of a run: the fluid, the start, `RunState`, the Strang loop).
+- `examples/equilibrium.jl` — the main driver (equilibrium ensembles for correlators): `RunConfig`, `RunState`, checkpoints.
+  `examples/stability.jl`, `hmc_positions.jl`, `eos_measure.jl`, … — other drivers; analysis and plotting scripts next to them.
+- `docs/stochastic.tex` — the stochastic step.  `docs/plan.tex`, `docs/fullruns.tex` — older plans and findings.
+- `test/` — the test suite, `test/run.sh [unit|physics|load|regress|all] [-r <ref>]` (`docs/codeplan.tex`).  After any change to
+  `src/`: `test/run.sh all` — unit tests pass, every script loads, and the regression against `<ref>` is bit-identical unless a change
+  to the numerics is intended.  `test/regress/astcmp.jl <ref>`: the code unchanged (for changes of comments only).
+- `nersc/` — run-only environment, Slurm job array, campaign files (the record of what was run: not edited), `nersc/README.md`.
 - **`nersc/LOG.md` — where things stand at NERSC: setup, lessons, campaigns and their job
   IDs.  Read it first; add to it when you submit or learn something.**
 

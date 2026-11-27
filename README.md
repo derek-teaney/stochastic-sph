@@ -40,20 +40,22 @@ These are working notes and will change.
 
 ```
 src/        library code; scripts include src/load.jl, which loads it in order
-  sph.jl          SimParams, Particle, equation of state + Newton solve, kernels, κ tensor
+  settings.jl     the table of every setting (julia src/settings.jl --list) and setting(name)
+  sph.jl          SimParams, Particle, equation of state + Newton solve, kernels
   celllist.jl     cell list and neighbour list
   ideal.jl        the ideal (Hamiltonian) step: smoothing, velocities, force, compute_dt, leapfrog
-  pointwise.jl    the particle representation: pointwise state, particle energies, back maps
-  viscous.jl      the deterministic viscous step: bond dissipation, viscous_step!, generic_step!
-  setup.jl        lattices (square / hex / 1D), initial conditions
+  pointwise.jl    the particle maps: particle energies and the inverse map
+  positional.jl   the positional counterterm ω
+  renorm_split.jl, sscheme.jl, sscheme_exact.jl   the renormalization (split, the S-scheme)
+  viscous.jl      the deterministic viscous step: the inverse-moment bond dissipation, viscous_step!, generic_step!
+  setup.jl        the hexagonal lattice, initial conditions
   rng.jl          per-particle random streams
   stochastic.jl   the stochastic step (stochastic_step!)
-  measure.jl      equilibrium start, Fourier modes, correlators, checkpoints, HDF5 output
+  measure.jl      the target state and the start, Fourier modes, correlators, checkpoints, HDF5 output
+  hmc.jl          hybrid Monte Carlo and the generalized leapfrog (the ideal step)
   monitor.jl      running statistics printed to the log
-  settings.jl     setting(name, default): every environment knob, noted for the run record
   runinfo.jl      the run record <run>.toml (every setting as used, provenance, outcome)
-  legacy/         superseded: the two-level strain form and the old particle sweep
-                  (include src/legacy/load.jl after src/load.jl)
+  run.jl          the pieces of a run: the fluid, the start, RunState (the checkpoint), the Strang loop
 test/       checks with pass/fail assertions (some also make plots)
 examples/   physics validation runs (sound waves, shear waves, Gaussian pulse,
             stochastic uniform background); write PNGs next to the script
@@ -75,47 +77,37 @@ julia --project test/teststochastic_guard.jl
 julia --project examples/testsound.jl
 ```
 
+### The scheme
+
+One scheme (since 2026-11-27; `docs/focus_plan.pdf`): the energy Hamiltonian with the number volume
+$V_a=1/n_a$, the generalized leapfrog, the inverse-moment viscous step with the Hastings correction of the
+stochastic step, the Liouville measure, two dimensions.  The renormalization is `SPH_RENORM` = `split`
+(default), `sscheme` or `0` (the tree level).  The options removed then (the smoothed Hamiltonian, the other
+dissipations, the drift–kick–drift and grid steps, the Einstein measure, 1D, …) are in the git tag
+`pre-prune`; the settings that chose them stop with a message.
+
+### Inputs
+
+Every setting is in the table of `src/settings.jl` (`julia src/settings.jl --list`).  A name not in it, or a
+bad value, stops the run.
+
 ### Initial state of the stochastic runs
 
-`examples/equilibrium.jl` and `examples/stability.jl` take
-`SR_START`:
+`examples/equilibrium.jl` takes `SR_START`, at the requested state (`target_state`, `src/measure.jl`):
 
-- `cold` — the uniform state at rest; the run thermalizes from it.
-- `eq` — energies and momenta drawn from the equilibrium at a global $\beta^\mu$ whose
-  averages are the totals, then shifted to them exactly; no thermalization step is
-  needed (`docs/eqstart.pdf`, `equilibrium_init!`; the default).
-- `thermal` — momenta only, at fixed particle energies (`thermal_init!`, used by the
-  first NERSC campaign).
+- `hmc` (default) — energies and momenta drawn at the requested $\beta^\mu$, then hybrid Monte Carlo of
+  the positions and momenta (`docs/equilibrium_positions.pdf`).
+- `hot` — the lattice, energies and momenta drawn at the requested $\beta^\mu$ and shifted to the totals of
+  the lattice (`docs/eqstart.pdf`); the default of `examples/stability.jl`.
+- `cold` — the lattice as set up; the run thermalizes from it.
 
 ### Dissipative function
 
-Three viscous steps are available, selected by `params.dissipation`:
-
-- `:particle` (default; formerly `:changerep`, still accepted) — the bond form evaluated in the particle
-  representation, with the gradient-corrected conversion map
-  (`docs/changerep.pdf`). Each particle's own momentum sets its thermodynamic
-  force, so short wavelengths are damped without the $R^2$ suppression of the
-  smoothing, while the smoothed energy $H$ is conserved as well as with the
-  smoothed forms.
-- `:bond` — the one-level bond form on the smoothed $\beta$
-  (`docs/bond_dissipation.pdf`). It has no null mode.
-- `:two_level` — the SPH gradient of $\beta$ at each particle, squared
-  (`docs/sph2.pdf`). Superseded by the bond form; in `src/legacy/`.
-
-Any script can be run with another form from the environment:
-
-```sh
-SPH_DISSIPATION=bond julia --project examples/testsound_viscous.jl
-```
-
-With its stronger damping of short wavelengths, `:particle` needs smaller time
-steps: `compute_dt(...; mode=:viscous)` bounds its fastest rate and shortens
-$\Delta t$ so that every mode decays monotonically in each viscous half step of
-`generic_step!` (0.67 of the previous viscous $\Delta t$ in 1D, 0.41 in 2D).
-
-The noise is the stochastic step `stochastic_step!` (`src/stochastic.jl`,
-`docs/stochastic.pdf`). The old particle sweep with the two-level form
-(`particle_sweep!`, `src/legacy/`) never worked and is kept only as a record.
+The inverse-moment bond form (`docs/inverse_moment.pdf`, `src/viscous.jl`): the resolved part of the
+dissipation through the least-squares gradient of $\beta$, the residual on the bonds.  `compute_dt(...;
+mode=:viscous)` bounds its fastest rate so that every mode decays monotonically in each viscous half step of
+`generic_step!`.  The noise is the stochastic step `stochastic_step!` (`src/stochastic.jl`,
+`docs/stochastic.pdf`).
 
 Scripts use plain `include`. To edit and re-run inside one REPL session, use
 [Revise](https://github.com/timholy/Revise.jl) from your global environment and
@@ -125,18 +117,18 @@ swap `include` for `includet`.
 
 Verified:
 
-- Kernel smoothing, cell-list neighbour search (against brute force), EOS solve, κ tensor.
+- Kernel smoothing, cell-list neighbour search (against brute force), EOS solve.
 - Ideal dynamics: sound-wave propagation, entropy and energy conservation.
 - Deterministic viscous dynamics: shear-wave and sound-wave decay rates against
   the analytic values.
 - Stochastic noise draw: covariance matches $2T\kappa^{ijlm}$ (Monte Carlo check).
-- Bond dissipative function: force equals $-\partial K/\partial\beta$, exact for
+- Inverse-moment dissipative function: force equals $-\partial K/\partial\beta$, the continuum $K$ of
   linear fields on jittered and moving lattices, no force from rigid rotations
-  (`test/testdissipative.jl`).
+  (`test/testdissipative.jl`, `test/testmoment.jl`).
 - Equation of state: thermodynamically consistent for a moving fluid
   (`test/testeos_consistency.jl`).
-- Particle-representation viscous step: rates, conversion map, gradient
-  correction, conservation (`test/testchangerep.jl`).
+- The start (`test/teststart.jl`), checkpoints (`test/testcheckpoint.jl`), a failed leapfrog step
+  (`test/testleapfrog_fail.jl`), the renormalization (`test/testsplit.jl`, `test/testsscheme*.jl`).
 
 In progress:
 

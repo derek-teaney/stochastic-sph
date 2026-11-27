@@ -81,6 +81,17 @@ sbatch --array=1-$N%64 -A <account> --export=ALL,SR_REPO=$R \
   `docs/plan.tex`, "Where the time goes".  At `h/a = 2`, `N = 672`: about 8 minutes per
   realization to `t = 100`; 2 cores are as fast as 8 (`nersc/LOG.md`).  Raise `#SBATCH -t` for bigger boxes.
 
+## Settings
+
+The table of every setting, with its default and meaning, is `SETTING_SPECS` in `src/settings.jl`:
+
+    julia src/settings.jl --list
+
+A campaign line with a name not in the table (a misspelling) or a bad value stops the task at once, with the nearest
+valid name.  A setting set but not read by the driver is listed in the run record's `[unused]` table.  Since
+2026-11-27 the code has one scheme (`docs/focus_plan.tex`); the settings of the removed options are retired (below)
+and the options themselves are in the git tag `pre-prune`.
+
 ## Retired settings
 
 A retired setting stops any run that sets it (`src/settings.jl`, `RETIRED_SETTINGS`), so that an old script or campaign
@@ -116,3 +127,8 @@ salloc -C cpu -q interactive -t 01:00:00 -c 16 -A <account>
 ```
 
 Do not run heavy computations on the login nodes.
+
+**Checkpoints (2026-11-27, docs/focus_plan.tex Q14).**  A checkpoint of `examples/equilibrium.jl` is now its `RunState`
+(`src/run.jl`).  Checkpoints written before (a NamedTuple) do not resume: the run stops with a message; resume such a run
+with the tag `focus-q11`, or remove the `.chk` and rerun.
+

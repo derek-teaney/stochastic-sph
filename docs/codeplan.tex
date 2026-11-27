@@ -27,6 +27,14 @@ changes the numerics; every step is checked bit for bit against the code before 
 
 \maketitle
 
+\paragraph{Status (2026-11-27).}  The code was since focused on one scheme (\file{docs/focus\_plan.tex}): the n-scheme, the
+generalized leapfrog, the inverse-moment viscous step, the Liouville measure, two dimensions; the inputs are a table
+(\file{src/settings.jl}, \file{SETTING\_SPECS}) that stops on unknown names and bad values; the start is \file{SR\_START} = cold, hot or
+hmc at the requested state; the main driver is built from \file{src/run.jl} (\file{RunState}, the checkpoint).  The options this plan
+kept reproducible by settings, and \file{src/legacy/}, are in the commit tagged \file{pre-prune}.  The regression of the test suite
+compares against a reference given with \file{-r}: \file{pre-prune} for the stages that kept the numbers, \file{focus-q11} after the
+stages that changed them.
+
 %=============================================================================
 \section{The rule: no change to the numerics}
 \label{sec:rule}
