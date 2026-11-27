@@ -69,15 +69,14 @@ end
 
 function run(kind, seed=1)
     eos = conformal_eos(default_phys_dim(); η_by_s = ETAS)
-    params, ps, cl, eos = setup_ic(0.05, HA, eos, (x, y) -> SREL0, (x, y) -> SVector(0.0, 0.0);
-                                   L=0.6, lattice=:hex)
-    N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
-    # the target state (src/measure.jl): the normalization of KE, 2(N−1) V w T, and the multipliers of the start
+    # the fluid at the target state at rest (src/run.jl, src/measure.jl): the normalization of KE, 2(N−1) V w T, the start
     tgt = target_state(SREL0, 0.0, eos)
+    params, ps, cl, eos, cold = setup_fluid(tgt, eos; h = 0.05, ha = HA, L = 0.6)
+    N = params.N;  rngs = make_phys_rng(N, 1000seed + 1);  rng = Xoshiro(1000seed + 2)
     p = ps[1];  V = p.V;  w = tgt.w0;  T = tgt.Trel0;  eq = N * V * w * T
     seed == 1 && @printf("%-7s h/a=%.1f η/s=%.2f s_a=%.1f  thermal |δv| per component=%.3f\n", kind, HA, ETAS, p.s, sqrt(T / (V * w)))
     initial_state!(ps, params, cl, eos, START; rng = Xoshiro(1000seed + 3),   # SR_START (default hot), at the target state
-                   bath = tgt.bath, totals = cold_totals(ps, params, cl, eos))
+                   bath = tgt.bath, totals = cold)
     dt = DTF * 0.5 * compute_dt(ps, params, eos; mode=:viscous)
     nsteps = ceil(Int, TEND / dt)
     Lx, Ly = params.L;  nmx = round(Int, Lx / params.a / 2);  nmy = round(Int, Ly / params.a / 2)

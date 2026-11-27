@@ -579,7 +579,7 @@ end
 # atomically (path.tmp, then renamed).  A restart from it continues bit-identically.
 # Julia serialization: read back with the same code version only (a run resumes with
 # the checkout it started from).
-function save_checkpoint(path::AbstractString, state::NamedTuple)
+function save_checkpoint(path::AbstractString, state)
     tmp = path * ".tmp"
     open(io -> serialize(io, state), tmp, "w")
     mv(tmp, path; force = true)

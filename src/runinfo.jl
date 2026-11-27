@@ -4,6 +4,7 @@
 # Generated from the values the code used, never typed in:
 #
 #   [run]         driver, tag, seed, command-line arguments
+#   [config]      the inputs of the driver, grouped (equilibrium.jl, RunConfig; optional)
 #   [sim]         every field of SimParams
 #   [eos]         every field of the equation of state
 #   [stochastic]  every field of StochOptions (absent if the run has no stochastic step)
@@ -57,11 +58,13 @@ function provenance()
 end
 
 function write_record(base::AbstractString; run = NamedTuple(), params = nothing, eos = nothing,
-                      opts = nothing, driver = NamedTuple(), start = NamedTuple(), outcome = NamedTuple())
+                      opts = nothing, driver = NamedTuple(), start = NamedTuple(), outcome = NamedTuple(),
+                      config = nothing)
     rec = Dict{String,Any}("run" => tomlval(run), "sim" => fields_table(params), "eos" => fields_table(eos),
                            "settings" => settings_table(), "unused" => unused_settings(), "driver" => tomlval(driver),
                            "start" => tomlval(start), "provenance" => provenance(), "outcome" => tomlval(outcome))
     opts === nothing || (rec["stochastic"] = fields_table(opts))
+    config === nothing || (rec["config"] = tomlval(config))   # the driver's inputs, grouped (equilibrium.jl RunConfig)
     open(io -> TOML.print(io, rec; sorted = true), base * ".toml.tmp", "w")
     mv(base * ".toml.tmp", base * ".toml"; force = true)
     return base * ".toml"

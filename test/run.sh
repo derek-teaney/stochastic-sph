@@ -109,7 +109,7 @@ if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
     # the starts (SR_START, focus_plan.tex Q9) hot and cold, and hmc when <ref> has it.  A <ref> before Q9 names the same starts
     # SR_POSITIONS=lattice SR_START=eq (hot) and SR_POSITIONS=lattice SR_START=cold (cold); its hmc start drew again after hybrid
     # Monte Carlo and had another proposal, so it is not compared.
-    oldref=false;  grep -q 'SR_POSITIONS' "$(drv "$W")" && oldref=true
+    oldref=false;  grep -q 'setting("SR_POSITIONS"' "$(drv "$W")" && oldref=true   # the read, not a mention in a comment
     starts="hot cold";  $oldref || starts="hot cold hmc"
     for cfg in tree default; do
         u="";  [ $cfg = default ] && u="-u SPH_RENORM"
