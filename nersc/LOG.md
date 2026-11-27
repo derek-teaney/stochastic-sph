@@ -1260,3 +1260,7 @@ note in `docs/` with the tables and figures.
   testcheckpoint, testrunrecord pass.  Runs resumed before d819789 with omega on: none (omega was off by default until P4c).
 - P7 (interactive 62073121): every Hamiltonian that stays bit-identical P1 -> head (split omega 0/1; S-scheme measure c_s^2 = 1/2, 1/4
   omega 0/1, b_rho = b; exact omega 0/1; tree; rest and boost), only hast_lq_* differ (thread order).  Full suite at the head: debug 62079209.
+- Full suite at d819789 (debug 62079209, timed out in the regression; the rest in 62080375; $SCRATCH/sph/tests/final): unit (32), physics (3),
+  load (95) pass; step.jl and the stability driver bit-identical to main 00064e7; equilibrium driver differs only in H, KE, Vspr, hast_lq_*
+  and the unit output only in round-off, timing, the settings count, src/renorm.jl -> positional.jl, testlegendre — all as at P1.
+  renorm-main is ready to merge (P8, on the owner's word).
