@@ -244,8 +244,13 @@ without jitter are bit-identical.  The tests that use jitter (\nolinkurl{test/te
 
 \subsection*{Q11. A failed step of the leapfrog}
 \texttt{generalized\_leapfrog!} returns $-1$ when it reaches a state without a Hamiltonian; hybrid Monte Carlo rejects the trajectory, but
-\texttt{generalized\_step!} ignores the return, so a run continues from that state.  \ask{} the owner what a run should do (stop with a
-diagnostic, or retry the step with a smaller $\Delta t$, or something else).  Numbers change only where a step fails.
+\texttt{generalized\_step!} ignores the return, so a run continues from that state.
+
+\emph{Decision (owner, 2026-11-27).}  On a failed step of the generalized leapfrog (a $-1$ return, or the implicit iterations not
+converging), restore $x$ and $m$ and redo the step as two half steps, recursively, down to $\Delta t/16$.  Count each retry in a new
+guard counter, reported by the monitor and in the record's \texttt{[outcome]}.  If the step still fails at $\Delta t/16$, save the state at
+the start of the step and the failing particles for diagnosis, mark the record failed with the reason, and stop with a nonzero exit.  The
+run must never continue from a state without a Hamiltonian.  Bit-identical when no step fails.
 
 \subsection*{Q12. Strict inputs}
 \begin{itemize}
