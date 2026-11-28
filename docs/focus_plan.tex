@@ -410,6 +410,7 @@ the owner.
 \paragraph{After Q15: \texttt{SR\_HMC\_SHIFT\_TOTALS} removed} (the owner, 2026-11-27).  The cold totals are those of the lattice, without
 the energy of the fluctuations, so they are not the totals of the target state: the shift moved the hmc start off the requested
 $\beta^\mu$.  The flag (check (iv) of Q9) and \texttt{shift\_to\_totals!} are gone; the name stops with a message.  The hmc start keeps
-the totals of its sample (canonical at the target).  The default never used the flag: the numbers are unchanged.
+the totals of its sample (canonical at the target).  The default never used the flag: gate 62131118 against \texttt{d2c4ca7}, every driver and \texttt{step.jl} bit-identical; the
+unit-test output differs only by the removed key and test (\texttt{testcheckpoint}, \texttt{testrunrecord}, \texttt{teststart}).
 
 \end{document}
