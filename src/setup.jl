@@ -1,45 +1,25 @@
-# Shared helpers for shear-wave test scripts.
+# setup.jl — the lattice and the initial conditions of test and example scripts.
 # Include after sph.jl and celllist.jl.
 
-# Regular NxN grid of particles with uniform s, zero M.
-# s_density is the entropy density; per-particle entropy = s_density * params.vol.
-# jitter ∈ [0,1]: each particle is displaced uniformly in [−jitter·a/2, jitter·a/2]² before
-# wrapping into [0,L).  jitter=0 (default) gives the exact lattice.
-function make_uniform_particles(params::SimParams, s_density; jitter=0.0)
-    Lx = params.L[1];  Ly = params.L[2]
-    Nx = round(Int, Lx / params.a)
-    Ny = round(Int, Ly / params.a)
-    vol    = params.vol
-    particles = Particle[]
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
-    for iy in 0:Ny-1, ix in 0:Nx-1
-        x0 = SVector((ix + 0.5) * params.a, (iy + 0.5) * params.a)
-        if jitter > 0.0
-            δ  = jitter * params.a * (SVector(rand(RNG), rand(RNG)) .- 0.5)
-            x0 = SVector(mod(x0[1] + δ[1], Lx), mod(x0[2] + δ[2], Ly))
-        end
-        push!(particles, Particle(x0, s_density * vol))
-    end
-    return particles
-end
-
-# Hexagonal close-packed lattice.  N_x columns (spacing a), N_y rows (spacing a√3/2).
-# Odd rows are offset by a/2 in x.  Geometry (N, vol, a) is already set by SimParams
-# constructor; this function only places the particles.
+# Hexagonal close-packed lattice: N_x columns (spacing a), N_y rows (spacing a√3/2), odd rows
+# offset by a/2 in x.
+#
+# The geometry (N, vol, a) is already set by the SimParams constructor; this function only
+# places the particles.  The jitter has its own random numbers, Xoshiro(params.seed).
 function make_hex_particles!(params::SimParams, s_density; jitter=0.0)
     Lx  = params.L[1];  Ly = params.L[2]
     a_x = params.a
     N_x = round(Int, Lx / a_x)
     N_y = round(Int, params.N / N_x)
     a_y = Ly / N_y
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
+    rng = Xoshiro(params.seed)        # the jitter's own random numbers
     particles = Particle[]
     for iy in 0:N_y-1
         x_off = (iy % 2 == 0) ? 0.0 : 0.5 * a_x
         for ix in 0:N_x-1
             x0 = SVector(mod(ix * a_x + x_off, Lx), (iy + 0.5) * a_y)
             if jitter > 0.0
-                δ  = jitter * a_x * (SVector(rand(RNG), rand(RNG)) .- 0.5)
+                δ  = jitter * a_x * (SVector(rand(rng), rand(rng)) .- 0.5)
                 x0 = SVector(mod(x0[1] + δ[1], Lx), mod(x0[2] + δ[2], Ly))
             end
             push!(particles, Particle(x0, s_density * params.vol))
@@ -48,27 +28,9 @@ function make_hex_particles!(params::SimParams, s_density; jitter=0.0)
     return particles
 end
 
-# Single row of N particles along x, all at y = a/2 (centre of the single cell row).
-# vol = a (1D), so per-particle entropy = s_density * a.
-function make_1d_particles!(params::SimParams, s_density; jitter=0.0)
-    a = params.a
-    N = params.N
-    jitter > 0.0 && Random.seed!(RNG, params.seed)
-    particles = Particle[]
-    for ix in 0:N-1
-        x0 = SVector((ix + 0.5) * a, 0.5 * a)
-        if jitter > 0.0
-            δx = jitter * a * (rand(RNG) - 0.5)
-            x0 = SVector(mod(x0[1] + δx, params.L[1]), x0[2])
-        end
-        push!(particles, Particle(x0, s_density * params.vol))
-    end
-    return particles
-end
-
 # Set initial conditions from continuous density fields.
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
-# Per-particle quantities are S_func(x,y)*vol and M_func(x,y)*vol respectively.
+# The particle values are S_func(x,y)*vol and M_func(x,y)*vol.
 # Pass nothing to leave that field unchanged.
 function set_ic!(particles, params::SimParams; S_func=nothing, M_func=nothing)
     vol = params.vol
@@ -85,11 +47,11 @@ function thermalize!(particles, params, cl, eos)
     update_velocities!(particles, params, cl)
 end
 
-# SPH kernel estimate of field(p) on a 1D slice through the box.
-# Formula: f̄(r) = Σ_a field(pa)·pa.s·W(|r - rₐ|, h) / Σ_a pa.s·W(|r - rₐ|, h)
+# SPH kernel estimate of field(p) on a line through the box:
+#   f̄(r) = Σ_a field(pa)·pa.s·W(|r - rₐ|, h) / Σ_a pa.s·W(|r - rₐ|, h)
 # dim=:x (default): vary x at fixed y = yslice (default L/2).
 # dim=:y          : vary y at fixed x = xslice (default L/2).
-# Returns (xs, fs) — caller is responsible for plotting, labels, and title.
+# Returns (xs, fs); the caller plots.
 function plot_slice(particles, params, cl;
                     field=p->p.s, dim=:x,
                     xslice=params.L[1]/2, yslice=params.L[2]/2, Ng=400)
@@ -126,24 +88,16 @@ function plot_slice(particles, params, cl;
 end
 
 # General setup: build params, particles, cl from smooth density fields.
-# eos must be constructed by the caller (allows S_func/M_func to close over eos quantities).
+# The caller constructs eos, so that S_func/M_func can close over it.
 # S_func(x,y) → entropy density S(x); M_func(x,y) → momentum density (SVector{2}).
 # Lattice kwargs: jitter, lattice.  Returns (params, particles, cl, eos).
 function setup_ic(h, ha_ratio, eos, S_func, M_func;
-                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, sim_dim=2, phys_dim=default_phys_dim(sim_dim), seed=42)
+                  L=nothing, Lx=1.0, Ly=1.0, jitter=0.0, lattice=:hex, phys_dim=default_phys_dim(), seed=42)
     if L !== nothing
         Lx = Float64(L); Ly = Float64(L)
     end
-    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, sim_dim, phys_dim, seed)
-    particles = if sim_dim == 1
-        make_1d_particles!(params, 1.0; jitter)
-    elseif lattice == :hex
-        make_hex_particles!(params, 1.0; jitter)
-    elseif lattice == :square
-        make_uniform_particles(params, 1.0; jitter)
-    else
-        error("Unknown lattice type: $lattice")
-    end
+    params    = SimParams(Lx, Ly, h, ha_ratio; lattice, phys_dim, seed)
+    particles = make_hex_particles!(params, 1.0; jitter)
     set_ic!(particles, params; S_func, M_func)
     cl = CellList2D(params.L, params.h, params.N)
     rebuild_cell_list!(cl, particles)

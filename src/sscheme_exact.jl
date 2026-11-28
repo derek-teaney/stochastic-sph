@@ -1,19 +1,35 @@
-# sscheme_exact.jl — the exact count of the single particle as the label, SPH_SSCHEME_FORM=exact (docs/sscheme_plan.tex, "The exact form").
+# sscheme_exact.jl — the exact count of the single particle as the label, SPH_SSCHEME_FORM=exact
+# (docs/sscheme_plan.tex, "The exact form").
 #
-# The label of the exact form is the exact number of states of the particle (renorm2.tex, "With momentum"; examples/exact_count.py),
-#   s = s_exact = ln G(e, |m|, V) − ln V − 1 = s_min + ln A + g(x, θ),   x = ln S_t,  θ the rapidity of the target,
-# with the flat Liouville measure e^s ds d²m d²x (no wall, no β ln S_t, no reference).  For the conformal fluid the label depends on the target
-# entropy and rapidity alone (the one-loop Δ does too: Δ = b ln S_t + ½ ln(1 − c_s²v²) + const, testsscheme.jl test 4), and on A only through ln A.
-# s_min = ln K(n/2) − 1 = ln(1/2π) − 1 is the floor: as S_t → 0 the count is that of one quantum, g → 0 as S_t³ and ∂s/∂e → 0 (T_a → ∞).
-# ℓ = ln g is tabulated by `python3 examples/exact_count.py dyntable` (src/tables/exact_lng_c05.csv, c_s² = 1/2 only) with its nodal derivatives
-# ℓ_x, ℓ_θ, ℓ_xθ, on x ∈ [ln 10⁻³, ln 10⁶] (the exact count to S_t = 600, S_1loop + c(a)/S_t + d(θ)/S_t² above, matched), θ ∈ [0, 6], and
-# interpolated here by bicubic Hermite polynomials (C¹: the forces are the derivatives of one Hamiltonian).  Outside: ℓ linear in x (below,
-# g ∝ S_t³ exactly; above, g ≈ S_t), θ clamped at 6 (γ > 200; ℓ_θ ≈ 10⁻⁴ there).  ℓ_θ = 0 at θ = 0 (the table is mirrored in θ).
+# The label is the exact number of states of the particle (renorm2.tex, "With momentum";
+# examples/exact_count.py),
+#   s = s_exact = ln G(e, |m|, V) − ln V − 1 = s_min + ln A + g(x, θ),
+#   x = ln S_t,  θ the rapidity of the target,
+# with the flat Liouville measure e^s ds d²m d²x (no wall, no b_ρ ln S_t, no reference).
 #
-# The state (sscheme.jl, sscheme_state) follows from G_x = ∂s/∂x and G_θ = ∂s/∂θ|_x (g's slopes, plus ω's: s → s + ω(S_t/n, V), G_x += ω_σ),
-# without the one-loop parts, so that no cancellation enters where g is small:
-#   y = (a G_x − v G_θ)/(a S_t),   z = (v G_x + G_θ)/S_t,   𝒟 = (1 + v²) y − v z,   T_a = T/𝒟,   v_a = (2 v y − z)/𝒟,   P_a V/T_a = G_x/n + ω_V,
-# the general relations of the S-scheme (𝒟 = 1 − (1 + v²) ε_p + v ε_∥, ε_p = Δ_p/(S_t a), ε_∥ = Δ_θ/S_t) with Δ = S_t − s.
+# For the conformal fluid the label depends on the target entropy and rapidity alone (the
+# one-loop Δ does too: Δ = b ln S_t + ½ ln(1 − c_s²v²) + const, testsscheme.jl test 4), and on
+# A only through ln A.
+#
+# s_min = ln K(n/2) − 1 = ln(1/2π) − 1 is the floor: as S_t → 0 the count is that of one
+# quantum, g → 0 as S_t³ and ∂s/∂e → 0 (T_a → ∞).
+#
+# ℓ = ln g is tabulated by `python3 examples/exact_count.py dyntable` (src/tables/exact_lng_c05.csv,
+# c_s² = 1/2 only) with its nodal derivatives ℓ_x, ℓ_θ, ℓ_xθ, on x ∈ [ln 10⁻³, ln 10⁶] (the exact
+# count to S_t = 600, S_1loop + c(a)/S_t + d(θ)/S_t² above, matched) and θ ∈ [0, 6].
+# It is interpolated here by bicubic Hermite polynomials (C¹: the forces are the derivatives of
+# one Hamiltonian).
+#
+# Outside the table: ℓ linear in x (below, g ∝ S_t³ exactly; above, g ≈ S_t), θ clamped at 6
+# (γ > 200; ℓ_θ ≈ 10⁻⁴ there).  ℓ_θ = 0 at θ = 0 (the table is mirrored in θ).
+#
+# The state (sscheme.jl, sscheme_state) follows from G_x = ∂s/∂x and G_θ = ∂s/∂θ|_x (g's slopes,
+# plus ω's: s → s + ω(S_t/n, V), G_x += ω_σ), without the one-loop parts, so that no
+# cancellation enters where g is small:
+#   y = (a G_x − v G_θ)/(a S_t),   z = (v G_x + G_θ)/S_t,   𝒟 = (1 + v²) y − v z,
+#   T_a = T/𝒟,   v_a = (2 v y − z)/𝒟,   P_a V/T_a = G_x/n + ω_V,
+# the general relations of the S-scheme (𝒟 = 1 − (1 + v²) ε_p + v ε_∥, ε_p = Δ_p/(S_t a),
+# ε_∥ = Δ_θ/S_t) with Δ = S_t − s.
 
 struct ExactTable
     x0 :: Float64;  dx :: Float64;  nx :: Int
@@ -91,7 +107,8 @@ function check_sscheme_exact(eos)
     return nothing
 end
 
-# the next order of the one-loop label, c(a) (renorm3.tex, appendix, eq. c; d = 2), and dc/da (for the tests: the rows above S_t = 600)
+# the next order of the one-loop label, c(a) (renorm3.tex, appendix, eq. c; d = 2), and dc/da
+# (for the tests: the rows above S_t = 600)
 function ssx_c2(q::Float64, a::Float64)
     l3 = 2q * (q - 1);  l4 = 2q * (q - 1) * (3q + 1)
     return -3 / 8 + l4 / (8a^2) - 5l3^2 / (24a^3), -l4 / (4a^3) + 5l3^2 / (8a^4)

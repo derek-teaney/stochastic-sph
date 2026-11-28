@@ -319,7 +319,8 @@ mode.
 \paragraph{A cold residual.}  The residual move need not satisfy detailed balance: the modes it acts on
 are lattice modes, which we want damped but do not need to fluctuate.  A parameter $\lambda\geq1$
 keeps its mean traction and lowers its noise to the temperature $T/\lambda$; $\lambda=1$ is detailed
-balance (the default), and $\lambda=\infty$ the deterministic residual step (\App{app:cold}).
+balance (the default), and $\lambda=\infty$ the deterministic residual step (\App{app:cold}).  The code has only $\lambda=1$ since
+2026-11-27 (\nolinkurl{docs/focus_plan.tex}, Q1); $\lambda\neq1$ is in the commit tagged \texttt{pre-prune}.
 
 %=============================================================================
 \section{The sweep}
@@ -424,8 +425,8 @@ one or two leftover cells; the color of a cell is the pair of its two colors.
 \end{minipage}}
 \medskip
 
-\noindent The single vote is \texttt{vote=:star}, the default.  The factorized votes of \App{app:bonds} are
-\texttt{vote=:bonds} and \texttt{vote=:even}.
+\noindent The code has only the single vote since 2026-11-27 (\nolinkurl{docs/focus_plan.tex}, Q1).  The factorized votes of
+\App{app:bonds}, \texttt{vote=:bonds} and \texttt{vote=:even}, are in the commit tagged \texttt{pre-prune}.
 
 %=============================================================================
 \section{Tests on a frozen lattice}
@@ -734,8 +735,8 @@ $\partial H/\partial s_a=(T_{\rm rel})_a/\gamma_a$.  In 1D the rest-frame forms 
 \section{A factorized vote}
 \label{app:bonds}
 
-The code also has a factorized vote, one factor per bond (\texttt{vote=:bonds}), and its
-simpler variant (\texttt{vote=:even}).  Both are exact.  Both reject more often than the single vote
+The code had a factorized vote, one factor per bond (\texttt{vote=:bonds}), and its
+simpler variant (\texttt{vote=:even}); they were removed on 2026-11-27 and are in the commit tagged \texttt{pre-prune}.  Both are exact.  Both reject more often than the single vote
 \Eq{Pstar}, and neither changes the mean drift, so they are not used.  They apply to the stress
 and the residual move alike, with the traction $\pf_{ab}$ of the stress move or $\vec p_{ab}$ of the residual
 move; we write $\pf_{ab}$.

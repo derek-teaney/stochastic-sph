@@ -33,8 +33,6 @@ const CFL  = envf("SW_CFL", 0.2)
 const S0   = 2.0
 
 function run_shear(ham::Symbol, η_by_s::Float64)
-    ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)
-    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "entropy"
     eos = conformal_eos(default_phys_dim(); η_by_s = η_by_s)
     params, ps, cl, eos = setup_ic(H_, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L)
     k = 2π * NW / params.L[1]
@@ -76,7 +74,7 @@ end
 
 println("Shear wave: h=$H_ h/a=$HA L=$L n=$NW η/s=$ETA amp=$AMP tend=$TEND decay times")
 runs = Dict{Tuple{Symbol,Float64},Any}()
-const HAMS = Symbol.(split(get(ENV, "SW_HAMS", "smoothed,energy,energy_n"), ","))
+const HAMS = Symbol.(split(get(ENV, "SW_HAMS", "energy_n"), ","))   # the n-scheme only (docs/focus_plan.tex, Q3, Q6)
 for ham in HAMS, η in (ETA, 0.0)
     runs[(ham, η)] = run_shear(ham, η)
 end

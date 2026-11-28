@@ -30,7 +30,7 @@ let eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
     P0 = sum(p.m for p in ps);  reset_guards!()
     dt = 50 * compute_dt(ps, params, eos; mode=:viscous)
     for n in 1:5
-        stochastic_step!(ps, params, cl, dt, eos; rng, rngs, vote=:bonds)
+        stochastic_step!(ps, params, cl, dt, eos; rng, rngs)
     end
     g = guards()
     vmax = maximum(norm(eos_from_energy(particle_energy(p, eos) / (p.s / p.S_smooth),
@@ -48,7 +48,7 @@ let eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
     N = params.N;  rngs = make_phys_rng(N, 5);  rng = Xoshiro(6);  reset_guards!()
     dt = 0.5 * compute_dt(ps, params, eos; mode=:viscous);  dotm = zeros(SVector{2,Float64}, N)
     for n in 1:20
-        stochastic_step!(ps, params, cl, dt / 2, eos; rng, rngs, vote=:star)
+        stochastic_step!(ps, params, cl, dt / 2, eos; rng, rngs)
         leapfrog_step!(ps, params, cl, dt, eos, dotm)
     end
     @printf("  guard events: %s\n", guards())

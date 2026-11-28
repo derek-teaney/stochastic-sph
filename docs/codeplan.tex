@@ -27,6 +27,14 @@ changes the numerics; every step is checked bit for bit against the code before 
 
 \maketitle
 
+\paragraph{Status (2026-11-27).}  The code was since focused on one scheme (\file{docs/focus\_plan.tex}): the n-scheme, the
+generalized leapfrog, the inverse-moment viscous step, the Liouville measure, two dimensions; the inputs are a table
+(\file{src/settings.jl}, \file{SETTING\_SPECS}) that stops on unknown names and bad values; the start is \file{SR\_START} = cold, hot or
+hmc at the requested state; the main driver is built from \file{src/run.jl} (\file{RunState}, the checkpoint).  The options this plan
+kept reproducible by settings, and \file{src/legacy/}, are in the commit tagged \file{pre-prune}.  The regression of the test suite
+compares against a reference given with \file{-r}: \file{pre-prune} for the stages that kept the numbers, \file{focus-q11} after the
+stages that changed them.
+
 %=============================================================================
 \section{The rule: no change to the numerics}
 \label{sec:rule}
@@ -104,7 +112,8 @@ exact and gradient-corrected back maps), and \file{dissipative\_step!} becomes
 campaign files use it) as an alias of the new name, \file{particle}.  \file{docs/changerep.tex}
 keeps its name: it is the record of that study.
 
-\paragraph{Superseded code} moves to \file{src/legacy/}: the old particle sweep with the
+\paragraph{Superseded code} moved to \file{src/legacy/}, which was deleted on 2026-11-27 (\file{docs/focus\_plan.tex}, Q7; the
+commit tagged \file{pre-prune} has it): the old particle sweep with the
 noise tensor (the present \file{src/stochastic.jl}, whose name the new step takes) and the
 two-level (strain) dissipation (\file{two\_level\_dissipative\_force!}, \file{compute\_strain},
 \file{kappa\_dot\_strain}, \file{SPH\_DISSIPATION=two\_level}).  The bond dissipation and
@@ -228,7 +237,7 @@ figure of the notes can be made again (\file{git checkout notes-2026-11}; one fi
 \begin{enumerate}
 \item \file{src/load.jl}, and the scripts use it.
 \item The library split by content (\file{ideal.jl}, \file{pointwise.jl}, \file{viscous.jl}), and the new names of the deterministic step.
-\item \file{src/legacy/}: the superseded code and its users.
+\item \file{src/legacy/}: the superseded code and its users (deleted on 2026-11-27; tag \file{pre-prune}).
 \item The rename to ``stochastic'' (code, drivers, notes).
 \item The kernel names.
 \item \file{test/run.sh} and the regression from a worktree (needed before the steps that

@@ -1,0 +1,10 @@
+# Campaign `q9_start` (2026-11-27, branch focus; docs/focus_plan.tex Q9, check (iii)): the hmc start of focus (the draw, hybrid Monte Carlo
+# with the Liouville proposal, no redraw) against that of pre-prune (hybrid Monte Carlo with the flat proposal, then the redraw SR_START=eq),
+# each at the defaults (split, omega).  The same lines run on both checkouts (SR_REPO = the tag pre-prune or focus at the Q9 commit),
+# output q9_old / q9_new.  The layout of hastings_compare: L = 0.6, N = 672, h/a = 2, eta/s = 0.2, c_s^2 = 1/2, s_a = 16, 54, v0 = 0, 0.8,
+# t = 100, 16 seeds, the same seed offsets.  Compared: KE/eq, <H>, the static spectra of M and S, the transverse and longitudinal
+# correlators.  64 tasks of 4 cores per side.
+q9_16_v0     16  SR_SREL0=2.956e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=500  -- examples/equilibrium.jl 0.6 2 100 1 4 q9_16_v0
+q9_16_v0.8   16  SR_SREL0=2.956e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=600  -- examples/equilibrium.jl 0.6 2 100 1 4 q9_16_v0.8
+q9_54_v0     16  SR_SREL0=9.977e4 SR_BOOST=0 SR_RECORD_E=1 SR_KHMAX=1.6 SR_SEEDOFFSET=700  -- examples/equilibrium.jl 0.6 2 100 1 4 q9_54_v0
+q9_54_v0.8   16  SR_SREL0=9.977e4 SR_BOOST=0.8 SR_DTFAC=0.6 SR_KHMAX=1.6 SR_SEEDOFFSET=800  -- examples/equilibrium.jl 0.6 2 100 1 4 q9_54_v0.8

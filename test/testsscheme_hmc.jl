@@ -21,7 +21,7 @@ for c2 in CS2S
     lab_ok = SS_MEASURE ? all(abs(q.s - q.St) < 0.02 for q in ps) : all(q.s < q.St for q in ps)
     check(eSt < 1e-12 && eV < 2e-3 && lab_ok,
           @sprintf("c_s² = %.2f (form %s): set-up S_t = S V to %.0e, V = 1/n_a within %.0e of the nominal volume (the lattice sum of W), label s = %.4f, S_t = %.4f", c2, SS_FORM, eSt, eV, ps[1].s, ps[1].St))
-    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1)))
+    r = quiet(() -> equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1), bath = target_state(Sd, 0.0, eos).bath))
     Hnow() = hmc_measure!(ps, params, cl, eos)[1]
     dt0 = 0.5 * compute_dt(ps, params, eos; mode = :ideal)
     x0 = [q.x for q in ps];  m0 = [q.m for q in ps]

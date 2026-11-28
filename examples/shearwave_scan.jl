@@ -27,7 +27,7 @@ envf(k, d) = parse(Float64, get(ENV, k, string(d)))
 envl(k, d) = split(get(ENV, k, d), ",")
 KERNELS = Symbol.(envl("SC_KERNELS", "C2,C4,C6"))
 HAS     = parse.(Float64, envl("SC_HA", "2,2.5,3,4"))
-HAMS    = Symbol.(envl("SC_HAMS", "smoothed,energy"))
+HAMS    = Symbol.(envl("SC_HAMS", "energy_n"))   # the n-scheme only (docs/focus_plan.tex, Q3, Q6)
 const H_   = envf("SC_H", 0.05)
 const L    = envf("SC_L", 1.0)
 const LY   = envf("SC_LY", 6.0) * H_
@@ -37,8 +37,7 @@ const CFL  = envf("SC_CFL", 0.2)
 const S0   = 2.0
 
 function run_ideal(kern::Symbol, ha::Float64, ham::Symbol, AMP::Float64)
-    ENV["SPH_HAMILTONIAN"] = ham === :energy_n ? "energy" : string(ham)     # energy_n: SPH_VOLUME=number
-    ENV["SPH_VOLUME"] = ham === :energy_n ? "number" : "entropy";  ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
+    ENV["SPH_KERNEL"] = lowercase("w" * string(kern))
     eos = conformal_eos(default_phys_dim(); η_by_s = 0.0)
     params, ps, cl, eos = setup_ic(H_, ha, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0);
                                    Lx = L, Ly = LY)

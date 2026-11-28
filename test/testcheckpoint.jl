@@ -11,7 +11,7 @@ drv  = joinpath(@__DIR__, "..", "examples", "equilibrium.jl")
 jl   = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) -t 2`
 args = ["0.6", "2.0", "1.0", "1", "2", "ck"]                     # L h/a t_end nreal rec_every tag
 root = mktempdir(get(ENV, "SR_TMP", tempdir()));  A = joinpath(root, "A");  B = joinpath(root, "B")
-drive(out; env...) = run(addenv(`$jl $drv $args`, "SR_OUTDIR" => out, "SR_START" => "eq",
+drive(out; env...) = run(addenv(`$jl $drv $args`, "SR_OUTDIR" => out, "SR_START" => "hmc",
                                 [string(k) => string(v) for (k, v) in env]...))
 
 println("uninterrupted run");  drive(A)

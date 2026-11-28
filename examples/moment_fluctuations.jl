@@ -36,8 +36,7 @@ function moment_stats(ps, params, cl)
             Q += w * (r * r' - rm^2 / 2 * I);  s += w^2 * rm^4 / 2
         end
         trQ2[a] = tr(Q * Q);  self[a] = s
-        ψ0b = Float64[];  ψout, _ = bond_weights_comoving(nb, ps, FLAT2, FLAT2, params.bond_h; ψ0 = ψ0b, ψfun)
-        fb[a] = ψout === ψ0b                                              # Λ_a fell back to 0
+        # (the fraction of stars where the correction Λ_a of :common fell back went with :common, docs/focus_plan.tex Q5: reported 0)
     end
     return mean(trQ2), mean(self), mean(fb)
 end
@@ -72,13 +71,13 @@ for sa in SAS
     pr, q, c, _ = redirect_stdout(devnull) do
         setup_ic(H, HA, eos, (x, y) -> sa / vol, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex)
     end
-    start = redirect_stdout(devnull) do;  equilibrium_init!(q, pr, c, eos; rng = Xoshiro(11));  end
-    tg = HMCTarget(start.β0, start.β, pr.vol, eos)
+    tgt = target_state(sa / vol, 0.0, eos)                # the target state (src/measure.jl; docs/focus_plan.tex Q9)
+    redirect_stdout(devnull) do;  equilibrium_init!(q, pr, c, eos; rng = Xoshiro(11), bath = tgt.bath);  end
+    tg = HMCTarget(tgt.β0, tgt.β, pr.vol, eos)
     dt = 0.35 * compute_dt(q, pr, eos; mode = :ideal);  nmax = max(4, round(Int, LBOX / sqrt(1/3) / dt))
     rng = Xoshiro(12);  st = [];  acc = 0.0;  t0 = time()
-    for n in 1:NUPD
-        u = hmc_update!(q, pr, c, eos, tg, rng; nsteps = rand(rng, (nmax ÷ 2):nmax), dt)
-        acc += u.accepted
+    # trajectories of random length in [nmax/2, nmax] (taujit = 1/2; until docs/focus_plan.tex Q9 uniform integers in that range)
+    acc = NUPD * hmc_equilibrate!(q, pr, c, eos, tg, rng; nupdates = NUPD, nsteps = nmax, dt, taujit = 0.5) do n, u
         n > BURN && push!(st, moment_stats(q, pr, c))
     end
     report(@sprintf("HMC s_a = %g", sa), st)

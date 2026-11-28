@@ -9,8 +9,10 @@ to experiment.
 - `examples/`: physics runs (sound waves, shear waves, Gaussian pulse,
   stochastic background). These are the scripts to run and play with.
 - `test/`: checks that pass or fail.
-- `docs/`: the notes behind the code (`sph2.pdf`, `firstrun.pdf`,
-  `bond_dissipation.pdf`, `particle_metrics.pdf`, `changerep.pdf`, `stochastic.pdf`).
+- `docs/`: the notes behind the code: `volume_n.pdf` (the Hamiltonian), `inverse_moment.pdf` (the viscous
+  step), `stochastic.pdf` (the stochastic step), `equilibrium_positions.pdf` (the measure, hybrid Monte Carlo),
+  `renorm3.pdf` and `sscheme_plan.pdf` (the renormalization), `focus_plan.pdf` (what the code keeps; the
+  removed options are in the git tag `pre-prune`).
 
 ## Setup (once)
 

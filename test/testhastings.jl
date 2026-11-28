@@ -13,13 +13,13 @@ ok = true
 check(c, msg) = (println(c ? "  ✓ " : "  ✗ FAIL: ", msg); global ok &= c)
 eos = ConstantCs2EOS(1/3, 1.0, 0.2, 0.0)
 
-params, ps, cl = withenv("SPH_DISSIPATION" => "moment", "SPH_MEASURE" => "einstein") do
+params, ps, cl = let
     v0 = 0.5;  γ = 1 / sqrt(1 - v0^2)
     _, q, _, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> 3e4, (x, y) -> SVector(0.0, 0.0); L = 0.6, lattice = :hex))
     w0 = q[1].e + q[1].p
     P, p, c, _ = quiet(() -> setup_ic(0.05, 2.0, eos, (x, y) -> γ * 3e4, (x, y) -> SVector(w0 * γ^2 * v0, 0.0); L = 0.6, lattice = :hex,
                                        jitter = 0.3, seed = 4))
-    quiet(() -> equilibrium_init!(p, P, c, eos; rng = Xoshiro(2)))           # thermal momenta (s_a ≈ 16)
+    quiet(() -> equilibrium_init!(p, P, c, eos; rng = Xoshiro(2), bath = target_state(3e4, v0, eos).bath))   # thermal momenta (s_a ≈ 16)
     smooth_to_particles!(p, P, c);  update_thermodynamics!(p, eos);  update_velocities!(p, P, c)
     (P, p, c)
 end
@@ -83,7 +83,7 @@ let worst = 0.0
 end
 
 println("4. a stochastic step with the correction")
-withenv("SPH_DISSIPATION" => "moment", "SPH_MEASURE" => "einstein", "SPH_HASTINGS" => "1") do
+withenv("SPH_HASTINGS" => "1") do
     p2 = deepcopy(ps);  P0 = sum(q.m for q in p2)
     opts = StochOptions(params)
     a = stochastic_step!(p2, params, cl, 0.5 * compute_dt(p2, params, eos; mode = :viscous), eos, opts;

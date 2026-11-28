@@ -128,8 +128,8 @@ println("Test 1: 20 random particles,  L=10  h=1  (5×5 grid)")
 println("=" ^ 55)
 
 L, h = 10.0, 1.0
-Random.seed!(RNG, 42)
-particles1 = [Particle(SVector(rand(RNG)*L, rand(RNG)*L), 1.0) for _ in 1:20]
+rng = MersenneTwister(42)          # (the global RNG of sph.jl, seeded 42, until docs/focus_plan.tex Q10: the same numbers)
+particles1 = [Particle(SVector(rand(rng)*L, rand(rng)*L), 1.0) for _ in 1:20]
 
 cl1 = CellList2D(SVector(L,L), h, length(particles1))
 rebuild_cell_list!(cl1, particles1)
@@ -211,8 +211,8 @@ println("=" ^ 55)
 
 Lx4, Ly4, h4 = 6.0, 12.0, 1.0
 L4 = SVector(Lx4, Ly4)
-Random.seed!(RNG, 99)
-particles4 = [Particle(SVector(rand(RNG)*Lx4, rand(RNG)*Ly4), 1.0) for _ in 1:20]
+rng = MersenneTwister(99)
+particles4 = [Particle(SVector(rand(rng)*Lx4, rand(rng)*Ly4), 1.0) for _ in 1:20]
 
 cl4 = CellList2D(L4, h4, length(particles4))
 rebuild_cell_list!(cl4, particles4)

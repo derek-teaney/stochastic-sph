@@ -1,18 +1,24 @@
 # runinfo.jl — the run record: what a run ran and how it went, <base>.toml next to its data
-# (docs/codeplan.tex, "The run record").  Generated from the values the code used, never
-# typed in:
+# (docs/codeplan.tex, "The run record").
+#
+# Generated from the values the code used, never typed in:
 #
 #   [run]         driver, tag, seed, command-line arguments
+#   [config]      the inputs of the driver, grouped (equilibrium.jl, RunConfig; optional)
 #   [sim]         every field of SimParams
 #   [eos]         every field of the equation of state
 #   [stochastic]  every field of StochOptions (absent if the run has no stochastic step)
 #   [settings]    every setting read through `setting` (settings.jl): value, default, set
+#   [unused]      the settings set in the environment but never read so far, with their
+#                 values (settings.jl, unused_settings)
 #   [driver]      quantities the driver derives (time step, steps, entropy per particle, ...)
 #   [start]       how the initial state was made
 #   [provenance]  commit (+dirty and a hash of the diff), Julia, threads, host, Slurm, date
 #   [outcome]     progress and results; rewritten at each checkpoint and at the end
 #
-# write_record(base; run, params, eos, opts, driver, start, outcome) writes it (atomically).
+# write_record(base; run, params, eos, opts, driver, start, outcome) writes it (atomically:
+# <base>.toml.tmp, then renamed) and returns the path.
+#
 # Python reads it with tomllib; nersc/collect_runs.jl gathers the records of a campaign into
 # one table.
 
@@ -52,11 +58,13 @@ function provenance()
 end
 
 function write_record(base::AbstractString; run = NamedTuple(), params = nothing, eos = nothing,
-                      opts = nothing, driver = NamedTuple(), start = NamedTuple(), outcome = NamedTuple())
+                      opts = nothing, driver = NamedTuple(), start = NamedTuple(), outcome = NamedTuple(),
+                      config = nothing)
     rec = Dict{String,Any}("run" => tomlval(run), "sim" => fields_table(params), "eos" => fields_table(eos),
-                           "settings" => settings_table(), "driver" => tomlval(driver),
+                           "settings" => settings_table(), "unused" => unused_settings(), "driver" => tomlval(driver),
                            "start" => tomlval(start), "provenance" => provenance(), "outcome" => tomlval(outcome))
     opts === nothing || (rec["stochastic"] = fields_table(opts))
+    config === nothing || (rec["config"] = tomlval(config))   # the driver's inputs, grouped (equilibrium.jl RunConfig)
     open(io -> TOML.print(io, rec; sorted = true), base * ".toml.tmp", "w")
     mv(base * ".toml.tmp", base * ".toml"; force = true)
     return base * ".toml"

@@ -52,7 +52,7 @@ run_unit() {   # <repo> <outdir>: every <repo>/test/*.jl → <outdir>/<name>.log
 }
 
 # log comparison, timing, temporary paths and commit hashes masked; test/regress/logmask.sed maps renames
-mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g; s/(steps=[0-9]+) [0-9]+ s\b/\1 T s/g; s/commit [0-9a-f]{7,}(\+dirty)?/commit HASH/g' | sed -E -f "$R/test/regress/logmask.sed"; }
+mask() { grep -v -E 'seconds|elapsed|threads, ' "$1" | sed -E 's/wall= *[0-9.]+ *s/wall/g; s/jl_[A-Za-z0-9]+/jl_TMP/g; s/[0-9]+\.[0-9]+ s\b/T s/g; s/(steps=[0-9]+) [0-9]+ s\b/\1 T s/g; s/, [0-9]+ s$/, T s/; s/commit [0-9a-f]{7,}(\+dirty)?/commit HASH/g' | sed -E -f "$R/test/regress/logmask.sed"; }
 
 if [ "$MODE" = unit ] || [ "$MODE" = all ]; then
     echo "unit tests ($(git rev-parse --short HEAD), $JOBS at a time):"
@@ -85,39 +85,55 @@ if [ "$MODE" = load ] || [ "$MODE" = all ]; then
 fi
 
 if [ "$MODE" = regress ] || [ "$MODE" = all ]; then
-    # The regression is of the tree level and the start of before (since 2026-11-23 the defaults are SPH_RENORM=split and
-    # SR_BATH=nominal): both sides run with SPH_RENORM=0 SR_BATH=totals, so that the default path of <ref> must be reproduced
-    # bit-identically.  The renormalized runs are tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit run above.
-    export SPH_RENORM=0 SR_BATH=totals
+    # The regression is of the tree level (both sides run with SPH_RENORM=0); the equilibrium and stability drivers run at the
+    # default renormalization (split) as well (focus_plan.tex, Q0).  SR_BATH=totals was exported here until focus_plan.tex Q9,
+    # which removed it.  The renormalized runs are also tested by testsplit.jl, testsscheme*.jl, testpositional*.jl and the unit
+    # run above.
+    export SPH_RENORM=0
     W=$OUT/ref;  git worktree add -q --detach "$W" "$REF" || exit 1
     echo "regression against $REF ($(git -C "$W" rev-parse --short HEAD)):"
-    refstep=$W/test/regress/step.jl;  [ -f "$refstep" ] || refstep=$W/test/testregress_step.jl
+    # step.jl: this version's script on both sides (with each side's library), so that it exercises only what both have
+    mkdir -p "$W/test/regress";  cp test/regress/step.jl "$W/test/regress/step.jl";  refstep=$W/test/regress/step.jl
     drv() { [ -f "$1/examples/equilibrium.jl" ] && echo "$1/examples/equilibrium.jl" || echo "$1/examples/stochrep_equilibrium.jl"; }
-    for H in energy smoothed; do
+    # (the n-scheme, the only Hamiltonian since docs/focus_plan.tex Q7; the smoothed one was run here until Q2)
+    for H in energy; do
         t0=$(date +%s)
-        ( cd "$W" && SPH_HAMILTONIAN=$H julia -t 1 --project="$PROJ" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
+        ( cd "$W" && julia -t 1 --project="$PROJ" "$refstep" save "$OUT/ref_$H.jls" > "$OUT/ref_step_$H.log" 2>&1 )
         ok=pass
         for th in 1 4; do
-            SPH_HAMILTONIAN=$H julia -t $th --project="$PROJ" test/regress/step.jl compare "$OUT/ref_$H.jls" > "$OUT/step_${H}_t$th.log" 2>&1 || ok=fail
+            julia -t $th --project="$PROJ" test/regress/step.jl compare "$OUT/ref_$H.jls" > "$OUT/step_${H}_t$th.log" 2>&1 || ok=fail
         done
         record "step.jl, $H" regress $ok $(( $(date +%s) - t0 ))
     done
-    for c in rest boost; do
-        t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
-        for side in ref here; do
-            d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_$c.log" 2>&1 ) &
-        done; wait
-        ok=fail
-        julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_$c.log" 2>&1 && ok=pass
-        record "equilibrium driver, $c" regress $ok $(( $(date +%s) - t0 ))
+    # the equilibrium driver at the tree level (the environment above) and at the default renormalization ("env -u" drops it), for
+    # the starts (SR_START, focus_plan.tex Q9) hot and cold, and hmc when <ref> has it.  A <ref> before Q9 names the same starts
+    # SR_POSITIONS=lattice SR_START=eq (hot) and SR_POSITIONS=lattice SR_START=cold (cold); its hmc start drew again after hybrid
+    # Monte Carlo and had another proposal, so it is not compared.
+    oldref=false;  grep -q 'setting("SR_POSITIONS"' "$(drv "$W")" && oldref=true   # the read, not a mention in a comment
+    starts="hot cold";  $oldref || starts="hot cold hmc"
+    for cfg in tree default; do
+        u="";  [ $cfg = default ] && u="-u SPH_RENORM"
+        for sta in $starts; do
+            here_env="SR_START=$sta";  ref_env="$here_env"
+            $oldref && { [ $sta = hot ] && ref_env="SR_POSITIONS=lattice SR_START=eq" || ref_env="SR_POSITIONS=lattice SR_START=cold"; }
+            for c in rest boost; do
+                t0=$(date +%s);  b=""; [ $c = boost ] && b=0.6
+                for side in ref here; do
+                    d=$R;  e=$here_env;  [ $side = ref ] && { d=$W;  e=$ref_env; }
+                    ( cd "$d" && env $u $e SR_BOOST=${b:-0} SR_OUTDIR=$OUT/drv_$side/$cfg/$sta/$c julia -t 2 --project="$PROJ" "$(drv "$d")" 0.6 2.0 0.5 1 2 $c > "$OUT/drv_${side}_${cfg}_${sta}_$c.log" 2>&1 ) &
+                done; wait
+                ok=fail
+                julia --project="$PROJ" test/regress/h5cmp.jl "$OUT/drv_ref/$cfg/$sta/$c/equilibrium_${c}_r1.h5" "$OUT/drv_here/$cfg/$sta/$c/equilibrium_${c}_r1.h5" > "$OUT/drv_cmp_${cfg}_${sta}_$c.log" 2>&1 && ok=pass
+                record "equilibrium driver, $cfg, $sta, $c" regress $ok $(( $(date +%s) - t0 ))
+            done
+        done
     done
     sdrv() { [ -f "$1/examples/stability.jl" ] && echo "$1/examples/stability.jl" || echo "$1/examples/stochrep_hamiltonian.jl"; }
-    for H in smoothed energy; do
-        t0=$(date +%s)
+    for H in energy default; do                        # default: the energy Hamiltonian at the default renormalization (split)
+        t0=$(date +%s);  u="";  [ $H = default ] && u="-u SPH_RENORM"
         for side in ref here; do
             d=$R; [ $side = ref ] && d=$W
-            ( cd "$d" && SPH_HAMILTONIAN=$H SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
+            ( cd "$d" && env $u SR_OUTDIR=$OUT/stab_$side/$H julia -t 2 --project="$PROJ" "$(sdrv "$d")" 2.0 0.3 1 full star > "$OUT/stab_${side}_$H.log" 2>&1 ) &
         done; wait
         ok=fail;  f=$(ls "$OUT/stab_ref/$H" 2>/dev/null | head -1)
         [ -n "$f" ] && julia --project="$PROJ" test/regress/jlscmp.jl "$OUT/stab_ref/$H/$f" "$OUT/stab_here/$H/$f" > "$OUT/stab_cmp_$H.log" 2>&1 && ok=pass

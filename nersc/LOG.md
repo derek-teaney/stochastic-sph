@@ -4,6 +4,16 @@ Running record of what has been set up and run at NERSC (Perlmutter CPU), newest
 Agents: read this before submitting anything, and add an entry when you submit, finish,
 or learn something about running the code here.
 
+**2026-11-27 (NERSC): focusing the code, branch `focus` (docs/focus_plan.tex, Q0-Q15; its Results section).**  Tags: `pre-prune`
+(f5237d9, main before), `focus-q11` (504ea20, the reference of Q12-Q14).  Gates (test/run.sh all -r <ref>), each 1 node:
+interactive 62102226 (Q0, 1.3 nh), 62103015 (Q1 + Q2 overlapped, 1.5 nh), 62104585 (Q12, ~1.5 nh); regular 62103676 (Q3-Q8 at the Q8
+head), 62104423 (Q11 head), 62105280 (Q15 head); checks of Q9, Q10, Q11, Q14 with srun --overlap on those allocations.  Campaign
+`q9_start` (check (iii) of Q9: the hmc start of focus against pre-prune; nersc/campaign_q9_start.txt, 64 tasks per side):
+62104058 (old, ~/gPRE = pre-prune), 62104059 (new, ~/gQ9 = cfd6988), 1 node each, ~0.6 h each.  About 12 node-hours in all.
+Lessons: the hast_lq_* datasets are sums by atomic adds across threads: their last bits differ between runs of identical code
+(h5cmp no longer compares them).  The interactive QOS allows 2 jobs per user: overlap further work on them with srun --overlap.
+Old checkpoints (before Q14) do not resume; old campaign lines that set retired settings stop (nersc/README.md).
+
 **2026-11-16 (NERSC): hastings_low, s_a = 4 done** (61376873, 37 min): 49/128 tasks stopped in HMC (eos_newton, see below); survivors at rest
 7 nh / 10 h / 5 chains, at v0 = 0.8 14 / 14 / 13.  Indicative: at rest residual acceptance 5% (nh) / 0.8% (h), light cone 90% of residual and 60%
 of stress proposals, shear Γ/Γ_hyd ≈ 2.6–2.7 in both, KE/2VwT ≈ 0.6; spectra / HMC: nh +3–9% at rest and M_T +6–11% at v0 = 0.8, h ≈ 1.

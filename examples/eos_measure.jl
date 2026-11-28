@@ -22,23 +22,23 @@ const NUPD = parse(Int, ARGS[4])
 const SEED   = setting("SR_SEED0", 1)
 const DTFAC  = setting("SR_HMC_DTFAC", 0.35)
 const TAUJIT = setting("SR_HMC_TAUJIT", 0.5)
-const BURN   = setting("SR_BURN", 1 / 3)
+const BURN   = setting("SR_BURN")
 const KHMAX  = setting("SR_KHMAX", 3.0)
 const OUTDIR = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data", "eos")))
 const SCHEME = SSCHEME ? "sscheme" : SPLIT ? "split" : "tree"
-const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V", 0.0)
+const CS2 = setting("SR_CS2", 0.5);  const VFLUID = setting("SR_V")
 const TAG = (length(ARGS) > 4 ? ARGS[5] : "eos_L$(LBOX)_ha$(HA)_s$(SA)_$(SCHEME)") * "_seed$(SEED)"
 const H = 0.05;  const A = H / HA;  const S0 = SA / (sqrt(3) / 2 * A^2)
 
 eos = CS2 == 0.5 ? conformal_eos(default_phys_dim(); η_by_s = 0.2) : ConstantCs2EOS(cs2_val = CS2, η_by_s = 0.2)
 params, ps, cl, _ = setup_ic(H, HA, eos, (x, y) -> S0, (x, y) -> SVector(0.0, 0.0); L = LBOX, lattice = :hex, seed = 1000SEED + 4)
-start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3))
-# the bath: the start at rest, as for v = 0; in motion (SR_V) the same rest-frame temperature T_rel = 1/β⁰_rest moving at v:
-# β⁰ = γ/T_rel, β = v β⁰ x̂ (the heat bath gives the particles their momenta at the first update; the burn-in absorbs the start)
+# the bath: the target state (src/measure.jl target_state) at s_rel,0 = S0, at rest or moving at v = SR_V: β⁰ = γ/T_rel,0, β = v β⁰ x̂.
+# The draw is at rest (the heat bath gives the particles their momenta at the first update; the burn-in absorbs the start).
+# (Until 2026-11-27 the rest bath was solved from the totals of the lattice, beta_from_averages: docs/focus_plan.tex Q9.)
 const NEXP = 1 + 1 / CS2
-const BATH = VFLUID > 0 ? (γv = 1 / sqrt(1 - VFLUID^2);  β0 = γv * start.β0;
-                           (β0 = β0, β = SVector(VFLUID * β0, 0.0), T = 1 / β0, v = SVector(VFLUID, 0.0))) :
-                          (β0 = start.β0, β = start.β, T = start.T, v = start.v)
+const TGT = target_state(S0, VFLUID, eos)
+start = equilibrium_init!(ps, params, cl, eos; rng = Xoshiro(1000SEED + 3), bath = target_state(S0, 0.0, eos).bath)
+const BATH = (β0 = TGT.β0, β = TGT.β, T = 1 / TGT.β0, v = SVector(VFLUID, 0.0))
 tg = HMCTarget(BATH.β0, BATH.β, params.vol, eos)
 dt = DTFAC * compute_dt(ps, params, eos; mode = :ideal)
 const NSTEPS = max(1, ceil(Int, params.L[1] / sqrt(cs2(eos)) / dt))
@@ -59,9 +59,8 @@ rec = Recorder(ks);  prec = ParticleRecorder(ps, params; ks, cl)
 E = Float64[];  P = Float64[];  Pk = Float64[];  Pv = Float64[];  acc = Float64[];  vmean = Float64[];  vvar = Float64[]
 Tyy = Float64[];  Px = Float64[];  Py = Float64[]
 rng = Xoshiro(1000SEED + 7);  t0 = time()
-for n in 1:NUPD
-    nst = max(1, round(Int, NSTEPS * (1 - TAUJIT * rand(rng))))
-    u = hmc_update!(ps, params, cl, eos, tg, rng; nsteps = nst, dt);  push!(acc, u.accepted)
+hmc_equilibrate!(ps, params, cl, eos, tg, rng; nupdates = NUPD, nsteps = NSTEPS, dt, taujit = TAUJIT) do n, u
+    push!(acc, u.accepted)
     r = energy_pressure(ps, params, cl, eos)
     push!(E, r.E);  push!(P, r.P);  push!(Pk, r.Pkin);  push!(Pv, r.Pvir);  push!(Tyy, r.P - r.Sxxyy)
     Ptot = sum(q.m for q in ps);  push!(Px, Ptot[1]);  push!(Py, Ptot[2])
@@ -152,7 +151,7 @@ mkpath(OUTDIR)
 meta = (L = params.L, h = params.h, a = params.a, ha = HA, N = params.N, S0 = S0, s_a = SA, T0 = T0, sigma = σp, renorm = SCHEME != "tree",
         scheme = SCHEME, v = vb, gamma = γb, w_target = w_t, M_target = M_t,
         eos_meta(params, eos)..., sampler = "hmc", nupdates = NUPD, nsteps = NSTEPS, taujit = TAUJIT, dt = dt,
-        acceptance = mean(acc), seed = SEED, measure = string(params.measure), e_target = e_t, p_target = p_t)
+        acceptance = mean(acc), seed = SEED, measure = "liouville", e_target = e_t, p_target = p_t)
 write_equilibrium_h5(joinpath(OUTDIR, "$(TAG).h5"), meta, rec, vmean, zeros(NUPD); prec,
                      extra = (E = E, P = P, Pkin = Pk, Pvir = Pv, Tyy = Tyy, Px = Px, Py = Py, vol_mean = vmean, vol_var = vvar, hmc_acc = acc))
 open(joinpath(OUTDIR, "$(TAG).txt"), "w") do io
