@@ -28,7 +28,7 @@ end
 
 # ── The start ────────────────────────────────────────────────────────────────
 # SR_START (docs/focus_plan.tex Q9): cold and hot (initial_state!, measure.jl), or hmc: the draw at the target's β^μ, then hybrid
-# Monte Carlo (hmc_equilibrate!, hmc.jl) with the settings hmc = (n, tau, dtfac, taujit, shift_totals); tau = 0 is √3 L (L/c_s at
+# Monte Carlo (hmc_equilibrate!, hmc.jl) with the settings hmc = (n, tau, dtfac, taujit); tau = 0 is √3 L (L/c_s at
 # c_s² = 1/3).  The random numbers: the draw 1000 seed + 6, the chain 1000 seed + 7; the hot draw 1000 seed + 3.
 # Returns the description of the start, for the run record.
 function start_run!(ps, params, cl, eos, tgt, cold, start::Symbol; seed, L, hmc = nothing, label = "")
@@ -41,11 +41,8 @@ function start_run!(ps, params, cl, eos, tgt, cold, start::Symbol; seed, L, hmc 
     acch = hmc_equilibrate!(ps, params, cl, eos, tg, Xoshiro(1000seed + 7); nupdates = hmc.n, nsteps = nH, dt = dtH, taujit = hmc.taujit)
     @printf("%s: hybrid Monte Carlo, %d updates of %d steps (τ = %.3g), acceptance %.2f, %.0f s\n",
             label, hmc.n, nH, nH * dtH, acch, time() - th)
-    hmc.shift_totals && shift_to_totals!(ps, params, cl, eos, cold.E, cold.P)
-    return (type = "hmc", what = "equilibrium draw, then hybrid Monte Carlo at the requested beta^mu" *
-                                 (hmc.shift_totals ? ", final sample shifted to the cold totals" : ""),
-            hmc_updates = hmc.n, hmc_steps = nH, hmc_taujit = hmc.taujit, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = acch,
-            hmc_shift_totals = hmc.shift_totals)
+    return (type = "hmc", what = "equilibrium draw, then hybrid Monte Carlo at the requested beta^mu",
+            hmc_updates = hmc.n, hmc_steps = nH, hmc_taujit = hmc.taujit, hmc_dt = dtH, hmc_tau = nH * dtH, hmc_acceptance = acch)
 end
 
 # ── The state of a run ───────────────────────────────────────────────────────

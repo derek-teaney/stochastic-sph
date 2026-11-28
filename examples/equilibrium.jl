@@ -31,7 +31,7 @@ include(joinpath(@__DIR__, "..", "src", "load.jl"))
 #             hmc   the draw, then hybrid Monte Carlo at the target's β^μ: SR_HMC_N updates (default 200) of trajectories of
 #                   length up to SR_HMC_TAU (0: L/c_s), δt = SR_HMC_DTFAC times the acoustic step, a random fraction SR_HMC_TAUJIT
 #                   of the length (default 0.5: a fixed length equal to a period of a box sound mode freezes that mode).  No
-#                   redraw, no shift (SR_HMC_SHIFT_TOTALS=1, for debugging, shifts the sample to the cold totals).  For production.
+#                   redraw, no shift: the totals are those of the sample (canonical at the target).  For production.
 #           SR_JITTER: displace the sites by up to ±j·a/2, then make the smoothed densities uniform again.
 # output    SR_OUTDIR, SR_CHECKPOINT_MIN, the seeds SR_SEEDOFFSET + SR_SEED0·SR_SEEDSTRIDE + (1…nreal), the commit.
 # tests     SR_NOVISC (no stochastic step), SR_NOHAM (no ideal step: positions frozen), SR_STOP_AFTER (stop after that step, after a
@@ -57,7 +57,7 @@ function RunConfig(argv)
     st in (:eq, :thermal) && error("SR_START=$st was removed on 2026-11-27 (docs/focus_plan.tex, Q9): use cold, hot or hmc " *
                                    "(hot is the former SR_POSITIONS=lattice SR_START=eq; tag pre-prune)")
     hmc = st === :hmc ? (n = setting("SR_HMC_N"), tau = setting("SR_HMC_TAU"), dtfac = setting("SR_HMC_DTFAC", 0.35),
-                         taujit = setting("SR_HMC_TAUJIT", 0.5), shift_totals = setting("SR_HMC_SHIFT_TOTALS")) : nothing
+                         taujit = setting("SR_HMC_TAUJIT", 0.5)) : nothing
     start = (start = st, jitter = setting("SR_JITTER"), hmc = hmc)
     out = setting("SR_OUTDIR", normpath(joinpath(@__DIR__, "..", "data")));  mkpath(out)
     commit = try

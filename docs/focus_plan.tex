@@ -407,4 +407,9 @@ stability driver bit-identical; the unit-test output differs only by the printed
 new file \nolinkurl{src/run.jl} in the load list (\texttt{testrunrecord}).  The plan is done; the merge into \texttt{main} waits for
 the owner.
 
+\paragraph{After Q15: \texttt{SR\_HMC\_SHIFT\_TOTALS} removed} (the owner, 2026-11-27).  The cold totals are those of the lattice, without
+the energy of the fluctuations, so they are not the totals of the target state: the shift moved the hmc start off the requested
+$\beta^\mu$.  The flag (check (iv) of Q9) and \texttt{shift\_to\_totals!} are gone; the name stops with a message.  The hmc start keeps
+the totals of its sample (canonical at the target).  The default never used the flag: the numbers are unchanged.
+
 \end{document}

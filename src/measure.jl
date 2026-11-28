@@ -190,27 +190,9 @@ function equilibrium_init!(particles::Vector{Particle}, params::SimParams, cl::C
 end
 
 # The totals of the state as set up (the lattice, before any draw): the cold start's (E, P).
-# The hot start and, with SR_HMC_SHIFT_TOTALS, the hmc start are shifted to them.
+# The hot start is shifted to them.
 cold_totals(particles, params, cl, eos) = (thermalize!(particles, params, cl, eos);
     (E = sum(particle_energy(pa, eos) for pa in particles), P = sum(pa.m for pa in particles)))
-
-# Shift (e_a, m_a) at fixed positions so that the totals are (E, P) exactly, the difference
-# removed in proportion to the volumes (as in draw_configuration); s_a = S_a(e_a, m_a).
-#
-# Used by SR_HMC_SHIFT_TOTALS: the hmc start at the cold totals.
-function shift_to_totals!(particles, params, cl, eos, E, P)
-    thermalize!(particles, params, cl, eos)
-    V = [pa.V for pa in particles];  Vtot = sum(V)
-    X = [SVector(particle_energy(pa, eos), pa.m[1], pa.m[2]) for pa in particles]
-    d = sum(X) - SVector(E, P[1], P[2])
-    for (a, pa) in enumerate(particles)
-        x = X[a] - (V[a] / Vtot) * d
-        pa.m = SVector(x[2], x[3]);  pa.s = particle_entropy(x[1], pa.m, V[a], eos)
-        isfinite(pa.s) || error("shift_to_totals!: the shift makes particle $a unphysical")
-    end
-    thermalize!(particles, params, cl, eos)
-    return d
-end
 
 # The start of a run on the lattice (drivers: SR_START; the hmc start is the draw and
 # hmc_equilibrate!, hmc.jl):

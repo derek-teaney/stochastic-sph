@@ -55,7 +55,6 @@ const SETTING_SPECS = Dict{String,Any}(
     "SR_HMC_TAU"        => spec(Float64, 0.0, "the length of an HMC trajectory (0: L/c_s)"),
     "SR_HMC_DTFAC"      => spec(Float64, nothing, "the HMC step / the acoustic step (0.35; hmc_positions.jl 0.5)"),
     "SR_HMC_TAUJIT"     => spec(Float64, nothing, "the random fraction of an HMC trajectory length (0.5; hmc_positions.jl 0)"),
-    "SR_HMC_SHIFT_TOTALS" => spec(Bool, false, "shift the hmc start to the totals of the cold start (debugging)"),
     "SR_JITTER"         => spec(Float64, 0.0, "the jitter of the lattice sites, in units of a"),
     "SR_DTFAC"          => spec(Float64, 1.0, "Δt / the default time step"),
     "SR_KHMAX"          => spec(Float64, nothing, "the largest kh recorded (equilibrium.jl, hmc_positions.jl 1.5; eos_measure.jl, volume_fluctuations.jl 3)"),
@@ -133,6 +132,7 @@ const RETIRED_SETTINGS = Dict(
     "SPH_HAMILTONIAN" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the n-scheme (energy Hamiltonian, number volume) is the only one; SPH_HAMILTONIAN=smoothed is in the tag pre-prune",
     "SPH_VOLUME" => "removed on 2026-11-27 (docs/focus_plan.tex, Q7): the number volume V_a = 1/n_a is the only one; SPH_VOLUME=entropy is in the tag pre-prune",
     "SR_POSITIONS" => "removed on 2026-11-27 (docs/focus_plan.tex, Q9): SR_START = cold | hot | hmc says where and how a run starts (lattice = cold or hot); poisson is in the tag pre-prune",
+    "SR_HMC_SHIFT_TOTALS" => "removed on 2026-11-27: the lattice totals are not those of the target state (they lack the energy of the fluctuations), so the shift moved the start off the requested β^μ; the hmc start keeps the totals of its sample",
     "SR_BATH" => "removed on 2026-11-27 (docs/focus_plan.tex, Q9): the start is always at the requested state (the former nominal); totals is in the tag pre-prune",
     "SR_LAMBDA" => "removed on 2026-11-27 (docs/focus_plan.tex, Q1): the residual move always has λ = 1; λ ≠ 1 is in the tag pre-prune",
 )
